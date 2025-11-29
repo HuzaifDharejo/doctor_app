@@ -86,7 +86,7 @@
 ### Utility Classes
 - [x] DateTimeFormatter (45 tests)
 - [x] NumberFormatter (55 tests)
-- [ ] StringUtils (truncate, capitalize, etc.)
+- [x] StringUtils (92 tests) - truncate, capitalize, mask, slugify, etc.
 
 ### Future Features
 - [ ] Export monthly reports (PDF)
@@ -99,8 +99,8 @@
 Last Updated: 2025-02-03
 
 ## Progress Summary
-- **538 tests passing**
-  - Unit tests: ~256 (Validators, Settings, Pagination, Connectivity, DateTime/Number Formatters, Database, Logger, Backup)
+- **630 tests passing**
+  - Unit tests: ~348 (Validators, Settings, Pagination, Connectivity, DateTime/Number/String Formatters, Database, Logger, Backup)
   - Widget tests: ~281 (PatientCard, ErrorDisplay, SyncStatus, LoadingButton, SearchField, ConfirmationDialog, StatCard, SectionHeader, InfoRow)
   - Smoke test: 1
 - **0 errors, minor info-level lint suggestions**
@@ -111,3 +111,4 @@ Last Updated: 2025-02-03
 - Connectivity and retry utilities ready for use
 - Comprehensive reusable widget library
 - Full database test infrastructure with in-memory SQLite
+- Complete string manipulation utilities
