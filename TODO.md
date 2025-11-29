@@ -80,9 +80,16 @@
 - [x] LoadingButton with variants (14 tests)
 - [x] SearchField with debouncing (29 tests)
 - [x] ConfirmationDialog variants (26 tests)
+- [x] StatCard for dashboard (22 tests)
+- [x] SectionHeader and variants (20 tests)
+- [x] InfoRow and variants (20 tests)
 - [ ] FormFieldWrapper with validation
 - [ ] DateTimePicker with presets
-- [ ] StatCard for dashboard
+
+### Utility Classes
+- [x] DateTimeFormatter (45 tests)
+- [x] NumberFormatter (55 tests)
+- [ ] StringUtils (truncate, capitalize, etc.)
 
 ### Future Features
 - [ ] Export monthly reports (PDF)
@@ -95,11 +102,11 @@
 Last Updated: 2025-02-03
 
 ## Progress Summary
-- **246 tests passing** (93 unit + 122 widget + 1 smoke + 29 pagination + connectivity)
+- **408 tests passing** (148 unit + 229 widget + 1 smoke + connectivity + pagination)
 - **0 errors, minor info-level lint suggestions**
 - Input validation integrated into patient form
 - Error handling widgets ready for use
 - Auto-backup system enhanced with metadata and verification
 - Pagination utilities ready for integration
 - Connectivity and retry utilities ready for use
-- Reusable widget library growing
+- Comprehensive reusable widget library
