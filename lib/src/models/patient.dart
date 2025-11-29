@@ -2,6 +2,51 @@ import 'dart:convert';
 
 /// Patient data model representing a patient in the system
 class PatientModel {
+
+  const PatientModel({
+    required this.firstName, this.id,
+    this.lastName = '',
+    this.dateOfBirth,
+    this.phone = '',
+    this.email = '',
+    this.address = '',
+    this.medicalHistory = '',
+    this.tags = const [],
+    this.riskLevel = 0,
+    this.createdAt,
+  });
+
+  /// Create from JSON map
+  factory PatientModel.fromJson(Map<String, dynamic> json) {
+    return PatientModel(
+      id: json['id'] as int?,
+      firstName: json['firstName'] as String? ?? json['first_name'] as String? ?? '',
+      lastName: json['lastName'] as String? ?? json['last_name'] as String? ?? '',
+      dateOfBirth: json['dateOfBirth'] != null
+          ? DateTime.tryParse(json['dateOfBirth'] as String)
+          : json['date_of_birth'] != null
+              ? DateTime.tryParse(json['date_of_birth'] as String)
+              : null,
+      phone: json['phone'] as String? ?? '',
+      email: json['email'] as String? ?? '',
+      address: json['address'] as String? ?? '',
+      medicalHistory: json['medicalHistory'] as String? ?? json['medical_history'] as String? ?? '',
+      tags: json['tags'] is String
+          ? parseTags(json['tags'] as String)
+          : (json['tags'] as List<dynamic>?)?.cast<String>() ?? [],
+      riskLevel: json['riskLevel'] as int? ?? json['risk_level'] as int? ?? 0,
+      createdAt: json['createdAt'] != null
+          ? DateTime.tryParse(json['createdAt'] as String)
+          : json['created_at'] != null
+              ? DateTime.tryParse(json['created_at'] as String)
+              : null,
+    );
+  }
+
+  /// Create from JSON string
+  factory PatientModel.fromJsonString(String jsonString) {
+    return PatientModel.fromJson(jsonDecode(jsonString) as Map<String, dynamic>);
+  }
   final int? id;
   final String firstName;
   final String lastName;
@@ -13,20 +58,6 @@ class PatientModel {
   final List<String> tags;
   final int riskLevel; // 0 = Low, 1 = Medium, 2 = High
   final DateTime? createdAt;
-
-  const PatientModel({
-    this.id,
-    required this.firstName,
-    this.lastName = '',
-    this.dateOfBirth,
-    this.phone = '',
-    this.email = '',
-    this.address = '',
-    this.medicalHistory = '',
-    this.tags = const [],
-    this.riskLevel = 0,
-    this.createdAt,
-  });
 
   /// Full name of the patient
   String get fullName => lastName.isEmpty ? firstName : '$firstName $lastName';
@@ -73,33 +104,6 @@ class PatientModel {
     return tagsString.split(',').map((t) => t.trim()).where((t) => t.isNotEmpty).toList();
   }
 
-  /// Create from JSON map
-  factory PatientModel.fromJson(Map<String, dynamic> json) {
-    return PatientModel(
-      id: json['id'] as int?,
-      firstName: json['firstName'] as String? ?? json['first_name'] as String? ?? '',
-      lastName: json['lastName'] as String? ?? json['last_name'] as String? ?? '',
-      dateOfBirth: json['dateOfBirth'] != null
-          ? DateTime.tryParse(json['dateOfBirth'] as String)
-          : json['date_of_birth'] != null
-              ? DateTime.tryParse(json['date_of_birth'] as String)
-              : null,
-      phone: json['phone'] as String? ?? '',
-      email: json['email'] as String? ?? '',
-      address: json['address'] as String? ?? '',
-      medicalHistory: json['medicalHistory'] as String? ?? json['medical_history'] as String? ?? '',
-      tags: json['tags'] is String
-          ? parseTags(json['tags'] as String)
-          : (json['tags'] as List<dynamic>?)?.cast<String>() ?? [],
-      riskLevel: json['riskLevel'] as int? ?? json['risk_level'] as int? ?? 0,
-      createdAt: json['createdAt'] != null
-          ? DateTime.tryParse(json['createdAt'] as String)
-          : json['created_at'] != null
-              ? DateTime.tryParse(json['created_at'] as String)
-              : null,
-    );
-  }
-
   /// Convert to JSON map
   Map<String, dynamic> toJson() {
     return {
@@ -119,11 +123,6 @@ class PatientModel {
 
   /// Convert to JSON string
   String toJsonString() => jsonEncode(toJson());
-
-  /// Create from JSON string
-  factory PatientModel.fromJsonString(String jsonString) {
-    return PatientModel.fromJson(jsonDecode(jsonString) as Map<String, dynamic>);
-  }
 
   /// Create a copy with modified fields
   PatientModel copyWith({

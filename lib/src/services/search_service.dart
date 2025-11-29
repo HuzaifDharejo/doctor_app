@@ -1,12 +1,6 @@
 import '../db/doctor_db.dart';
 
 class SearchResult {
-  final String type; // 'patient', 'appointment', 'prescription', 'invoice'
-  final int id;
-  final String title;
-  final String subtitle;
-  final DateTime? date;
-  final dynamic data;
 
   SearchResult({
     required this.type,
@@ -16,12 +10,18 @@ class SearchResult {
     this.date,
     this.data,
   });
+  final String type; // 'patient', 'appointment', 'prescription', 'invoice'
+  final int id;
+  final String title;
+  final String subtitle;
+  final DateTime? date;
+  final dynamic data;
 }
 
 class SearchService {
-  final DoctorDatabase db;
 
   SearchService(this.db);
+  final DoctorDatabase db;
 
   Future<List<SearchResult>> search(String query) async {
     if (query.isEmpty) return [];
@@ -44,7 +44,7 @@ class SearchService {
           title: '${patient.firstName} ${patient.lastName}',
           subtitle: patient.phone.isNotEmpty ? patient.phone : patient.email,
           data: patient,
-        ));
+        ),);
       }
     }
 
@@ -63,7 +63,7 @@ class SearchService {
           subtitle: appt.reason.isNotEmpty ? appt.reason : 'General Checkup',
           date: appt.appointmentDateTime,
           data: appt,
-        ));
+        ),);
       }
     }
 
@@ -82,7 +82,7 @@ class SearchService {
           subtitle: 'Rx #${rx.id}',
           date: rx.createdAt,
           data: rx,
-        ));
+        ),);
       }
     }
 
@@ -101,7 +101,7 @@ class SearchService {
               : 'Rs. ${inv.grandTotal.toStringAsFixed(0)}',
           date: inv.invoiceDate,
           data: inv,
-        ));
+        ),);
       }
     }
 

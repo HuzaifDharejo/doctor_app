@@ -10,9 +10,9 @@ import '../../theme/app_theme.dart';
 import '../widgets/suggestion_text_field.dart';
 
 class PsychiatricAssessmentScreen extends ConsumerStatefulWidget {
-  final Patient? preselectedPatient;
   
   const PsychiatricAssessmentScreen({super.key, this.preselectedPatient});
+  final Patient? preselectedPatient;
 
   @override
   ConsumerState<PsychiatricAssessmentScreen> createState() =>
@@ -427,7 +427,7 @@ class _PsychiatricAssessmentScreenState
                 builder: (context) => AlertDialog(
                   title: const Text('Clear Form?'),
                   content: const Text(
-                      'This will reset all fields. Are you sure?'),
+                      'This will reset all fields. Are you sure?',),
                   actions: [
                     TextButton(
                       onPressed: () => Navigator.pop(context),
@@ -545,7 +545,7 @@ class _PsychiatricAssessmentScreenState
                   _buildTextField(
                     controller: _pcController,
                     label: 'Chief Complaints',
-                    hint: 'Describe the patient\'s main complaints...',
+                    hint: "Describe the patient's main complaints...",
                     maxLines: 5,
                   ),
                 ],
@@ -916,8 +916,8 @@ class _PsychiatricAssessmentScreenState
                 Expanded(
                   child: _buildCompactTextField(
                     controller:
-                        symptoms[i]['controller'] as TextEditingController,
-                    label: symptoms[i]['label'] as String,
+                        symptoms[i]['controller']! as TextEditingController,
+                    label: symptoms[i]['label']! as String,
                     suggestions: symptoms[i]['suggestions'] as List<String>?,
                   ),
                 ),
@@ -925,9 +925,9 @@ class _PsychiatricAssessmentScreenState
                   const SizedBox(width: 12),
                   Expanded(
                     child: _buildCompactTextField(
-                      controller: symptoms[i + 1]['controller']
+                      controller: symptoms[i + 1]['controller']!
                           as TextEditingController,
-                      label: symptoms[i + 1]['label'] as String,
+                      label: symptoms[i + 1]['label']! as String,
                       suggestions: symptoms[i + 1]['suggestions'] as List<String>?,
                     ),
                   ),
@@ -951,7 +951,6 @@ class _PsychiatricAssessmentScreenState
         label: label,
         suggestions: suggestions,
         appendMode: false,
-        maxLines: 1,
       );
     }
     return TextFormField(
@@ -974,9 +973,8 @@ class _PsychiatricAssessmentScreenState
         SuggestionTextField(
           controller: _appearanceBehaviorController,
           label: 'Appearance & Behavior',
-          suggestions: [...MedicalRecordSuggestions.appearance, ...MedicalRecordSuggestions.behavior],
+          suggestions: const [...MedicalRecordSuggestions.appearance, ...MedicalRecordSuggestions.behavior],
           maxLines: 2,
-          appendMode: true,
         ),
         const SizedBox(height: 12),
         Row(
@@ -1074,7 +1072,6 @@ class _PsychiatricAssessmentScreenState
           label: 'Perception (Hallucination)',
           suggestions: MedicalRecordSuggestions.perception,
           maxLines: 2,
-          appendMode: true,
         ),
         const SizedBox(height: 12),
         Row(

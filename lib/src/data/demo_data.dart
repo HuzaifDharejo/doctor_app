@@ -351,27 +351,19 @@ class DemoData {
 
 /// Demo medication class for prescription display
 class DemoMedication {
-  final String name;
-  final String dosage;
-  final String frequency;
 
   DemoMedication({
     required this.name,
     required this.dosage,
     required this.frequency,
   });
+  final String name;
+  final String dosage;
+  final String frequency;
 }
 
 /// Demo prescription class with additional display info
 class DemoPrescription {
-  final int id;
-  final int patientId;
-  final String patientName;
-  final DateTime createdAt;
-  final List<DemoMedication> medications;
-  final String instructions;
-  final bool isRefillable;
-  final String status;
 
   DemoPrescription({
     required this.id,
@@ -383,4 +375,12 @@ class DemoPrescription {
     required this.isRefillable,
     required this.status,
   });
+  final int id;
+  final int patientId;
+  final String patientName;
+  final DateTime createdAt;
+  final List<DemoMedication> medications;
+  final String instructions;
+  final bool isRefillable;
+  final String status;
 }

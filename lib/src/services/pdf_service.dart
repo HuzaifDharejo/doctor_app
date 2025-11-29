@@ -208,14 +208,14 @@ class PdfService {
                 columnWidths: {
                   0: const pw.FlexColumnWidth(0.5),
                   1: const pw.FlexColumnWidth(2.5),
-                  2: const pw.FlexColumnWidth(1),
+                  2: const pw.FlexColumnWidth(),
                   3: const pw.FlexColumnWidth(1.5),
-                  4: const pw.FlexColumnWidth(1),
+                  4: const pw.FlexColumnWidth(),
                 },
                 children: [
                   // Header row
                   pw.TableRow(
-                    decoration: pw.BoxDecoration(color: PdfColors.blue100),
+                    decoration: const pw.BoxDecoration(color: PdfColors.blue100),
                     children: [
                       _tableCell('#', isHeader: true),
                       _tableCell('Medication', isHeader: true),
@@ -271,11 +271,10 @@ class PdfService {
                 mainAxisAlignment: pw.MainAxisAlignment.end,
                 children: [
                   pw.Column(
-                    crossAxisAlignment: pw.CrossAxisAlignment.center,
                     children: [
                       // Show signature image if available
                       if (signatureImage != null) ...[
-                        pw.Image(signatureImage, height: 50, width: 120, fit: pw.BoxFit.contain),
+                        pw.Image(signatureImage, height: 50, width: 120),
                         pw.SizedBox(height: 4),
                       ] else ...[
                         pw.Container(width: 150, child: pw.Divider()),
@@ -393,14 +392,14 @@ class PdfService {
                 columnWidths: {
                   0: const pw.FlexColumnWidth(0.5),
                   1: const pw.FlexColumnWidth(3),
-                  2: const pw.FlexColumnWidth(1),
+                  2: const pw.FlexColumnWidth(),
                   3: const pw.FlexColumnWidth(1.2),
                   4: const pw.FlexColumnWidth(1.3),
                 },
                 children: [
                   // Header row
                   pw.TableRow(
-                    decoration: pw.BoxDecoration(color: PdfColors.green100),
+                    decoration: const pw.BoxDecoration(color: PdfColors.green100),
                     children: [
                       _tableCell('#', isHeader: true),
                       _tableCell('Description', isHeader: true),
@@ -482,11 +481,10 @@ class PdfService {
                     ),
                   ),
                   pw.Column(
-                    crossAxisAlignment: pw.CrossAxisAlignment.center,
                     children: [
                       // Show signature image if available
                       if (signatureImage != null) ...[
-                        pw.Image(signatureImage, height: 50, width: 120, fit: pw.BoxFit.contain),
+                        pw.Image(signatureImage, height: 50, width: 120),
                         pw.SizedBox(height: 4),
                       ] else ...[
                         pw.Container(width: 150, child: pw.Divider()),
@@ -525,7 +523,7 @@ class PdfService {
               ),
             ),
             if (doctorName != null)
-              pw.Text('Dr. $doctorName', style: pw.TextStyle(fontSize: 12)),
+              pw.Text('Dr. $doctorName', style: const pw.TextStyle(fontSize: 12)),
             if (phone != null && phone.isNotEmpty)
               pw.Text('Tel: $phone', style: const pw.TextStyle(fontSize: 10)),
             if (address != null && address.isNotEmpty)

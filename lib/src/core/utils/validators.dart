@@ -17,11 +17,11 @@ typedef Validator = String? Function(String? value);
 
 /// Chainable validator class
 class ValidatorChain {
-  final List<Validator> _validators = [];
 
   ValidatorChain(Validator validator) {
     _validators.add(validator);
   }
+  final List<Validator> _validators = [];
 
   /// Chain another validator
   ValidatorChain and(Validator validator) {

@@ -27,17 +27,17 @@ class WhatsAppService {
     }
     buffer
       ..writeln('═══════════════════════')
-      ..writeln('')
+      ..writeln()
       ..writeln('*PRESCRIPTION*')
       ..writeln('📅 ${_formatDate(prescription.createdAt)}')
-      ..writeln('');
+      ..writeln();
     
     // Patient info
     buffer.writeln('*Patient:* ${patient.firstName} ${patient.lastName}');
     if (patient.phone.isNotEmpty) {
       buffer.writeln('📱 ${patient.phone}');
     }
-    buffer.writeln('');
+    buffer.writeln();
     
     // Medications
     buffer
@@ -46,7 +46,7 @@ class WhatsAppService {
     for (int i = 0; i < medications.length; i++) {
       final med = medications[i];
       buffer
-        ..writeln('')
+        ..writeln()
         ..writeln('${i + 1}. *${med['name'] ?? 'Unknown'}*');
       if (med['dosage'] != null && med['dosage'].toString().isNotEmpty) {
         buffer.writeln('   Dose: ${med['dosage']}');
@@ -61,7 +61,7 @@ class WhatsAppService {
         buffer.writeln('   Route: ${med['route']}');
       }
     }
-    buffer.writeln('');
+    buffer.writeln();
     
     // Instructions
     if (prescription.instructions.isNotEmpty) {
@@ -69,18 +69,18 @@ class WhatsAppService {
         ..writeln('*📋 Instructions:*')
         ..writeln('───────────────────')
         ..writeln(prescription.instructions)
-        ..writeln('');
+        ..writeln();
     }
     
     // Footer
     buffer
       ..writeln('───────────────────')
       ..writeln('*Dr. $doctorName*')
-      ..writeln('')
+      ..writeln()
       ..writeln('_Get well soon! 🙏_');
     
     final message = Uri.encodeComponent(buffer.toString());
-    final whatsappUrl = 'https://wa.me/${patient.phone.replaceAll(RegExp(r'[^0-9+]'), '')}?text=$message';
+    final whatsappUrl = 'https://wa.me/${patient.phone.replaceAll(RegExp('[^0-9+]'), '')}?text=$message';
     
     if (await canLaunchUrl(Uri.parse(whatsappUrl))) {
       await launchUrl(Uri.parse(whatsappUrl), mode: LaunchMode.externalApplication);
@@ -110,15 +110,15 @@ class WhatsAppService {
     }
     buffer
       ..writeln('═══════════════════════')
-      ..writeln('')
+      ..writeln()
       ..writeln('*INVOICE: ${invoice.invoiceNumber}*')
       ..writeln('📅 ${_formatDate(invoice.invoiceDate)}')
-      ..writeln('');
+      ..writeln();
     
     // Patient info
     buffer
       ..writeln('*Bill To:* ${patient.firstName} ${patient.lastName}')
-      ..writeln('');
+      ..writeln();
     
     // Items
     buffer
@@ -129,7 +129,7 @@ class WhatsAppService {
     }
     buffer
       ..writeln('───────────────────')
-      ..writeln('');
+      ..writeln();
     
     // Totals
     buffer.writeln('Subtotal: Rs. ${invoice.subtotal.toStringAsFixed(0)}');
@@ -140,16 +140,16 @@ class WhatsAppService {
       buffer.writeln('Tax: Rs. ${invoice.taxAmount.toStringAsFixed(0)}');
     }
     buffer
-      ..writeln('')
+      ..writeln()
       ..writeln('*Grand Total: Rs. ${invoice.grandTotal.toStringAsFixed(0)}*')
-      ..writeln('')
+      ..writeln()
       ..writeln('Status: ${invoice.paymentStatus}')
-      ..writeln('')
+      ..writeln()
       ..writeln('───────────────────')
       ..writeln('_Thank you for your visit!_');
     
     final message = Uri.encodeComponent(buffer.toString());
-    final whatsappUrl = 'https://wa.me/${patient.phone.replaceAll(RegExp(r'[^0-9+]'), '')}?text=$message';
+    final whatsappUrl = 'https://wa.me/${patient.phone.replaceAll(RegExp('[^0-9+]'), '')}?text=$message';
     
     if (await canLaunchUrl(Uri.parse(whatsappUrl))) {
       await launchUrl(Uri.parse(whatsappUrl), mode: LaunchMode.externalApplication);
@@ -158,7 +158,7 @@ class WhatsAppService {
 
   /// Open WhatsApp chat with patient
   static Future<void> openChat(String phoneNumber) async {
-    final cleanPhone = phoneNumber.replaceAll(RegExp(r'[^0-9+]'), '');
+    final cleanPhone = phoneNumber.replaceAll(RegExp('[^0-9+]'), '');
     final whatsappUrl = 'https://wa.me/$cleanPhone';
     
     if (await canLaunchUrl(Uri.parse(whatsappUrl))) {

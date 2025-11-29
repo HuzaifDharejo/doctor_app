@@ -122,7 +122,7 @@ extension ScaffoldExtension on BuildContext {
         action: action,
         backgroundColor: backgroundColor,
         behavior: SnackBarBehavior.floating,
-        shape: RoundedRectangleBorder(
+        shape: const RoundedRectangleBorder(
           borderRadius: AppRadius.mediumRadius,
         ),
         margin: EdgeInsets.all(responsivePadding),

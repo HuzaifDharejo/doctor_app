@@ -11,14 +11,14 @@ import '../widgets/document_data_extractor.dart';
 import '../widgets/suggestion_text_field.dart';
 
 class AddMedicalRecordScreen extends ConsumerStatefulWidget {
-  final Patient? preselectedPatient;
-  final String initialRecordType;
 
   const AddMedicalRecordScreen({
     super.key,
     this.preselectedPatient,
     this.initialRecordType = 'general',
   });
+  final Patient? preselectedPatient;
+  final String initialRecordType;
 
   @override
   ConsumerState<AddMedicalRecordScreen> createState() => _AddMedicalRecordScreenState();
@@ -418,7 +418,7 @@ class _AddMedicalRecordScreenState extends ConsumerState<AddMedicalRecordScreen>
         treatment: Value(_treatmentController.text),
         doctorNotes: Value(_doctorNotesController.text),
         recordDate: _recordDate,
-      ));
+      ),);
 
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -471,10 +471,10 @@ class _AddMedicalRecordScreenState extends ConsumerState<AddMedicalRecordScreen>
           slivers: [
             // Gradient Header
             SliverToBoxAdapter(
-              child: Container(
-                decoration: BoxDecoration(
+              child: DecoratedBox(
+                decoration: const BoxDecoration(
                   gradient: AppColors.primaryGradient,
-                  borderRadius: const BorderRadius.only(
+                  borderRadius: BorderRadius.only(
                     bottomLeft: Radius.circular(32),
                     bottomRight: Radius.circular(32),
                   ),
@@ -611,8 +611,6 @@ class _AddMedicalRecordScreenState extends ConsumerState<AddMedicalRecordScreen>
               prefixIcon: Icons.medical_information_outlined,
               maxLines: 3,
               suggestions: MedicalSuggestions.diagnoses,
-              appendMode: true,
-              separator: ', ',
             ),
             const SizedBox(height: 20),
 
@@ -625,7 +623,6 @@ class _AddMedicalRecordScreenState extends ConsumerState<AddMedicalRecordScreen>
               prefixIcon: Icons.healing_outlined,
               maxLines: 3,
               suggestions: PrescriptionSuggestions.instructions,
-              appendMode: true,
               separator: '\n',
             ),
             const SizedBox(height: 20),
@@ -650,7 +647,7 @@ class _AddMedicalRecordScreenState extends ConsumerState<AddMedicalRecordScreen>
   Widget _buildRecordTypeSelector() {
     final appSettingsService = ref.watch(appSettingsProvider);
     final enabledTypes = appSettingsService.settings.enabledMedicalRecordTypes;
-    final filteredTypes = _recordTypes.where((type) => enabledTypes.contains(type)).toList();
+    final filteredTypes = _recordTypes.where(enabledTypes.contains).toList();
     
     // If current record type is not in enabled types, switch to first enabled type
     if (!enabledTypes.contains(_recordType) && filteredTypes.isNotEmpty) {
@@ -748,7 +745,7 @@ class _AddMedicalRecordScreenState extends ConsumerState<AddMedicalRecordScreen>
           builder: (context, snapshot) {
             final patients = snapshot.data ?? [];
             
-            return Container(
+            return DecoratedBox(
               decoration: BoxDecoration(
                 color: Theme.of(context).colorScheme.surface,
                 borderRadius: BorderRadius.circular(16),
@@ -765,7 +762,7 @@ class _AddMedicalRecordScreenState extends ConsumerState<AddMedicalRecordScreen>
                 items: patients.map((p) => DropdownMenuItem(
                   value: p.id,
                   child: Text('${p.firstName} ${p.lastName}'),
-                )).toList(),
+                ),).toList(),
                 onChanged: (value) {
                   setState(() => _selectedPatientId = value);
                 },
@@ -946,8 +943,6 @@ class _AddMedicalRecordScreenState extends ConsumerState<AddMedicalRecordScreen>
           prefixIcon: Icons.sick_outlined,
           maxLines: 4,
           suggestions: MedicalSuggestions.symptoms,
-          appendMode: true,
-          separator: ', ',
         ),
         const SizedBox(height: 20),
 
@@ -1111,8 +1106,6 @@ class _AddMedicalRecordScreenState extends ConsumerState<AddMedicalRecordScreen>
               prefixIcon: Icons.history,
               maxLines: 2,
               suggestions: PulmonarySuggestions.pastPulmonaryHistory,
-              appendMode: true,
-              separator: ', ',
             ),
             const SizedBox(height: 12),
             SuggestionTextField(
@@ -1122,8 +1115,6 @@ class _AddMedicalRecordScreenState extends ConsumerState<AddMedicalRecordScreen>
               prefixIcon: Icons.smoke_free,
               maxLines: 2,
               suggestions: PulmonarySuggestions.exposureHistory,
-              appendMode: true,
-              separator: ', ',
             ),
             const SizedBox(height: 12),
             SuggestionTextField(
@@ -1133,8 +1124,6 @@ class _AddMedicalRecordScreenState extends ConsumerState<AddMedicalRecordScreen>
               prefixIcon: Icons.spa_outlined,
               maxLines: 2,
               suggestions: PulmonarySuggestions.allergyHistory,
-              appendMode: true,
-              separator: ', ',
             ),
             const SizedBox(height: 12),
             _buildTextField(
@@ -1321,7 +1310,6 @@ class _AddMedicalRecordScreenState extends ConsumerState<AddMedicalRecordScreen>
           options: PulmonarySuggestions.investigations,
           selectedOptions: _selectedInvestigations,
           onChanged: (selected) => setState(() => _selectedInvestigations = selected),
-          color: AppColors.primary,
         ),
         const SizedBox(height: 20),
 
@@ -1534,8 +1522,6 @@ class _AddMedicalRecordScreenState extends ConsumerState<AddMedicalRecordScreen>
           prefixIcon: Icons.sick_outlined,
           maxLines: 3,
           suggestions: MedicalSuggestions.chiefComplaints,
-          appendMode: true,
-          separator: ', ',
         ),
         const SizedBox(height: 20),
 
@@ -1599,7 +1585,6 @@ class _AddMedicalRecordScreenState extends ConsumerState<AddMedicalRecordScreen>
           prefixIcon: Icons.find_in_page_outlined,
           maxLines: 5,
           suggestions: MedicalRecordSuggestions.imagingFindings,
-          appendMode: true,
           separator: '. ',
         ),
         const SizedBox(height: 20),
@@ -1628,7 +1613,6 @@ class _AddMedicalRecordScreenState extends ConsumerState<AddMedicalRecordScreen>
           prefixIcon: Icons.note_alt_outlined,
           maxLines: 5,
           suggestions: MedicalRecordSuggestions.procedureNotes,
-          appendMode: true,
           separator: '. ',
         ),
         const SizedBox(height: 20),
@@ -1654,7 +1638,6 @@ class _AddMedicalRecordScreenState extends ConsumerState<AddMedicalRecordScreen>
           prefixIcon: Icons.trending_up_outlined,
           maxLines: 5,
           suggestions: MedicalRecordSuggestions.followUpNotes,
-          appendMode: true,
           separator: '. ',
         ),
         const SizedBox(height: 20),
@@ -1683,7 +1666,7 @@ class _AddMedicalRecordScreenState extends ConsumerState<AddMedicalRecordScreen>
               isFocused: _bpFocused,
               onFocusChange: (f) => setState(() => _bpFocused = f),
               suggestions: MedicalSuggestions.bloodPressure,
-            )),
+            ),),
             const SizedBox(width: 12),
             Expanded(child: _buildVitalFieldWithSuggestions(
               controller: _pulseController,
@@ -1692,7 +1675,7 @@ class _AddMedicalRecordScreenState extends ConsumerState<AddMedicalRecordScreen>
               isFocused: _pulseFocused,
               onFocusChange: (f) => setState(() => _pulseFocused = f),
               suggestions: MedicalSuggestions.pulseRate,
-            )),
+            ),),
           ],
         ),
         const SizedBox(height: 12),
@@ -1710,13 +1693,13 @@ class _AddMedicalRecordScreenState extends ConsumerState<AddMedicalRecordScreen>
                     suggestions: _isCelsius 
                         ? MedicalSuggestions.temperatureCelsius
                         : MedicalSuggestions.temperatureFahrenheit,
-                  )),
+                  ),),
                   const SizedBox(width: 4),
                   // Temperature unit toggle
                   Builder(
                     builder: (context) {
                       final isDark = Theme.of(context).brightness == Brightness.dark;
-                      return Container(
+                      return DecoratedBox(
                         decoration: BoxDecoration(
                           color: isDark ? AppColors.darkBackground : AppColors.background,
                           borderRadius: BorderRadius.circular(8),
@@ -1777,7 +1760,7 @@ class _AddMedicalRecordScreenState extends ConsumerState<AddMedicalRecordScreen>
               isFocused: _weightFocused,
               onFocusChange: (f) => setState(() => _weightFocused = f),
               suggestions: MedicalSuggestions.weightKg,
-            )),
+            ),),
           ],
         ),
       ],
@@ -1843,7 +1826,7 @@ class _AddMedicalRecordScreenState extends ConsumerState<AddMedicalRecordScreen>
                                 child: Text(s, style: const TextStyle(fontSize: 10)),
                               ),
                             ),
-                          )).toList(),
+                          ),).toList(),
                         ),
                       ),
                     )
@@ -1994,7 +1977,7 @@ class _AddMedicalRecordScreenState extends ConsumerState<AddMedicalRecordScreen>
     return Builder(
       builder: (context) {
         final isDark = Theme.of(context).brightness == Brightness.dark;
-        return Container(
+        return DecoratedBox(
           decoration: BoxDecoration(
             color: Theme.of(context).colorScheme.surface,
             borderRadius: BorderRadius.circular(16),
@@ -2020,7 +2003,6 @@ class _AddMedicalRecordScreenState extends ConsumerState<AddMedicalRecordScreen>
       label: label,
       suggestions: suggestions,
       appendMode: false,
-      maxLines: 1,
     );
   }
 
@@ -2049,7 +2031,7 @@ class _AddMedicalRecordScreenState extends ConsumerState<AddMedicalRecordScreen>
         final isDark = Theme.of(context).brightness == Brightness.dark;
         return SizedBox(
           width: double.infinity,
-          child: Container(
+          child: DecoratedBox(
             decoration: BoxDecoration(
               gradient: _isSaving ? null : AppColors.primaryGradient,
               color: _isSaving ? (isDark ? AppColors.darkTextSecondary : AppColors.textHint) : null,

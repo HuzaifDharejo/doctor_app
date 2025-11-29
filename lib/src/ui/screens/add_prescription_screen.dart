@@ -10,9 +10,6 @@ import '../../theme/app_theme.dart';
 import '../widgets/suggestion_text_field.dart';
 
 class AddPrescriptionScreen extends ConsumerStatefulWidget {
-  final int? patientId;
-  final String? patientName;
-  final Patient? preselectedPatient;
 
   const AddPrescriptionScreen({
     super.key,
@@ -20,6 +17,9 @@ class AddPrescriptionScreen extends ConsumerStatefulWidget {
     this.patientName,
     this.preselectedPatient,
   });
+  final int? patientId;
+  final String? patientName;
+  final Patient? preselectedPatient;
 
   @override
   ConsumerState<AddPrescriptionScreen> createState() => _AddPrescriptionScreenState();
@@ -154,7 +154,7 @@ class _AddPrescriptionScreenState extends ConsumerState<AddPrescriptionScreen> {
     _notesController.dispose();
     _adviceController.dispose();
     _followUpNotesController.dispose();
-    for (var med in _medications) {
+    for (final med in _medications) {
       med.dispose();
     }
     super.dispose();
@@ -341,7 +341,7 @@ class _AddPrescriptionScreenState extends ConsumerState<AddPrescriptionScreen> {
           slivers: [
             // Gradient Header
             SliverToBoxAdapter(
-              child: Container(
+              child: DecoratedBox(
                 decoration: BoxDecoration(
                   gradient: LinearGradient(
                     colors: [AppColors.warning, AppColors.warning.withRed(255)],
@@ -467,8 +467,6 @@ class _AddPrescriptionScreenState extends ConsumerState<AddPrescriptionScreen> {
                       prefixIcon: Icons.sick_outlined,
                       maxLines: 2,
                       suggestions: MedicalSuggestions.symptoms,
-                      appendMode: true,
-                      separator: ', ',
                     ),
                     const SizedBox(height: 16),
                     SuggestionTextField(
@@ -478,8 +476,6 @@ class _AddPrescriptionScreenState extends ConsumerState<AddPrescriptionScreen> {
                       prefixIcon: Icons.assignment_outlined,
                       maxLines: 2,
                       suggestions: MedicalSuggestions.diagnoses,
-                      appendMode: true,
-                      separator: ', ',
                       validator: (value) {
                         if (value == null || value.isEmpty) {
                           return 'Please enter diagnosis';

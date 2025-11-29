@@ -2,6 +2,13 @@ import 'package:flutter/material.dart';
 import '../../theme/app_theme.dart';
 
 class StatCard extends StatelessWidget {
+
+  const StatCard({
+    required this.icon, required this.title, required this.value, required this.color, super.key,
+    this.trend,
+    this.trendUp,
+    this.useGradient = false,
+  });
   final IconData icon;
   final String title;
   final String value;
@@ -9,17 +16,6 @@ class StatCard extends StatelessWidget {
   final String? trend;
   final bool? trendUp;
   final bool useGradient;
-
-  const StatCard({
-    super.key,
-    required this.icon,
-    required this.title,
-    required this.value,
-    required this.color,
-    this.trend,
-    this.trendUp,
-    this.useGradient = false,
-  });
 
   @override
   Widget build(BuildContext context) {
@@ -79,7 +75,7 @@ class StatCard extends StatelessWidget {
                     decoration: BoxDecoration(
                       color: useGradient 
                           ? Colors.white.withValues(alpha: 0.2)
-                          : trendUp == true
+                          : trendUp ?? false
                               ? AppColors.success.withValues(alpha: 0.12)
                               : trendUp == false
                                   ? AppColors.error.withValues(alpha: 0.12)
@@ -106,7 +102,7 @@ class StatCard extends StatelessWidget {
                               fontWeight: FontWeight.w600,
                               color: useGradient 
                                   ? Colors.white.withValues(alpha: 0.9)
-                                  : trendUp == true
+                                  : trendUp ?? false
                                       ? AppColors.success
                                       : trendUp == false
                                           ? AppColors.error

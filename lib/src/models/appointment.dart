@@ -25,6 +25,50 @@ enum AppointmentStatus {
 
 /// Appointment data model
 class AppointmentModel {
+
+  const AppointmentModel({
+    required this.patientId, required this.appointmentDateTime, this.id,
+    this.patientName,
+    this.durationMinutes = 15,
+    this.reason = '',
+    this.status = AppointmentStatus.scheduled,
+    this.reminderAt,
+    this.notes = '',
+    this.createdAt,
+  });
+
+  /// Create from JSON map
+  factory AppointmentModel.fromJson(Map<String, dynamic> json) {
+    return AppointmentModel(
+      id: json['id'] as int?,
+      patientId: json['patientId'] as int? ?? json['patient_id'] as int? ?? 0,
+      patientName: json['patientName'] as String? ?? json['patient_name'] as String?,
+      appointmentDateTime: json['appointmentDateTime'] != null
+          ? DateTime.parse(json['appointmentDateTime'] as String)
+          : json['appointment_date_time'] != null
+              ? DateTime.parse(json['appointment_date_time'] as String)
+              : DateTime.now(),
+      durationMinutes: json['durationMinutes'] as int? ?? json['duration_minutes'] as int? ?? 15,
+      reason: json['reason'] as String? ?? '',
+      status: AppointmentStatus.fromValue(json['status'] as String? ?? 'scheduled'),
+      reminderAt: json['reminderAt'] != null
+          ? DateTime.tryParse(json['reminderAt'] as String)
+          : json['reminder_at'] != null
+              ? DateTime.tryParse(json['reminder_at'] as String)
+              : null,
+      notes: json['notes'] as String? ?? '',
+      createdAt: json['createdAt'] != null
+          ? DateTime.tryParse(json['createdAt'] as String)
+          : json['created_at'] != null
+              ? DateTime.tryParse(json['created_at'] as String)
+              : null,
+    );
+  }
+
+  /// Create from JSON string
+  factory AppointmentModel.fromJsonString(String jsonString) {
+    return AppointmentModel.fromJson(jsonDecode(jsonString) as Map<String, dynamic>);
+  }
   final int? id;
   final int patientId;
   final String? patientName; // For display purposes (not stored in DB)
@@ -35,19 +79,6 @@ class AppointmentModel {
   final DateTime? reminderAt;
   final String notes;
   final DateTime? createdAt;
-
-  const AppointmentModel({
-    this.id,
-    required this.patientId,
-    this.patientName,
-    required this.appointmentDateTime,
-    this.durationMinutes = 15,
-    this.reason = '',
-    this.status = AppointmentStatus.scheduled,
-    this.reminderAt,
-    this.notes = '',
-    this.createdAt,
-  });
 
   /// Get the end time of the appointment
   DateTime get endDateTime => appointmentDateTime.add(Duration(minutes: durationMinutes));
@@ -98,34 +129,6 @@ class AppointmentModel {
     return '$hours hr $mins min';
   }
 
-  /// Create from JSON map
-  factory AppointmentModel.fromJson(Map<String, dynamic> json) {
-    return AppointmentModel(
-      id: json['id'] as int?,
-      patientId: json['patientId'] as int? ?? json['patient_id'] as int? ?? 0,
-      patientName: json['patientName'] as String? ?? json['patient_name'] as String?,
-      appointmentDateTime: json['appointmentDateTime'] != null
-          ? DateTime.parse(json['appointmentDateTime'] as String)
-          : json['appointment_date_time'] != null
-              ? DateTime.parse(json['appointment_date_time'] as String)
-              : DateTime.now(),
-      durationMinutes: json['durationMinutes'] as int? ?? json['duration_minutes'] as int? ?? 15,
-      reason: json['reason'] as String? ?? '',
-      status: AppointmentStatus.fromValue(json['status'] as String? ?? 'scheduled'),
-      reminderAt: json['reminderAt'] != null
-          ? DateTime.tryParse(json['reminderAt'] as String)
-          : json['reminder_at'] != null
-              ? DateTime.tryParse(json['reminder_at'] as String)
-              : null,
-      notes: json['notes'] as String? ?? '',
-      createdAt: json['createdAt'] != null
-          ? DateTime.tryParse(json['createdAt'] as String)
-          : json['created_at'] != null
-              ? DateTime.tryParse(json['created_at'] as String)
-              : null,
-    );
-  }
-
   /// Convert to JSON map
   Map<String, dynamic> toJson() {
     return {
@@ -144,11 +147,6 @@ class AppointmentModel {
 
   /// Convert to JSON string
   String toJsonString() => jsonEncode(toJson());
-
-  /// Create from JSON string
-  factory AppointmentModel.fromJsonString(String jsonString) {
-    return AppointmentModel.fromJson(jsonDecode(jsonString) as Map<String, dynamic>);
-  }
 
   /// Create a copy with modified fields
   AppointmentModel copyWith({

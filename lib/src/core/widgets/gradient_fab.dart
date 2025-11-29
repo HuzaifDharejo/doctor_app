@@ -6,17 +6,9 @@ import '../../theme/app_theme.dart';
 import '../constants/app_constants.dart';
 
 class GradientFAB extends StatelessWidget {
-  final VoidCallback onPressed;
-  final IconData icon;
-  final String? tooltip;
-  final String? heroTag;
-  final Gradient? gradient;
-  final Color? shadowColor;
-  final double? size;
 
   const GradientFAB({
-    super.key,
-    required this.onPressed,
+    required this.onPressed, super.key,
     this.icon = Icons.add,
     this.tooltip,
     this.heroTag,
@@ -27,8 +19,7 @@ class GradientFAB extends StatelessWidget {
 
   /// Creates a primary gradient FAB
   const GradientFAB.primary({
-    super.key,
-    required this.onPressed,
+    required this.onPressed, super.key,
     this.icon = Icons.add,
     this.tooltip,
     this.heroTag,
@@ -38,8 +29,7 @@ class GradientFAB extends StatelessWidget {
 
   /// Creates an accent gradient FAB
   const GradientFAB.accent({
-    super.key,
-    required this.onPressed,
+    required this.onPressed, super.key,
     this.icon = Icons.add,
     this.tooltip,
     this.heroTag,
@@ -49,14 +39,20 @@ class GradientFAB extends StatelessWidget {
 
   /// Creates a success gradient FAB
   const GradientFAB.success({
-    super.key,
-    required this.onPressed,
+    required this.onPressed, super.key,
     this.icon = Icons.check,
     this.tooltip,
     this.heroTag,
   })  : gradient = AppColors.successGradient,
         shadowColor = AppColors.success,
         size = null;
+  final VoidCallback onPressed;
+  final IconData icon;
+  final String? tooltip;
+  final String? heroTag;
+  final Gradient? gradient;
+  final Color? shadowColor;
+  final double? size;
 
   @override
   Widget build(BuildContext context) {
@@ -85,22 +81,20 @@ class GradientFAB extends StatelessWidget {
 
 /// Extended gradient FAB with label
 class GradientExtendedFAB extends StatelessWidget {
+
+  const GradientExtendedFAB({
+    required this.onPressed, required this.label, super.key,
+    this.icon = Icons.add,
+    this.heroTag,
+    this.gradient,
+    this.shadowColor,
+  });
   final VoidCallback onPressed;
   final String label;
   final IconData icon;
   final String? heroTag;
   final Gradient? gradient;
   final Color? shadowColor;
-
-  const GradientExtendedFAB({
-    super.key,
-    required this.onPressed,
-    required this.label,
-    this.icon = Icons.add,
-    this.heroTag,
-    this.gradient,
-    this.shadowColor,
-  });
 
   @override
   Widget build(BuildContext context) {

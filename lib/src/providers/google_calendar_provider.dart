@@ -4,14 +4,6 @@ import '../services/google_calendar_service.dart';
 
 /// State class for Google Calendar connection
 class GoogleCalendarState {
-  final bool isConnected;
-  final bool isLoading;
-  final String? userEmail;
-  final String? userName;
-  final String? userPhotoUrl;
-  final String? error;
-  final List<gcal.CalendarListEntry> calendars;
-  final String selectedCalendarId;
 
   const GoogleCalendarState({
     this.isConnected = false,
@@ -23,6 +15,14 @@ class GoogleCalendarState {
     this.calendars = const [],
     this.selectedCalendarId = 'primary',
   });
+  final bool isConnected;
+  final bool isLoading;
+  final String? userEmail;
+  final String? userName;
+  final String? userPhotoUrl;
+  final String? error;
+  final List<gcal.CalendarListEntry> calendars;
+  final String selectedCalendarId;
 
   GoogleCalendarState copyWith({
     bool? isConnected,
@@ -49,11 +49,11 @@ class GoogleCalendarState {
 
 /// Notifier for managing Google Calendar state
 class GoogleCalendarNotifier extends StateNotifier<GoogleCalendarState> {
-  final GoogleCalendarService _service;
 
   GoogleCalendarNotifier(this._service) : super(const GoogleCalendarState()) {
     _initialize();
   }
+  final GoogleCalendarService _service;
 
   Future<void> _initialize() async {
     state = state.copyWith(isLoading: true);

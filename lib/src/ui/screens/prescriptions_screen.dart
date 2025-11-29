@@ -286,11 +286,11 @@ class PrescriptionsScreen extends ConsumerWidget {
                                 ),
                                 child: Row(
                                   children: [
-                                    Icon(Icons.local_pharmacy_rounded, size: 12, color: AppColors.primary),
+                                    const Icon(Icons.local_pharmacy_rounded, size: 12, color: AppColors.primary),
                                     const SizedBox(width: 4),
                                     Text(
                                       '${medications.length} medications',
-                                      style: TextStyle(
+                                      style: const TextStyle(
                                         fontSize: 10,
                                         fontWeight: FontWeight.w600,
                                         color: AppColors.primary,
@@ -314,7 +314,7 @@ class PrescriptionsScreen extends ConsumerWidget {
                                     width: 6,
                                     height: 6,
                                     decoration: BoxDecoration(
-                                      gradient: LinearGradient(
+                                      gradient: const LinearGradient(
                                         colors: [AppColors.prescriptions, AppColors.primary],
                                       ),
                                       borderRadius: BorderRadius.circular(3),
@@ -345,14 +345,14 @@ class PrescriptionsScreen extends ConsumerWidget {
                                   const SizedBox(width: 18),
                                   Text(
                                     '+${medications.length - 3} more',
-                                    style: TextStyle(
+                                    style: const TextStyle(
                                       fontSize: 11,
                                       color: AppColors.primary,
                                       fontWeight: FontWeight.w600,
                                     ),
                                   ),
                                   const SizedBox(width: 4),
-                                  Icon(Icons.arrow_forward_rounded, size: 12, color: AppColors.primary),
+                                  const Icon(Icons.arrow_forward_rounded, size: 12, color: AppColors.primary),
                                 ],
                               ),
                             ),
@@ -380,7 +380,7 @@ class PrescriptionsScreen extends ConsumerWidget {
                               color: AppColors.info.withValues(alpha: 0.12),
                               borderRadius: BorderRadius.circular(8),
                             ),
-                            child: Icon(
+                            child: const Icon(
                               Icons.info_outline_rounded,
                               size: 14,
                               color: AppColors.info,
@@ -523,11 +523,11 @@ class PrescriptionsScreen extends ConsumerWidget {
                                   color: AppColors.success.withValues(alpha: 0.1),
                                   borderRadius: BorderRadius.circular(8),
                                 ),
-                                child: Row(
+                                child: const Row(
                                   mainAxisSize: MainAxisSize.min,
                                   children: [
                                     Icon(Icons.refresh, size: 12, color: AppColors.success),
-                                    const SizedBox(width: 4),
+                                    SizedBox(width: 4),
                                     Text(
                                       'Refillable',
                                       style: TextStyle(
@@ -607,11 +607,11 @@ class PrescriptionsScreen extends ConsumerWidget {
                   children: [
                     Column(
                       children: [
-                        Icon(Icons.medication, color: AppColors.warning, size: 24),
+                        const Icon(Icons.medication, color: AppColors.warning, size: 24),
                         const SizedBox(height: 4),
                         Text(
                           '${medications.length}',
-                          style: TextStyle(
+                          style: const TextStyle(
                             fontWeight: FontWeight.bold,
                             fontSize: 18,
                             color: AppColors.warning,
@@ -659,7 +659,7 @@ class PrescriptionsScreen extends ConsumerWidget {
               // Medications title
               Row(
                 children: [
-                  Icon(Icons.medication_outlined, color: AppColors.warning, size: 20),
+                  const Icon(Icons.medication_outlined, color: AppColors.warning, size: 20),
                   const SizedBox(width: 8),
                   Text(
                     'Medications (${medications.length})',
@@ -702,7 +702,7 @@ class PrescriptionsScreen extends ConsumerWidget {
                                   ),
                                   child: Text(
                                     '${index + 1}',
-                                    style: TextStyle(
+                                    style: const TextStyle(
                                       fontWeight: FontWeight.bold,
                                       color: AppColors.warning,
                                     ),
@@ -747,7 +747,7 @@ class PrescriptionsScreen extends ConsumerWidget {
                       const SizedBox(height: 8),
                       Row(
                         children: [
-                          Icon(Icons.assignment_outlined, color: AppColors.info, size: 20),
+                          const Icon(Icons.assignment_outlined, color: AppColors.info, size: 20),
                           const SizedBox(width: 8),
                           Text(
                             "Doctor's Instructions",

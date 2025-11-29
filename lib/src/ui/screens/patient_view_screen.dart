@@ -19,9 +19,9 @@ import 'medical_record_detail_screen.dart';
 import 'psychiatric_assessment_screen.dart';
 
 class PatientViewScreen extends ConsumerStatefulWidget {
-  final Patient patient;
 
-  const PatientViewScreen({super.key, required this.patient});
+  const PatientViewScreen({required this.patient, super.key});
+  final Patient patient;
 
   @override
   ConsumerState<PatientViewScreen> createState() => _PatientViewScreenState();
@@ -188,19 +188,17 @@ class _PatientViewScreenState extends ConsumerState<PatientViewScreen>
   Widget _buildHeaderAction({
     required IconData icon,
     required Color color,
-    Color? bgColor,
-    required VoidCallback onTap,
+    required VoidCallback onTap, Color? bgColor,
     bool isLast = false,
   }) {
     return Padding(
       padding: EdgeInsets.only(right: isLast ? 12 : 8),
-      child: Container(
+      child: DecoratedBox(
         decoration: BoxDecoration(
           color: bgColor ?? color.withValues(alpha: 0.15),
           borderRadius: BorderRadius.circular(12),
           border: Border.all(
             color: Colors.white.withValues(alpha: 0.15),
-            width: 1,
           ),
         ),
         child: Material(
@@ -343,13 +341,12 @@ class _PatientViewScreenState extends ConsumerState<PatientViewScreen>
               ),
               bottom: PreferredSize(
                 preferredSize: const Size.fromHeight(48),
-                child: Container(
+                child: DecoratedBox(
                   decoration: BoxDecoration(
                     color: surfaceColor,
                     border: Border(
                       bottom: BorderSide(
                         color: onSurfaceColor.withValues(alpha: 0.08),
-                        width: 1,
                       ),
                     ),
                   ),
@@ -992,10 +989,10 @@ class _PatientViewScreenState extends ConsumerState<PatientViewScreen>
               Expanded(
                 child: _buildQuickAddButton(
                   context,
-                  icon: rowItems[j]['icon'] as IconData,
-                  label: rowItems[j]['label'] as String,
-                  color: rowItems[j]['color'] as Color,
-                  onTap: () => _addMedicalRecord(context, rowItems[j]['type'] as String),
+                  icon: rowItems[j]['icon']! as IconData,
+                  label: rowItems[j]['label']! as String,
+                  color: rowItems[j]['color']! as Color,
+                  onTap: () => _addMedicalRecord(context, rowItems[j]['type']! as String),
                 ),
               ),
             ],
@@ -1050,7 +1047,7 @@ class _PatientViewScreenState extends ConsumerState<PatientViewScreen>
     );
   }
 
-  void _addMedicalRecord(BuildContext context, String recordType) async {
+  Future<void> _addMedicalRecord(BuildContext context, String recordType) async {
     final result = await Navigator.push<bool>(
       context,
       MaterialPageRoute<bool>(
@@ -1060,12 +1057,12 @@ class _PatientViewScreenState extends ConsumerState<PatientViewScreen>
         ),
       ),
     );
-    if (result == true) {
+    if (result ?? false) {
       setState(() {}); // Refresh the list
     }
   }
 
-  void _openDetailedPsychiatricAssessment(BuildContext context) async {
+  Future<void> _openDetailedPsychiatricAssessment(BuildContext context) async {
     final result = await Navigator.push<bool>(
       context,
       MaterialPageRoute<bool>(
@@ -1074,7 +1071,7 @@ class _PatientViewScreenState extends ConsumerState<PatientViewScreen>
         ),
       ),
     );
-    if (result == true) {
+    if (result ?? false) {
       setState(() {}); // Refresh the list
     }
   }
@@ -1199,7 +1196,7 @@ class _PatientViewScreenState extends ConsumerState<PatientViewScreen>
         children: [
           Row(
             children: [
-              Icon(Icons.warning_amber, color: AppColors.warning, size: 20),
+              const Icon(Icons.warning_amber, color: AppColors.warning, size: 20),
               const SizedBox(width: 8),
               Text(
                 'Risk Assessment',
@@ -1237,7 +1234,7 @@ class _PatientViewScreenState extends ConsumerState<PatientViewScreen>
 
   Widget _buildComprehensiveSymptomsCard(Map<String, dynamic> symptoms, bool isDark) {
     final entries = symptoms.entries.where((e) => 
-      e.value != null && e.value.toString().isNotEmpty && e.value.toString() != 'null'
+      e.value != null && e.value.toString().isNotEmpty && e.value.toString() != 'null',
     ).toList();
     
     if (entries.isEmpty) return const SizedBox.shrink();
@@ -1293,7 +1290,7 @@ class _PatientViewScreenState extends ConsumerState<PatientViewScreen>
 
   Widget _buildPhysicalExamCard(Map<String, dynamic> exam, bool isDark) {
     final entries = exam.entries.where((e) => 
-      e.value != null && e.value.toString().isNotEmpty && e.value.toString() != 'null'
+      e.value != null && e.value.toString().isNotEmpty && e.value.toString() != 'null',
     ).toList();
     
     if (entries.isEmpty) return const SizedBox.shrink();
@@ -1311,7 +1308,7 @@ class _PatientViewScreenState extends ConsumerState<PatientViewScreen>
         children: [
           Row(
             children: [
-              Icon(Icons.medical_information, color: AppColors.accent, size: 20),
+              const Icon(Icons.medical_information, color: AppColors.accent, size: 20),
               const SizedBox(width: 8),
               Text(
                 'Physical Examination',
@@ -1376,7 +1373,7 @@ class _PatientViewScreenState extends ConsumerState<PatientViewScreen>
         children: [
           Row(
             children: [
-              Icon(Icons.favorite, color: AppColors.info, size: 20),
+              const Icon(Icons.favorite, color: AppColors.info, size: 20),
               const SizedBox(width: 8),
               Text(
                 'Vitals',
@@ -1459,7 +1456,7 @@ class _PatientViewScreenState extends ConsumerState<PatientViewScreen>
         children: [
           Row(
             children: [
-              Icon(Icons.assessment, color: AppColors.primary, size: 20),
+              const Icon(Icons.assessment, color: AppColors.primary, size: 20),
               const SizedBox(width: 8),
               Text(
                 'Assessment Scores',
@@ -1580,7 +1577,7 @@ class _PatientViewScreenState extends ConsumerState<PatientViewScreen>
         children: [
           Row(
             children: [
-              Icon(Icons.science, color: AppColors.warning, size: 20),
+              const Icon(Icons.science, color: AppColors.warning, size: 20),
               const SizedBox(width: 8),
               Text(
                 'Lab Results',
@@ -1647,7 +1644,7 @@ class _PatientViewScreenState extends ConsumerState<PatientViewScreen>
   String _formatLabLabel(String key) {
     // Convert camelCase to readable format
     return key
-        .replaceAllMapped(RegExp(r'([A-Z])'), (m) => ' ${m.group(1)}')
+        .replaceAllMapped(RegExp('([A-Z])'), (m) => ' ${m.group(1)}')
         .replaceAll('_', ' ')
         .trim()
         .split(' ')
@@ -1671,7 +1668,7 @@ class _PatientViewScreenState extends ConsumerState<PatientViewScreen>
         children: [
           Row(
             children: [
-              Icon(Icons.image_outlined, color: AppColors.info, size: 20),
+              const Icon(Icons.image_outlined, color: AppColors.info, size: 20),
               const SizedBox(width: 8),
               Text(
                 'Imaging Findings',
@@ -1735,7 +1732,7 @@ class _PatientViewScreenState extends ConsumerState<PatientViewScreen>
         children: [
           Row(
             children: [
-              Icon(Icons.healing, color: AppColors.accent, size: 20),
+              const Icon(Icons.healing, color: AppColors.accent, size: 20),
               const SizedBox(width: 8),
               Text(
                 'Procedure Details',
@@ -1777,7 +1774,7 @@ class _PatientViewScreenState extends ConsumerState<PatientViewScreen>
                 ],
               ),
             );
-          }).toList(),
+          }),
         ],
       ),
     );
@@ -1799,7 +1796,7 @@ class _PatientViewScreenState extends ConsumerState<PatientViewScreen>
         children: [
           Row(
             children: [
-              Icon(Icons.info_outline, color: AppColors.primary, size: 20),
+              const Icon(Icons.info_outline, color: AppColors.primary, size: 20),
               const SizedBox(width: 8),
               Text(
                 'Additional Details',
@@ -1962,7 +1959,7 @@ class _PatientViewScreenState extends ConsumerState<PatientViewScreen>
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final color = accentColor ?? AppColors.primary;
     
-    return Container(
+    return DecoratedBox(
       decoration: BoxDecoration(
         color: isDark ? AppColors.darkSurface : Colors.white,
         borderRadius: BorderRadius.circular(16),
@@ -2130,7 +2127,7 @@ class _PatientViewScreenState extends ConsumerState<PatientViewScreen>
                         ),
                         focusedBorder: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(8),
-                          borderSide: BorderSide(
+                          borderSide: const BorderSide(
                             color: AppColors.primary,
                             width: 1.5,
                           ),
@@ -2158,7 +2155,7 @@ class _PatientViewScreenState extends ConsumerState<PatientViewScreen>
       ),
       child: Row(
         children: [
-          Icon(
+          const Icon(
             Icons.warning_amber_rounded,
             color: AppColors.warning,
             size: 24,
@@ -2631,7 +2628,7 @@ class _PatientViewScreenState extends ConsumerState<PatientViewScreen>
             ),
             if (actionLabel != null && onAction != null) ...[
               const SizedBox(height: 28),
-              Container(
+              DecoratedBox(
                 decoration: BoxDecoration(
                   gradient: const LinearGradient(
                     colors: [AppColors.primary, AppColors.accent],
@@ -2667,7 +2664,7 @@ class _PatientViewScreenState extends ConsumerState<PatientViewScreen>
   }
 
   Widget _buildSpeedDial(BuildContext context) {
-    return Container(
+    return DecoratedBox(
       decoration: BoxDecoration(
         gradient: const LinearGradient(
           begin: Alignment.topLeft,
@@ -3047,11 +3044,11 @@ class _PatientViewScreenState extends ConsumerState<PatientViewScreen>
                                   color: AppColors.success.withValues(alpha: 0.1),
                                   borderRadius: BorderRadius.circular(8),
                                 ),
-                                child: Row(
+                                child: const Row(
                                   mainAxisSize: MainAxisSize.min,
                                   children: [
                                     Icon(Icons.refresh, size: 12, color: AppColors.success),
-                                    const SizedBox(width: 4),
+                                    SizedBox(width: 4),
                                     Text(
                                       'Refillable',
                                       style: TextStyle(
@@ -3108,7 +3105,7 @@ class _PatientViewScreenState extends ConsumerState<PatientViewScreen>
               // Medications title
               Row(
                 children: [
-                  Icon(Icons.medication_outlined, color: AppColors.accent, size: 20),
+                  const Icon(Icons.medication_outlined, color: AppColors.accent, size: 20),
                   const SizedBox(width: 8),
                   Text(
                     'Medications (${medications.length})',
@@ -3152,7 +3149,7 @@ class _PatientViewScreenState extends ConsumerState<PatientViewScreen>
                                   ),
                                   child: Text(
                                     '${index + 1}',
-                                    style: TextStyle(
+                                    style: const TextStyle(
                                       fontWeight: FontWeight.bold,
                                       color: AppColors.accent,
                                     ),
@@ -3203,7 +3200,7 @@ class _PatientViewScreenState extends ConsumerState<PatientViewScreen>
                                 child: Row(
                                   crossAxisAlignment: CrossAxisAlignment.start,
                                   children: [
-                                    Icon(Icons.note_outlined, size: 16, color: AppColors.info),
+                                    const Icon(Icons.note_outlined, size: 16, color: AppColors.info),
                                     const SizedBox(width: 8),
                                     Expanded(
                                       child: Text(
@@ -3227,7 +3224,7 @@ class _PatientViewScreenState extends ConsumerState<PatientViewScreen>
                       const SizedBox(height: 8),
                       Row(
                         children: [
-                          Icon(Icons.assignment_outlined, color: AppColors.info, size: 20),
+                          const Icon(Icons.assignment_outlined, color: AppColors.info, size: 20),
                           const SizedBox(width: 8),
                           Text(
                             "Doctor's Instructions",
@@ -3629,7 +3626,7 @@ class _PatientViewScreenState extends ConsumerState<PatientViewScreen>
                         isDark,
                         child: Row(
                           children: [
-                            Icon(Icons.alarm, size: 18, color: AppColors.warning),
+                            const Icon(Icons.alarm, size: 18, color: AppColors.warning),
                             const SizedBox(width: 8),
                             Text(
                               DateFormat('MMM d, yyyy h:mm a').format(appointment.reminderAt!),

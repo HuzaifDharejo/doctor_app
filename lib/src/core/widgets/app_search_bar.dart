@@ -7,18 +7,6 @@ import '../constants/app_constants.dart';
 import '../extensions/context_extensions.dart';
 
 class AppSearchBar extends StatelessWidget {
-  final TextEditingController? controller;
-  final String? hintText;
-  final String? value;
-  final ValueChanged<String>? onChanged;
-  final VoidCallback? onTap;
-  final VoidCallback? onClear;
-  final bool readOnly;
-  final Widget? prefix;
-  final Widget? suffix;
-  final FocusNode? focusNode;
-  final TextInputAction? textInputAction;
-  final ValueChanged<String>? onSubmitted;
 
   const AppSearchBar({
     super.key,
@@ -35,6 +23,18 @@ class AppSearchBar extends StatelessWidget {
     this.textInputAction,
     this.onSubmitted,
   });
+  final TextEditingController? controller;
+  final String? hintText;
+  final String? value;
+  final ValueChanged<String>? onChanged;
+  final VoidCallback? onTap;
+  final VoidCallback? onClear;
+  final bool readOnly;
+  final Widget? prefix;
+  final Widget? suffix;
+  final FocusNode? focusNode;
+  final TextInputAction? textInputAction;
+  final ValueChanged<String>? onSubmitted;
 
   @override
   Widget build(BuildContext context) {
@@ -44,7 +44,7 @@ class AppSearchBar extends StatelessWidget {
     // Use value to create an internal controller if no controller provided
     final effectiveController = controller ?? 
         (value != null ? (TextEditingController(text: value)..selection = TextSelection.fromPosition(
-            TextPosition(offset: value!.length))) : null);
+            TextPosition(offset: value!.length),)) : null);
     
     // Show clear button if there's text and onClear is provided
     final showClear = (value?.isNotEmpty ?? effectiveController?.text.isNotEmpty ?? false) && onClear != null;
@@ -103,12 +103,6 @@ class AppSearchBar extends StatelessWidget {
 
 /// Animated search bar that expands/collapses
 class ExpandableSearchBar extends StatefulWidget {
-  final TextEditingController? controller;
-  final String? hintText;
-  final ValueChanged<String>? onChanged;
-  final ValueChanged<String>? onSubmitted;
-  final VoidCallback? onClear;
-  final bool initiallyExpanded;
 
   const ExpandableSearchBar({
     super.key,
@@ -119,6 +113,12 @@ class ExpandableSearchBar extends StatefulWidget {
     this.onClear,
     this.initiallyExpanded = false,
   });
+  final TextEditingController? controller;
+  final String? hintText;
+  final ValueChanged<String>? onChanged;
+  final ValueChanged<String>? onSubmitted;
+  final VoidCallback? onClear;
+  final bool initiallyExpanded;
 
   @override
   State<ExpandableSearchBar> createState() => _ExpandableSearchBarState();
@@ -214,7 +214,7 @@ class _ExpandableSearchBarState extends State<ExpandableSearchBar>
                     decoration: InputDecoration(
                       hintText: widget.hintText ?? 'Search...',
                       border: InputBorder.none,
-                      contentPadding: EdgeInsets.only(right: AppSpacing.lg),
+                      contentPadding: const EdgeInsets.only(right: AppSpacing.lg),
                     ),
                   ),
                 ),

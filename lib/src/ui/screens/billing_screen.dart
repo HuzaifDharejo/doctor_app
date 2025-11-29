@@ -113,7 +113,6 @@ class _BillingScreenState extends ConsumerState<BillingScreen> {
               Icons.schedule_rounded,
               AppColors.warning,
               '${(stats['pendingCount'] ?? 0).toInt()} invoices',
-              useGradient: false,
             ),
           ),
         ],
@@ -456,7 +455,7 @@ class _BillingScreenState extends ConsumerState<BillingScreen> {
                                           color: AppColors.primary.withValues(alpha: 0.1),
                                           borderRadius: BorderRadius.circular(6),
                                         ),
-                                        child: Icon(
+                                        child: const Icon(
                                           Icons.person_rounded,
                                           size: 12,
                                           color: AppColors.primary,
@@ -758,7 +757,7 @@ class _BillingScreenState extends ConsumerState<BillingScreen> {
                     ),
                     Text(
                       currencyFormat.format(invoice.grandTotal),
-                      style: TextStyle(
+                      style: const TextStyle(
                         fontSize: 24,
                         fontWeight: FontWeight.bold,
                         color: AppColors.primary,

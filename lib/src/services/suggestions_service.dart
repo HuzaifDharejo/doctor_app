@@ -263,7 +263,7 @@ abstract class SettingsSuggestions {
 
   // Currency
   static const List<String> currencies = [
-    '₹ (INR)', '\$ (USD)', '€ (EUR)', '£ (GBP)',
+    '₹ (INR)', r'$ (USD)', '€ (EUR)', '£ (GBP)',
   ];
 
   // Date formats

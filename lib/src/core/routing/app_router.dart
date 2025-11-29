@@ -39,35 +39,35 @@ abstract class AppRoutes {
 
 /// Route arguments for type-safe navigation
 class PatientViewArgs {
-  final Patient patient;
   const PatientViewArgs({required this.patient});
+  final Patient patient;
 }
 
 class AddAppointmentArgs {
+  const AddAppointmentArgs({this.patient, this.initialDate});
   final Patient? patient;
   final DateTime? initialDate;
-  const AddAppointmentArgs({this.patient, this.initialDate});
 }
 
 class AddPrescriptionArgs {
-  final Patient? patient;
   const AddPrescriptionArgs({this.patient});
+  final Patient? patient;
 }
 
 class AddMedicalRecordArgs {
-  final Patient patient;
   const AddMedicalRecordArgs({required this.patient});
+  final Patient patient;
 }
 
 class PsychiatricAssessmentArgs {
-  final Patient? patient;
   const PsychiatricAssessmentArgs({this.patient});
+  final Patient? patient;
 }
 
 class AddInvoiceArgs {
+  const AddInvoiceArgs({this.patientId, this.patientName});
   final int? patientId;
   final String? patientName;
-  const AddInvoiceArgs({this.patientId, this.patientName});
 }
 
 /// App router configuration
@@ -81,7 +81,7 @@ class AppRouter {
         return _buildRoute(const AddPatientScreen(), settings);
         
       case AppRoutes.patientView:
-        final args = settings.arguments as PatientViewArgs;
+        final args = settings.arguments! as PatientViewArgs;
         return _buildRoute(PatientViewScreen(patient: args.patient), settings);
         
       case AppRoutes.appointments:
@@ -131,7 +131,7 @@ class AppRouter {
         );
         
       case AppRoutes.addMedicalRecord:
-        final args = settings.arguments as AddMedicalRecordArgs;
+        final args = settings.arguments! as AddMedicalRecordArgs;
         return _buildRoute(
           AddMedicalRecordScreen(preselectedPatient: args.patient),
           settings,

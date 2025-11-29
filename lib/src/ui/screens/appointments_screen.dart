@@ -74,21 +74,20 @@ class _AppointmentsScreenState extends ConsumerState<AppointmentsScreen> {
         ),
       ),
       floatingActionButton: GradientFAB(
-        icon: Icons.add,
         onPressed: () => _navigateToAddAppointment(context),
         heroTag: 'appointments_fab',
       ),
     );
   }
 
-  void _navigateToAddAppointment(BuildContext context) async {
+  Future<void> _navigateToAddAppointment(BuildContext context) async {
     final result = await Navigator.push<bool>(
       context,
       MaterialPageRoute<bool>(
         builder: (_) => AddAppointmentScreen(initialDate: _selectedDate),
       ),
     );
-    if (result == true) {
+    if (result ?? false) {
       setState(() {}); // Refresh the list
     }
   }
@@ -201,7 +200,7 @@ class _AppointmentsScreenState extends ConsumerState<AppointmentsScreen> {
                           : context.colorScheme.onSurface,
                     ),
                   ),
-                  SizedBox(height: AppSpacing.xs),
+                  const SizedBox(height: AppSpacing.xs),
                   if (isToday)
                     Container(
                       width: isSelected ? 20 : 6,
@@ -244,7 +243,6 @@ class _AppointmentsScreenState extends ConsumerState<AppointmentsScreen> {
           onRefresh: _onRefresh,
           color: AppColors.appointments,
           backgroundColor: isDark ? AppColors.darkSurface : Colors.white,
-          strokeWidth: 2.5,
           child: ListView.builder(
             physics: const AlwaysScrollableScrollPhysics(
               parent: BouncingScrollPhysics(),
@@ -300,10 +298,10 @@ class _AppointmentsScreenState extends ConsumerState<AppointmentsScreen> {
             ),
             alignment: Alignment.centerLeft,
             padding: const EdgeInsets.only(left: 20),
-            child: Row(
+            child: const Row(
               children: [
                 Icon(Icons.check_circle, color: AppColors.success, size: 28),
-                const SizedBox(width: 8),
+                SizedBox(width: 8),
                 Text(
                   'Confirm',
                   style: TextStyle(
@@ -322,7 +320,7 @@ class _AppointmentsScreenState extends ConsumerState<AppointmentsScreen> {
             ),
             alignment: Alignment.centerRight,
             padding: const EdgeInsets.only(right: 20),
-            child: Row(
+            child: const Row(
               mainAxisAlignment: MainAxisAlignment.end,
               children: [
                 Text(
@@ -332,7 +330,7 @@ class _AppointmentsScreenState extends ConsumerState<AppointmentsScreen> {
                     fontWeight: FontWeight.w600,
                   ),
                 ),
-                const SizedBox(width: 8),
+                SizedBox(width: 8),
                 Icon(Icons.cancel, color: AppColors.error, size: 28),
               ],
             ),
@@ -342,8 +340,8 @@ class _AppointmentsScreenState extends ConsumerState<AppointmentsScreen> {
             if (direction == DismissDirection.startToEnd) {
               // Confirm appointment
               ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(
-                  content: const Text('Appointment confirmed'),
+                const SnackBar(
+                  content: Text('Appointment confirmed'),
                   backgroundColor: AppColors.success,
                   behavior: SnackBarBehavior.floating,
                 ),
@@ -351,8 +349,8 @@ class _AppointmentsScreenState extends ConsumerState<AppointmentsScreen> {
             } else {
               // Cancel appointment
               ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(
-                  content: const Text('Appointment cancelled'),
+                const SnackBar(
+                  content: Text('Appointment cancelled'),
                   backgroundColor: AppColors.error,
                   behavior: SnackBarBehavior.floating,
                 ),
@@ -419,9 +417,9 @@ class _AppointmentsScreenState extends ConsumerState<AppointmentsScreen> {
                                   color: Colors.white.withValues(alpha: 0.85),
                                 ),
                               ),
-                              SizedBox(height: AppSpacing.xs),
+                              const SizedBox(height: AppSpacing.xs),
                               Container(
-                                padding: EdgeInsets.symmetric(horizontal: AppSpacing.xs, vertical: AppSpacing.xxs),
+                                padding: const EdgeInsets.symmetric(horizontal: AppSpacing.xs, vertical: AppSpacing.xxs),
                                 decoration: BoxDecoration(
                                   color: Colors.white.withValues(alpha: 0.2),
                                   borderRadius: BorderRadius.circular(AppRadius.xs),
@@ -462,9 +460,9 @@ class _AppointmentsScreenState extends ConsumerState<AppointmentsScreen> {
                                         overflow: TextOverflow.ellipsis,
                                       ),
                                     ),
-                                    SizedBox(width: AppSpacing.xs),
+                                    const SizedBox(width: AppSpacing.xs),
                                     Container(
-                                      padding: EdgeInsets.symmetric(horizontal: AppSpacing.sm, vertical: AppSpacing.xxs),
+                                      padding: const EdgeInsets.symmetric(horizontal: AppSpacing.sm, vertical: AppSpacing.xxs),
                                       decoration: BoxDecoration(
                                         gradient: LinearGradient(
                                           colors: [
@@ -486,18 +484,18 @@ class _AppointmentsScreenState extends ConsumerState<AppointmentsScreen> {
                                     ),
                                   ],
                                 ),
-                                SizedBox(height: AppSpacing.sm),
+                                const SizedBox(height: AppSpacing.sm),
                                 Row(
                                   children: [
                                     Container(
-                                      padding: EdgeInsets.all(AppSpacing.xs),
+                                      padding: const EdgeInsets.all(AppSpacing.xs),
                                       decoration: BoxDecoration(
                                         color: AppColors.prescriptions.withValues(alpha: 0.1),
                                         borderRadius: BorderRadius.circular(AppRadius.xs),
                                       ),
-                                      child: Icon(Icons.medical_services_rounded, size: 14, color: AppColors.prescriptions),
+                                      child: const Icon(Icons.medical_services_rounded, size: 14, color: AppColors.prescriptions),
                                     ),
-                                    SizedBox(width: AppSpacing.xs),
+                                    const SizedBox(width: AppSpacing.xs),
                                     Expanded(
                                       child: Text(
                                         appt.reason.isNotEmpty ? appt.reason : 'General Checkup',
@@ -544,7 +542,7 @@ class _AppointmentsScreenState extends ConsumerState<AppointmentsScreen> {
                                 color: AppColors.success,
                                 onTap: () => _callPatient(patient.phone),
                               ),
-                              SizedBox(width: AppSpacing.sm),
+                              const SizedBox(width: AppSpacing.sm),
                               _buildQuickAction(
                                 context,
                                 icon: Icons.message_rounded,
@@ -552,7 +550,7 @@ class _AppointmentsScreenState extends ConsumerState<AppointmentsScreen> {
                                 color: AppColors.info,
                                 onTap: () => _messagePatient(patient.phone),
                               ),
-                              SizedBox(width: AppSpacing.sm),
+                              const SizedBox(width: AppSpacing.sm),
                             ],
                             _buildQuickAction(
                               context,
@@ -956,10 +954,10 @@ class _AppointmentsScreenState extends ConsumerState<AppointmentsScreen> {
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            Row(
+                            const Row(
                               children: [
                                 Icon(Icons.medical_services_outlined, size: 18, color: AppColors.accent),
-                                const SizedBox(width: 8),
+                                SizedBox(width: 8),
                                 Text(
                                   'Reason for Visit',
                                   style: TextStyle(
@@ -994,10 +992,10 @@ class _AppointmentsScreenState extends ConsumerState<AppointmentsScreen> {
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            Row(
+                            const Row(
                               children: [
                                 Icon(Icons.note_alt_outlined, size: 18, color: AppColors.info),
-                                const SizedBox(width: 8),
+                                SizedBox(width: 8),
                                 Text(
                                   'Notes',
                                   style: TextStyle(

@@ -3,14 +3,13 @@ import '../../theme/app_theme.dart';
 
 /// Shimmer effect widget for loading states
 class ShimmerLoading extends StatefulWidget {
-  final Widget child;
-  final bool isLoading;
   
   const ShimmerLoading({
-    super.key,
-    required this.child,
+    required this.child, super.key,
     this.isLoading = true,
   });
+  final Widget child;
+  final bool isLoading;
 
   @override
   State<ShimmerLoading> createState() => _ShimmerLoadingState();
@@ -81,8 +80,8 @@ class _ShimmerLoadingState extends State<ShimmerLoading>
 }
 
 class _SlidingGradientTransform extends GradientTransform {
-  final double slidePercent;
   const _SlidingGradientTransform(this.slidePercent);
+  final double slidePercent;
 
   @override
   Matrix4 transform(Rect bounds, {TextDirection? textDirection}) {
@@ -92,16 +91,14 @@ class _SlidingGradientTransform extends GradientTransform {
 
 /// Shimmer placeholder box
 class ShimmerBox extends StatelessWidget {
+
+  const ShimmerBox({
+    required this.width, required this.height, super.key,
+    this.borderRadius = 8,
+  });
   final double width;
   final double height;
   final double borderRadius;
-
-  const ShimmerBox({
-    super.key,
-    required this.width,
-    required this.height,
-    this.borderRadius = 8,
-  });
 
   @override
   Widget build(BuildContext context) {
@@ -119,9 +116,9 @@ class ShimmerBox extends StatelessWidget {
 
 /// Shimmer for stat cards on dashboard
 class StatCardShimmer extends StatelessWidget {
-  final bool isCompact;
   
   const StatCardShimmer({super.key, this.isCompact = false});
+  final bool isCompact;
 
   @override
   Widget build(BuildContext context) {
@@ -139,7 +136,7 @@ class StatCardShimmer extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.start,
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
-            Row(
+            const Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
                 ShimmerBox(width: 40, height: 40, borderRadius: 12),
@@ -151,7 +148,7 @@ class StatCardShimmer extends StatelessWidget {
               children: [
                 ShimmerBox(width: 60, height: isCompact ? 26 : 32, borderRadius: 6),
                 const SizedBox(height: 8),
-                ShimmerBox(width: 80, height: 12, borderRadius: 4),
+                const ShimmerBox(width: 80, height: 12, borderRadius: 4),
               ],
             ),
           ],
@@ -163,9 +160,9 @@ class StatCardShimmer extends StatelessWidget {
 
 /// Shimmer for patient cards
 class PatientCardShimmer extends StatelessWidget {
-  final bool isCompact;
   
   const PatientCardShimmer({super.key, this.isCompact = false});
+  final bool isCompact;
 
   @override
   Widget build(BuildContext context) {
@@ -189,24 +186,24 @@ class PatientCardShimmer extends StatelessWidget {
               borderRadius: 27,
             ),
             SizedBox(width: isCompact ? 12 : 16),
-            Expanded(
+            const Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Row(
                     children: [
                       Expanded(child: ShimmerBox(width: double.infinity, height: 16, borderRadius: 4)),
-                      const SizedBox(width: 8),
+                      SizedBox(width: 8),
                       ShimmerBox(width: 60, height: 24, borderRadius: 12),
                     ],
                   ),
-                  const SizedBox(height: 10),
+                  SizedBox(height: 10),
                   ShimmerBox(width: 120, height: 12, borderRadius: 4),
-                  const SizedBox(height: 10),
+                  SizedBox(height: 10),
                   Row(
                     children: [
                       ShimmerBox(width: 60, height: 24),
-                      const SizedBox(width: 6),
+                      SizedBox(width: 6),
                       ShimmerBox(width: 80, height: 24),
                     ],
                   ),
@@ -214,7 +211,7 @@ class PatientCardShimmer extends StatelessWidget {
               ),
             ),
             const SizedBox(width: 8),
-            ShimmerBox(width: 32, height: 32, borderRadius: 10),
+            const ShimmerBox(width: 32, height: 32, borderRadius: 10),
           ],
         ),
       ),
@@ -240,16 +237,16 @@ class ScheduleItemShimmer extends StatelessWidget {
             color: (isDark ? AppColors.darkDivider : AppColors.divider).withValues(alpha: 0.5),
           ),
         ),
-        child: Row(
+        child: const Row(
           children: [
             ShimmerBox(width: 70, height: 36, borderRadius: 12),
-            const SizedBox(width: 16),
+            SizedBox(width: 16),
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   ShimmerBox(width: 120, height: 14, borderRadius: 4),
-                  const SizedBox(height: 8),
+                  SizedBox(height: 8),
                   ShimmerBox(width: 80, height: 12, borderRadius: 4),
                 ],
               ),

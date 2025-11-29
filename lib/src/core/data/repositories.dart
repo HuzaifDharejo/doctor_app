@@ -11,9 +11,9 @@ import '../utils/result.dart';
 
 /// Base repository class with common functionality
 abstract class BaseRepository {
-  final DoctorDatabase db;
   
   BaseRepository(this.db);
+  final DoctorDatabase db;
   
   /// Execute a database operation with error handling
   Future<Result<T, AppException>> execute<T>(
@@ -42,14 +42,14 @@ abstract class BaseRepository {
 
 /// Repository for Patient data operations
 class PatientRepository extends BaseRepository {
-  static const _tag = 'PatientRepo';
   
   PatientRepository(super.db);
+  static const _tag = 'PatientRepo';
   
   /// Get all patients
   Future<Result<List<Patient>, AppException>> getAll() async {
     return execute(
-      () => db.getAllPatients(),
+      db.getAllPatients,
       tag: _tag,
       operationName: 'getAllPatients',
     );
@@ -121,14 +121,14 @@ class PatientRepository extends BaseRepository {
 
 /// Repository for Appointment data operations
 class AppointmentRepository extends BaseRepository {
-  static const _tag = 'AppointmentRepo';
   
   AppointmentRepository(super.db);
+  static const _tag = 'AppointmentRepo';
   
   /// Get all appointments
   Future<Result<List<Appointment>, AppException>> getAll() async {
     return execute(
-      () => db.getAllAppointments(),
+      db.getAllAppointments,
       tag: _tag,
       operationName: 'getAllAppointments',
     );
@@ -173,7 +173,7 @@ class AppointmentRepository extends BaseRepository {
       final now = DateTime.now();
       return appointments
           .where((a) => a.appointmentDateTime.isAfter(now) && 
-                        (a.status == 'scheduled' || a.status == 'pending'))
+                        (a.status == 'scheduled' || a.status == 'pending'),)
           .toList()
         ..sort((a, b) => a.appointmentDateTime.compareTo(b.appointmentDateTime));
     });
@@ -184,7 +184,7 @@ class AppointmentRepository extends BaseRepository {
     final result = await getToday();
     return result.map((appointments) {
       return appointments.where((a) => 
-        a.status == 'pending' || a.status == 'scheduled'
+        a.status == 'pending' || a.status == 'scheduled',
       ).length;
     });
   }
@@ -192,14 +192,14 @@ class AppointmentRepository extends BaseRepository {
 
 /// Repository for Prescription data operations
 class PrescriptionRepository extends BaseRepository {
-  static const _tag = 'PrescriptionRepo';
   
   PrescriptionRepository(super.db);
+  static const _tag = 'PrescriptionRepo';
   
   /// Get all prescriptions
   Future<Result<List<Prescription>, AppException>> getAll() async {
     return execute(
-      () => db.getAllPrescriptions(),
+      db.getAllPrescriptions,
       tag: _tag,
       operationName: 'getAllPrescriptions',
     );
@@ -244,14 +244,14 @@ class PrescriptionRepository extends BaseRepository {
 
 /// Repository for Medical Record data operations
 class MedicalRecordRepository extends BaseRepository {
-  static const _tag = 'MedicalRecordRepo';
   
   MedicalRecordRepository(super.db);
+  static const _tag = 'MedicalRecordRepo';
   
   /// Get all medical records
   Future<Result<List<MedicalRecord>, AppException>> getAll() async {
     return execute(
-      () => db.getAllMedicalRecords(),
+      db.getAllMedicalRecords,
       tag: _tag,
       operationName: 'getAllMedicalRecords',
     );
@@ -260,7 +260,7 @@ class MedicalRecordRepository extends BaseRepository {
   /// Get all medical records with patient info
   Future<Result<List<MedicalRecordWithPatient>, AppException>> getAllWithPatients() async {
     return execute(
-      () => db.getAllMedicalRecordsWithPatients(),
+      db.getAllMedicalRecordsWithPatients,
       tag: _tag,
       operationName: 'getAllMedicalRecordsWithPatients',
     );
@@ -327,14 +327,14 @@ class MedicalRecordRepository extends BaseRepository {
 
 /// Repository for Invoice data operations
 class InvoiceRepository extends BaseRepository {
-  static const _tag = 'InvoiceRepo';
   
   InvoiceRepository(super.db);
+  static const _tag = 'InvoiceRepo';
   
   /// Get all invoices
   Future<Result<List<Invoice>, AppException>> getAll() async {
     return execute(
-      () => db.getAllInvoices(),
+      db.getAllInvoices,
       tag: _tag,
       operationName: 'getAllInvoices',
     );
@@ -353,7 +353,7 @@ class InvoiceRepository extends BaseRepository {
   Future<Result<List<Invoice>, AppException>> getByStatus(String status) async {
     final result = await getAll();
     return result.map((invoices) => 
-      invoices.where((i) => i.paymentStatus == status).toList()
+      invoices.where((i) => i.paymentStatus == status).toList(),
     );
   }
   
@@ -361,7 +361,7 @@ class InvoiceRepository extends BaseRepository {
   Future<Result<List<Invoice>, AppException>> getUnpaid() async {
     final result = await getAll();
     return result.map((invoices) => 
-      invoices.where((i) => i.paymentStatus != 'Paid').toList()
+      invoices.where((i) => i.paymentStatus != 'Paid').toList(),
     );
   }
   

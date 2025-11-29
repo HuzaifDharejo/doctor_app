@@ -76,10 +76,10 @@ class Invoices extends Table {
 
 /// Model to hold a medical record with its associated patient
 class MedicalRecordWithPatient {
-  final MedicalRecord record;
-  final Patient patient;
 
   MedicalRecordWithPatient({required this.record, required this.patient});
+  final MedicalRecord record;
+  final Patient patient;
 }
 
 @DriftDatabase(tables: [Patients, Appointments, Prescriptions, MedicalRecords, Invoices])

@@ -13,14 +13,12 @@ import '../widgets/medical_record_widgets.dart';
 /// - Accessible semantic labels
 /// - Dark mode support
 class MedicalRecordDetailScreen extends StatelessWidget {
-  final MedicalRecord record;
-  final Patient patient;
 
   const MedicalRecordDetailScreen({
-    super.key,
-    required this.record,
-    required this.patient,
+    required this.record, required this.patient, super.key,
   });
+  final MedicalRecord record;
+  final Patient patient;
 
   /// Cached parsed JSON data with error handling
   Map<String, dynamic> get _data {
@@ -103,21 +101,21 @@ class MedicalRecordDetailScreen extends StatelessWidget {
 // ============================================================================
 
 class _Header extends StatelessWidget {
-  final MedicalRecord record;
-  final Patient patient;
-  final RecordTypeInfo recordInfo;
 
   const _Header({
     required this.record,
     required this.patient,
     required this.recordInfo,
   });
+  final MedicalRecord record;
+  final Patient patient;
+  final RecordTypeInfo recordInfo;
 
   static final _dateFormat = DateFormat('EEEE, MMMM d, yyyy');
 
   @override
   Widget build(BuildContext context) {
-    return Container(
+    return DecoratedBox(
       decoration: BoxDecoration(
         gradient: LinearGradient(
           colors: [recordInfo.color, recordInfo.color.withValues(alpha: 0.7)],
@@ -269,10 +267,10 @@ class _Header extends StatelessWidget {
 // ============================================================================
 
 class _PatientCard extends StatelessWidget {
-  final Patient patient;
-  final bool isDark;
 
   const _PatientCard({required this.patient, required this.isDark});
+  final Patient patient;
+  final bool isDark;
 
   String get _initials => '${patient.firstName[0]}${patient.lastName[0]}';
   String get _fullName => '${patient.firstName} ${patient.lastName}';
@@ -369,15 +367,15 @@ class _PatientCard extends StatelessWidget {
 // ============================================================================
 
 class _RecordContent extends StatelessWidget {
-  final MedicalRecord record;
-  final Map<String, dynamic> data;
-  final bool isDark;
 
   const _RecordContent({
     required this.record,
     required this.data,
     required this.isDark,
   });
+  final MedicalRecord record;
+  final Map<String, dynamic> data;
+  final bool isDark;
 
   @override
   Widget build(BuildContext context) {
@@ -405,10 +403,10 @@ class _RecordContent extends StatelessWidget {
 // ============================================================================
 
 class _PulmonaryContent extends StatelessWidget {
-  final Map<String, dynamic> data;
-  final bool isDark;
 
   const _PulmonaryContent({required this.data, required this.isDark});
+  final Map<String, dynamic> data;
+  final bool isDark;
 
   @override
   Widget build(BuildContext context) {
@@ -491,10 +489,10 @@ class _PulmonaryContent extends StatelessWidget {
 }
 
 class _PsychiatricContent extends StatelessWidget {
-  final Map<String, dynamic> data;
-  final bool isDark;
 
   const _PsychiatricContent({required this.data, required this.isDark});
+  final Map<String, dynamic> data;
+  final bool isDark;
 
   @override
   Widget build(BuildContext context) {
@@ -534,10 +532,10 @@ class _PsychiatricContent extends StatelessWidget {
 }
 
 class _LabResultContent extends StatelessWidget {
-  final Map<String, dynamic> data;
-  final bool isDark;
 
   const _LabResultContent({required this.data, required this.isDark});
+  final Map<String, dynamic> data;
+  final bool isDark;
 
   @override
   Widget build(BuildContext context) {
@@ -629,7 +627,7 @@ class _LabResultContent extends StatelessWidget {
       ),
       child: Row(
         children: [
-          Icon(Icons.straighten, size: MedicalRecordConstants.iconLarge, color: AppColors.info),
+          const Icon(Icons.straighten, size: MedicalRecordConstants.iconLarge, color: AppColors.info),
           const SizedBox(width: MedicalRecordConstants.paddingSmall),
           Text(
             'Reference: ${data.getString('reference_range')}',
@@ -646,10 +644,10 @@ class _LabResultContent extends StatelessWidget {
 }
 
 class _ImagingContent extends StatelessWidget {
-  final Map<String, dynamic> data;
-  final bool isDark;
 
   const _ImagingContent({required this.data, required this.isDark});
+  final Map<String, dynamic> data;
+  final bool isDark;
 
   @override
   Widget build(BuildContext context) {
@@ -679,10 +677,10 @@ class _ImagingContent extends StatelessWidget {
 }
 
 class _ProcedureContent extends StatelessWidget {
-  final Map<String, dynamic> data;
-  final bool isDark;
 
   const _ProcedureContent({required this.data, required this.isDark});
+  final Map<String, dynamic> data;
+  final bool isDark;
 
   @override
   Widget build(BuildContext context) {
@@ -714,10 +712,10 @@ class _ProcedureContent extends StatelessWidget {
 }
 
 class _FollowUpContent extends StatelessWidget {
-  final Map<String, dynamic> data;
-  final bool isDark;
 
   const _FollowUpContent({required this.data, required this.isDark});
+  final Map<String, dynamic> data;
+  final bool isDark;
 
   @override
   Widget build(BuildContext context) {
@@ -739,11 +737,11 @@ class _FollowUpContent extends StatelessWidget {
 }
 
 class _GeneralContent extends StatelessWidget {
+
+  const _GeneralContent({required this.record, required this.data, required this.isDark});
   final MedicalRecord record;
   final Map<String, dynamic> data;
   final bool isDark;
-
-  const _GeneralContent({required this.record, required this.data, required this.isDark});
 
   @override
   Widget build(BuildContext context) {
@@ -779,15 +777,15 @@ class _GeneralContent extends StatelessWidget {
 // ============================================================================
 
 class _VitalsSection extends StatelessWidget {
-  final Map<String, dynamic> vitals;
-  final bool isDark;
-  final bool isPulmonary;
 
   const _VitalsSection({
     required this.vitals,
     required this.isDark,
     this.isPulmonary = false,
   });
+  final Map<String, dynamic> vitals;
+  final bool isDark;
+  final bool isPulmonary;
 
   @override
   Widget build(BuildContext context) {
@@ -880,10 +878,10 @@ class _VitalsSection extends StatelessWidget {
 }
 
 class _MseSection extends StatelessWidget {
-  final Map<String, dynamic> mse;
-  final bool isDark;
 
   const _MseSection({required this.mse, required this.isDark});
+  final Map<String, dynamic> mse;
+  final bool isDark;
 
   @override
   Widget build(BuildContext context) {
@@ -958,15 +956,15 @@ class _MseSection extends StatelessWidget {
 }
 
 class _MseGridItem extends StatelessWidget {
-  final MseItemConfig config;
-  final String value;
-  final bool isDark;
 
   const _MseGridItem({
     required this.config,
     required this.value,
     required this.isDark,
   });
+  final MseItemConfig config;
+  final String value;
+  final bool isDark;
 
   @override
   Widget build(BuildContext context) {
@@ -1012,10 +1010,10 @@ class _MseGridItem extends StatelessWidget {
 }
 
 class _RiskAssessmentSection extends StatelessWidget {
-  final Map<String, dynamic> risk;
-  final bool isDark;
 
   const _RiskAssessmentSection({required this.risk, required this.isDark});
+  final Map<String, dynamic> risk;
+  final bool isDark;
 
   @override
   Widget build(BuildContext context) {
@@ -1079,10 +1077,10 @@ class _RiskAssessmentSection extends StatelessWidget {
 }
 
 class _ChestAuscultationSection extends StatelessWidget {
-  final Map<String, dynamic> auscultation;
-  final bool isDark;
 
   const _ChestAuscultationSection({required this.auscultation, required this.isDark});
+  final Map<String, dynamic> auscultation;
+  final bool isDark;
 
   @override
   Widget build(BuildContext context) {
@@ -1206,7 +1204,7 @@ class _ChestAuscultationSection extends StatelessWidget {
                 fontWeight: FontWeight.w600,
               ),
             ),
-          )).toList(),
+          ),).toList(),
         ),
       ],
     );
@@ -1214,10 +1212,10 @@ class _ChestAuscultationSection extends StatelessWidget {
 }
 
 class _LungZonesDisplay extends StatelessWidget {
-  final Map<String, dynamic> auscultation;
-  final bool isDark;
 
   const _LungZonesDisplay({required this.auscultation, required this.isDark});
+  final Map<String, dynamic> auscultation;
+  final bool isDark;
 
   @override
   Widget build(BuildContext context) {
@@ -1276,11 +1274,11 @@ class _LungZonesDisplay extends StatelessWidget {
 }
 
 class _ZoneBox extends StatelessWidget {
+
+  const _ZoneBox({required this.zone, required this.finding, required this.isDark});
   final String zone;
   final String finding;
   final bool isDark;
-
-  const _ZoneBox({required this.zone, required this.finding, required this.isDark});
 
   bool get _hasValue => finding.isNotEmpty && finding != '-';
 
@@ -1332,16 +1330,16 @@ class _ZoneBox extends StatelessWidget {
 // ============================================================================
 
 class _ActionButtons extends StatelessWidget {
-  final bool isDark;
 
   const _ActionButtons({required this.isDark});
+  final bool isDark;
 
   @override
   Widget build(BuildContext context) {
     return Row(
       children: [
         Expanded(
-          child: Container(
+          child: DecoratedBox(
             decoration: BoxDecoration(
               gradient: AppColors.primaryGradient,
               borderRadius: BorderRadius.circular(14),
@@ -1367,7 +1365,7 @@ class _ActionButtons extends StatelessWidget {
           ),
         ),
         const SizedBox(width: MedicalRecordConstants.paddingMedium),
-        Container(
+        DecoratedBox(
           decoration: BoxDecoration(
             color: isDark ? AppColors.darkSurface : Colors.white,
             borderRadius: BorderRadius.circular(14),

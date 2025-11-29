@@ -6,18 +6,9 @@ import '../../theme/app_theme.dart';
 import '../constants/app_constants.dart';
 
 class EmptyState extends StatefulWidget {
-  final String title;
-  final String? message;
-  final IconData icon;
-  final Widget? action;
-  final VoidCallback? onAction;
-  final String? actionLabel;
-  final Color? iconColor;
-  final bool animate;
 
   const EmptyState({
-    super.key,
-    required this.title,
+    required this.title, super.key,
     this.message,
     this.icon = Icons.inbox_rounded,
     this.action,
@@ -87,6 +78,14 @@ class EmptyState extends StatefulWidget {
         actionLabel = null,
         iconColor = null,
         animate = true;
+  final String title;
+  final String? message;
+  final IconData icon;
+  final Widget? action;
+  final VoidCallback? onAction;
+  final String? actionLabel;
+  final Color? iconColor;
+  final bool animate;
 
   @override
   State<EmptyState> createState() => _EmptyStateState();
@@ -164,7 +163,7 @@ class _EmptyStateState extends State<EmptyState> with TickerProviderStateMixin {
 
     return Center(
       child: Padding(
-        padding: EdgeInsets.all(AppSpacing.xxl),
+        padding: const EdgeInsets.all(AppSpacing.xxl),
         child: FadeTransition(
           opacity: _fadeIn,
           child: SlideTransition(
@@ -185,7 +184,7 @@ class _EmptyStateState extends State<EmptyState> with TickerProviderStateMixin {
                     );
                   },
                   child: Container(
-                    padding: EdgeInsets.all(AppSpacing.xl),
+                    padding: const EdgeInsets.all(AppSpacing.xl),
                     decoration: BoxDecoration(
                       gradient: RadialGradient(
                         colors: [
@@ -210,7 +209,7 @@ class _EmptyStateState extends State<EmptyState> with TickerProviderStateMixin {
                     ),
                   ),
                 ),
-                SizedBox(height: AppSpacing.xl),
+                const SizedBox(height: AppSpacing.xl),
                 
                 // Title
                 Text(
@@ -225,7 +224,7 @@ class _EmptyStateState extends State<EmptyState> with TickerProviderStateMixin {
                 
                 // Message
                 if (widget.message != null) ...[
-                  SizedBox(height: AppSpacing.sm),
+                  const SizedBox(height: AppSpacing.sm),
                   Text(
                     widget.message!,
                     style: TextStyle(
@@ -238,7 +237,7 @@ class _EmptyStateState extends State<EmptyState> with TickerProviderStateMixin {
                   ),
                 ],
                 
-                SizedBox(height: AppSpacing.xl),
+                const SizedBox(height: AppSpacing.xl),
                 
                 // Animated Action button or custom action
                 if (widget.action != null)
@@ -261,7 +260,7 @@ class _EmptyStateState extends State<EmptyState> with TickerProviderStateMixin {
                       style: ElevatedButton.styleFrom(
                         backgroundColor: effectiveIconColor,
                         foregroundColor: Colors.white,
-                        padding: EdgeInsets.symmetric(
+                        padding: const EdgeInsets.symmetric(
                           horizontal: AppSpacing.xl,
                           vertical: AppSpacing.md,
                         ),
@@ -284,16 +283,15 @@ class _EmptyStateState extends State<EmptyState> with TickerProviderStateMixin {
 
 /// Compact empty state for inline use with subtle animation
 class EmptyStateCompact extends StatelessWidget {
-  final String message;
-  final IconData icon;
-  final bool animate;
 
   const EmptyStateCompact({
-    super.key,
-    required this.message,
+    required this.message, super.key,
     this.icon = Icons.inbox_rounded,
     this.animate = true,
   });
+  final String message;
+  final IconData icon;
+  final bool animate;
 
   @override
   Widget build(BuildContext context) {
@@ -309,7 +307,7 @@ class EmptyStateCompact extends StatelessWidget {
               ? AppColors.darkTextSecondary 
               : AppColors.textSecondary,
         ),
-        SizedBox(width: AppSpacing.sm),
+        const SizedBox(width: AppSpacing.sm),
         Text(
           message,
           style: TextStyle(
@@ -341,7 +339,7 @@ class EmptyStateCompact extends StatelessWidget {
     }
 
     return Padding(
-      padding: EdgeInsets.symmetric(vertical: AppSpacing.xl),
+      padding: const EdgeInsets.symmetric(vertical: AppSpacing.xl),
       child: content,
     );
   }

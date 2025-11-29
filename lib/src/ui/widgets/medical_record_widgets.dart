@@ -57,10 +57,6 @@ abstract class MedicalRecordConstants {
 /// Immutable model representing record type metadata
 @immutable
 class RecordTypeInfo {
-  final IconData icon;
-  final Color color;
-  final String label;
-  final String recordType;
 
   const RecordTypeInfo({
     required this.icon,
@@ -73,6 +69,10 @@ class RecordTypeInfo {
   factory RecordTypeInfo.fromType(String recordType) {
     return _recordTypeMap[recordType] ?? _defaultRecordType;
   }
+  final IconData icon;
+  final Color color;
+  final String label;
+  final String recordType;
 
   static const _defaultRecordType = RecordTypeInfo(
     icon: Icons.medical_services_outlined,
@@ -136,15 +136,15 @@ class RecordTypeInfo {
 /// Mental State Examination item configuration
 @immutable
 class MseItemConfig {
-  final String key;
-  final String label;
-  final IconData icon;
 
   const MseItemConfig({
     required this.key,
     required this.label,
     required this.icon,
   });
+  final String key;
+  final String label;
+  final IconData icon;
 
   static const List<MseItemConfig> allItems = [
     MseItemConfig(key: 'appearance', label: 'Appearance', icon: Icons.person_outline),
@@ -167,20 +167,18 @@ class MseItemConfig {
 
 /// A decorated icon button with semi-transparent background
 class HeaderIconButton extends StatelessWidget {
+
+  const HeaderIconButton({
+    required this.icon, required this.onTap, super.key,
+    this.semanticLabel,
+    this.iconColor = Colors.white,
+    this.backgroundColor = const Color(0x33FFFFFF), // white with 20% opacity
+  });
   final IconData icon;
   final VoidCallback onTap;
   final String? semanticLabel;
   final Color iconColor;
   final Color backgroundColor;
-
-  const HeaderIconButton({
-    super.key,
-    required this.icon,
-    required this.onTap,
-    this.semanticLabel,
-    this.iconColor = Colors.white,
-    this.backgroundColor = const Color(0x33FFFFFF), // white with 20% opacity
-  });
 
   @override
   Widget build(BuildContext context) {
@@ -204,20 +202,15 @@ class HeaderIconButton extends StatelessWidget {
 
 /// A card with icon, title, and content
 class InfoCard extends StatelessWidget {
+
+  const InfoCard({
+    required this.title, required this.content, required this.icon, required this.color, required this.isDark, super.key,
+  });
   final String title;
   final String content;
   final IconData icon;
   final Color color;
   final bool isDark;
-
-  const InfoCard({
-    super.key,
-    required this.title,
-    required this.content,
-    required this.icon,
-    required this.color,
-    required this.isDark,
-  });
 
   @override
   Widget build(BuildContext context) {
@@ -255,20 +248,15 @@ class InfoCard extends StatelessWidget {
 
 /// A small statistic card with icon and value
 class StatCard extends StatelessWidget {
+
+  const StatCard({
+    required this.label, required this.value, required this.icon, required this.color, required this.isDark, super.key,
+  });
   final String label;
   final String value;
   final IconData icon;
   final Color color;
   final bool isDark;
-
-  const StatCard({
-    super.key,
-    required this.label,
-    required this.value,
-    required this.icon,
-    required this.color,
-    required this.isDark,
-  });
 
   @override
   Widget build(BuildContext context) {
@@ -318,20 +306,15 @@ class StatCard extends StatelessWidget {
 
 /// A section displaying chips/tags
 class ChipsSection extends StatelessWidget {
+
+  const ChipsSection({
+    required this.title, required this.items, required this.color, required this.icon, required this.isDark, super.key,
+  });
   final String title;
   final List<String> items;
   final Color color;
   final IconData icon;
   final bool isDark;
-
-  const ChipsSection({
-    super.key,
-    required this.title,
-    required this.items,
-    required this.color,
-    required this.icon,
-    required this.isDark,
-  });
 
   @override
   Widget build(BuildContext context) {
@@ -368,20 +351,15 @@ class ChipsSection extends StatelessWidget {
 
 /// A single vital sign display
 class VitalItem extends StatelessWidget {
+
+  const VitalItem({
+    required this.label, required this.value, required this.unit, required this.icon, required this.color, super.key,
+  });
   final String label;
   final String value;
   final String unit;
   final IconData icon;
   final Color color;
-
-  const VitalItem({
-    super.key,
-    required this.label,
-    required this.value,
-    required this.unit,
-    required this.icon,
-    required this.color,
-  });
 
   @override
   Widget build(BuildContext context) {
@@ -421,14 +399,12 @@ class VitalItem extends StatelessWidget {
 
 /// A risk level badge with color coding
 class RiskBadge extends StatelessWidget {
-  final String label;
-  final String level;
 
   const RiskBadge({
-    super.key,
-    required this.label,
-    required this.level,
+    required this.label, required this.level, super.key,
   });
+  final String label;
+  final String level;
 
   Color get _color {
     switch (level.toLowerCase()) {
@@ -475,18 +451,14 @@ class RiskBadge extends StatelessWidget {
 
 /// Filter chip for record type selection
 class RecordTypeFilterChip extends StatelessWidget {
+
+  const RecordTypeFilterChip({
+    required this.recordType, required this.isSelected, required this.onTap, required this.isDark, super.key,
+  });
   final RecordTypeInfo recordType;
   final bool isSelected;
   final VoidCallback onTap;
   final bool isDark;
-
-  const RecordTypeFilterChip({
-    super.key,
-    required this.recordType,
-    required this.isSelected,
-    required this.onTap,
-    required this.isDark,
-  });
 
   @override
   Widget build(BuildContext context) {
@@ -539,15 +511,15 @@ class RecordTypeFilterChip extends StatelessWidget {
 // ============================================================================
 
 class _CardHeader extends StatelessWidget {
-  final String title;
-  final IconData icon;
-  final Color color;
 
   const _CardHeader({
     required this.title,
     required this.icon,
     required this.color,
   });
+  final String title;
+  final IconData icon;
+  final Color color;
 
   @override
   Widget build(BuildContext context) {
@@ -578,10 +550,10 @@ class _CardHeader extends StatelessWidget {
 }
 
 class _Chip extends StatelessWidget {
-  final String text;
-  final Color color;
 
   const _Chip({required this.text, required this.color});
+  final String text;
+  final Color color;
 
   @override
   Widget build(BuildContext context) {

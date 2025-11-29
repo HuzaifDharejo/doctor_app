@@ -2,20 +2,18 @@ import 'package:flutter/material.dart';
 
 /// Staggered animation list item wrapper
 class StaggeredListItem extends StatefulWidget {
+  
+  const StaggeredListItem({
+    required this.child, required this.index, super.key,
+    this.delay = const Duration(milliseconds: 50),
+    this.duration = const Duration(milliseconds: 400),
+    this.curve = Curves.easeOutCubic,
+  });
   final Widget child;
   final int index;
   final Duration delay;
   final Duration duration;
   final Curve curve;
-  
-  const StaggeredListItem({
-    super.key,
-    required this.child,
-    required this.index,
-    this.delay = const Duration(milliseconds: 50),
-    this.duration = const Duration(milliseconds: 400),
-    this.curve = Curves.easeOutCubic,
-  });
 
   @override
   State<StaggeredListItem> createState() => _StaggeredListItemState();
@@ -42,7 +40,7 @@ class _StaggeredListItemState extends State<StaggeredListItem>
     ).animate(CurvedAnimation(
       parent: _controller,
       curve: widget.curve,
-    ));
+    ),);
     
     _slideAnimation = Tween<Offset>(
       begin: const Offset(0, 0.2),
@@ -50,7 +48,7 @@ class _StaggeredListItemState extends State<StaggeredListItem>
     ).animate(CurvedAnimation(
       parent: _controller,
       curve: widget.curve,
-    ));
+    ),);
     
     _scaleAnimation = Tween<double>(
       begin: 0.95,
@@ -58,7 +56,7 @@ class _StaggeredListItemState extends State<StaggeredListItem>
     ).animate(CurvedAnimation(
       parent: _controller,
       curve: widget.curve,
-    ));
+    ),);
     
     // Delay animation start based on index
     Future.delayed(widget.delay * widget.index, () {
@@ -91,20 +89,19 @@ class _StaggeredListItemState extends State<StaggeredListItem>
 
 /// Animated counter for stats
 class AnimatedCounter extends StatefulWidget {
-  final int value;
-  final TextStyle? style;
-  final Duration duration;
-  final String? prefix;
-  final String? suffix;
   
   const AnimatedCounter({
-    super.key,
-    required this.value,
+    required this.value, super.key,
     this.style,
     this.duration = const Duration(milliseconds: 800),
     this.prefix,
     this.suffix,
   });
+  final int value;
+  final TextStyle? style;
+  final Duration duration;
+  final String? prefix;
+  final String? suffix;
 
   @override
   State<AnimatedCounter> createState() => _AnimatedCounterState();
@@ -144,7 +141,7 @@ class _AnimatedCounterState extends State<AnimatedCounter>
     ).animate(CurvedAnimation(
       parent: _controller,
       curve: Curves.easeOutCubic,
-    ));
+    ),);
   }
 
   @override
@@ -169,20 +166,19 @@ class _AnimatedCounterState extends State<AnimatedCounter>
 
 /// Pulse animation wrapper
 class PulseAnimation extends StatefulWidget {
-  final Widget child;
-  final Duration duration;
-  final double minScale;
-  final double maxScale;
-  final bool enabled;
   
   const PulseAnimation({
-    super.key,
-    required this.child,
+    required this.child, super.key,
     this.duration = const Duration(milliseconds: 1500),
     this.minScale = 0.95,
     this.maxScale = 1.0,
     this.enabled = true,
   });
+  final Widget child;
+  final Duration duration;
+  final double minScale;
+  final double maxScale;
+  final bool enabled;
 
   @override
   State<PulseAnimation> createState() => _PulseAnimationState();
@@ -207,7 +203,7 @@ class _PulseAnimationState extends State<PulseAnimation>
     ).animate(CurvedAnimation(
       parent: _controller,
       curve: Curves.easeInOut,
-    ));
+    ),);
     
     if (widget.enabled) {
       _controller.repeat(reverse: true);
@@ -247,8 +243,6 @@ class _PulseAnimationState extends State<PulseAnimation>
 
 /// Fade slide transition for page routes
 class FadeSlideRoute<T> extends PageRouteBuilder<T> {
-  final Widget page;
-  final AxisDirection direction;
   
   FadeSlideRoute({
     required this.page,
@@ -282,6 +276,8 @@ class FadeSlideRoute<T> extends PageRouteBuilder<T> {
             );
           },
         );
+  final Widget page;
+  final AxisDirection direction;
 
   static Offset _getBeginOffset(AxisDirection direction) {
     switch (direction) {
@@ -299,18 +295,17 @@ class FadeSlideRoute<T> extends PageRouteBuilder<T> {
 
 /// Bouncy tap animation wrapper
 class BouncyTap extends StatefulWidget {
-  final Widget child;
-  final VoidCallback? onTap;
-  final VoidCallback? onLongPress;
-  final double scaleFactor;
   
   const BouncyTap({
-    super.key,
-    required this.child,
+    required this.child, super.key,
     this.onTap,
     this.onLongPress,
     this.scaleFactor = 0.95,
   });
+  final Widget child;
+  final VoidCallback? onTap;
+  final VoidCallback? onLongPress;
+  final double scaleFactor;
 
   @override
   State<BouncyTap> createState() => _BouncyTapState();
@@ -335,7 +330,7 @@ class _BouncyTapState extends State<BouncyTap>
     ).animate(CurvedAnimation(
       parent: _controller,
       curve: Curves.easeInOut,
-    ));
+    ),);
   }
 
   @override
@@ -374,16 +369,15 @@ class _BouncyTapState extends State<BouncyTap>
 
 /// Notification badge with animation
 class AnimatedBadge extends StatefulWidget {
-  final int count;
-  final Color? color;
-  final double size;
   
   const AnimatedBadge({
-    super.key,
-    required this.count,
+    required this.count, super.key,
     this.color,
     this.size = 18,
   });
+  final int count;
+  final Color? color;
+  final double size;
 
   @override
   State<AnimatedBadge> createState() => _AnimatedBadgeState();
@@ -415,7 +409,7 @@ class _AnimatedBadgeState extends State<AnimatedBadge>
     ]).animate(CurvedAnimation(
       parent: _controller,
       curve: Curves.easeOutBack,
-    ));
+    ),);
     
     _previousCount = widget.count;
     if (widget.count > 0) {

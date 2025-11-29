@@ -1,6 +1,5 @@
 import 'dart:async';
 import 'dart:convert';
-import 'dart:typed_data';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:image_picker/image_picker.dart';
@@ -8,22 +7,21 @@ import '../../theme/app_theme.dart';
 
 /// A signature pad widget for capturing handwritten signatures
 class SignaturePad extends StatefulWidget {
+
+  const SignaturePad({
+    required this.onSignatureChanged, super.key,
+    this.initialSignature,
+    this.height = 200,
+    this.strokeColor = const Color(0xFF1E3A8A),
+    this.strokeWidth = 3.0,
+    this.readOnly = false,
+  });
   final String? initialSignature;
   final ValueChanged<String?> onSignatureChanged;
   final double height;
   final Color strokeColor;
   final double strokeWidth;
   final bool readOnly;
-
-  const SignaturePad({
-    super.key,
-    this.initialSignature,
-    required this.onSignatureChanged,
-    this.height = 200,
-    this.strokeColor = const Color(0xFF1E3A8A),
-    this.strokeWidth = 3.0,
-    this.readOnly = false,
-  });
 
   @override
   State<SignaturePad> createState() => _SignaturePadState();
@@ -177,7 +175,7 @@ class _SignaturePadState extends State<SignaturePad> {
     if (widget.readOnly) return;
     // Lock screen orientation when user starts drawing
     _lockOrientation();
-    final RenderBox box = context.findRenderObject() as RenderBox;
+    final RenderBox box = context.findRenderObject()! as RenderBox;
     final localPosition = box.globalToLocal(event.position);
     setState(() {
       _isDrawing = true;
@@ -190,7 +188,7 @@ class _SignaturePadState extends State<SignaturePad> {
 
   void _handlePointerMove(PointerMoveEvent event) {
     if (widget.readOnly || !_isDrawing) return;
-    final RenderBox box = context.findRenderObject() as RenderBox;
+    final RenderBox box = context.findRenderObject()! as RenderBox;
     final localPosition = box.globalToLocal(event.position);
     setState(() {
       _currentStroke = [..._currentStroke, localPosition];
@@ -349,7 +347,7 @@ class _SignaturePadState extends State<SignaturePad> {
                 style: TextStyle(fontSize: 12, color: isDark ? AppColors.darkTextHint : AppColors.textHint),
               ),
             ),
-          ]),
+          ],),
         ],
       ],
     );
@@ -357,10 +355,6 @@ class _SignaturePadState extends State<SignaturePad> {
 }
 
 class _ActionButton extends StatelessWidget {
-  final IconData icon;
-  final String label;
-  final VoidCallback onTap;
-  final bool isDark;
 
   const _ActionButton({
     required this.icon,
@@ -368,6 +362,10 @@ class _ActionButton extends StatelessWidget {
     required this.onTap,
     required this.isDark,
   });
+  final IconData icon;
+  final String label;
+  final VoidCallback onTap;
+  final bool isDark;
 
   @override
   Widget build(BuildContext context) {
@@ -407,12 +405,12 @@ class _ActionButton extends StatelessWidget {
 }
 
 class _SignaturePainter extends CustomPainter {
+
+  _SignaturePainter({required this.strokes, required this.currentStroke, required this.strokeColor, required this.strokeWidth});
   final List<List<Offset>> strokes;
   final List<Offset> currentStroke;
   final Color strokeColor;
   final double strokeWidth;
-
-  _SignaturePainter({required this.strokes, required this.currentStroke, required this.strokeColor, required this.strokeWidth});
 
   @override
   void paint(Canvas canvas, Size size) {
@@ -431,7 +429,9 @@ class _SignaturePainter extends CustomPainter {
     }
     if (currentStroke.length >= 2) {
       final path = Path()..moveTo(currentStroke.first.dx, currentStroke.first.dy);
-      for (int i = 1; i < currentStroke.length; i++) path.lineTo(currentStroke[i].dx, currentStroke[i].dy);
+      for (int i = 1; i < currentStroke.length; i++) {
+        path.lineTo(currentStroke[i].dx, currentStroke[i].dy);
+      }
       canvas.drawPath(path, paint);
     }
   }
@@ -441,13 +441,15 @@ class _SignaturePainter extends CustomPainter {
 }
 
 class _SignatureBackgroundPainter extends CustomPainter {
-  final bool isDark;
   _SignatureBackgroundPainter({required this.isDark});
+  final bool isDark;
 
   @override
   void paint(Canvas canvas, Size size) {
     final paint = Paint()..color = (isDark ? Colors.white : Colors.grey).withValues(alpha: 0.05)..strokeWidth = 1;
-    for (double y = 20; y < size.height; y += 20) canvas.drawLine(Offset(0, y), Offset(size.width, y), paint);
+    for (double y = 20; y < size.height; y += 20) {
+      canvas.drawLine(Offset(0, y), Offset(size.width, y), paint);
+    }
     final baselinePaint = Paint()..color = (isDark ? Colors.white : Colors.grey).withValues(alpha: 0.15)..strokeWidth = 2;
     canvas.drawLine(Offset(20, size.height - 40), Offset(size.width - 20, size.height - 40), baselinePaint);
   }
@@ -457,11 +459,11 @@ class _SignatureBackgroundPainter extends CustomPainter {
 }
 
 class SignaturePreview extends StatelessWidget {
+
+  const SignaturePreview({super.key, this.signatureData, this.height = 80, this.onTap});
   final String? signatureData;
   final double height;
   final VoidCallback? onTap;
-
-  const SignaturePreview({super.key, this.signatureData, this.height = 80, this.onTap});
 
   @override
   Widget build(BuildContext context) {

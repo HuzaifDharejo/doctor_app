@@ -10,9 +10,6 @@ import '../../theme/app_theme.dart';
 import '../widgets/suggestion_text_field.dart';
 
 class AddAppointmentScreen extends ConsumerStatefulWidget {
-  final DateTime? initialDate;
-  final int? patientId;
-  final Patient? preselectedPatient;
 
   const AddAppointmentScreen({
     super.key,
@@ -20,6 +17,9 @@ class AddAppointmentScreen extends ConsumerStatefulWidget {
     this.patientId,
     this.preselectedPatient,
   });
+  final DateTime? initialDate;
+  final int? patientId;
+  final Patient? preselectedPatient;
 
   @override
   ConsumerState<AddAppointmentScreen> createState() => _AddAppointmentScreenState();
@@ -68,9 +68,9 @@ class _AddAppointmentScreenState extends ConsumerState<AddAppointmentScreen> {
             // Gradient Header
             SliverToBoxAdapter(
               child: DecoratedBox(
-                decoration: BoxDecoration(
+                decoration: const BoxDecoration(
                   gradient: AppColors.primaryGradient,
-                  borderRadius: const BorderRadius.only(
+                  borderRadius: BorderRadius.only(
                     bottomLeft: Radius.circular(32),
                     bottomRight: Radius.circular(32),
                   ),
@@ -389,7 +389,7 @@ class _AddAppointmentScreenState extends ConsumerState<AddAppointmentScreen> {
             items: patients.map((p) => DropdownMenuItem(
               value: p.id,
               child: Text('${p.firstName} ${p.lastName}'),
-            )).toList(),
+            ),).toList(),
             onChanged: (value) {
               setState(() => _selectedPatientId = value);
             },
@@ -546,8 +546,6 @@ class _AddAppointmentScreenState extends ConsumerState<AddAppointmentScreen> {
       prefixIcon: Icons.notes_outlined,
       maxLines: 3,
       suggestions: AppointmentSuggestions.notes,
-      appendMode: true,
-      separator: ', ',
     );
   }
 
@@ -712,8 +710,6 @@ class _AddAppointmentScreenState extends ConsumerState<AddAppointmentScreen> {
           data: Theme.of(context).copyWith(
             colorScheme: const ColorScheme.light(
               primary: AppColors.primary,
-              onPrimary: Colors.white,
-              surface: AppColors.surface,
               onSurface: AppColors.textPrimary,
             ),
           ),
@@ -735,8 +731,6 @@ class _AddAppointmentScreenState extends ConsumerState<AddAppointmentScreen> {
           data: Theme.of(context).copyWith(
             colorScheme: const ColorScheme.light(
               primary: AppColors.primary,
-              onPrimary: Colors.white,
-              surface: AppColors.surface,
               onSurface: AppColors.textPrimary,
             ),
           ),
@@ -792,7 +786,7 @@ class _AddAppointmentScreenState extends ConsumerState<AddAppointmentScreen> {
         status: const Value('scheduled'),
         reminderAt: Value(reminderAt),
         notes: Value(_notesController.text),
-      ));
+      ),);
 
       // Sync with Google Calendar if connected
       final calendarState = ref.read(googleCalendarProvider);

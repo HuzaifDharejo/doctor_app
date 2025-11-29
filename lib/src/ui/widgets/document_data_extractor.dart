@@ -8,14 +8,13 @@ import '../../theme/app_theme.dart';
 
 /// Widget for extracting data from images and PDFs
 class DocumentDataExtractor extends StatefulWidget {
-  final void Function(Map<String, String> extractedData) onDataExtracted;
-  final VoidCallback? onClose;
 
   const DocumentDataExtractor({
-    super.key,
-    required this.onDataExtracted,
+    required this.onDataExtracted, super.key,
     this.onClose,
   });
+  final void Function(Map<String, String> extractedData) onDataExtracted;
+  final VoidCallback? onClose;
 
   @override
   State<DocumentDataExtractor> createState() => _DocumentDataExtractorState();
@@ -206,7 +205,7 @@ class _DocumentDataExtractorState extends State<DocumentDataExtractor> {
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
-    return Container(
+    return DecoratedBox(
       decoration: BoxDecoration(
         color: isDark ? AppColors.darkSurface : Colors.white,
         borderRadius: BorderRadius.circular(20),
@@ -222,9 +221,9 @@ class _DocumentDataExtractorState extends State<DocumentDataExtractor> {
           // Header
           Container(
             padding: const EdgeInsets.all(16),
-            decoration: BoxDecoration(
+            decoration: const BoxDecoration(
               gradient: AppColors.primaryGradient,
-              borderRadius: const BorderRadius.only(
+              borderRadius: BorderRadius.only(
                 topLeft: Radius.circular(18),
                 topRight: Radius.circular(18),
               ),
@@ -442,7 +441,7 @@ class _DocumentDataExtractorState extends State<DocumentDataExtractor> {
           const SizedBox(height: 8),
 
           // Display extracted fields
-          Container(
+          DecoratedBox(
             decoration: BoxDecoration(
               color: isDark ? AppColors.darkBackground : AppColors.background,
               borderRadius: BorderRadius.circular(12),
@@ -562,17 +561,12 @@ class _DocumentDataExtractorState extends State<DocumentDataExtractor> {
         .split(' ')
         .map((word) => word.isNotEmpty 
             ? '${word[0].toUpperCase()}${word.substring(1)}'
-            : '')
+            : '',)
         .join(' ');
   }
 }
 
 class _SourceButton extends StatelessWidget {
-  final IconData icon;
-  final String label;
-  final String subtitle;
-  final VoidCallback? onTap;
-  final bool isDark;
 
   const _SourceButton({
     required this.icon,
@@ -581,6 +575,11 @@ class _SourceButton extends StatelessWidget {
     required this.onTap,
     required this.isDark,
   });
+  final IconData icon;
+  final String label;
+  final String subtitle;
+  final VoidCallback? onTap;
+  final bool isDark;
 
   @override
   Widget build(BuildContext context) {

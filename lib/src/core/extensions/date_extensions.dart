@@ -44,13 +44,13 @@ extension DateTimeExtension on DateTime {
   DateTime get endOfDay => DateTime(year, month, day, 23, 59, 59);
   
   /// Get start of month
-  DateTime get startOfMonth => DateTime(year, month, 1);
+  DateTime get startOfMonth => DateTime(year, month);
   
   /// Get end of month
   DateTime get endOfMonth => DateTime(year, month + 1, 0);
   
   /// Get start of year
-  DateTime get startOfYear => DateTime(year, 1, 1);
+  DateTime get startOfYear => DateTime(year);
   
   /// Get end of year
   DateTime get endOfYear => DateTime(year, 12, 31);

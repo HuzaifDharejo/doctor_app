@@ -7,10 +7,6 @@ import '../constants/app_constants.dart';
 import '../constants/app_strings.dart';
 
 class LoadingState extends StatelessWidget {
-  final String? message;
-  final Color? color;
-  final double size;
-  final bool showMessage;
 
   const LoadingState({
     super.key,
@@ -35,6 +31,10 @@ class LoadingState extends StatelessWidget {
   })  : message = null,
         size = 20,
         showMessage = false;
+  final String? message;
+  final Color? color;
+  final double size;
+  final bool showMessage;
 
   @override
   Widget build(BuildContext context) {
@@ -53,7 +53,7 @@ class LoadingState extends StatelessWidget {
             ),
           ),
           if (showMessage && message != null) ...[
-            SizedBox(height: AppSpacing.lg),
+            const SizedBox(height: AppSpacing.lg),
             Text(
               message ?? AppStrings.loading,
               style: TextStyle(
@@ -70,18 +70,16 @@ class LoadingState extends StatelessWidget {
 
 /// Loading overlay that covers the entire screen
 class LoadingOverlay extends StatelessWidget {
+
+  const LoadingOverlay({
+    required this.isLoading, required this.child, super.key,
+    this.message,
+    this.barrierColor,
+  });
   final bool isLoading;
   final Widget child;
   final String? message;
   final Color? barrierColor;
-
-  const LoadingOverlay({
-    super.key,
-    required this.isLoading,
-    required this.child,
-    this.message,
-    this.barrierColor,
-  });
 
   @override
   Widget build(BuildContext context) {
@@ -89,7 +87,7 @@ class LoadingOverlay extends StatelessWidget {
       children: [
         child,
         if (isLoading)
-          Container(
+          ColoredBox(
             color: barrierColor ?? Colors.black.withValues(alpha: 0.3),
             child: LoadingState(message: message),
           ),

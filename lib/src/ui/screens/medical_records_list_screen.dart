@@ -18,13 +18,13 @@ import 'medical_record_detail_screen.dart';
 /// - Pull-to-refresh support
 /// - Empty states with contextual messages
 class MedicalRecordsListScreen extends ConsumerStatefulWidget {
-  /// Optional filter to show only specific record type
-  final String? filterRecordType;
   
   const MedicalRecordsListScreen({
     super.key,
     this.filterRecordType,
   });
+  /// Optional filter to show only specific record type
+  final String? filterRecordType;
 
   @override
   ConsumerState<MedicalRecordsListScreen> createState() => _MedicalRecordsListScreenState();
@@ -99,12 +99,12 @@ class _MedicalRecordsListScreenState extends ConsumerState<MedicalRecordsListScr
                 searchQuery: _searchQuery,
                 onSearchChanged: _onSearchChanged,
                 onClearSearch: _clearSearch,
-              )),
+              ),),
               SliverToBoxAdapter(child: _FilterChipsRow(
                 selectedRecordType: _selectedRecordType,
                 onTypeSelected: (type) => setState(() => _selectedRecordType = type),
                 isDark: isDark,
-              )),
+              ),),
               SliverPadding(
                 padding: const EdgeInsets.all(MedicalRecordConstants.paddingLarge),
                 sliver: _RecordsList(
@@ -136,10 +136,6 @@ class _MedicalRecordsListScreenState extends ConsumerState<MedicalRecordsListScr
 // ============================================================================
 
 class _Header extends StatelessWidget {
-  final TextEditingController searchController;
-  final String searchQuery;
-  final ValueChanged<String> onSearchChanged;
-  final VoidCallback onClearSearch;
 
   const _Header({
     required this.searchController,
@@ -147,13 +143,17 @@ class _Header extends StatelessWidget {
     required this.onSearchChanged,
     required this.onClearSearch,
   });
+  final TextEditingController searchController;
+  final String searchQuery;
+  final ValueChanged<String> onSearchChanged;
+  final VoidCallback onClearSearch;
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      decoration: BoxDecoration(
+    return DecoratedBox(
+      decoration: const BoxDecoration(
         gradient: AppColors.primaryGradient,
-        borderRadius: const BorderRadius.only(
+        borderRadius: BorderRadius.only(
           bottomLeft: Radius.circular(MedicalRecordConstants.radiusHeader),
           bottomRight: Radius.circular(MedicalRecordConstants.radiusHeader),
         ),
@@ -234,15 +234,15 @@ class _Header extends StatelessWidget {
 // ============================================================================
 
 class _FilterChipsRow extends StatelessWidget {
-  final String? selectedRecordType;
-  final ValueChanged<String?> onTypeSelected;
-  final bool isDark;
 
   const _FilterChipsRow({
     required this.selectedRecordType,
     required this.onTypeSelected,
     required this.isDark,
   });
+  final String? selectedRecordType;
+  final ValueChanged<String?> onTypeSelected;
+  final bool isDark;
 
   @override
   Widget build(BuildContext context) {
@@ -278,11 +278,6 @@ class _FilterChipsRow extends StatelessWidget {
 // ============================================================================
 
 class _RecordsList extends StatelessWidget {
-  final DoctorDatabase db;
-  final String searchQuery;
-  final String? selectedRecordType;
-  final bool isDark;
-  final DateFormat dateFormat;
 
   const _RecordsList({
     required this.db,
@@ -291,6 +286,11 @@ class _RecordsList extends StatelessWidget {
     required this.isDark,
     required this.dateFormat,
   });
+  final DoctorDatabase db;
+  final String searchQuery;
+  final String? selectedRecordType;
+  final bool isDark;
+  final DateFormat dateFormat;
 
   @override
   Widget build(BuildContext context) {
@@ -384,11 +384,6 @@ class _RecordsList extends StatelessWidget {
 // ============================================================================
 
 class _DateGroupSection extends StatelessWidget {
-  final String dateKey;
-  final List<MedicalRecordWithPatient> records;
-  final bool isFirst;
-  final bool isDark;
-  final DateFormat dateFormat;
 
   const _DateGroupSection({
     required this.dateKey,
@@ -397,6 +392,11 @@ class _DateGroupSection extends StatelessWidget {
     required this.isDark,
     required this.dateFormat,
   });
+  final String dateKey;
+  final List<MedicalRecordWithPatient> records;
+  final bool isFirst;
+  final bool isDark;
+  final DateFormat dateFormat;
 
   @override
   Widget build(BuildContext context) {
@@ -407,17 +407,13 @@ class _DateGroupSection extends StatelessWidget {
         ...records.map((record) => _RecordCard(
           recordWithPatient: record,
           isDark: isDark,
-        )),
+        ),),
       ],
     );
   }
 }
 
 class _DateHeader extends StatelessWidget {
-  final String dateKey;
-  final int recordCount;
-  final bool isFirst;
-  final bool isDark;
 
   const _DateHeader({
     required this.dateKey,
@@ -425,6 +421,10 @@ class _DateHeader extends StatelessWidget {
     required this.isFirst,
     required this.isDark,
   });
+  final String dateKey;
+  final int recordCount;
+  final bool isFirst;
+  final bool isDark;
 
   @override
   Widget build(BuildContext context) {
@@ -491,13 +491,13 @@ class _DateHeader extends StatelessWidget {
 // ============================================================================
 
 class _RecordCard extends StatelessWidget {
-  final MedicalRecordWithPatient recordWithPatient;
-  final bool isDark;
 
   const _RecordCard({
     required this.recordWithPatient,
     required this.isDark,
   });
+  final MedicalRecordWithPatient recordWithPatient;
+  final bool isDark;
 
   @override
   Widget build(BuildContext context) {
@@ -645,13 +645,13 @@ class _RecordCard extends StatelessWidget {
 // ============================================================================
 
 class _AddRecordFAB extends StatelessWidget {
-  final String? selectedRecordType;
 
   const _AddRecordFAB({this.selectedRecordType});
+  final String? selectedRecordType;
 
   @override
   Widget build(BuildContext context) {
-    return Container(
+    return DecoratedBox(
       decoration: BoxDecoration(
         gradient: AppColors.primaryGradient,
         borderRadius: BorderRadius.circular(MedicalRecordConstants.radiusLarge),
@@ -683,7 +683,7 @@ class _AddRecordFAB extends StatelessWidget {
       ),
     );
     
-    if (result == true && context.mounted) {
+    if ((result ?? false) && context.mounted) {
       // Trigger rebuild by invalidating the provider
       // This is handled by the parent widget's state
     }
@@ -695,13 +695,12 @@ class _AddRecordFAB extends StatelessWidget {
 // ============================================================================
 
 class _EmptyState extends StatelessWidget {
-  final String? selectedRecordType;
-  final bool hasSearchQuery;
 
   const _EmptyState({
-    this.selectedRecordType,
-    required this.hasSearchQuery,
+    required this.hasSearchQuery, this.selectedRecordType,
   });
+  final String? selectedRecordType;
+  final bool hasSearchQuery;
 
   @override
   Widget build(BuildContext context) {
@@ -775,13 +774,13 @@ class _EmptyState extends StatelessWidget {
 // ============================================================================
 
 class _ErrorState extends StatelessWidget {
-  final String error;
-  final VoidCallback onRetry;
 
   const _ErrorState({
     required this.error,
     required this.onRetry,
   });
+  final String error;
+  final VoidCallback onRetry;
 
   @override
   Widget build(BuildContext context) {

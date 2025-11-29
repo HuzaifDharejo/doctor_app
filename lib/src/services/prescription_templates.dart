@@ -2,13 +2,6 @@ import 'package:flutter/material.dart';
 import '../theme/app_theme.dart';
 
 class MedicationTemplate {
-  final String name;
-  final String category;
-  final String dosage;
-  final String frequency;
-  final String duration;
-  final String route;
-  final String notes;
 
   const MedicationTemplate({
     required this.name,
@@ -19,6 +12,13 @@ class MedicationTemplate {
     this.route = 'Oral',
     this.notes = '',
   });
+  final String name;
+  final String category;
+  final String dosage;
+  final String frequency;
+  final String duration;
+  final String route;
+  final String notes;
 
   Map<String, dynamic> toJson() => {
     'name': name,
@@ -304,15 +304,15 @@ class PrescriptionTemplates {
     final lowerQuery = query.toLowerCase();
     return getAllTemplates().where((template) =>
       template.name.toLowerCase().contains(lowerQuery) ||
-      template.category.toLowerCase().contains(lowerQuery)
+      template.category.toLowerCase().contains(lowerQuery),
     ).toList();
   }
 }
 
 class MedicationTemplateBottomSheet extends StatefulWidget {
-  final void Function(MedicationTemplate) onSelect;
 
-  const MedicationTemplateBottomSheet({super.key, required this.onSelect});
+  const MedicationTemplateBottomSheet({required this.onSelect, super.key});
+  final void Function(MedicationTemplate) onSelect;
 
   @override
   State<MedicationTemplateBottomSheet> createState() => _MedicationTemplateBottomSheetState();
@@ -452,7 +452,7 @@ class _MedicationTemplateBottomSheetState extends State<MedicationTemplateBottom
             color: AppColors.primary.withValues(alpha: 0.1),
             borderRadius: BorderRadius.circular(10),
           ),
-          child: Icon(Icons.medication, color: AppColors.primary),
+          child: const Icon(Icons.medication, color: AppColors.primary),
         ),
         title: Text(
           template.name,
@@ -472,7 +472,7 @@ class _MedicationTemplateBottomSheetState extends State<MedicationTemplateBottom
           ],
         ),
         trailing: IconButton(
-          icon: Icon(Icons.add_circle, color: AppColors.primary),
+          icon: const Icon(Icons.add_circle, color: AppColors.primary),
           onPressed: () {
             widget.onSelect(template);
             Navigator.pop(context);

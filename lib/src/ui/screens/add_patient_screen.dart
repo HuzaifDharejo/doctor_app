@@ -1,4 +1,3 @@
-import 'dart:typed_data';
 import 'package:drift/drift.dart' hide Column;
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
@@ -46,7 +45,6 @@ class _AddPatientScreenState extends ConsumerState<AddPatientScreen> {
     try {
       final result = await FilePicker.platform.pickFiles(
         type: FileType.image,
-        allowMultiple: false,
         withData: true,
       );
 
@@ -107,10 +105,10 @@ class _AddPatientScreenState extends ConsumerState<AddPatientScreen> {
       slivers: [
         // Gradient Header
         SliverToBoxAdapter(
-          child: Container(
-            decoration: BoxDecoration(
+          child: DecoratedBox(
+            decoration: const BoxDecoration(
               gradient: AppColors.primaryGradient,
-              borderRadius: const BorderRadius.only(
+              borderRadius: BorderRadius.only(
                 bottomLeft: Radius.circular(32),
                 bottomRight: Radius.circular(32),
               ),
@@ -184,7 +182,7 @@ class _AddPatientScreenState extends ConsumerState<AddPatientScreen> {
                                       width: isCompact ? 90 : 110,
                                       height: isCompact ? 90 : 110,
                                     )
-                                  : Container(
+                                  : DecoratedBox(
                                       decoration: BoxDecoration(
                                         gradient: LinearGradient(
                                           begin: Alignment.topLeft,
@@ -424,7 +422,7 @@ class _AddPatientScreenState extends ConsumerState<AddPatientScreen> {
   }) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     
-    return Container(
+    return DecoratedBox(
       decoration: BoxDecoration(
         color: Theme.of(context).colorScheme.surface,
         borderRadius: BorderRadius.circular(20),
@@ -503,8 +501,6 @@ class _AddPatientScreenState extends ConsumerState<AddPatientScreen> {
           prefixIcon: Icons.history,
           maxLines: 2,
           suggestions: PatientSuggestions.chronicConditions,
-          appendMode: true,
-          separator: ', ',
         ),
         const SizedBox(height: 12),
         // Allergies field
@@ -514,8 +510,6 @@ class _AddPatientScreenState extends ConsumerState<AddPatientScreen> {
           hint: 'Known allergies...',
           prefixIcon: Icons.warning_amber_outlined,
           suggestions: PatientSuggestions.allergies,
-          appendMode: true,
-          separator: ', ',
         ),
       ],
     );
@@ -536,7 +530,7 @@ class _AddPatientScreenState extends ConsumerState<AddPatientScreen> {
         final screenWidth = MediaQuery.of(context).size.width;
         final isCompact = screenWidth < 400;
         
-        return Container(
+        return DecoratedBox(
           decoration: BoxDecoration(
             color: isDark ? AppColors.darkBackground : Theme.of(context).colorScheme.surface,
             borderRadius: BorderRadius.circular(14),

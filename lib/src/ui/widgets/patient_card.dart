@@ -10,20 +10,19 @@ import '../screens/patient_view_screen.dart';
 import 'patient_avatar.dart';
 
 class PatientCard extends StatefulWidget {
-  final Patient patient;
-  final DateTime? lastVisit;
-  final DateTime? nextAppointment;
-  final int index;
-  final String? heroTagPrefix;
   
   const PatientCard({
-    super.key, 
-    required this.patient,
+    required this.patient, super.key,
     this.lastVisit,
     this.nextAppointment,
     this.index = 0,
     this.heroTagPrefix,
   });
+  final Patient patient;
+  final DateTime? lastVisit;
+  final DateTime? nextAppointment;
+  final int index;
+  final String? heroTagPrefix;
 
   @override
   State<PatientCard> createState() => _PatientCardState();
@@ -139,12 +138,11 @@ class _PatientCardState extends State<PatientCard>
               ).animate(CurvedAnimation(
                 parent: animation,
                 curve: Curves.easeOutCubic,
-              )),
+              ),),
               child: child,
             ),
           );
         },
-        transitionDuration: const Duration(milliseconds: 300),
       ),
     );
   }
@@ -162,7 +160,7 @@ class _PatientCardState extends State<PatientCard>
       opacity: _fadeAnimation,
       child: SlideTransition(
         position: _slideAnimation,
-        child: Container(
+        child: DecoratedBox(
           decoration: BoxDecoration(
             color: Theme.of(context).colorScheme.surface,
             borderRadius: BorderRadius.circular(20),
@@ -215,7 +213,6 @@ class _PatientCardState extends State<PatientCard>
                                 firstName: patient.firstName,
                                 lastName: patient.lastName,
                                 size: isCompact ? 44 : 50,
-                                editable: false,
                               ),
                             ),
                           ),
@@ -314,7 +311,7 @@ class _PatientCardState extends State<PatientCard>
                                         color: isDark ? AppColors.darkDivider : AppColors.divider,
                                       ),
                                     if (widget.nextAppointment != null) ...[
-                                      Icon(
+                                      const Icon(
                                         Icons.event_rounded,
                                         size: 12,
                                         color: AppColors.appointments,
@@ -323,7 +320,7 @@ class _PatientCardState extends State<PatientCard>
                                       Flexible(
                                         child: Text(
                                           _formatUpcomingDate(widget.nextAppointment!),
-                                          style: TextStyle(
+                                          style: const TextStyle(
                                             fontSize: 11,
                                             fontWeight: FontWeight.w500,
                                             color: AppColors.appointments,
@@ -343,7 +340,7 @@ class _PatientCardState extends State<PatientCard>
                                         color: AppColors.accent.withValues(alpha: 0.1),
                                         borderRadius: BorderRadius.circular(6),
                                       ),
-                                      child: Icon(
+                                      child: const Icon(
                                         Icons.phone_rounded,
                                         size: 12,
                                         color: AppColors.accent,
@@ -395,7 +392,7 @@ class _PatientCardState extends State<PatientCard>
                                               maxLines: 1,
                                               overflow: TextOverflow.ellipsis,
                                             ),
-                                          ))
+                                          ),)
                                       .toList(),
                                 ),
                               ],
@@ -453,10 +450,6 @@ class _PatientCardState extends State<PatientCard>
 
 /// Quick action button with ripple effect
 class _QuickActionButton extends StatelessWidget {
-  final IconData icon;
-  final Color color;
-  final VoidCallback onTap;
-  final double size;
 
   const _QuickActionButton({
     required this.icon,
@@ -464,6 +457,10 @@ class _QuickActionButton extends StatelessWidget {
     required this.onTap,
     this.size = 36,
   });
+  final IconData icon;
+  final Color color;
+  final VoidCallback onTap;
+  final double size;
 
   @override
   Widget build(BuildContext context) {

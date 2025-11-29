@@ -12,14 +12,14 @@ import '../../theme/app_theme.dart';
 import '../widgets/suggestion_text_field.dart';
 
 class AddInvoiceScreen extends ConsumerStatefulWidget {
-  final int? patientId;
-  final String? patientName;
 
   const AddInvoiceScreen({
     super.key,
     this.patientId,
     this.patientName,
   });
+  final int? patientId;
+  final String? patientName;
 
   @override
   ConsumerState<AddInvoiceScreen> createState() => _AddInvoiceScreenState();
@@ -48,7 +48,7 @@ class _AddInvoiceScreenState extends ConsumerState<AddInvoiceScreen> {
 
   // Invoice Info
   late String _invoiceNumber;
-  DateTime _invoiceDate = DateTime.now();
+  final DateTime _invoiceDate = DateTime.now();
   DateTime? _dueDate;
 
   // Common Services for quick add - using BillingSuggestions
@@ -112,7 +112,7 @@ class _AddInvoiceScreenState extends ConsumerState<AddInvoiceScreen> {
     _discountController.dispose();
     _taxController.dispose();
     _notesController.dispose();
-    for (var item in _items) {
+    for (final item in _items) {
       item.dispose();
     }
     super.dispose();
@@ -300,13 +300,13 @@ class _AddInvoiceScreenState extends ConsumerState<AddInvoiceScreen> {
             // Gradient Header
             SliverToBoxAdapter(
               child: DecoratedBox(
-                decoration: BoxDecoration(
-                  gradient: const LinearGradient(
+                decoration: const BoxDecoration(
+                  gradient: LinearGradient(
                     colors: [Color(0xFF6366F1), Color(0xFF8B5CF6)],
                     begin: Alignment.topLeft,
                     end: Alignment.bottomRight,
                   ),
-                  borderRadius: const BorderRadius.only(
+                  borderRadius: BorderRadius.only(
                     bottomLeft: Radius.circular(32),
                     bottomRight: Radius.circular(32),
                   ),
@@ -493,7 +493,6 @@ class _AddInvoiceScreenState extends ConsumerState<AddInvoiceScreen> {
                   prefixIcon: Icons.note_outlined,
                   maxLines: 3,
                   suggestions: BillingSuggestions.discountReasons,
-                  appendMode: true,
                   separator: '. ',
                 ),
               ),
@@ -672,7 +671,7 @@ class _AddInvoiceScreenState extends ConsumerState<AddInvoiceScreen> {
         decoration: BoxDecoration(
           color: colorScheme.surfaceContainerHighest.withValues(alpha: 0.3),
           borderRadius: BorderRadius.circular(12),
-          border: Border.all(color: colorScheme.outlineVariant, style: BorderStyle.solid),
+          border: Border.all(color: colorScheme.outlineVariant),
         ),
         child: Column(
           children: [
@@ -741,7 +740,7 @@ class _AddInvoiceScreenState extends ConsumerState<AddInvoiceScreen> {
                       isDense: true,
                       filled: true,
                     ),
-                    validator: (v) => v?.isEmpty == true ? 'Required' : null,
+                    validator: (v) => v?.isEmpty ?? false ? 'Required' : null,
                   ),
                 ),
                 const SizedBox(width: 8),

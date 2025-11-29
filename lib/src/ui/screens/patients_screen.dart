@@ -61,7 +61,6 @@ class _PatientsScreenState extends ConsumerState<PatientsScreen> {
         ),
       ),
       floatingActionButton: GradientFAB(
-        icon: Icons.add,
         onPressed: () => Navigator.push(
           context,
           MaterialPageRoute<void>(builder: (_) => const AddPatientScreen()),
@@ -206,7 +205,6 @@ class _PatientsScreenState extends ConsumerState<PatientsScreen> {
           onRefresh: _onRefresh,
           color: AppColors.primary,
           backgroundColor: isDark ? AppColors.darkSurface : Colors.white,
-          strokeWidth: 2.5,
           displacement: 20,
           child: ListView.builder(
             physics: const AlwaysScrollableScrollPhysics(

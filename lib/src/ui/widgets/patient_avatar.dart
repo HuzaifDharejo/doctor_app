@@ -7,6 +7,16 @@ import '../../theme/app_theme.dart';
 /// A widget that displays a patient's photo or initials
 /// With optional ability to pick a new photo
 class PatientAvatar extends StatefulWidget {
+
+  const PatientAvatar({
+    required this.firstName, required this.lastName, super.key,
+    this.patientId,
+    this.size = 64,
+    this.editable = false,
+    this.onPhotoChanged,
+    this.borderRadius = 18,
+    this.showEditIcon = true,
+  });
   final int? patientId;
   final String firstName;
   final String lastName;
@@ -15,18 +25,6 @@ class PatientAvatar extends StatefulWidget {
   final VoidCallback? onPhotoChanged;
   final double borderRadius;
   final bool showEditIcon;
-
-  const PatientAvatar({
-    super.key,
-    this.patientId,
-    required this.firstName,
-    required this.lastName,
-    this.size = 64,
-    this.editable = false,
-    this.onPhotoChanged,
-    this.borderRadius = 18,
-    this.showEditIcon = true,
-  });
 
   @override
   State<PatientAvatar> createState() => _PatientAvatarState();
@@ -93,7 +91,6 @@ class _PatientAvatarState extends State<PatientAvatar> {
     try {
       final result = await FilePicker.platform.pickFiles(
         type: FileType.image,
-        allowMultiple: false,
         withData: true,
       );
 
@@ -165,7 +162,7 @@ class _PatientAvatarState extends State<PatientAvatar> {
       ),
     );
 
-    if (confirm == true) {
+    if (confirm ?? false) {
       final success = await PhotoService.deletePatientPhoto(widget.patientId!);
       if (success && mounted) {
         setState(() => _photoBase64 = null);
@@ -200,7 +197,7 @@ class _PatientAvatarState extends State<PatientAvatar> {
             child: ClipRRect(
               borderRadius: BorderRadius.circular(widget.borderRadius),
               child: _loading
-                  ? Container(
+                  ? ColoredBox(
                       color: avatarColor.withValues(alpha: 0.3),
                       child: Center(
                         child: SizedBox(
@@ -395,22 +392,20 @@ class _PatientAvatarState extends State<PatientAvatar> {
 
 /// A circular variant of PatientAvatar for profile headers
 class PatientAvatarCircle extends StatelessWidget {
+
+  const PatientAvatarCircle({
+    required this.firstName, required this.lastName, super.key,
+    this.patientId,
+    this.size = 100,
+    this.editable = false,
+    this.onPhotoChanged,
+  });
   final int? patientId;
   final String firstName;
   final String lastName;
   final double size;
   final bool editable;
   final VoidCallback? onPhotoChanged;
-
-  const PatientAvatarCircle({
-    super.key,
-    this.patientId,
-    required this.firstName,
-    required this.lastName,
-    this.size = 100,
-    this.editable = false,
-    this.onPhotoChanged,
-  });
 
   @override
   Widget build(BuildContext context) {

@@ -16,9 +16,9 @@ import 'add_patient_screen.dart';
 import 'patients_screen.dart';
 
 class DashboardScreen extends ConsumerStatefulWidget {
-  final VoidCallback? onMenuTap;
   
   const DashboardScreen({super.key, this.onMenuTap});
+  final VoidCallback? onMenuTap;
 
   @override
   ConsumerState<DashboardScreen> createState() => _DashboardScreenState();
@@ -79,7 +79,6 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
               onRefresh: _onRefresh,
               color: AppColors.primary,
               backgroundColor: isDark ? AppColors.darkSurface : Colors.white,
-              strokeWidth: 2.5,
               displacement: 20,
               child: CustomScrollView(
                 physics: const AlwaysScrollableScrollPhysics(
@@ -144,7 +143,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                     padding: EdgeInsets.symmetric(horizontal: padding),
                     child: _buildSectionHeader(context, AppStrings.recentPatients, () {
                       Navigator.push(context, MaterialPageRoute<void>(builder: (_) => const PatientsScreen()));
-                    }, isCompact),
+                    }, isCompact,),
                   ),
                 ),
                 
@@ -574,11 +573,11 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                 ),
                 borderRadius: BorderRadius.circular(20),
               ),
-              child: Row(
+              child: const Row(
                 mainAxisSize: MainAxisSize.min,
                 children: [
                   Icon(Icons.bolt_rounded, size: 14, color: AppColors.accent),
-                  const SizedBox(width: 4),
+                  SizedBox(width: 4),
                   Text(
                     'Fast access',
                     style: TextStyle(
@@ -602,7 +601,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
               onTap: () => Navigator.push(context, MaterialPageRoute<void>(builder: (_) => const AddPatientScreen())),
               isCompact: isCompact,
               isDark: isDark,
-            )),
+            ),),
             SizedBox(width: isCompact ? 10 : 14),
             Expanded(child: _buildQuickActionCard(
               icon: Icons.event_note_rounded,
@@ -611,7 +610,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
               onTap: () => Navigator.push(context, MaterialPageRoute<void>(builder: (_) => const AddAppointmentScreen())),
               isCompact: isCompact,
               isDark: isDark,
-            )),
+            ),),
           ],
         ),
 
@@ -730,7 +729,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                     color: AppColors.accent.withValues(alpha: 0.1),
                     borderRadius: BorderRadius.circular(12),
                   ),
-                  child: Icon(
+                  child: const Icon(
                     Icons.event_available_rounded,
                     color: AppColors.accent,
                     size: 24,
@@ -1023,7 +1022,10 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
     
     // Get appointment stats for this month
     final appointments = await db.select(db.appointments).get();
-    int completed = 0, scheduled = 0, cancelled = 0, noShow = 0;
+    int completed = 0;
+    int scheduled = 0;
+    int cancelled = 0;
+    int noShow = 0;
     
     for (final appt in appointments) {
       if (appt.appointmentDateTime.month == now.month && 

@@ -7,12 +7,6 @@ import '../constants/app_constants.dart';
 import '../constants/app_strings.dart';
 
 class ErrorState extends StatelessWidget {
-  final String? title;
-  final String? message;
-  final IconData icon;
-  final VoidCallback? onRetry;
-  final String? retryLabel;
-  final Widget? action;
 
   const ErrorState({
     super.key,
@@ -53,6 +47,12 @@ class ErrorState extends StatelessWidget {
         onRetry = null,
         retryLabel = null,
         action = null;
+  final String? title;
+  final String? message;
+  final IconData icon;
+  final VoidCallback? onRetry;
+  final String? retryLabel;
+  final Widget? action;
 
   @override
   Widget build(BuildContext context) {
@@ -61,13 +61,13 @@ class ErrorState extends StatelessWidget {
 
     return Center(
       child: Padding(
-        padding: EdgeInsets.all(AppSpacing.xxl),
+        padding: const EdgeInsets.all(AppSpacing.xxl),
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
             // Icon
             Container(
-              padding: EdgeInsets.all(AppSpacing.xl),
+              padding: const EdgeInsets.all(AppSpacing.xl),
               decoration: BoxDecoration(
                 color: AppColors.error.withValues(alpha: 0.1),
                 shape: BoxShape.circle,
@@ -78,7 +78,7 @@ class ErrorState extends StatelessWidget {
                 color: AppColors.error,
               ),
             ),
-            SizedBox(height: AppSpacing.xl),
+            const SizedBox(height: AppSpacing.xl),
             
             // Title
             Text(
@@ -93,7 +93,7 @@ class ErrorState extends StatelessWidget {
             
             // Message
             if (message != null) ...[
-              SizedBox(height: AppSpacing.sm),
+              const SizedBox(height: AppSpacing.sm),
               Text(
                 message!,
                 style: TextStyle(
@@ -106,7 +106,7 @@ class ErrorState extends StatelessWidget {
               ),
             ],
             
-            SizedBox(height: AppSpacing.xl),
+            const SizedBox(height: AppSpacing.xl),
             
             // Retry button or custom action
             if (action != null)
@@ -117,7 +117,7 @@ class ErrorState extends StatelessWidget {
                 icon: const Icon(Icons.refresh_rounded),
                 label: Text(retryLabel ?? AppStrings.retry),
                 style: ElevatedButton.styleFrom(
-                  padding: EdgeInsets.symmetric(
+                  padding: const EdgeInsets.symmetric(
                     horizontal: AppSpacing.xl,
                     vertical: AppSpacing.md,
                   ),
@@ -132,19 +132,18 @@ class ErrorState extends StatelessWidget {
 
 /// Inline error widget for forms and smaller sections
 class InlineError extends StatelessWidget {
-  final String message;
-  final VoidCallback? onDismiss;
 
   const InlineError({
-    super.key,
-    required this.message,
+    required this.message, super.key,
     this.onDismiss,
   });
+  final String message;
+  final VoidCallback? onDismiss;
 
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: EdgeInsets.all(AppSpacing.md),
+      padding: const EdgeInsets.all(AppSpacing.md),
       decoration: BoxDecoration(
         color: AppColors.error.withValues(alpha: 0.1),
         borderRadius: AppRadius.mediumRadius,
@@ -152,16 +151,16 @@ class InlineError extends StatelessWidget {
       ),
       child: Row(
         children: [
-          Icon(
+          const Icon(
             Icons.error_outline_rounded,
             color: AppColors.error,
             size: AppIconSize.sm,
           ),
-          SizedBox(width: AppSpacing.sm),
+          const SizedBox(width: AppSpacing.sm),
           Expanded(
             child: Text(
               message,
-              style: TextStyle(
+              style: const TextStyle(
                 color: AppColors.error,
                 fontSize: AppFontSize.md,
               ),

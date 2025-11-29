@@ -9,6 +9,13 @@ import 'package:flutter/foundation.dart';
 /// Base exception for all app-specific exceptions
 @immutable
 sealed class AppException implements Exception {
+
+  const AppException({
+    required this.message,
+    this.technicalDetails,
+    this.cause,
+    this.stackTrace,
+  });
   /// Human-readable error message for users
   final String message;
   
@@ -20,13 +27,6 @@ sealed class AppException implements Exception {
   
   /// Stack trace of the original error
   final StackTrace? stackTrace;
-
-  const AppException({
-    required this.message,
-    this.technicalDetails,
-    this.cause,
-    this.stackTrace,
-  });
   
   /// User-friendly message to display
   String get userMessage => message;
@@ -50,24 +50,16 @@ sealed class AppException implements Exception {
 
 /// Database-related exceptions
 final class DatabaseException extends AppException {
-  /// The operation that failed (e.g., 'insert', 'update', 'delete', 'query')
-  final String? operation;
-  
-  /// The table involved, if any
-  final String? table;
 
   const DatabaseException(
     String message, {
     this.operation,
     this.table,
-    String? technicalDetails,
-    Object? cause,
-    StackTrace? stackTrace,
+    super.technicalDetails,
+    super.cause,
+    super.stackTrace,
   }) : super(
           message: message,
-          technicalDetails: technicalDetails,
-          cause: cause,
-          stackTrace: stackTrace,
         );
 
   factory DatabaseException.insertFailed(String table, [Object? cause, StackTrace? stackTrace]) {
@@ -122,24 +114,23 @@ final class DatabaseException extends AppException {
       stackTrace: stackTrace,
     );
   }
+  /// The operation that failed (e.g., 'insert', 'update', 'delete', 'query')
+  final String? operation;
+  
+  /// The table involved, if any
+  final String? table;
 }
 
 /// Validation-related exceptions
 final class ValidationException extends AppException {
-  /// The field that failed validation
-  final String? field;
-  
-  /// The validation rule that failed
-  final String? rule;
 
   const ValidationException(
     String message, {
     this.field,
     this.rule,
-    String? technicalDetails,
+    super.technicalDetails,
   }) : super(
           message: message,
-          technicalDetails: technicalDetails,
         );
 
   factory ValidationException.required(String field) {
@@ -190,28 +181,25 @@ final class ValidationException extends AppException {
       rule: 'date',
     );
   }
+  /// The field that failed validation
+  final String? field;
+  
+  /// The validation rule that failed
+  final String? rule;
 }
 
 /// Network-related exceptions
 final class NetworkException extends AppException {
-  /// HTTP status code if applicable
-  final int? statusCode;
-  
-  /// The URL that was being accessed
-  final String? url;
 
   const NetworkException(
     String message, {
     this.statusCode,
     this.url,
-    String? technicalDetails,
-    Object? cause,
-    StackTrace? stackTrace,
+    super.technicalDetails,
+    super.cause,
+    super.stackTrace,
   }) : super(
           message: message,
-          technicalDetails: technicalDetails,
-          cause: cause,
-          stackTrace: stackTrace,
         );
 
   factory NetworkException.noConnection() {
@@ -247,32 +235,29 @@ final class NetworkException extends AppException {
 
   factory NetworkException.forbidden() {
     return const NetworkException(
-      'You don\'t have permission to access this',
+      "You don't have permission to access this",
       statusCode: 403,
     );
   }
+  /// HTTP status code if applicable
+  final int? statusCode;
+  
+  /// The URL that was being accessed
+  final String? url;
 }
 
 /// File-related exceptions
 final class FileException extends AppException {
-  /// The file path involved
-  final String? path;
-  
-  /// The file operation that failed
-  final String? operation;
 
   const FileException(
     String message, {
     this.path,
     this.operation,
-    String? technicalDetails,
-    Object? cause,
-    StackTrace? stackTrace,
+    super.technicalDetails,
+    super.cause,
+    super.stackTrace,
   }) : super(
           message: message,
-          technicalDetails: technicalDetails,
-          cause: cause,
-          stackTrace: stackTrace,
         );
 
   factory FileException.notFound(String path) {
@@ -311,24 +296,24 @@ final class FileException extends AppException {
       technicalDetails: 'No permission to access $path',
     );
   }
+  /// The file path involved
+  final String? path;
+  
+  /// The file operation that failed
+  final String? operation;
 }
 
 /// Business logic related exceptions
 final class BusinessException extends AppException {
-  /// Error code for programmatic handling
-  final String? code;
 
   const BusinessException(
     String message, {
     this.code,
-    String? technicalDetails,
-    Object? cause,
-    StackTrace? stackTrace,
+    super.technicalDetails,
+    super.cause,
+    super.stackTrace,
   }) : super(
           message: message,
-          technicalDetails: technicalDetails,
-          cause: cause,
-          stackTrace: stackTrace,
         );
 
   factory BusinessException.appointmentConflict(DateTime dateTime) {
@@ -352,20 +337,19 @@ final class BusinessException extends AppException {
       code: 'INVALID_OPERATION',
     );
   }
+  /// Error code for programmatic handling
+  final String? code;
 }
 
 /// Authentication related exceptions
 final class AuthException extends AppException {
   const AuthException(
     String message, {
-    String? technicalDetails,
-    Object? cause,
-    StackTrace? stackTrace,
+    super.technicalDetails,
+    super.cause,
+    super.stackTrace,
   }) : super(
           message: message,
-          technicalDetails: technicalDetails,
-          cause: cause,
-          stackTrace: stackTrace,
         );
 
   factory AuthException.notAuthenticated() {

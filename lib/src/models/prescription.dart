@@ -2,13 +2,6 @@ import 'dart:convert';
 
 /// Individual medication item in a prescription
 class MedicationItem {
-  final String name;
-  final String dosage;
-  final String frequency;
-  final String duration;
-  final String route;
-  final String instructions;
-  final bool beforeFood;
 
   const MedicationItem({
     required this.name,
@@ -32,6 +25,13 @@ class MedicationItem {
       beforeFood: json['beforeFood'] as bool? ?? json['before_food'] as bool? ?? false,
     );
   }
+  final String name;
+  final String dosage;
+  final String frequency;
+  final String duration;
+  final String route;
+  final String instructions;
+  final bool beforeFood;
 
   /// Convert to JSON map
   Map<String, dynamic> toJson() {
@@ -98,22 +98,10 @@ class MedicationItem {
 
 /// Prescription data model
 class PrescriptionModel {
-  final int? id;
-  final int patientId;
-  final String? patientName; // For display purposes
-  final DateTime createdAt;
-  final List<MedicationItem> items;
-  final String instructions;
-  final bool isRefillable;
-  final String? diagnosis;
-  final String? chiefComplaint;
-  final Map<String, dynamic>? vitals;
 
   const PrescriptionModel({
-    this.id,
-    required this.patientId,
+    required this.patientId, required this.createdAt, this.id,
     this.patientName,
-    required this.createdAt,
     this.items = const [],
     this.instructions = '',
     this.isRefillable = false,
@@ -121,35 +109,6 @@ class PrescriptionModel {
     this.chiefComplaint,
     this.vitals,
   });
-
-  /// Get total number of medications
-  int get medicationCount => items.length;
-
-  /// Check if prescription is recent (within last 7 days)
-  bool get isRecent {
-    final diff = DateTime.now().difference(createdAt);
-    return diff.inDays <= 7;
-  }
-
-  /// Get formatted date
-  String get formattedDate {
-    const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
-    return '${months[createdAt.month - 1]} ${createdAt.day}, ${createdAt.year}';
-  }
-
-  /// Parse items from JSON string
-  static List<MedicationItem> parseItemsJson(String jsonString) {
-    if (jsonString.isEmpty) return [];
-    try {
-      final List<dynamic> list = jsonDecode(jsonString) as List<dynamic>;
-      return list.map((item) => MedicationItem.fromJson(item as Map<String, dynamic>)).toList();
-    } catch (e) {
-      return [];
-    }
-  }
-
-  /// Convert items to JSON string
-  String get itemsJsonString => jsonEncode(items.map((i) => i.toJson()).toList());
 
   /// Create from JSON map
   factory PrescriptionModel.fromJson(Map<String, dynamic> json) {
@@ -183,6 +142,50 @@ class PrescriptionModel {
     );
   }
 
+  /// Create from JSON string
+  factory PrescriptionModel.fromJsonString(String jsonString) {
+    return PrescriptionModel.fromJson(jsonDecode(jsonString) as Map<String, dynamic>);
+  }
+  final int? id;
+  final int patientId;
+  final String? patientName; // For display purposes
+  final DateTime createdAt;
+  final List<MedicationItem> items;
+  final String instructions;
+  final bool isRefillable;
+  final String? diagnosis;
+  final String? chiefComplaint;
+  final Map<String, dynamic>? vitals;
+
+  /// Get total number of medications
+  int get medicationCount => items.length;
+
+  /// Check if prescription is recent (within last 7 days)
+  bool get isRecent {
+    final diff = DateTime.now().difference(createdAt);
+    return diff.inDays <= 7;
+  }
+
+  /// Get formatted date
+  String get formattedDate {
+    const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+    return '${months[createdAt.month - 1]} ${createdAt.day}, ${createdAt.year}';
+  }
+
+  /// Parse items from JSON string
+  static List<MedicationItem> parseItemsJson(String jsonString) {
+    if (jsonString.isEmpty) return [];
+    try {
+      final List<dynamic> list = jsonDecode(jsonString) as List<dynamic>;
+      return list.map((item) => MedicationItem.fromJson(item as Map<String, dynamic>)).toList();
+    } catch (e) {
+      return [];
+    }
+  }
+
+  /// Convert items to JSON string
+  String get itemsJsonString => jsonEncode(items.map((i) => i.toJson()).toList());
+
   /// Convert to JSON map
   Map<String, dynamic> toJson() {
     return {
@@ -201,11 +204,6 @@ class PrescriptionModel {
 
   /// Convert to JSON string
   String toJsonString() => jsonEncode(toJson());
-
-  /// Create from JSON string
-  factory PrescriptionModel.fromJsonString(String jsonString) {
-    return PrescriptionModel.fromJson(jsonDecode(jsonString) as Map<String, dynamic>);
-  }
 
   /// Create a copy with modified fields
   PrescriptionModel copyWith({

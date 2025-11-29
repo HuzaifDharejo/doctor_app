@@ -7,19 +7,9 @@ import '../constants/app_constants.dart';
 import '../extensions/context_extensions.dart';
 
 class AppHeader extends StatelessWidget {
-  final String title;
-  final String? subtitle;
-  final IconData? icon;
-  final Color? iconColor;
-  final Color? iconBackgroundColor;
-  final bool showBackButton;
-  final VoidCallback? onBackPressed;
-  final List<Widget>? actions;
-  final Widget? trailing;
 
   const AppHeader({
-    super.key,
-    required this.title,
+    required this.title, super.key,
     this.subtitle,
     this.icon,
     this.iconColor,
@@ -29,6 +19,15 @@ class AppHeader extends StatelessWidget {
     this.actions,
     this.trailing,
   });
+  final String title;
+  final String? subtitle;
+  final IconData? icon;
+  final Color? iconColor;
+  final Color? iconBackgroundColor;
+  final bool showBackButton;
+  final VoidCallback? onBackPressed;
+  final List<Widget>? actions;
+  final Widget? trailing;
 
   @override
   Widget build(BuildContext context) {

@@ -20,13 +20,6 @@ enum LogLevel {
 
 /// A single log entry
 class LogEntry {
-  final DateTime timestamp;
-  final LogLevel level;
-  final String tag;
-  final String message;
-  final Object? error;
-  final StackTrace? stackTrace;
-  final Map<String, dynamic>? extra;
 
   LogEntry({
     required this.timestamp,
@@ -37,6 +30,13 @@ class LogEntry {
     this.stackTrace,
     this.extra,
   });
+  final DateTime timestamp;
+  final LogLevel level;
+  final String tag;
+  final String message;
+  final Object? error;
+  final StackTrace? stackTrace;
+  final Map<String, dynamic>? extra;
 
   Map<String, dynamic> toJson() => {
     'timestamp': timestamp.toIso8601String(),
@@ -74,18 +74,18 @@ class LogEntry {
 
 /// Performance metrics tracker
 class PerformanceMetric {
-  final String name;
-  final DateTime startTime;
-  DateTime? endTime;
-  final Map<String, dynamic> metadata;
 
   PerformanceMetric({
     required this.name,
     required this.startTime,
     Map<String, dynamic>? metadata,
   }) : metadata = metadata ?? {};
+  final String name;
+  final DateTime startTime;
+  DateTime? endTime;
+  final Map<String, dynamic> metadata;
 
-  Duration? get duration => endTime != null ? endTime!.difference(startTime) : null;
+  Duration? get duration => endTime?.difference(startTime);
 
   void stop() {
     endTime = DateTime.now();
@@ -102,10 +102,6 @@ class PerformanceMetric {
 
 /// Analytics event for tracking user actions
 class AnalyticsEvent {
-  final DateTime timestamp;
-  final String name;
-  final String? screen;
-  final Map<String, dynamic>? properties;
 
   AnalyticsEvent({
     required this.timestamp,
@@ -113,6 +109,10 @@ class AnalyticsEvent {
     this.screen,
     this.properties,
   });
+  final DateTime timestamp;
+  final String name;
+  final String? screen;
+  final Map<String, dynamic>? properties;
 
   Map<String, dynamic> toJson() => {
     'timestamp': timestamp.toIso8601String(),
@@ -124,9 +124,9 @@ class AnalyticsEvent {
 
 /// Main Logger Service - Singleton
 class AppLogger {
-  static final AppLogger _instance = AppLogger._internal();
   factory AppLogger() => _instance;
   AppLogger._internal();
+  static final AppLogger _instance = AppLogger._internal();
 
   // Configuration
   LogLevel _minLevel = kDebugMode ? LogLevel.verbose : LogLevel.warning;
@@ -134,8 +134,8 @@ class AppLogger {
   // ignore: unused_field
   bool _enableFileLogging = false;
   int _maxLogEntries = 1000;
-  int _maxPerformanceMetrics = 100;
-  int _maxAnalyticsEvents = 500;
+  final int _maxPerformanceMetrics = 100;
+  final int _maxAnalyticsEvents = 500;
 
   // Storage
   final List<LogEntry> _logs = [];
@@ -332,7 +332,7 @@ class AppLogger {
 
   // Export logs
   String exportLogsAsJson({LogLevel? minLevel, DateTime? since}) {
-    var filtered = _logs.where((l) {
+    final filtered = _logs.where((l) {
       if (minLevel != null && l.level.priority < minLevel.priority) return false;
       if (since != null && l.timestamp.isBefore(since)) return false;
       return true;

@@ -6,9 +6,9 @@ import 'package:syncfusion_flutter_pdf/pdf.dart';
 
 /// Service for extracting text from images and PDFs
 class OcrService {
-  static final OcrService _instance = OcrService._internal();
   factory OcrService() => _instance;
   OcrService._internal();
+  static final OcrService _instance = OcrService._internal();
 
   TextRecognizer? _textRecognizer;
 
@@ -51,7 +51,7 @@ class OcrService {
           confidence: block.lines.isNotEmpty 
               ? block.lines.map((l) => l.confidence ?? 0.0).reduce((a, b) => a + b) / block.lines.length
               : 0.0,
-        )).toList(),
+        ),).toList(),
       );
     } catch (e) {
       return OcrResult(
@@ -204,11 +204,6 @@ class OcrService {
 
 /// Result of OCR extraction
 class OcrResult {
-  final bool success;
-  final String? rawText;
-  final Map<String, String>? parsedData;
-  final List<TextBlockInfo>? blocks;
-  final String? errorMessage;
 
   OcrResult({
     required this.success,
@@ -217,6 +212,11 @@ class OcrResult {
     this.blocks,
     this.errorMessage,
   });
+  final bool success;
+  final String? rawText;
+  final Map<String, String>? parsedData;
+  final List<TextBlockInfo>? blocks;
+  final String? errorMessage;
 
   /// Get a specific parsed field
   String? getField(String key) => parsedData?[key];
@@ -227,11 +227,11 @@ class OcrResult {
 
 /// Information about a text block
 class TextBlockInfo {
-  final String text;
-  final double confidence;
 
   TextBlockInfo({
     required this.text,
     required this.confidence,
   });
+  final String text;
+  final double confidence;
 }

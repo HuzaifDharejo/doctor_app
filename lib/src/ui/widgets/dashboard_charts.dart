@@ -4,14 +4,12 @@ import '../../theme/app_theme.dart';
 import '../../utils/pkr_currency.dart';
 
 class RevenueChart extends StatelessWidget {
-  final List<double> weeklyRevenue;
-  final double totalRevenue;
 
   const RevenueChart({
-    super.key,
-    required this.weeklyRevenue,
-    required this.totalRevenue,
+    required this.weeklyRevenue, required this.totalRevenue, super.key,
   });
+  final List<double> weeklyRevenue;
+  final double totalRevenue;
 
   @override
   Widget build(BuildContext context) {
@@ -69,11 +67,11 @@ class RevenueChart extends StatelessWidget {
                   color: AppColors.success.withValues(alpha: 0.1),
                   borderRadius: BorderRadius.circular(20),
                 ),
-                child: Row(
+                child: const Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [
                     Icon(Icons.trending_up, size: 16, color: AppColors.success),
-                    const SizedBox(width: 4),
+                    SizedBox(width: 4),
                     Text(
                       '+12%',
                       style: TextStyle(
@@ -112,7 +110,6 @@ class RevenueChart extends StatelessWidget {
                   ),
                 ),
                 titlesData: FlTitlesData(
-                  show: true,
                   bottomTitles: AxisTitles(
                     sideTitles: SideTitles(
                       showTitles: true,
@@ -143,11 +140,10 @@ class RevenueChart extends StatelessWidget {
                       },
                     ),
                   ),
-                  topTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
-                  rightTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
+                  topTitles: const AxisTitles(),
+                  rightTitles: const AxisTitles(),
                 ),
                 gridData: FlGridData(
-                  show: true,
                   drawVerticalLine: false,
                   getDrawingHorizontalLine: (value) => FlLine(
                     color: (isDark ? AppColors.darkDivider : AppColors.divider).withValues(alpha: 0.3),
@@ -188,18 +184,14 @@ class RevenueChart extends StatelessWidget {
 }
 
 class AppointmentsPieChart extends StatelessWidget {
+
+  const AppointmentsPieChart({
+    required this.completed, required this.scheduled, required this.cancelled, required this.noShow, super.key,
+  });
   final int completed;
   final int scheduled;
   final int cancelled;
   final int noShow;
-
-  const AppointmentsPieChart({
-    super.key,
-    required this.completed,
-    required this.scheduled,
-    required this.cancelled,
-    required this.noShow,
-  });
 
   @override
   Widget build(BuildContext context) {
@@ -347,6 +339,12 @@ class AppointmentsPieChart extends StatelessWidget {
 }
 
 class MonthlyStatsCard extends StatelessWidget {
+
+  const MonthlyStatsCard({
+    required this.title, required this.value, required this.subtitle, required this.icon, required this.color, super.key,
+    this.trend,
+    this.isPositive = true,
+  });
   final String title;
   final String value;
   final String subtitle;
@@ -354,17 +352,6 @@ class MonthlyStatsCard extends StatelessWidget {
   final Color color;
   final String? trend;
   final bool isPositive;
-
-  const MonthlyStatsCard({
-    super.key,
-    required this.title,
-    required this.value,
-    required this.subtitle,
-    required this.icon,
-    required this.color,
-    this.trend,
-    this.isPositive = true,
-  });
 
   @override
   Widget build(BuildContext context) {

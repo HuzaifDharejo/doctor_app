@@ -3,20 +3,18 @@ import 'package:intl/intl.dart';
 import '../../theme/app_theme.dart';
 
 class CalendarWidget extends StatefulWidget {
+
+  const CalendarWidget({
+    required this.selectedDate, required this.onDateSelected, super.key,
+    this.focusedMonth,
+    this.appointmentCounts,
+    this.showMonthPicker = true,
+  });
   final DateTime selectedDate;
   final DateTime? focusedMonth;
   final void Function(DateTime) onDateSelected;
   final Map<DateTime, int>? appointmentCounts;
   final bool showMonthPicker;
-
-  const CalendarWidget({
-    super.key,
-    required this.selectedDate,
-    this.focusedMonth,
-    required this.onDateSelected,
-    this.appointmentCounts,
-    this.showMonthPicker = true,
-  });
 
   @override
   State<CalendarWidget> createState() => _CalendarWidgetState();
@@ -33,7 +31,6 @@ class _CalendarWidgetState extends State<CalendarWidget> {
     _focusedMonth = DateTime(
       widget.selectedDate.year,
       widget.selectedDate.month,
-      1,
     );
     _pageController = PageController(initialPage: _currentPage);
   }
@@ -47,7 +44,7 @@ class _CalendarWidgetState extends State<CalendarWidget> {
   DateTime _getMonthFromPage(int page) {
     final baseDate = DateTime.now();
     final diff = page - 1000;
-    return DateTime(baseDate.year, baseDate.month + diff, 1);
+    return DateTime(baseDate.year, baseDate.month + diff);
   }
 
   @override
@@ -74,7 +71,7 @@ class _CalendarWidgetState extends State<CalendarWidget> {
         
         final isDark = Theme.of(context).brightness == Brightness.dark;
         
-        return Container(
+        return DecoratedBox(
           decoration: BoxDecoration(
             color: isDark ? AppColors.darkSurface : AppColors.surface,
             borderRadius: BorderRadius.circular(isSmallScreen ? 16 : 24),
@@ -141,7 +138,7 @@ class _CalendarWidgetState extends State<CalendarWidget> {
               duration: const Duration(milliseconds: 300),
               curve: Curves.easeInOut,
             );
-          }, iconSize, isDark),
+          }, iconSize, isDark,),
           Flexible(
             child: GestureDetector(
               onTap: () => _showMonthPicker(context),
@@ -184,7 +181,7 @@ class _CalendarWidgetState extends State<CalendarWidget> {
               duration: const Duration(milliseconds: 300),
               curve: Curves.easeInOut,
             );
-          }, iconSize, isDark),
+          }, iconSize, isDark,),
         ],
       ),
     );
@@ -240,7 +237,7 @@ class _CalendarWidgetState extends State<CalendarWidget> {
     double fontSize,
     bool isDark,
   ) {
-    final firstDay = DateTime(month.year, month.month, 1);
+    final firstDay = DateTime(month.year, month.month);
     final lastDay = DateTime(month.year, month.month + 1, 0);
     final firstWeekday = firstDay.weekday == 7 ? 0 : firstDay.weekday;
     final daysInMonth = lastDay.day;
@@ -255,7 +252,6 @@ class _CalendarWidgetState extends State<CalendarWidget> {
         physics: const NeverScrollableScrollPhysics(),
         gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
           crossAxisCount: 7,
-          childAspectRatio: 1,
           mainAxisSpacing: spacing,
           crossAxisSpacing: spacing,
         ),
@@ -356,7 +352,7 @@ class _CalendarWidgetState extends State<CalendarWidget> {
                 ),
                 itemCount: 12,
                 itemBuilder: (context, index) {
-                  final month = DateTime(_focusedMonth.year, index + 1, 1);
+                  final month = DateTime(_focusedMonth.year, index + 1);
                   final isCurrentMonth = month.month == DateTime.now().month && 
                                          month.year == DateTime.now().year;
                   final isSelected = month.month == _focusedMonth.month &&

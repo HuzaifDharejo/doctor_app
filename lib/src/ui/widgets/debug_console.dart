@@ -246,7 +246,6 @@ class _DebugConsoleState extends State<DebugConsole> with SingleTickerProviderSt
           color: entry.level.priority >= LogLevel.error.priority
               ? color.withValues(alpha: 0.3)
               : Colors.transparent,
-          width: 1,
         ),
       ),
       child: InkWell(
@@ -293,7 +292,7 @@ class _DebugConsoleState extends State<DebugConsole> with SingleTickerProviderSt
                     ),
                     child: Text(
                       entry.tag,
-                      style: TextStyle(
+                      style: const TextStyle(
                         color: AppColors.primary,
                         fontSize: 10,
                         fontWeight: FontWeight.w500,
@@ -341,7 +340,7 @@ class _DebugConsoleState extends State<DebugConsole> with SingleTickerProviderSt
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(Icons.check_circle_outline, size: 64, color: AppColors.success),
+            const Icon(Icons.check_circle_outline, size: 64, color: AppColors.success),
             const SizedBox(height: 16),
             Text('No errors! 🎉', style: TextStyle(color: Colors.grey[500], fontSize: 16)),
           ],
@@ -454,14 +453,14 @@ class _DebugConsoleState extends State<DebugConsole> with SingleTickerProviderSt
             _buildStatRow('Warnings', '${summary['warnings']}', isDark, color: AppColors.warning),
             _buildStatRow('Performance Metrics', '${summary['metricsCount']}', isDark),
             _buildStatRow('Analytics Events', '${summary['eventsCount']}', isDark),
-          ], isDark),
+          ], isDark,),
           const SizedBox(height: 16),
           if (errorsByTag.isNotEmpty) ...[
             _buildStatCard('Errors by Tag', 
               errorsByTag.entries.map((e) => 
-                _buildStatRow(e.key, '${e.value}', isDark, color: AppColors.error)
+                _buildStatRow(e.key, '${e.value}', isDark, color: AppColors.error),
               ).toList(),
-            isDark),
+            isDark,),
             const SizedBox(height: 16),
           ],
           if (summary['lastError'] != null)
@@ -474,7 +473,7 @@ class _DebugConsoleState extends State<DebugConsole> with SingleTickerProviderSt
               ),
               child: Row(
                 children: [
-                  Icon(Icons.error_outline, color: AppColors.error),
+                  const Icon(Icons.error_outline, color: AppColors.error),
                   const SizedBox(width: 12),
                   Expanded(
                     child: Column(
@@ -574,9 +573,9 @@ class _DebugConsoleState extends State<DebugConsole> with SingleTickerProviderSt
 }
 
 class _LogDetailsSheet extends StatelessWidget {
-  final LogEntry entry;
 
   const _LogDetailsSheet({required this.entry});
+  final LogEntry entry;
 
   @override
   Widget build(BuildContext context) {

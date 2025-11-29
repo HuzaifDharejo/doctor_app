@@ -56,7 +56,7 @@ Future<void> _insertSampleData(DoctorDatabase db) async {
     {'firstName': 'Sidra', 'lastName': 'Iqbal', 'dob': DateTime(1994, 5, 30), 'phone': '0315-2345678', 'email': 'sidra.iqbal@outlook.com', 'address': '78 PWD Housing, Islamabad', 'history': 'Vitamin D deficiency, Fatigue', 'tags': 'general', 'risk': 1},
     {'firstName': 'Adnan', 'lastName': 'Sami', 'dob': DateTime(1971, 2, 15), 'phone': '0326-3456789', 'email': 'adnan.sami@hotmail.com', 'address': '23 Cavalry Ground, Lahore', 'history': 'Obesity, Sleep apnea', 'tags': 'metabolic,respiratory', 'risk': 3},
     {'firstName': 'Komal', 'lastName': 'Rizvi', 'dob': DateTime(1986, 7, 8), 'phone': '0338-4567890', 'email': 'komal.rizvi@gmail.com', 'address': 'Flat 8, Block A, Askari 11, Lahore', 'history': 'Rheumatoid arthritis', 'tags': 'rheumatology,chronic', 'risk': 3},
-    {'firstName': 'Shahid', 'lastName': 'Afridi', 'dob': DateTime(1980, 3, 1), 'phone': '0306-5678901', 'email': 'shahid.afridi@yahoo.com', 'address': '56 Hayatabad, Peshawar', 'history': 'Sports injury, Knee problems', 'tags': 'orthopedic', 'risk': 2},
+    {'firstName': 'Shahid', 'lastName': 'Afridi', 'dob': DateTime(1980, 3), 'phone': '0306-5678901', 'email': 'shahid.afridi@yahoo.com', 'address': '56 Hayatabad, Peshawar', 'history': 'Sports injury, Knee problems', 'tags': 'orthopedic', 'risk': 2},
     {'firstName': 'Iqra', 'lastName': 'Aziz', 'dob': DateTime(1997, 11, 24), 'phone': '0316-6789012', 'email': 'iqra.aziz@gmail.com', 'address': '89 Gulistan Colony, Faisalabad', 'history': 'Acne, Hormonal imbalance', 'tags': 'dermatology,endocrine', 'risk': 1},
     {'firstName': 'Asad', 'lastName': 'Shafiq', 'dob': DateTime(1984, 6, 18), 'phone': '0327-7890123', 'email': 'asad.shafiq@outlook.com', 'address': '34 Askari 10, Lahore', 'history': 'Generalized anxiety disorder', 'tags': 'psychiatric', 'risk': 3},
     {'firstName': 'Nimra', 'lastName': 'Ali', 'dob': DateTime(1990, 10, 2), 'phone': '0339-8901234', 'email': 'nimra.ali@hotmail.com', 'address': '67 DHA Phase 6, Karachi', 'history': 'Hypothyroidism', 'tags': 'endocrine,follow-up', 'risk': 2},
@@ -70,7 +70,7 @@ Future<void> _insertSampleData(DoctorDatabase db) async {
     {'firstName': 'Kiran', 'lastName': 'Baloch', 'dob': DateTime(1992, 6, 15), 'phone': '0345-1111114', 'email': 'kiran.baloch@gmail.com', 'address': '78 University Road, Quetta', 'history': 'Polycystic Kidney Disease', 'tags': 'nephrology,genetic', 'risk': 3},
     {'firstName': 'Farhan', 'lastName': 'Saeed', 'dob': DateTime(1985, 11, 30), 'phone': '0302-1111115', 'email': 'farhan.saeed@outlook.com', 'address': '23 Canal Road, Multan', 'history': 'Multiple Sclerosis', 'tags': 'neurology,chronic', 'risk': 5},
     {'firstName': 'Saba', 'lastName': 'Qamar', 'dob': DateTime(1990, 3, 8), 'phone': '0311-1111116', 'email': 'saba.qamar@yahoo.com', 'address': '56 Johar Town Block B, Lahore', 'history': 'Endometriosis, Infertility', 'tags': 'gynecology', 'risk': 2},
-    {'firstName': 'Omar', 'lastName': 'Sharif', 'dob': DateTime(1958, 12, 25), 'phone': '0322-1111117', 'email': 'omar.sharif@gmail.com', 'address': 'House 89, G-11/2, Islamabad', 'history': 'Parkinson\'s Disease, Dementia', 'tags': 'neurology,elderly,chronic', 'risk': 5},
+    {'firstName': 'Omar', 'lastName': 'Sharif', 'dob': DateTime(1958, 12, 25), 'phone': '0322-1111117', 'email': 'omar.sharif@gmail.com', 'address': 'House 89, G-11/2, Islamabad', 'history': "Parkinson's Disease, Dementia", 'tags': 'neurology,elderly,chronic', 'risk': 5},
     {'firstName': 'Mahira', 'lastName': 'Khan', 'dob': DateTime(1984, 12, 21), 'phone': '0334-1111118', 'email': 'mahira.khan@hotmail.com', 'address': '12 Defence Phase 7, Karachi', 'history': 'Chronic Migraine, Vertigo', 'tags': 'neurology', 'risk': 2},
     {'firstName': 'Hamza', 'lastName': 'Ali', 'dob': DateTime(2010, 5, 18), 'phone': '0301-1111119', 'email': 'hamza.parent@gmail.com', 'address': '34 Bahria Town Phase 4, Rawalpindi', 'history': 'Childhood Asthma, Allergies', 'tags': 'pediatric,respiratory', 'risk': 2},
     {'firstName': 'Zara', 'lastName': 'Noor', 'dob': DateTime(2015, 9, 10), 'phone': '0312-1111120', 'email': 'zara.parent@yahoo.com', 'address': '67 Model Town, Gujranwala', 'history': 'ADHD, Learning Disability', 'tags': 'pediatric,psychiatric', 'risk': 2},
@@ -79,13 +79,13 @@ Future<void> _insertSampleData(DoctorDatabase db) async {
     {'firstName': 'Shaan', 'lastName': 'Shahid', 'dob': DateTime(1971, 4, 27), 'phone': '0303-1111123', 'email': 'shaan.shahid@yahoo.com', 'address': '56 F-6/1, Islamabad', 'history': 'Type 1 Diabetes, Diabetic Retinopathy', 'tags': 'endocrine,ophthalmology,chronic', 'risk': 4},
     {'firstName': 'Urwa', 'lastName': 'Hocane', 'dob': DateTime(1991, 7, 2), 'phone': '0313-1111124', 'email': 'urwa.hocane@hotmail.com', 'address': '78 DHA Phase 5, Lahore', 'history': 'Celiac Disease, IBS', 'tags': 'gastro,autoimmune', 'risk': 2},
     {'firstName': 'Fawad', 'lastName': 'Khan', 'dob': DateTime(1981, 11, 29), 'phone': '0324-1111125', 'email': 'fawad.khan@gmail.com', 'address': '12 E-7, Islamabad', 'history': 'Ankylosing Spondylitis', 'tags': 'rheumatology,chronic', 'risk': 3},
-    {'firstName': 'Sanam', 'lastName': 'Saeed', 'dob': DateTime(1985, 2, 2), 'phone': '0336-1111126', 'email': 'sanam.saeed@outlook.com', 'address': '34 Gulshan Block 13, Karachi', 'history': 'Graves\' Disease, Osteoporosis', 'tags': 'endocrine,rheumatology', 'risk': 3},
-    {'firstName': 'Ahad', 'lastName': 'Raza', 'dob': DateTime(1993, 9, 24), 'phone': '0304-1111127', 'email': 'ahad.raza@yahoo.com', 'address': '67 Bahria Orchard, Lahore', 'history': 'Crohn\'s Disease', 'tags': 'gastro,autoimmune,chronic', 'risk': 4},
+    {'firstName': 'Sanam', 'lastName': 'Saeed', 'dob': DateTime(1985, 2, 2), 'phone': '0336-1111126', 'email': 'sanam.saeed@outlook.com', 'address': '34 Gulshan Block 13, Karachi', 'history': "Graves' Disease, Osteoporosis", 'tags': 'endocrine,rheumatology', 'risk': 3},
+    {'firstName': 'Ahad', 'lastName': 'Raza', 'dob': DateTime(1993, 9, 24), 'phone': '0304-1111127', 'email': 'ahad.raza@yahoo.com', 'address': '67 Bahria Orchard, Lahore', 'history': "Crohn's Disease", 'tags': 'gastro,autoimmune,chronic', 'risk': 4},
     {'firstName': 'Mawra', 'lastName': 'Hocane', 'dob': DateTime(1992, 9, 28), 'phone': '0314-1111128', 'email': 'mawra.hocane@gmail.com', 'address': '89 Garden Town, Lahore', 'history': 'Generalized Anxiety, Panic Disorder', 'tags': 'psychiatric', 'risk': 3},
     {'firstName': 'Danish', 'lastName': 'Taimoor', 'dob': DateTime(1983, 2, 16), 'phone': '0325-1111129', 'email': 'danish.taimoor@hotmail.com', 'address': '23 Askari 14, Rawalpindi', 'history': 'Chronic Back Pain, Sciatica', 'tags': 'orthopedic,chronic', 'risk': 2},
     {'firstName': 'Ayeza', 'lastName': 'Khan', 'dob': DateTime(1991, 1, 15), 'phone': '0337-1111130', 'email': 'ayeza.khan@outlook.com', 'address': '56 DHA Phase 8, Karachi', 'history': 'Post-partum Depression, Thyroid', 'tags': 'psychiatric,endocrine', 'risk': 3},
     {'firstName': 'Humayun', 'lastName': 'Saeed', 'dob': DateTime(1971, 7, 27), 'phone': '0305-1111131', 'email': 'humayun.saeed@gmail.com', 'address': '78 F-10/3, Islamabad', 'history': 'Coronary Artery Disease, Stent', 'tags': 'cardiac,chronic', 'risk': 4},
-    {'firstName': 'Syra', 'lastName': 'Yousuf', 'dob': DateTime(1988, 4, 20), 'phone': '0315-1111132', 'email': 'syra.yousuf@yahoo.com', 'address': '12 Clifton Block 8, Karachi', 'history': 'Hashimoto\'s Thyroiditis', 'tags': 'endocrine,autoimmune', 'risk': 2},
+    {'firstName': 'Syra', 'lastName': 'Yousuf', 'dob': DateTime(1988, 4, 20), 'phone': '0315-1111132', 'email': 'syra.yousuf@yahoo.com', 'address': '12 Clifton Block 8, Karachi', 'history': "Hashimoto's Thyroiditis", 'tags': 'endocrine,autoimmune', 'risk': 2},
     {'firstName': 'Osman', 'lastName': 'Khalid', 'dob': DateTime(1978, 10, 5), 'phone': '0326-1111133', 'email': 'osman.khalid@hotmail.com', 'address': '34 Model Town, Sialkot', 'history': 'Gout, Metabolic Syndrome', 'tags': 'rheumatology,metabolic', 'risk': 3},
     {'firstName': 'Sadia', 'lastName': 'Imam', 'dob': DateTime(1979, 2, 18), 'phone': '0338-1111134', 'email': 'sadia.imam@gmail.com', 'address': '67 Gulberg III, Lahore', 'history': 'Breast Cancer Survivor, Lymphedema', 'tags': 'oncology,follow-up', 'risk': 3},
     {'firstName': 'Shan', 'lastName': 'Masood', 'dob': DateTime(1989, 10, 14), 'phone': '0306-1111135', 'email': 'shan.masood@outlook.com', 'address': '89 DHA City, Karachi', 'history': 'Sports Injury, ACL Reconstruction', 'tags': 'orthopedic,sports', 'risk': 2},
@@ -102,7 +102,7 @@ Future<void> _insertSampleData(DoctorDatabase db) async {
     {'firstName': 'Hania', 'lastName': 'Amir', 'dob': DateTime(1997, 2, 12), 'phone': '0320-1111146', 'email': 'hania.amir@gmail.com', 'address': '12 DHA Phase 6, Lahore', 'history': 'Acne, Hirsutism, PCOS', 'tags': 'dermatology,endocrine', 'risk': 2},
     {'firstName': 'Hasan', 'lastName': 'Ali', 'dob': DateTime(1994, 2, 2), 'phone': '0311-1111147', 'email': 'hasan.ali@hotmail.com', 'address': '34 Askari 11, Lahore', 'history': 'Shoulder Impingement', 'tags': 'orthopedic,sports', 'risk': 1},
     {'firstName': 'Anoushay', 'lastName': 'Abbasi', 'dob': DateTime(1991, 10, 11), 'phone': '0330-1111148', 'email': 'anoushay.abbasi@outlook.com', 'address': '67 Clifton Block 5, Karachi', 'history': 'Irritable Bowel Syndrome, Food Intolerances', 'tags': 'gastro', 'risk': 2},
-    {'firstName': 'Mohammad', 'lastName': 'Rizwan', 'dob': DateTime(1992, 6, 1), 'phone': '0302-1111149', 'email': 'mohammad.rizwan@gmail.com', 'address': '89 Peshawar Road, Rawalpindi', 'history': 'Eye Strain, Dry Eyes', 'tags': 'ophthalmology', 'risk': 1},
+    {'firstName': 'Mohammad', 'lastName': 'Rizwan', 'dob': DateTime(1992, 6), 'phone': '0302-1111149', 'email': 'mohammad.rizwan@gmail.com', 'address': '89 Peshawar Road, Rawalpindi', 'history': 'Eye Strain, Dry Eyes', 'tags': 'ophthalmology', 'risk': 1},
     {'firstName': 'Sumbul', 'lastName': 'Iqbal', 'dob': DateTime(1990, 8, 27), 'phone': '0321-1111150', 'email': 'sumbul.iqbal@yahoo.com', 'address': '23 Johar Town Block J, Lahore', 'history': 'Hypothyroidism, Weight Gain', 'tags': 'endocrine,metabolic', 'risk': 2},
     {'firstName': 'Fakhar', 'lastName': 'Zaman', 'dob': DateTime(1990, 4, 10), 'phone': '0312-1111151', 'email': 'fakhar.zaman@hotmail.com', 'address': '56 Mardan Road, Peshawar', 'history': 'Hand Fracture (healed), Carpal Tunnel', 'tags': 'orthopedic', 'risk': 1},
     {'firstName': 'Aiman', 'lastName': 'Khan', 'dob': DateTime(1998, 11, 20), 'phone': '0331-1111152', 'email': 'aiman.khan@gmail.com', 'address': '78 G-10/4, Islamabad', 'history': 'Allergic Rhinitis, Sinusitis', 'tags': 'ent,respiratory', 'risk': 1},
@@ -116,15 +116,15 @@ Future<void> _insertSampleData(DoctorDatabase db) async {
   for (final p in patientData) {
     final id = await db.insertPatient(
       PatientsCompanion(
-        firstName: Value(p['firstName'] as String),
-        lastName: Value(p['lastName'] as String),
-        dateOfBirth: Value(p['dob'] as DateTime),
-        phone: Value(p['phone'] as String),
-        email: Value(p['email'] as String),
-        address: Value(p['address'] as String),
-        medicalHistory: Value(p['history'] as String),
-        tags: Value(p['tags'] as String),
-        riskLevel: Value(p['risk'] as int),
+        firstName: Value(p['firstName']! as String),
+        lastName: Value(p['lastName']! as String),
+        dateOfBirth: Value(p['dob']! as DateTime),
+        phone: Value(p['phone']! as String),
+        email: Value(p['email']! as String),
+        address: Value(p['address']! as String),
+        medicalHistory: Value(p['history']! as String),
+        tags: Value(p['tags']! as String),
+        riskLevel: Value(p['risk']! as int),
       ),
     );
     patientIds.add(id);
@@ -201,7 +201,7 @@ Future<void> _insertSampleData(DoctorDatabase db) async {
         durationMinutes: Value([15, 30, 30, 45, 30, 20, 45, 30, 15, 20, 30, 45][i]),
         reason: Value(appointmentReasons[i % appointmentReasons.length]),
         status: Value(i < 5 ? 'completed' : (i < 8 ? 'in-progress' : 'confirmed')),
-        notes: Value('Today\'s appointment for ${patientData[patientIndex]['firstName']}'),
+        notes: Value("Today's appointment for ${patientData[patientIndex]['firstName']}"),
       ),
     );
     appointmentCount++;
@@ -225,7 +225,7 @@ Future<void> _insertSampleData(DoctorDatabase db) async {
           reason: Value(appointmentReasons[random.nextInt(appointmentReasons.length)]),
           status: Value(random.nextInt(3) == 0 ? 'confirmed' : 'scheduled'),
           reminderAt: Value(appointmentDay.subtract(const Duration(hours: 24))),
-          notes: Value('Upcoming appointment'),
+          notes: const Value('Upcoming appointment'),
         ),
       );
       appointmentCount++;
@@ -402,7 +402,7 @@ Future<void> _insertSampleData(DoctorDatabase db) async {
   int prescriptionCount = 0;
   for (int i = 0; i < patientIds.length; i++) {
     // Multiple prescriptions per patient over time - more for chronic patients
-    final isChronic = (patientData[i]['tags'] as String).contains('chronic');
+    final isChronic = (patientData[i]['tags']! as String).contains('chronic');
     final numPrescriptions = isChronic ? (3 + random.nextInt(4)) : (1 + random.nextInt(3)); // 1-3 or 3-6 for chronic
     
     for (int j = 0; j < numPrescriptions; j++) {
@@ -444,35 +444,35 @@ Future<void> _insertSampleData(DoctorDatabase db) async {
       'data': {'chiefComplaint': 'Persistent sadness and loss of interest', 'moodAssessment': 'Depressed', 'anxietyLevel': 'Moderate', 'sleepQuality': 'Poor - early morning awakening', 'appetiteChanges': 'Decreased', 'suicidalIdeation': 'Denied', 'substanceUse': 'None', 'phq9Score': 15, 'gad7Score': 12},
       'diagnosis': 'Major Depressive Disorder, moderate severity',
       'treatment': 'Started Sertraline 50mg daily. Weekly CBT sessions.',
-      'notes': 'Patient shows insight into condition. Good social support. Follow-up in 2 weeks.'
+      'notes': 'Patient shows insight into condition. Good social support. Follow-up in 2 weeks.',
     },
     {
       'title': 'Anxiety Disorder Assessment',
       'data': {'chiefComplaint': 'Excessive worry and panic attacks', 'moodAssessment': 'Anxious', 'anxietyLevel': 'Severe', 'panicAttacks': 'Yes - 3 per week', 'avoidanceBehaviors': 'Yes', 'sleepQuality': 'Poor', 'phq9Score': 8, 'gad7Score': 18},
       'diagnosis': 'Generalized Anxiety Disorder with Panic',
       'treatment': 'Escitalopram 10mg daily, Clonazepam 0.5mg PRN',
-      'notes': 'Panic attack management plan discussed. Breathing exercises taught.'
+      'notes': 'Panic attack management plan discussed. Breathing exercises taught.',
     },
     {
       'title': 'Bipolar Disorder Follow-up',
       'data': {'currentEpisode': 'Euthymic', 'moodStability': 'Good for 3 months', 'medicationCompliance': 'Good', 'sideEffects': 'Mild tremor', 'sleepPattern': 'Regular', 'lithiumLevel': '0.8 mEq/L'},
       'diagnosis': 'Bipolar I Disorder - stable on treatment',
       'treatment': 'Continue Lithium 300mg BD, Quetiapine 100mg HS',
-      'notes': 'Stable on current regimen. Lithium levels therapeutic. Renal function normal.'
+      'notes': 'Stable on current regimen. Lithium levels therapeutic. Renal function normal.',
     },
     {
       'title': 'PTSD Assessment',
       'data': {'traumaHistory': 'Motor vehicle accident 6 months ago', 'flashbacks': 'Daily', 'nightmares': '4-5 per week', 'avoidance': 'Avoiding driving and highways', 'hypervigilance': 'Marked', 'pcl5Score': 52},
       'diagnosis': 'Post-Traumatic Stress Disorder',
       'treatment': 'Started Prazosin 1mg HS for nightmares. EMDR therapy referral.',
-      'notes': 'Patient motivated for treatment. Support group recommended.'
+      'notes': 'Patient motivated for treatment. Support group recommended.',
     },
     {
       'title': 'Schizophrenia Management',
       'data': {'positiveSymptoms': 'Auditory hallucinations - well controlled', 'negativeSymptoms': 'Mild flat affect', 'cognitiveFunction': 'Mildly impaired', 'medicationCompliance': 'Fair - occasional missed doses', 'sideEffects': 'Weight gain'},
       'diagnosis': 'Schizophrenia - partially controlled',
       'treatment': 'Continue Risperidone 2mg BD. Added Metformin for metabolic syndrome.',
-      'notes': 'Family meeting held. Medication reminder system implemented.'
+      'notes': 'Family meeting held. Medication reminder system implemented.',
     },
   ];
 
@@ -481,42 +481,42 @@ Future<void> _insertSampleData(DoctorDatabase db) async {
     {
       'title': 'Complete Blood Count',
       'data': {'hemoglobin': '14.2 g/dL', 'wbc': '7.5 x10^9/L', 'platelets': '250 x10^9/L', 'mcv': '88 fL', 'hematocrit': '42%'},
-      'notes': 'All values within normal range. No anemia or infection.'
+      'notes': 'All values within normal range. No anemia or infection.',
     },
     {
       'title': 'Comprehensive Metabolic Panel',
       'data': {'glucose': '126 mg/dL (H)', 'bun': '18 mg/dL', 'creatinine': '0.9 mg/dL', 'sodium': '140 mEq/L', 'potassium': '4.2 mEq/L', 'chloride': '102 mEq/L', 'co2': '24 mEq/L', 'calcium': '9.5 mg/dL', 'alt': '25 U/L', 'ast': '22 U/L'},
-      'notes': 'Glucose slightly elevated. Continue monitoring. Kidney and liver function normal.'
+      'notes': 'Glucose slightly elevated. Continue monitoring. Kidney and liver function normal.',
     },
     {
       'title': 'Lipid Panel',
       'data': {'totalCholesterol': '220 mg/dL (H)', 'ldl': '145 mg/dL (H)', 'hdl': '42 mg/dL', 'triglycerides': '165 mg/dL', 'nonHdl': '178 mg/dL'},
-      'notes': 'Elevated LDL cholesterol. Statin therapy recommended. Diet modifications advised.'
+      'notes': 'Elevated LDL cholesterol. Statin therapy recommended. Diet modifications advised.',
     },
     {
       'title': 'Thyroid Function Tests',
       'data': {'tsh': '5.8 mIU/L (H)', 'freeT4': '0.9 ng/dL', 'freeT3': '2.8 pg/mL', 'tpoAntibodies': 'Positive'},
-      'notes': 'Subclinical hypothyroidism with positive antibodies. Start low-dose levothyroxine.'
+      'notes': 'Subclinical hypothyroidism with positive antibodies. Start low-dose levothyroxine.',
     },
     {
       'title': 'HbA1c Test',
       'data': {'hba1c': '7.8%', 'estimatedAverageGlucose': '177 mg/dL'},
-      'notes': 'Above target of 7%. Medication adjustment needed. Diet review scheduled.'
+      'notes': 'Above target of 7%. Medication adjustment needed. Diet review scheduled.',
     },
     {
       'title': 'Liver Function Panel',
       'data': {'alt': '85 U/L (H)', 'ast': '72 U/L (H)', 'alp': '95 U/L', 'totalBilirubin': '0.8 mg/dL', 'albumin': '4.0 g/dL', 'ggt': '65 U/L (H)'},
-      'notes': 'Elevated liver enzymes. Hepatitis panel ordered. Alcohol use discussed.'
+      'notes': 'Elevated liver enzymes. Hepatitis panel ordered. Alcohol use discussed.',
     },
     {
       'title': 'Urinalysis',
       'data': {'appearance': 'Clear', 'ph': '6.0', 'specificGravity': '1.020', 'protein': 'Trace', 'glucose': 'Negative', 'ketones': 'Negative', 'blood': 'Negative', 'wbc': '0-2/hpf', 'bacteria': 'None'},
-      'notes': 'Trace protein. Follow-up with 24-hour urine protein if persists.'
+      'notes': 'Trace protein. Follow-up with 24-hour urine protein if persists.',
     },
     {
       'title': 'Vitamin D Level',
       'data': {'vitaminD25OH': '15 ng/mL (L)', 'normalRange': '30-100 ng/mL'},
-      'notes': 'Severe vitamin D deficiency. High-dose supplementation started.'
+      'notes': 'Severe vitamin D deficiency. High-dose supplementation started.',
     },
   ];
 
@@ -525,27 +525,27 @@ Future<void> _insertSampleData(DoctorDatabase db) async {
     {
       'title': 'Chest X-Ray',
       'data': {'findings': 'Clear lung fields bilaterally', 'heartSize': 'Normal', 'mediastinum': 'Normal', 'bones': 'No acute abnormality'},
-      'notes': 'No active pulmonary disease. Normal cardiac silhouette.'
+      'notes': 'No active pulmonary disease. Normal cardiac silhouette.',
     },
     {
       'title': 'Abdominal Ultrasound',
       'data': {'liver': 'Mild fatty infiltration', 'gallbladder': 'Normal, no stones', 'kidneys': 'Normal size and echogenicity', 'spleen': 'Normal', 'pancreas': 'Partially visualized, normal'},
-      'notes': 'Fatty liver disease grade 1. Recommend lifestyle modifications.'
+      'notes': 'Fatty liver disease grade 1. Recommend lifestyle modifications.',
     },
     {
       'title': 'Echocardiogram',
       'data': {'ef': '55%', 'lvFunction': 'Normal', 'valves': 'No significant abnormality', 'rwma': 'None', 'pericardium': 'Normal'},
-      'notes': 'Normal cardiac function. No valvular disease.'
+      'notes': 'Normal cardiac function. No valvular disease.',
     },
     {
       'title': 'Brain MRI',
       'data': {'findings': 'No acute infarct', 'ventricles': 'Normal', 'whiteMatters': 'Few nonspecific foci of T2 hyperintensity', 'massLesion': 'None'},
-      'notes': 'Age-appropriate changes. No evidence of stroke or tumor.'
+      'notes': 'Age-appropriate changes. No evidence of stroke or tumor.',
     },
     {
       'title': 'Knee X-Ray',
       'data': {'findings': 'Moderate osteoarthritis', 'jointSpace': 'Narrowed', 'osteophytes': 'Present', 'alignment': 'Mild varus'},
-      'notes': 'Osteoarthritis of knee. Physical therapy and NSAIDs recommended.'
+      'notes': 'Osteoarthritis of knee. Physical therapy and NSAIDs recommended.',
     },
   ];
 
@@ -554,27 +554,27 @@ Future<void> _insertSampleData(DoctorDatabase db) async {
     {
       'title': 'ECG (Electrocardiogram)',
       'data': {'rhythm': 'Normal sinus rhythm', 'rate': '72 bpm', 'axis': 'Normal', 'intervals': 'PR 160ms, QRS 88ms, QTc 420ms', 'findings': 'No acute ST changes'},
-      'notes': 'Normal ECG. No evidence of ischemia or arrhythmia.'
+      'notes': 'Normal ECG. No evidence of ischemia or arrhythmia.',
     },
     {
       'title': 'Spirometry',
       'data': {'fev1': '2.8L (78% predicted)', 'fvc': '3.5L (85% predicted)', 'fev1FvcRatio': '80%', 'interpretation': 'Mild obstruction'},
-      'notes': 'Mild obstructive pattern consistent with asthma. Bronchodilator response positive.'
+      'notes': 'Mild obstructive pattern consistent with asthma. Bronchodilator response positive.',
     },
     {
       'title': 'Blood Pressure Monitoring',
       'data': {'morningReadings': '138/88, 135/85, 140/90', 'eveningReadings': '130/82, 128/80, 132/84', 'averageBP': '134/85 mmHg'},
-      'notes': 'Stage 1 hypertension. Lifestyle modifications initiated. Medication if not controlled.'
+      'notes': 'Stage 1 hypertension. Lifestyle modifications initiated. Medication if not controlled.',
     },
     {
       'title': 'Wound Care',
       'data': {'woundLocation': 'Left lower leg', 'woundSize': '2cm x 3cm', 'appearance': 'Granulating well', 'treatment': 'Cleaned, dressed with hydrocolloid'},
-      'notes': 'Healing appropriately. Continue daily dressing changes. Review in 1 week.'
+      'notes': 'Healing appropriately. Continue daily dressing changes. Review in 1 week.',
     },
     {
       'title': 'Joint Injection',
       'data': {'joint': 'Right knee', 'medication': 'Triamcinolone 40mg + Lidocaine 1ml', 'technique': 'Anterolateral approach', 'complications': 'None'},
-      'notes': 'Successful injection. Expect relief in 24-48 hours. Avoid strenuous activity for 48 hours.'
+      'notes': 'Successful injection. Expect relief in 24-48 hours. Avoid strenuous activity for 48 hours.',
     },
   ];
 
@@ -606,7 +606,7 @@ Future<void> _insertSampleData(DoctorDatabase db) async {
         'investigationsRequired': ['Chest X-Ray', 'Spirometry'],
         'treatmentPlan': 'Switch ACE inhibitor to ARB. PPI therapy. Follow-up in 4 weeks.',
       },
-      'notes': 'Consider drug-induced cough. Trial of ACE inhibitor withdrawal recommended.'
+      'notes': 'Consider drug-induced cough. Trial of ACE inhibitor withdrawal recommended.',
     },
     {
       'title': 'Acute Asthma Exacerbation',
@@ -634,7 +634,7 @@ Future<void> _insertSampleData(DoctorDatabase db) async {
         'investigationsRequired': ['Peak Flow', 'Chest X-Ray', 'ABG'],
         'treatmentPlan': 'Nebulized bronchodilators, IV corticosteroids, oxygen therapy. Monitor closely.',
       },
-      'notes': 'Severe exacerbation requiring close monitoring. Consider ICU if not responding.'
+      'notes': 'Severe exacerbation requiring close monitoring. Consider ICU if not responding.',
     },
     {
       'title': 'COPD Follow-up',
@@ -662,7 +662,7 @@ Future<void> _insertSampleData(DoctorDatabase db) async {
         'investigationsRequired': ['Spirometry', 'Chest X-Ray Annual'],
         'treatmentPlan': 'Continue current inhalers. Pulmonary rehabilitation referral. Vaccination due.',
       },
-      'notes': 'Stable COPD. Good inhaler technique. Encourage continued smoking abstinence.'
+      'notes': 'Stable COPD. Good inhaler technique. Encourage continued smoking abstinence.',
     },
     {
       'title': 'Pneumonia Evaluation',
@@ -690,7 +690,7 @@ Future<void> _insertSampleData(DoctorDatabase db) async {
         'investigationsRequired': ['Chest X-Ray', 'CBC', 'CRP', 'Blood culture', 'Sputum culture'],
         'treatmentPlan': 'Azithromycin 500mg OD + Cefuroxime 500mg BD for 7 days. Adequate hydration.',
       },
-      'notes': 'CAP with diabetic comorbidity. Close monitoring for response. Avoid penicillins.'
+      'notes': 'CAP with diabetic comorbidity. Close monitoring for response. Avoid penicillins.',
     },
     {
       'title': 'Interstitial Lung Disease Workup',
@@ -718,7 +718,7 @@ Future<void> _insertSampleData(DoctorDatabase db) async {
         'investigationsRequired': ['HRCT Chest', 'Spirometry with DLCO', 'ANA', 'RF', 'Anti-CCP', 'Bronchoscopy if needed'],
         'treatmentPlan': 'HRCT chest urgently. Rheumatology consultation. Consider methotrexate-induced pneumonitis.',
       },
-      'notes': 'High suspicion for ILD. Multiple risk factors. Expedite workup.'
+      'notes': 'High suspicion for ILD. Multiple risk factors. Expedite workup.',
     },
   ];
 
@@ -727,7 +727,7 @@ Future<void> _insertSampleData(DoctorDatabase db) async {
   // Add medical records for each patient - more comprehensive
   for (int i = 0; i < patientIds.length; i++) {
     // More records for chronic patients
-    final isChronic = (patientData[i]['tags'] as String).contains('chronic');
+    final isChronic = (patientData[i]['tags']! as String).contains('chronic');
     final numRecords = isChronic ? (5 + random.nextInt(6)) : (3 + random.nextInt(5)); // 3-7 or 5-10 for chronic
     
     for (int j = 0; j < numRecords; j++) {
@@ -740,51 +740,51 @@ Future<void> _insertSampleData(DoctorDatabase db) async {
       switch (recordType) {
         case 'general':
           final record = generalRecords[random.nextInt(generalRecords.length)];
-          title = record['title'] as String;
+          title = record['title']!;
           description = 'General consultation visit';
-          diagnosis = record['diagnosis'] as String;
-          treatment = record['treatment'] as String;
-          doctorNotes = record['notes'] as String;
+          diagnosis = record['diagnosis']!;
+          treatment = record['treatment']!;
+          doctorNotes = record['notes']!;
         case 'psychiatric_assessment':
           final record = psychiatricRecords[random.nextInt(psychiatricRecords.length)];
-          title = record['title'] as String;
+          title = record['title']! as String;
           description = 'Psychiatric evaluation and assessment';
-          diagnosis = record['diagnosis'] as String;
-          treatment = record['treatment'] as String;
-          doctorNotes = record['notes'] as String;
-          dataJson = record['data'] as Map<String, dynamic>;
+          diagnosis = record['diagnosis']! as String;
+          treatment = record['treatment']! as String;
+          doctorNotes = record['notes']! as String;
+          dataJson = record['data']! as Map<String, dynamic>;
         case 'lab_result':
           final record = labRecords[random.nextInt(labRecords.length)];
-          title = record['title'] as String;
+          title = record['title']! as String;
           description = 'Laboratory test results';
           diagnosis = 'See results';
           treatment = 'Based on results';
-          doctorNotes = record['notes'] as String;
-          dataJson = record['data'] as Map<String, dynamic>;
+          doctorNotes = record['notes']! as String;
+          dataJson = record['data']! as Map<String, dynamic>;
         case 'imaging':
           final record = imagingRecords[random.nextInt(imagingRecords.length)];
-          title = record['title'] as String;
+          title = record['title']! as String;
           description = 'Imaging study report';
           diagnosis = 'See findings';
           treatment = 'Based on findings';
-          doctorNotes = record['notes'] as String;
-          dataJson = record['data'] as Map<String, dynamic>;
+          doctorNotes = record['notes']! as String;
+          dataJson = record['data']! as Map<String, dynamic>;
         case 'procedure':
           final record = procedureRecords[random.nextInt(procedureRecords.length)];
-          title = record['title'] as String;
+          title = record['title']! as String;
           description = 'Medical procedure performed';
           diagnosis = 'Procedure completed';
           treatment = 'As documented';
-          doctorNotes = record['notes'] as String;
-          dataJson = record['data'] as Map<String, dynamic>;
+          doctorNotes = record['notes']! as String;
+          dataJson = record['data']! as Map<String, dynamic>;
         case 'pulmonary_evaluation':
           final record = pulmonaryRecords[random.nextInt(pulmonaryRecords.length)];
-          title = record['title'] as String;
+          title = record['title']! as String;
           description = 'Pulmonary clinical evaluation';
-          final data = record['data'] as Map<String, dynamic>;
+          final data = record['data']! as Map<String, dynamic>;
           diagnosis = data['impressionDiagnosis'] as String? ?? 'Under evaluation';
           treatment = data['treatmentPlan'] as String? ?? 'Pending';
-          doctorNotes = record['notes'] as String;
+          doctorNotes = record['notes']! as String;
           dataJson = data;
         default:
           title = 'General Visit';
@@ -853,7 +853,7 @@ Future<void> _insertSampleData(DoctorDatabase db) async {
   // Generate invoices for all patients - more comprehensive
   for (int i = 0; i < patientIds.length; i++) {
     // More invoices for chronic patients
-    final isChronic = (patientData[i]['tags'] as String).contains('chronic');
+    final isChronic = (patientData[i]['tags']! as String).contains('chronic');
     final numInvoices = isChronic ? (4 + random.nextInt(5)) : (2 + random.nextInt(4)); // 2-5 or 4-8 for chronic
     
     for (int j = 0; j < numInvoices; j++) {
@@ -891,8 +891,8 @@ Future<void> _insertSampleData(DoctorDatabase db) async {
       final discountPercent = random.nextInt(100) < 30 ? [5.0, 10.0, 15.0][random.nextInt(3)] : 0.0;
       final discountAmount = subtotal * (discountPercent / 100);
       final afterDiscount = subtotal - discountAmount;
-      final taxPercent = 0.0; // No tax on medical services
-      final taxAmount = 0.0;
+      const taxPercent = 0.0; // No tax on medical services
+      const taxAmount = 0.0;
       final grandTotal = afterDiscount + taxAmount;
       
       final paymentMethod = paymentMethods[random.nextInt(paymentMethods.length)];
@@ -915,8 +915,8 @@ Future<void> _insertSampleData(DoctorDatabase db) async {
           subtotal: Value(subtotal),
           discountPercent: Value(discountPercent),
           discountAmount: Value(discountAmount),
-          taxPercent: Value(taxPercent),
-          taxAmount: Value(taxAmount),
+          taxPercent: const Value(taxPercent),
+          taxAmount: const Value(taxAmount),
           grandTotal: Value(grandTotal),
           paymentMethod: Value(paymentMethod),
           paymentStatus: Value(paymentStatus),

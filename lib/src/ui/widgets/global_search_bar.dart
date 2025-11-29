@@ -128,7 +128,7 @@ class _GlobalSearchBarState extends ConsumerState<GlobalSearchBar> {
           subtitle: patient.phone.isEmpty ? 'No phone' : patient.phone,
           type: 'patient',
           data: patient,
-        ));
+        ),);
       }
       
       setState(() {

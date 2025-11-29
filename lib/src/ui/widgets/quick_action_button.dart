@@ -1,18 +1,14 @@
 import 'package:flutter/material.dart';
 
 class QuickActionButton extends StatefulWidget {
+
+  const QuickActionButton({
+    required this.icon, required this.label, required this.color, required this.onTap, super.key,
+  });
   final IconData icon;
   final String label;
   final Color color;
   final VoidCallback onTap;
-
-  const QuickActionButton({
-    super.key,
-    required this.icon,
-    required this.label,
-    required this.color,
-    required this.onTap,
-  });
 
   @override
   State<QuickActionButton> createState() => _QuickActionButtonState();

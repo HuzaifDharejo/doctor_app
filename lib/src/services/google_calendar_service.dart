@@ -7,10 +7,6 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 /// User info from Google Sign-In
 class GoogleUserInfo {
-  final String email;
-  final String? displayName;
-  final String? photoUrl;
-  final String? id;
 
   GoogleUserInfo({
     required this.email,
@@ -18,6 +14,10 @@ class GoogleUserInfo {
     this.photoUrl,
     this.id,
   });
+  final String email;
+  final String? displayName;
+  final String? photoUrl;
+  final String? id;
 
   String get firstName {
     if (displayName == null || displayName!.isEmpty) return '';
@@ -257,7 +257,7 @@ class GoogleCalendarService {
           busyPeriods.add(DateTimeRange(
             start: event.start!.dateTime!.toLocal(),
             end: event.end!.dateTime!.toLocal(),
-          ));
+          ),);
         }
       }
 
@@ -283,7 +283,7 @@ class GoogleCalendarService {
           startTime: currentSlotStart,
           endTime: slotEnd,
           isAvailable: isAvailable,
-        ));
+        ),);
 
         currentSlotStart = slotEnd;
       }
@@ -424,10 +424,10 @@ class GoogleCalendarService {
 
 /// HTTP client wrapper for Google API authentication
 class GoogleAuthClient extends http.BaseClient {
-  final Map<String, String> _headers;
-  final http.Client _client = http.Client();
 
   GoogleAuthClient(this._headers);
+  final Map<String, String> _headers;
+  final http.Client _client = http.Client();
 
   @override
   Future<http.StreamedResponse> send(http.BaseRequest request) {
@@ -437,31 +437,31 @@ class GoogleAuthClient extends http.BaseClient {
 
 /// Represents a time slot with availability status
 class TimeSlot {
-  final DateTime startTime;
-  final DateTime endTime;
-  final bool isAvailable;
 
   TimeSlot({
     required this.startTime,
     required this.endTime,
     required this.isAvailable,
   });
+  final DateTime startTime;
+  final DateTime endTime;
+  final bool isAvailable;
 
   Duration get duration => endTime.difference(startTime);
 }
 
 /// Helper class for time of day (for slot generation)
 class CalendarTimeOfDay {
-  final int hour;
-  final int minute;
 
   const CalendarTimeOfDay({required this.hour, required this.minute});
+  final int hour;
+  final int minute;
 }
 
 /// Date range helper
 class DateTimeRange {
-  final DateTime start;
-  final DateTime end;
 
   DateTimeRange({required this.start, required this.end});
+  final DateTime start;
+  final DateTime end;
 }

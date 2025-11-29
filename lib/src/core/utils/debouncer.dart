@@ -19,14 +19,14 @@ import 'dart:async';
 
 /// Debouncer for rate-limiting function calls
 class Debouncer {
-  /// Delay before executing the action
-  final Duration delay;
-  
-  Timer? _timer;
 
   /// Creates a debouncer with the specified delay
   /// Default delay is 300 milliseconds
   Debouncer({this.delay = const Duration(milliseconds: 300)});
+  /// Delay before executing the action
+  final Duration delay;
+  
+  Timer? _timer;
 
   /// Run the action after the delay
   /// If called again before the delay, the previous call is cancelled
@@ -59,15 +59,15 @@ class Debouncer {
 /// Throttler for limiting the rate of function calls
 /// Unlike debouncer, throttler ensures the function is called at most once per interval
 class Throttler {
+
+  /// Creates a throttler with the specified interval
+  Throttler({required this.interval});
   /// Minimum interval between calls
   final Duration interval;
   
   DateTime? _lastCall;
   Timer? _pendingTimer;
   void Function()? _pendingAction;
-
-  /// Creates a throttler with the specified interval
-  Throttler({required this.interval});
 
   /// Run the action immediately if interval has passed,
   /// otherwise schedule it for later
@@ -107,15 +107,15 @@ class Throttler {
 
 /// Rate limiter that queues actions and executes them with a delay between each
 class RateLimiter {
+
+  /// Creates a rate limiter with the specified delay between actions
+  RateLimiter({required this.delay});
   /// Delay between each action
   final Duration delay;
   
   final List<void Function()> _queue = [];
   Timer? _timer;
   bool _isProcessing = false;
-
-  /// Creates a rate limiter with the specified delay between actions
-  RateLimiter({required this.delay});
 
   /// Add an action to the queue
   void add(void Function() action) {

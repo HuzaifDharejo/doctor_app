@@ -90,15 +90,12 @@ class AppTheme {
       
       colorScheme: ColorScheme.light(
         primary: AppColors.primary,
-        onPrimary: Colors.white,
         primaryContainer: AppColors.primaryLight.withValues(alpha: 0.2),
         secondary: AppColors.accent,
         onSecondary: Colors.white,
         secondaryContainer: AppColors.accentLight.withValues(alpha: 0.2),
-        surface: AppColors.surface,
         onSurface: AppColors.textPrimary,
         error: AppColors.error,
-        onError: Colors.white,
       ),
       
       // App Bar Theme

@@ -105,7 +105,7 @@ class _DoctorProfileScreenState extends ConsumerState<DoctorProfileScreen>
     _emergencyFeeController.text =
         profile.emergencyFee > 0 ? profile.emergencyFee.toStringAsFixed(0) : '';
     _workingHours = Map.from(
-        profile.workingHours.map((k, v) => MapEntry(k, Map<String, dynamic>.from(v))));
+        profile.workingHours.map((k, v) => MapEntry(k, Map<String, dynamic>.from(v))),);
     if (_workingHours.isEmpty) {
       _workingHours = {
         'Monday': {'enabled': true, 'start': '09:00', 'end': '17:00'},
@@ -195,7 +195,6 @@ class _DoctorProfileScreenState extends ConsumerState<DoctorProfileScreen>
     try {
       final result = await FilePicker.platform.pickFiles(
         type: FileType.image,
-        allowMultiple: false,
       );
       if (result != null && result.files.isNotEmpty) {
         final bytes = result.files.first.bytes;
@@ -332,7 +331,7 @@ class _DoctorProfileScreenState extends ConsumerState<DoctorProfileScreen>
         ),
       ),
       floatingActionButton: _hasChanges
-          ? Container(
+          ? DecoratedBox(
               decoration: BoxDecoration(
                 gradient: const LinearGradient(
                   colors: [AppColors.primary, AppColors.accent],
@@ -353,11 +352,11 @@ class _DoctorProfileScreenState extends ConsumerState<DoctorProfileScreen>
                 child: InkWell(
                   onTap: _saveProfile,
                   borderRadius: BorderRadius.circular(16),
-                  child: Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 14),
+                  child: const Padding(
+                    padding: EdgeInsets.symmetric(horizontal: 24, vertical: 14),
                     child: Row(
                       mainAxisSize: MainAxisSize.min,
-                      children: const [
+                      children: [
                         Icon(Icons.check_circle_outline_rounded, color: Colors.white, size: 22),
                         SizedBox(width: 10),
                         Text(
@@ -409,7 +408,7 @@ class _DoctorProfileScreenState extends ConsumerState<DoctorProfileScreen>
         onPressed: () => Navigator.pop(context),
       ),
       flexibleSpace: FlexibleSpaceBar(
-        background: Container(
+        background: DecoratedBox(
           decoration: const BoxDecoration(
             gradient: LinearGradient(
               colors: [AppColors.primary, AppColors.primaryDark],
@@ -496,10 +495,10 @@ class _DoctorProfileScreenState extends ConsumerState<DoctorProfileScreen>
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
                     _buildQuickStat(Icons.work_history,
-                        '${_experienceController.text.isNotEmpty ? _experienceController.text : "0"}+ yrs'),
+                        '${_experienceController.text.isNotEmpty ? _experienceController.text : "0"}+ yrs',),
                     _buildStatDivider(),
                     _buildQuickStat(Icons.verified,
-                        _licenseController.text.isNotEmpty ? _licenseController.text : 'License #'),
+                        _licenseController.text.isNotEmpty ? _licenseController.text : 'License #',),
                     _buildStatDivider(),
                     _buildQuickStat(Icons.language, '${_languages.length} Languages'),
                   ],
@@ -672,9 +671,9 @@ class _DoctorProfileScreenState extends ConsumerState<DoctorProfileScreen>
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text('Your signature will be automatically added to prescriptions and invoices',
-                    style: TextStyle(fontSize: 13, color: isDark ? AppColors.darkTextSecondary : AppColors.textSecondary)),
+                    style: TextStyle(fontSize: 13, color: isDark ? AppColors.darkTextSecondary : AppColors.textSecondary),),
                 const SizedBox(height: 16),
-                SignaturePad(initialSignature: _signatureData, onSignatureChanged: (data) { setState(() => _signatureData = data); _checkForChanges(); }, height: 200, readOnly: false),
+                SignaturePad(initialSignature: _signatureData, onSignatureChanged: (data) { setState(() => _signatureData = data); _checkForChanges(); }),
               ],
             ),
           ),
@@ -707,7 +706,7 @@ class _DoctorProfileScreenState extends ConsumerState<DoctorProfileScreen>
                       const SizedBox(height: 8),
                       Text('Dr. ${_nameController.text.isNotEmpty ? _nameController.text : "Your Name"}', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
                       Text(_specializationController.text.isNotEmpty ? _specializationController.text : 'Specialization',
-                          style: TextStyle(fontSize: 12, color: isDark ? AppColors.darkTextSecondary : AppColors.textSecondary)),
+                          style: TextStyle(fontSize: 12, color: isDark ? AppColors.darkTextSecondary : AppColors.textSecondary),),
                     ],
                   ),
                 ],
@@ -758,7 +757,7 @@ class _DoctorProfileScreenState extends ConsumerState<DoctorProfileScreen>
   }
 
   Widget _buildCard({required bool isDark, required String title, required IconData icon, required Widget child, Widget? trailing}) {
-    return Container(
+    return DecoratedBox(
       decoration: BoxDecoration(
         color: isDark ? AppColors.darkSurface : Colors.white,
         borderRadius: BorderRadius.circular(20),
@@ -917,9 +916,9 @@ class _DoctorProfileScreenState extends ConsumerState<DoctorProfileScreen>
 
 /// Custom painter for signature preview
 class _SignaturePreviewPainter extends CustomPainter {
-  final List<List<Offset>> strokes;
 
   _SignaturePreviewPainter({required this.strokes});
+  final List<List<Offset>> strokes;
 
   @override
   void paint(Canvas canvas, Size size) {
@@ -927,7 +926,8 @@ class _SignaturePreviewPainter extends CustomPainter {
     
     // Calculate bounds of the signature
     double minX = double.infinity, minY = double.infinity;
-    double maxX = double.negativeInfinity, maxY = double.negativeInfinity;
+    double maxX = double.negativeInfinity;
+    double maxY = double.negativeInfinity;
     
     for (final stroke in strokes) {
       for (final point in stroke) {

@@ -6,36 +6,6 @@ import 'dart:convert';
 
 /// Data class representing a pulmonary clinical evaluation
 class PulmonaryEvaluation {
-  // Presenting Complaint
-  final String chiefComplaint;
-  final String duration;
-  final String symptomCharacter; // Dry cough, productive, hemoptysis, etc.
-  
-  // Associated Symptoms
-  final List<String> systemicSymptoms; // Fever, weight loss, night sweats, fatigue
-  final List<String> redFlags; // Hemoptysis, severe dyspnea, stridor, cyanosis
-  
-  // History
-  final String pastPulmonaryHistory; // Previous TB, asthma, COPD, pneumonia
-  final String exposureHistory; // Occupational, smoking, environmental
-  final String allergyAtopyHistory; // Allergies, eczema, rhinitis
-  final List<String> currentMedications;
-  final List<String> comorbidities; // DM, HTN, immunocompromised, etc.
-  
-  // Examination
-  final ChestAuscultation chestAuscultation;
-  
-  // Assessment
-  final String impressionDiagnosis;
-  final List<String> differentialDiagnosis;
-  
-  // Plan
-  final List<String> investigationsRequired;
-  final String treatmentPlan;
-  final String followUpPlan;
-  
-  // Vitals (optional)
-  final PulmonaryVitals? vitals;
 
   const PulmonaryEvaluation({
     this.chiefComplaint = '',
@@ -84,6 +54,41 @@ class PulmonaryEvaluation {
     );
   }
 
+  /// Creates from JSON string
+  factory PulmonaryEvaluation.fromJsonString(String jsonString) {
+    return PulmonaryEvaluation.fromJson(jsonDecode(jsonString) as Map<String, dynamic>);
+  }
+  // Presenting Complaint
+  final String chiefComplaint;
+  final String duration;
+  final String symptomCharacter; // Dry cough, productive, hemoptysis, etc.
+  
+  // Associated Symptoms
+  final List<String> systemicSymptoms; // Fever, weight loss, night sweats, fatigue
+  final List<String> redFlags; // Hemoptysis, severe dyspnea, stridor, cyanosis
+  
+  // History
+  final String pastPulmonaryHistory; // Previous TB, asthma, COPD, pneumonia
+  final String exposureHistory; // Occupational, smoking, environmental
+  final String allergyAtopyHistory; // Allergies, eczema, rhinitis
+  final List<String> currentMedications;
+  final List<String> comorbidities; // DM, HTN, immunocompromised, etc.
+  
+  // Examination
+  final ChestAuscultation chestAuscultation;
+  
+  // Assessment
+  final String impressionDiagnosis;
+  final List<String> differentialDiagnosis;
+  
+  // Plan
+  final List<String> investigationsRequired;
+  final String treatmentPlan;
+  final String followUpPlan;
+  
+  // Vitals (optional)
+  final PulmonaryVitals? vitals;
+
   /// Converts PulmonaryEvaluation to JSON map
   Map<String, dynamic> toJson() {
     return {
@@ -109,11 +114,6 @@ class PulmonaryEvaluation {
 
   /// Serializes to JSON string
   String toJsonString() => jsonEncode(toJson());
-
-  /// Creates from JSON string
-  factory PulmonaryEvaluation.fromJsonString(String jsonString) {
-    return PulmonaryEvaluation.fromJson(jsonDecode(jsonString) as Map<String, dynamic>);
-  }
 
   static List<String> _parseStringList(dynamic value) {
     if (value == null) return [];
@@ -168,15 +168,6 @@ class PulmonaryEvaluation {
 
 /// Chest auscultation findings
 class ChestAuscultation {
-  final String breathSounds; // Normal vesicular, bronchial, diminished, absent
-  final List<String> addedSounds; // Crackles, wheeze, rhonchi, pleural rub
-  final String rightUpperZone;
-  final String rightMiddleZone;
-  final String rightLowerZone;
-  final String leftUpperZone;
-  final String leftMiddleZone;
-  final String leftLowerZone;
-  final String additionalFindings;
 
   const ChestAuscultation({
     this.breathSounds = '',
@@ -203,6 +194,15 @@ class ChestAuscultation {
       additionalFindings: json['additional_findings'] as String? ?? '',
     );
   }
+  final String breathSounds; // Normal vesicular, bronchial, diminished, absent
+  final List<String> addedSounds; // Crackles, wheeze, rhonchi, pleural rub
+  final String rightUpperZone;
+  final String rightMiddleZone;
+  final String rightLowerZone;
+  final String leftUpperZone;
+  final String leftMiddleZone;
+  final String leftLowerZone;
+  final String additionalFindings;
 
   Map<String, dynamic> toJson() {
     return {
@@ -221,13 +221,6 @@ class ChestAuscultation {
 
 /// Pulmonary-specific vitals
 class PulmonaryVitals {
-  final String bloodPressure;
-  final String pulse;
-  final String temperature;
-  final String respiratoryRate;
-  final String spo2; // Oxygen saturation
-  final String peakFlowRate;
-  final String weight;
 
   const PulmonaryVitals({
     this.bloodPressure = '',
@@ -250,6 +243,13 @@ class PulmonaryVitals {
       weight: json['weight'] as String? ?? '',
     );
   }
+  final String bloodPressure;
+  final String pulse;
+  final String temperature;
+  final String respiratoryRate;
+  final String spo2; // Oxygen saturation
+  final String peakFlowRate;
+  final String weight;
 
   Map<String, dynamic> toJson() {
     return {

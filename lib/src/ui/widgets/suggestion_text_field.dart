@@ -3,6 +3,17 @@ import '../../theme/app_theme.dart';
 
 /// A text field that shows suggestion chips when focused (inline below the field)
 class SuggestionTextField extends StatefulWidget {
+
+  const SuggestionTextField({
+    required this.controller, required this.label, required this.suggestions, super.key,
+    this.hint,
+    this.prefixIcon,
+    this.maxLines = 1,
+    this.appendMode = true,
+    this.separator = ', ',
+    this.validator,
+    this.keyboardType,
+  });
   final TextEditingController controller;
   final String label;
   final String? hint;
@@ -13,20 +24,6 @@ class SuggestionTextField extends StatefulWidget {
   final String separator;
   final String? Function(String?)? validator;
   final TextInputType? keyboardType;
-
-  const SuggestionTextField({
-    super.key,
-    required this.controller,
-    required this.label,
-    this.hint,
-    this.prefixIcon,
-    required this.suggestions,
-    this.maxLines = 1,
-    this.appendMode = true,
-    this.separator = ', ',
-    this.validator,
-    this.keyboardType,
-  });
 
   @override
   State<SuggestionTextField> createState() => _SuggestionTextFieldState();
@@ -149,7 +146,7 @@ class _SuggestionTextFieldState extends State<SuggestionTextField> {
                     scrollDirection: Axis.horizontal,
                     child: Row(
                       children: [
-                        Icon(Icons.tips_and_updates, size: 14, color: AppColors.warning),
+                        const Icon(Icons.tips_and_updates, size: 14, color: AppColors.warning),
                         const SizedBox(width: 6),
                         ...widget.suggestions.map((suggestion) {
                           final isSelected = widget.controller.text.contains(suggestion);
@@ -171,7 +168,7 @@ class _SuggestionTextFieldState extends State<SuggestionTextField> {
                                   mainAxisSize: MainAxisSize.min,
                                   children: [
                                     if (isSelected) ...[
-                                      Icon(Icons.check, size: 12, color: AppColors.primary),
+                                      const Icon(Icons.check, size: 12, color: AppColors.primary),
                                       const SizedBox(width: 4),
                                     ],
                                     Text(
@@ -200,6 +197,15 @@ class _SuggestionTextFieldState extends State<SuggestionTextField> {
 
 /// A compact version for vital signs with unit toggle
 class VitalTextField extends StatefulWidget {
+
+  const VitalTextField({
+    required this.controller, required this.label, required this.unit, required this.icon, required this.suggestions, super.key,
+    this.showUnitToggle = false,
+    this.alternateUnit,
+    this.alternateSuggestions,
+    this.onUnitChanged,
+    this.isAlternateUnit = false,
+  });
   final TextEditingController controller;
   final String label;
   final String unit;
@@ -210,20 +216,6 @@ class VitalTextField extends StatefulWidget {
   final List<String>? alternateSuggestions;
   final ValueChanged<bool>? onUnitChanged;
   final bool isAlternateUnit;
-
-  const VitalTextField({
-    super.key,
-    required this.controller,
-    required this.label,
-    required this.unit,
-    required this.icon,
-    required this.suggestions,
-    this.showUnitToggle = false,
-    this.alternateUnit,
-    this.alternateSuggestions,
-    this.onUnitChanged,
-    this.isAlternateUnit = false,
-  });
 
   @override
   State<VitalTextField> createState() => _VitalTextFieldState();
@@ -280,8 +272,8 @@ class _VitalTextFieldState extends State<VitalTextField> {
   }
 
   OverlayEntry _createOverlayEntry() {
-    RenderBox renderBox = context.findRenderObject() as RenderBox;
-    var size = renderBox.size;
+    final RenderBox renderBox = context.findRenderObject()! as RenderBox;
+    final size = renderBox.size;
 
     return OverlayEntry(
       builder: (context) => Positioned(
@@ -363,7 +355,7 @@ class _VitalTextFieldState extends State<VitalTextField> {
           ),
           if (widget.showUnitToggle && widget.alternateUnit != null) ...[
             const SizedBox(width: 4),
-            Container(
+            DecoratedBox(
               decoration: BoxDecoration(
                 color: Theme.of(context).colorScheme.surfaceContainerHighest,
                 borderRadius: BorderRadius.circular(8),
@@ -450,7 +442,7 @@ void showSuggestionBottomSheet({
             padding: const EdgeInsets.all(16),
             child: Row(
               children: [
-                Icon(Icons.lightbulb_outline, color: AppColors.warning, size: 20),
+                const Icon(Icons.lightbulb_outline, color: AppColors.warning, size: 20),
                 const SizedBox(width: 8),
                 Text(
                   title,
@@ -502,7 +494,7 @@ void showSuggestionBottomSheet({
                           : (isDark ? AppColors.darkDivider : AppColors.divider),
                     ),
                     avatar: isSelected 
-                        ? Icon(Icons.check, size: 16, color: AppColors.primary)
+                        ? const Icon(Icons.check, size: 16, color: AppColors.primary)
                         : null,
                   );
                 }).toList(),

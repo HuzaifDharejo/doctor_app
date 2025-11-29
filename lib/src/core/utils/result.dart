@@ -83,10 +83,10 @@ sealed class Result<T, E> {
 /// Represents a successful result
 @immutable
 final class Success<T, E> extends Result<T, E> {
-  /// The success value
-  final T value;
   
   const Success(this.value) : super._();
+  /// The success value
+  final T value;
   
   @override
   bool get isSuccess => true;
@@ -148,10 +148,10 @@ final class Success<T, E> extends Result<T, E> {
 /// Represents a failed result
 @immutable
 final class Failure<T, E> extends Result<T, E> {
-  /// The error value
-  final E error;
   
   const Failure(this.error) : super._();
+  /// The error value
+  final E error;
   
   @override
   bool get isSuccess => false;

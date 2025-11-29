@@ -72,7 +72,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> with SingleTick
                     ).animate(CurvedAnimation(
                       parent: _animationController,
                       curve: Curves.easeOutCubic,
-                    )),
+                    ),),
                     child: _buildProfileCard(context, ref),
                   ),
                 ),
@@ -521,7 +521,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> with SingleTick
                 Navigator.pop(context);
               }
             },
-          )).toList(),
+          ),).toList(),
         ),
       ),
     );
@@ -627,7 +627,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> with SingleTick
               Navigator.pop(context);
               try {
                 final dbAsync = ref.read(doctorDbProvider);
-                final db = await dbAsync.when(
+                final db = dbAsync.when(
                   data: (db) => db,
                   loading: () => throw Exception('Database loading'),
                   error: (e, _) => throw e,
@@ -877,7 +877,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> with SingleTick
             _buildFeatureItem('Medical Records'),
             const SizedBox(height: 16),
             const Text('© 2024 Doctor App. All rights reserved.', 
-              style: TextStyle(fontSize: 12, color: Colors.grey)),
+              style: TextStyle(fontSize: 12, color: Colors.grey),),
           ],
         ),
         actions: [
@@ -967,7 +967,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> with SingleTick
 
   Widget _buildSettingsGroup(BuildContext context, List<_SettingItem> items) {
     final isDark = context.isDarkMode;
-    return Container(
+    return DecoratedBox(
       decoration: BoxDecoration(
         color: context.colorScheme.surface,
         borderRadius: BorderRadius.circular(AppRadius.md),
@@ -1085,7 +1085,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> with SingleTick
     }
 
     if (calendarState.isConnected) {
-      return Container(
+      return DecoratedBox(
         decoration: BoxDecoration(
           color: context.colorScheme.surface,
           borderRadius: BorderRadius.circular(AppRadius.md),
@@ -1105,7 +1105,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> with SingleTick
                         ? NetworkImage(calendarState.userPhotoUrl!)
                         : null,
                     child: calendarState.userPhotoUrl == null
-                        ? Icon(Icons.person, color: AppColors.primary)
+                        ? const Icon(Icons.person, color: AppColors.primary)
                         : null,
                   ),
                   const SizedBox(width: AppSpacing.md),
@@ -1166,7 +1166,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> with SingleTick
       );
     }
 
-    return Container(
+    return DecoratedBox(
       decoration: BoxDecoration(
         color: context.colorScheme.surface,
         borderRadius: BorderRadius.circular(AppRadius.md),
@@ -1263,7 +1263,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> with SingleTick
       'follow_up': Icons.event_repeat,
     };
 
-    return Container(
+    return DecoratedBox(
       decoration: BoxDecoration(
         color: context.colorScheme.surface,
         borderRadius: BorderRadius.circular(AppRadius.md),
@@ -1590,7 +1590,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> with SingleTick
                     
                     return RadioListTile<String>(
                       title: Text(calendar.summary ?? 'Unnamed Calendar'),
-                      subtitle: calendar.primary == true ? const Text('Primary') : null,
+                      subtitle: calendar.primary ?? false ? const Text('Primary') : null,
                       value: calendar.id ?? 'primary',
                       groupValue: state.selectedCalendarId,
                       onChanged: (value) {
@@ -1685,12 +1685,6 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> with SingleTick
 }
 
 class _SettingItem {
-  final IconData icon;
-  final Color iconColor;
-  final String title;
-  final String? subtitle;
-  final Widget? trailing;
-  final VoidCallback? onTap;
 
   _SettingItem({
     required this.icon,
@@ -1700,17 +1694,23 @@ class _SettingItem {
     this.trailing,
     this.onTap,
   });
+  final IconData icon;
+  final Color iconColor;
+  final String title;
+  final String? subtitle;
+  final Widget? trailing;
+  final VoidCallback? onTap;
 }
 
 /// Animated tap card with scale effect
 class _AnimatedTapCard extends StatefulWidget {
-  final Widget child;
-  final VoidCallback onTap;
 
   const _AnimatedTapCard({
     required this.child,
     required this.onTap,
   });
+  final Widget child;
+  final VoidCallback onTap;
 
   @override
   State<_AnimatedTapCard> createState() => _AnimatedTapCardState();

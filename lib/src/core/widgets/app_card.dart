@@ -7,22 +7,9 @@ import '../constants/app_constants.dart';
 import '../extensions/context_extensions.dart';
 
 class AppCard extends StatelessWidget {
-  final Widget child;
-  final EdgeInsetsGeometry? padding;
-  final EdgeInsetsGeometry? margin;
-  final Color? color;
-  final Color? borderColor;
-  final double? borderWidth;
-  final BorderRadius? borderRadius;
-  final List<BoxShadow>? boxShadow;
-  final VoidCallback? onTap;
-  final VoidCallback? onLongPress;
-  final bool hasBorder;
-  final Gradient? gradient;
 
   const AppCard({
-    super.key,
-    required this.child,
+    required this.child, super.key,
     this.padding,
     this.margin,
     this.color,
@@ -38,8 +25,7 @@ class AppCard extends StatelessWidget {
 
   /// Creates a card with primary accent
   const AppCard.primary({
-    super.key,
-    required this.child,
+    required this.child, super.key,
     this.padding,
     this.margin,
     this.onTap,
@@ -54,8 +40,7 @@ class AppCard extends StatelessWidget {
 
   /// Creates an elevated card with shadow
   AppCard.elevated({
-    super.key,
-    required this.child,
+    required this.child, super.key,
     this.padding,
     this.margin,
     this.color,
@@ -70,9 +55,7 @@ class AppCard extends StatelessWidget {
 
   /// Creates a gradient card
   const AppCard.gradient({
-    super.key,
-    required this.child,
-    required this.gradient,
+    required this.child, required this.gradient, super.key,
     this.padding,
     this.margin,
     this.onTap,
@@ -83,6 +66,18 @@ class AppCard extends StatelessWidget {
         borderRadius = null,
         boxShadow = null,
         hasBorder = false;
+  final Widget child;
+  final EdgeInsetsGeometry? padding;
+  final EdgeInsetsGeometry? margin;
+  final Color? color;
+  final Color? borderColor;
+  final double? borderWidth;
+  final BorderRadius? borderRadius;
+  final List<BoxShadow>? boxShadow;
+  final VoidCallback? onTap;
+  final VoidCallback? onLongPress;
+  final bool hasBorder;
+  final Gradient? gradient;
 
   @override
   Widget build(BuildContext context) {
@@ -94,7 +89,7 @@ class AppCard extends StatelessWidget {
     final effectiveBorderColor = borderColor ?? 
         (isDark ? AppColors.darkDivider : AppColors.divider).withValues(alpha: 0.5);
 
-    Widget card = Container(
+    final Widget card = Container(
       margin: margin,
       decoration: BoxDecoration(
         color: gradient == null ? effectiveColor : null,
@@ -132,22 +127,20 @@ class AppCard extends StatelessWidget {
 
 /// Section card with title and optional actions
 class SectionCard extends StatelessWidget {
+
+  const SectionCard({
+    required this.title, required this.child, super.key,
+    this.trailing,
+    this.onSeeAll,
+    this.padding,
+    this.contentPadding,
+  });
   final String title;
   final Widget child;
   final Widget? trailing;
   final VoidCallback? onSeeAll;
   final EdgeInsetsGeometry? padding;
   final EdgeInsetsGeometry? contentPadding;
-
-  const SectionCard({
-    super.key,
-    required this.title,
-    required this.child,
-    this.trailing,
-    this.onSeeAll,
-    this.padding,
-    this.contentPadding,
-  });
 
   @override
   Widget build(BuildContext context) {
@@ -176,7 +169,7 @@ class SectionCard extends StatelessWidget {
                 TextButton(
                   onPressed: onSeeAll,
                   style: TextButton.styleFrom(
-                    padding: EdgeInsets.symmetric(horizontal: AppSpacing.sm),
+                    padding: const EdgeInsets.symmetric(horizontal: AppSpacing.sm),
                     minimumSize: Size.zero,
                     tapTargetSize: MaterialTapTargetSize.shrinkWrap,
                   ),
@@ -189,7 +182,7 @@ class SectionCard extends StatelessWidget {
                 ),
             ],
           ),
-          SizedBox(height: AppSpacing.md),
+          const SizedBox(height: AppSpacing.md),
           
           // Content
           Padding(

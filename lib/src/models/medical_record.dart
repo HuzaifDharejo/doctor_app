@@ -25,61 +25,20 @@ enum MedicalRecordType {
 }
 
 /// Medical record data model
-class MedicalRecordModel {
-  final int? id;
-  final int patientId;
-  final String? patientName; // For display purposes
-  final MedicalRecordType recordType;
-  final String title;
-  final String description;
-  final Map<String, dynamic> data; // Type-specific form data
-  final String diagnosis;
-  final String treatment;
-  final String doctorNotes;
-  final DateTime recordDate;
-  final DateTime? createdAt;
-  final List<String>? attachments; // File paths or URLs
+class MedicalRecordModel { // File paths or URLs
 
   const MedicalRecordModel({
-    this.id,
-    required this.patientId,
+    required this.patientId, required this.title, required this.recordDate, this.id,
     this.patientName,
     this.recordType = MedicalRecordType.general,
-    required this.title,
     this.description = '',
     this.data = const {},
     this.diagnosis = '',
     this.treatment = '',
     this.doctorNotes = '',
-    required this.recordDate,
     this.createdAt,
     this.attachments,
   });
-
-  /// Get formatted record date
-  String get formattedDate {
-    const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
-    return '${months[recordDate.month - 1]} ${recordDate.day}, ${recordDate.year}';
-  }
-
-  /// Check if record is recent (within last 30 days)
-  bool get isRecent {
-    final diff = DateTime.now().difference(recordDate);
-    return diff.inDays <= 30;
-  }
-
-  /// Get data as JSON string (for database storage)
-  String get dataJsonString => jsonEncode(data);
-
-  /// Parse data from JSON string
-  static Map<String, dynamic> parseDataJson(String jsonString) {
-    if (jsonString.isEmpty || jsonString == '{}') return {};
-    try {
-      return jsonDecode(jsonString) as Map<String, dynamic>;
-    } catch (e) {
-      return {};
-    }
-  }
 
   /// Create from JSON map
   factory MedicalRecordModel.fromJson(Map<String, dynamic> json) {
@@ -120,6 +79,49 @@ class MedicalRecordModel {
     );
   }
 
+  /// Create from JSON string
+  factory MedicalRecordModel.fromJsonString(String jsonString) {
+    return MedicalRecordModel.fromJson(jsonDecode(jsonString) as Map<String, dynamic>);
+  }
+  final int? id;
+  final int patientId;
+  final String? patientName; // For display purposes
+  final MedicalRecordType recordType;
+  final String title;
+  final String description;
+  final Map<String, dynamic> data; // Type-specific form data
+  final String diagnosis;
+  final String treatment;
+  final String doctorNotes;
+  final DateTime recordDate;
+  final DateTime? createdAt;
+  final List<String>? attachments;
+
+  /// Get formatted record date
+  String get formattedDate {
+    const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+    return '${months[recordDate.month - 1]} ${recordDate.day}, ${recordDate.year}';
+  }
+
+  /// Check if record is recent (within last 30 days)
+  bool get isRecent {
+    final diff = DateTime.now().difference(recordDate);
+    return diff.inDays <= 30;
+  }
+
+  /// Get data as JSON string (for database storage)
+  String get dataJsonString => jsonEncode(data);
+
+  /// Parse data from JSON string
+  static Map<String, dynamic> parseDataJson(String jsonString) {
+    if (jsonString.isEmpty || jsonString == '{}') return {};
+    try {
+      return jsonDecode(jsonString) as Map<String, dynamic>;
+    } catch (e) {
+      return {};
+    }
+  }
+
   /// Convert to JSON map
   Map<String, dynamic> toJson() {
     return {
@@ -141,11 +143,6 @@ class MedicalRecordModel {
 
   /// Convert to JSON string
   String toJsonString() => jsonEncode(toJson());
-
-  /// Create from JSON string
-  factory MedicalRecordModel.fromJsonString(String jsonString) {
-    return MedicalRecordModel.fromJson(jsonDecode(jsonString) as Map<String, dynamic>);
-  }
 
   /// Create a copy with modified fields
   MedicalRecordModel copyWith({
@@ -200,14 +197,6 @@ class MedicalRecordModel {
 
 /// Vital signs model for medical records
 class VitalSigns {
-  final String? bloodPressure;
-  final int? pulseRate;
-  final double? temperature;
-  final int? respiratoryRate;
-  final int? spo2;
-  final double? weight;
-  final double? height;
-  final double? bmi;
 
   const VitalSigns({
     this.bloodPressure,
@@ -219,6 +208,27 @@ class VitalSigns {
     this.height,
     this.bmi,
   });
+
+  factory VitalSigns.fromJson(Map<String, dynamic> json) {
+    return VitalSigns(
+      bloodPressure: json['bloodPressure'] as String? ?? json['bp'] as String?,
+      pulseRate: json['pulseRate'] as int? ?? json['pulse'] as int?,
+      temperature: (json['temperature'] as num?)?.toDouble() ?? (json['temp'] as num?)?.toDouble(),
+      respiratoryRate: json['respiratoryRate'] as int? ?? json['rr'] as int?,
+      spo2: json['spo2'] as int? ?? json['oxygen'] as int?,
+      weight: (json['weight'] as num?)?.toDouble(),
+      height: (json['height'] as num?)?.toDouble(),
+      bmi: (json['bmi'] as num?)?.toDouble(),
+    );
+  }
+  final String? bloodPressure;
+  final int? pulseRate;
+  final double? temperature;
+  final int? respiratoryRate;
+  final int? spo2;
+  final double? weight;
+  final double? height;
+  final double? bmi;
 
   /// Calculate BMI from weight and height
   static double? calculateBmi(double? weightKg, double? heightCm) {
@@ -234,19 +244,6 @@ class VitalSigns {
     if (bmi! < 25) return 'Normal';
     if (bmi! < 30) return 'Overweight';
     return 'Obese';
-  }
-
-  factory VitalSigns.fromJson(Map<String, dynamic> json) {
-    return VitalSigns(
-      bloodPressure: json['bloodPressure'] as String? ?? json['bp'] as String?,
-      pulseRate: json['pulseRate'] as int? ?? json['pulse'] as int?,
-      temperature: (json['temperature'] as num?)?.toDouble() ?? (json['temp'] as num?)?.toDouble(),
-      respiratoryRate: json['respiratoryRate'] as int? ?? json['rr'] as int?,
-      spo2: json['spo2'] as int? ?? json['oxygen'] as int?,
-      weight: (json['weight'] as num?)?.toDouble(),
-      height: (json['height'] as num?)?.toDouble(),
-      bmi: (json['bmi'] as num?)?.toDouble(),
-    );
   }
 
   Map<String, dynamic> toJson() {

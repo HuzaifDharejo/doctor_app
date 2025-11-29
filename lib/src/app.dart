@@ -76,7 +76,7 @@ class _SplashScreen extends StatelessWidget {
           children: [
             Container(
               padding: const EdgeInsets.all(24),
-              decoration: BoxDecoration(
+              decoration: const BoxDecoration(
                 gradient: AppColors.primaryGradient,
                 shape: BoxShape.circle,
               ),
@@ -128,12 +128,12 @@ class _HomeShellState extends ConsumerState<HomeShell> {
     dbAsync.whenData((db) async {
       final todayAppts = await db.getAppointmentsForDay(DateTime.now());
       final pendingCount = todayAppts.where((a) => 
-        a.status == 'pending' || a.status == 'scheduled'
+        a.status == 'pending' || a.status == 'scheduled',
       ).length;
       
       final invoices = await db.getAllInvoices();
       final unpaidCount = invoices.where((i) => 
-        i.paymentStatus != 'Paid'
+        i.paymentStatus != 'Paid',
       ).length;
       
       if (mounted) {
@@ -159,7 +159,7 @@ class _HomeShellState extends ConsumerState<HomeShell> {
         index: _index,
         children: _pages,
       ),
-      bottomNavigationBar: Container(
+      bottomNavigationBar: DecoratedBox(
         decoration: BoxDecoration(
           color: isDark 
               ? context.colorScheme.surface 
@@ -288,7 +288,7 @@ class _HomeShellState extends ConsumerState<HomeShell> {
     
     return Drawer(
       backgroundColor: Colors.transparent,
-      child: Container(
+      child: DecoratedBox(
         decoration: BoxDecoration(
           gradient: LinearGradient(
             begin: Alignment.topLeft,
@@ -550,16 +550,16 @@ class _HomeShellState extends ConsumerState<HomeShell> {
                         color: AppColors.error.withValues(alpha: 0.2),
                       ),
                     ),
-                    child: Row(
+                    child: const Row(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
-                        const Icon(
+                        Icon(
                           Icons.logout_rounded,
                           color: AppColors.error,
                           size: 20,
                         ),
-                        const SizedBox(width: 10),
-                        const Text(
+                        SizedBox(width: 10),
+                        Text(
                           AppStrings.logout,
                           style: TextStyle(
                             color: AppColors.error,

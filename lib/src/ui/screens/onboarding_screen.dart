@@ -69,7 +69,7 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen>
     ).animate(CurvedAnimation(
       parent: _logoAnimationController,
       curve: Curves.easeInOut,
-    ));
+    ),);
     
     _logoAnimationController.repeat();
     
@@ -536,11 +536,11 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen>
                       color: AppColors.appointments.withValues(alpha: 0.1),
                       borderRadius: BorderRadius.circular(20),
                     ),
-                    child: Row(
+                    child: const Row(
                       mainAxisSize: MainAxisSize.min,
                       children: [
                         Icon(Icons.calendar_month, size: 16, color: AppColors.appointments),
-                        const SizedBox(width: 6),
+                        SizedBox(width: 6),
                         Text(
                           'Google Calendar Connected',
                           style: TextStyle(
@@ -730,7 +730,7 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen>
           ),
         ],
       ),
-    ));
+    ),);
   }
 
   Widget _buildMiniFeatureAnimated(IconData icon, String label, Color color, bool isDark, int index) {
@@ -818,7 +818,7 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen>
                 const SizedBox(height: 8),
                 Text(
                   _isSignedIn 
-                      ? 'We\'ve filled in some details from your Google account.\nAdd your professional info below.'
+                      ? "We've filled in some details from your Google account.\nAdd your professional info below."
                       : 'This information will appear on prescriptions and invoices',
                   style: TextStyle(
                     fontSize: 14,
@@ -991,7 +991,7 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen>
                           // This will restart animation
                         },
                       ),
-                      Icon(
+                      const Icon(
                         Icons.check_circle_rounded,
                         size: 80,
                         color: AppColors.success,
@@ -1017,7 +1017,7 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen>
               );
             },
             child: Text(
-              'You\'re All Set!',
+              "You're All Set!",
               style: TextStyle(
                 fontSize: 28,
                 fontWeight: FontWeight.bold,

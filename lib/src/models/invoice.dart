@@ -45,30 +45,14 @@ enum PaymentMethod {
 
 /// Individual invoice line item
 class InvoiceItem {
-  final String description;
-  final int quantity;
-  final double unitPrice;
-  final double? discount;
-  final String? hsnCode;
-  final String? category;
 
   const InvoiceItem({
     required this.description,
-    this.quantity = 1,
-    required this.unitPrice,
+    required this.unitPrice, this.quantity = 1,
     this.discount,
     this.hsnCode,
     this.category,
   });
-
-  /// Calculate total for this line item
-  double get total {
-    final subtotal = quantity * unitPrice;
-    if (discount != null && discount! > 0) {
-      return subtotal - (subtotal * discount! / 100);
-    }
-    return subtotal;
-  }
 
   factory InvoiceItem.fromJson(Map<String, dynamic> json) {
     return InvoiceItem(
@@ -81,6 +65,21 @@ class InvoiceItem {
       hsnCode: json['hsnCode'] as String? ?? json['hsn_code'] as String?,
       category: json['category'] as String?,
     );
+  }
+  final String description;
+  final int quantity;
+  final double unitPrice;
+  final double? discount;
+  final String? hsnCode;
+  final String? category;
+
+  /// Calculate total for this line item
+  double get total {
+    final subtotal = quantity * unitPrice;
+    if (discount != null && discount! > 0) {
+      return subtotal - (subtotal * discount! / 100);
+    }
+    return subtotal;
   }
 
   Map<String, dynamic> toJson() {
@@ -130,31 +129,10 @@ class InvoiceItem {
 
 /// Invoice data model
 class InvoiceModel {
-  final int? id;
-  final int patientId;
-  final String? patientName; // For display purposes
-  final String invoiceNumber;
-  final DateTime invoiceDate;
-  final DateTime? dueDate;
-  final List<InvoiceItem> items;
-  final double subtotal;
-  final double discountPercent;
-  final double discountAmount;
-  final double taxPercent;
-  final double taxAmount;
-  final double grandTotal;
-  final PaymentMethod paymentMethod;
-  final PaymentStatus paymentStatus;
-  final double? amountPaid;
-  final String notes;
-  final DateTime? createdAt;
 
   const InvoiceModel({
-    this.id,
-    required this.patientId,
+    required this.patientId, required this.invoiceNumber, required this.invoiceDate, this.id,
     this.patientName,
-    required this.invoiceNumber,
-    required this.invoiceDate,
     this.dueDate,
     this.items = const [],
     this.subtotal = 0.0,
@@ -170,37 +148,11 @@ class InvoiceModel {
     this.createdAt,
   });
 
-  /// Calculate balance due
-  double get balanceDue {
-    if (paymentStatus == PaymentStatus.paid) return 0;
-    return grandTotal - (amountPaid ?? 0);
-  }
-
-  /// Check if invoice is overdue
-  bool get isOverdue {
-    if (paymentStatus == PaymentStatus.paid) return false;
-    if (dueDate == null) return false;
-    return DateTime.now().isAfter(dueDate!);
-  }
-
-  /// Get formatted invoice date
-  String get formattedDate {
-    const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
-    return '${months[invoiceDate.month - 1]} ${invoiceDate.day}, ${invoiceDate.year}';
-  }
-
-  /// Get formatted grand total with currency
-  String get formattedTotal => '₹${grandTotal.toStringAsFixed(2)}';
-
   /// Calculate totals from items
   factory InvoiceModel.calculateFromItems({
-    int? id,
-    required int patientId,
+    required int patientId, required String invoiceNumber, required DateTime invoiceDate, required List<InvoiceItem> items, int? id,
     String? patientName,
-    required String invoiceNumber,
-    required DateTime invoiceDate,
     DateTime? dueDate,
-    required List<InvoiceItem> items,
     double discountPercent = 0.0,
     double taxPercent = 0.0,
     PaymentMethod paymentMethod = PaymentMethod.cash,
@@ -234,20 +186,6 @@ class InvoiceModel {
       notes: notes,
     );
   }
-
-  /// Parse items from JSON string
-  static List<InvoiceItem> parseItemsJson(String jsonString) {
-    if (jsonString.isEmpty) return [];
-    try {
-      final List<dynamic> list = jsonDecode(jsonString) as List<dynamic>;
-      return list.map((item) => InvoiceItem.fromJson(item as Map<String, dynamic>)).toList();
-    } catch (e) {
-      return [];
-    }
-  }
-
-  /// Convert items to JSON string
-  String get itemsJsonString => jsonEncode(items.map((i) => i.toJson()).toList());
 
   /// Create from JSON map
   factory InvoiceModel.fromJson(Map<String, dynamic> json) {
@@ -307,6 +245,65 @@ class InvoiceModel {
     );
   }
 
+  /// Create from JSON string
+  factory InvoiceModel.fromJsonString(String jsonString) {
+    return InvoiceModel.fromJson(jsonDecode(jsonString) as Map<String, dynamic>);
+  }
+  final int? id;
+  final int patientId;
+  final String? patientName; // For display purposes
+  final String invoiceNumber;
+  final DateTime invoiceDate;
+  final DateTime? dueDate;
+  final List<InvoiceItem> items;
+  final double subtotal;
+  final double discountPercent;
+  final double discountAmount;
+  final double taxPercent;
+  final double taxAmount;
+  final double grandTotal;
+  final PaymentMethod paymentMethod;
+  final PaymentStatus paymentStatus;
+  final double? amountPaid;
+  final String notes;
+  final DateTime? createdAt;
+
+  /// Calculate balance due
+  double get balanceDue {
+    if (paymentStatus == PaymentStatus.paid) return 0;
+    return grandTotal - (amountPaid ?? 0);
+  }
+
+  /// Check if invoice is overdue
+  bool get isOverdue {
+    if (paymentStatus == PaymentStatus.paid) return false;
+    if (dueDate == null) return false;
+    return DateTime.now().isAfter(dueDate!);
+  }
+
+  /// Get formatted invoice date
+  String get formattedDate {
+    const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+    return '${months[invoiceDate.month - 1]} ${invoiceDate.day}, ${invoiceDate.year}';
+  }
+
+  /// Get formatted grand total with currency
+  String get formattedTotal => '₹${grandTotal.toStringAsFixed(2)}';
+
+  /// Parse items from JSON string
+  static List<InvoiceItem> parseItemsJson(String jsonString) {
+    if (jsonString.isEmpty) return [];
+    try {
+      final List<dynamic> list = jsonDecode(jsonString) as List<dynamic>;
+      return list.map((item) => InvoiceItem.fromJson(item as Map<String, dynamic>)).toList();
+    } catch (e) {
+      return [];
+    }
+  }
+
+  /// Convert items to JSON string
+  String get itemsJsonString => jsonEncode(items.map((i) => i.toJson()).toList());
+
   /// Convert to JSON map
   Map<String, dynamic> toJson() {
     return {
@@ -333,11 +330,6 @@ class InvoiceModel {
 
   /// Convert to JSON string
   String toJsonString() => jsonEncode(toJson());
-
-  /// Create from JSON string
-  factory InvoiceModel.fromJsonString(String jsonString) {
-    return InvoiceModel.fromJson(jsonDecode(jsonString) as Map<String, dynamic>);
-  }
 
   /// Create a copy with modified fields
   InvoiceModel copyWith({
