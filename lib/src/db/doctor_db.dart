@@ -85,6 +85,10 @@ class MedicalRecordWithPatient {
 @DriftDatabase(tables: [Patients, Appointments, Prescriptions, MedicalRecords, Invoices])
 class DoctorDatabase extends _$DoctorDatabase {
   DoctorDatabase() : super(impl.openConnection());
+  
+  /// Constructor for testing with a custom executor.
+  /// Use this with NativeDatabase.memory() for in-memory testing.
+  DoctorDatabase.forTesting(super.e);
 
   @override
   int get schemaVersion => 1;
