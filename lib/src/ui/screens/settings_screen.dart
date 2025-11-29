@@ -514,7 +514,9 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> with SingleTick
           children: languages.map((lang) => RadioListTile<String>(
             title: Text(lang),
             value: lang,
+            // ignore: deprecated_member_use
             groupValue: currentLanguage,
+            // ignore: deprecated_member_use
             onChanged: (value) {
               if (value != null) {
                 ref.read(appSettingsProvider).setLanguage(value);
@@ -1592,7 +1594,9 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> with SingleTick
                       title: Text(calendar.summary ?? 'Unnamed Calendar'),
                       subtitle: calendar.primary ?? false ? const Text('Primary') : null,
                       value: calendar.id ?? 'primary',
+                      // ignore: deprecated_member_use
                       groupValue: state.selectedCalendarId,
+                      // ignore: deprecated_member_use
                       onChanged: (value) {
                         if (value != null) {
                           ref.read(googleCalendarProvider.notifier).setSelectedCalendar(value);

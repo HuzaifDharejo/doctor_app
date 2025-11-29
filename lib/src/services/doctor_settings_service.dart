@@ -377,12 +377,14 @@ class AppSettingsService extends ChangeNotifier {
     }
   }
 
+  // ignore: avoid_positional_boolean_parameters
   Future<void> setNotificationsEnabled(bool enabled) async {
     _settings = _settings.copyWith(notificationsEnabled: enabled);
     await _saveSettings();
     notifyListeners();
   }
 
+  // ignore: avoid_positional_boolean_parameters
   Future<void> setDarkModeEnabled(bool enabled) async {
     _settings = _settings.copyWith(darkModeEnabled: enabled);
     await _saveSettings();
@@ -412,6 +414,7 @@ class AppSettingsService extends ChangeNotifier {
     }
   }
 
+  // ignore: avoid_positional_boolean_parameters
   Future<void> setOnboardingComplete(bool complete) async {
     _settings = _settings.copyWith(onboardingComplete: complete);
     await _saveSettings();
@@ -424,6 +427,7 @@ class AppSettingsService extends ChangeNotifier {
     notifyListeners();
   }
 
+  // ignore: avoid_positional_boolean_parameters
   Future<void> toggleMedicalRecordType(String type, bool enabled) async {
     final currentTypes = List<String>.from(_settings.enabledMedicalRecordTypes);
     if (enabled && !currentTypes.contains(type)) {

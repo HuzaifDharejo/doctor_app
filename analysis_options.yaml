@@ -9,8 +9,8 @@ analyzer:
     strict-inference: true
     strict-raw-types: true
   errors:
-    # Treat info level issues as warnings
-    todo: warning
+    # Treat TODOs as info since they're reminders not issues
+    todo: info
     # Prevent using deprecated APIs
     deprecated_member_use_from_same_package: warning
     # Missing returns are errors

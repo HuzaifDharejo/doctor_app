@@ -11,11 +11,11 @@ enum LogLevel {
   error(4, 'E', '\x1B[31m'),      // Red
   fatal(5, 'F', '\x1B[35m');      // Magenta
 
+  const LogLevel(this.priority, this.prefix, this.color);
+
   final int priority;
   final String prefix;
   final String color;
-  
-  const LogLevel(this.priority, this.prefix, this.color);
 }
 
 /// A single log entry

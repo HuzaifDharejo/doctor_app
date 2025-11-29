@@ -829,7 +829,9 @@ class _BillingScreenState extends ConsumerState<BillingScreen> {
                         child: ElevatedButton.icon(
                           onPressed: () async {
                             await db.updateInvoice(invoice.copyWith(paymentStatus: 'Paid'));
-                            Navigator.pop(context);
+                            if (context.mounted) {
+                              Navigator.pop(context);
+                            }
                             setState(() {});
                           },
                           icon: const Icon(Icons.check_circle),

@@ -9,10 +9,10 @@ enum PaymentStatus {
   cancelled('Cancelled', 'Invoice cancelled'),
   refunded('Refunded', 'Payment refunded');
 
+  const PaymentStatus(this.label, this.description);
+
   final String label;
   final String description;
-  
-  const PaymentStatus(this.label, this.description);
 
   static PaymentStatus fromValue(String value) {
     return PaymentStatus.values.firstWhere(
@@ -31,9 +31,9 @@ enum PaymentMethod {
   insurance('Insurance'),
   credit('Credit');
 
-  final String label;
-  
   const PaymentMethod(this.label);
+
+  final String label;
 
   static PaymentMethod fromValue(String value) {
     return PaymentMethod.values.firstWhere(

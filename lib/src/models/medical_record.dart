@@ -10,11 +10,11 @@ enum MedicalRecordType {
   procedure('procedure', 'Procedure', 'Medical procedures performed'),
   followUp('follow_up', 'Follow-up', 'Follow-up visit notes');
 
+  const MedicalRecordType(this.value, this.label, this.description);
+
   final String value;
   final String label;
   final String description;
-  
-  const MedicalRecordType(this.value, this.label, this.description);
 
   static MedicalRecordType fromValue(String value) {
     return MedicalRecordType.values.firstWhere(

@@ -26,6 +26,7 @@ class ValidatorChain {
   /// Chain another validator
   ValidatorChain and(Validator validator) {
     _validators.add(validator);
+    // ignore: avoid_returning_this
     return this;
   }
 

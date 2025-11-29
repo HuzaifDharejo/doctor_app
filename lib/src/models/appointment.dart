@@ -10,10 +10,10 @@ enum AppointmentStatus {
   noShow('no_show', 'No Show'),
   rescheduled('rescheduled', 'Rescheduled');
 
+  const AppointmentStatus(this.value, this.label);
+
   final String value;
   final String label;
-  
-  const AppointmentStatus(this.value, this.label);
 
   static AppointmentStatus fromValue(String value) {
     return AppointmentStatus.values.firstWhere(
