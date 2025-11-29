@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -120,13 +122,13 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen>
 
   /// Sign in with Google SSO - auto-fills profile and connects calendar
   Future<void> _signInWithGoogle() async {
-    HapticFeedback.mediumImpact();
+    unawaited(HapticFeedback.mediumImpact());
     setState(() => _isLoading = true);
     
     final userInfo = await ref.read(googleCalendarProvider.notifier).signInAndGetUserInfo();
     
     if (userInfo != null) {
-      HapticFeedback.heavyImpact();
+      unawaited(HapticFeedback.heavyImpact());
       setState(() {
         _isSignedIn = true;
         _googleUserInfo = userInfo;
@@ -157,11 +159,11 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen>
         );
 
         // Auto-navigate to profile page with delay for visual feedback
-        await Future.delayed(const Duration(milliseconds: 500));
+        await Future<void>.delayed(const Duration(milliseconds: 500));
         _nextPage();
       }
     } else {
-      HapticFeedback.vibrate();
+      unawaited(HapticFeedback.vibrate());
       setState(() => _isLoading = false);
       
       if (mounted) {
@@ -208,7 +210,7 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen>
 
       if (mounted) {
         // Navigate to main app
-        Navigator.of(context).pushReplacementNamed('/');
+        unawaited(Navigator.of(context).pushReplacementNamed('/'));
       }
     } catch (e) {
       if (mounted) {
@@ -267,7 +269,7 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen>
                         boxShadow: isCurrent
                             ? [
                                 BoxShadow(
-                                  color: AppColors.primary.withOpacity(0.4),
+                                  color: AppColors.primary.withValues(alpha: 0.4),
                                   blurRadius: 8,
                                   offset: const Offset(0, 2),
                                 ),
@@ -387,7 +389,7 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen>
                         shape: BoxShape.circle,
                         boxShadow: [
                           BoxShadow(
-                            color: AppColors.primary.withOpacity(0.4),
+                            color: AppColors.primary.withValues(alpha: 0.4),
                             blurRadius: 30,
                             offset: const Offset(0, 15),
                           ),
@@ -461,13 +463,13 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen>
               borderRadius: BorderRadius.circular(20),
               border: Border.all(
                 color: _isSignedIn 
-                    ? AppColors.success.withOpacity(0.5)
+                    ? AppColors.success.withValues(alpha: 0.5)
                     : (isDark ? AppColors.darkDivider : AppColors.divider),
                 width: _isSignedIn ? 2 : 1,
               ),
               boxShadow: [
                 BoxShadow(
-                  color: Colors.black.withOpacity(0.05),
+                  color: Colors.black.withValues(alpha: 0.05),
                   blurRadius: 20,
                   offset: const Offset(0, 10),
                 ),
@@ -479,7 +481,7 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen>
                   // Signed in state
                   CircleAvatar(
                     radius: 36,
-                    backgroundColor: AppColors.primary.withOpacity(0.1),
+                    backgroundColor: AppColors.primary.withValues(alpha: 0.1),
                     backgroundImage: _googleUserInfo!.photoUrl != null
                         ? NetworkImage(_googleUserInfo!.photoUrl!)
                         : null,
@@ -531,7 +533,7 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen>
                   Container(
                     padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                     decoration: BoxDecoration(
-                      color: AppColors.appointments.withOpacity(0.1),
+                      color: AppColors.appointments.withValues(alpha: 0.1),
                       borderRadius: BorderRadius.circular(20),
                     ),
                     child: Row(
@@ -755,7 +757,7 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen>
         Container(
           padding: const EdgeInsets.all(12),
           decoration: BoxDecoration(
-            color: color.withOpacity(0.1),
+            color: color.withValues(alpha: 0.1),
             borderRadius: BorderRadius.circular(12),
           ),
           child: Icon(icon, color: color, size: 24),
@@ -794,7 +796,7 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen>
                   Container(
                     padding: const EdgeInsets.all(20),
                     decoration: BoxDecoration(
-                      color: AppColors.primary.withOpacity(0.1),
+                      color: AppColors.primary.withValues(alpha: 0.1),
                       shape: BoxShape.circle,
                     ),
                     child: const Icon(
@@ -913,11 +915,11 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen>
           onChanged: (_) => setState(() {}),
           decoration: InputDecoration(
             hintText: hint,
-            prefixIcon: Icon(icon, color: readOnly ? AppColors.primary.withOpacity(0.5) : AppColors.primary),
+            prefixIcon: Icon(icon, color: readOnly ? AppColors.primary.withValues(alpha: 0.5) : AppColors.primary),
             suffixIcon: suffixIcon,
             filled: true,
             fillColor: readOnly 
-                ? (isDark ? AppColors.darkSurface.withOpacity(0.5) : Colors.grey.shade100)
+                ? (isDark ? AppColors.darkSurface.withValues(alpha: 0.5) : Colors.grey.shade100)
                 : (isDark ? AppColors.darkSurface : Colors.white),
             border: OutlineInputBorder(
               borderRadius: BorderRadius.circular(12),
@@ -958,7 +960,7 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen>
                 child: Container(
                   padding: const EdgeInsets.all(32),
                   decoration: BoxDecoration(
-                    color: AppColors.success.withOpacity(0.1),
+                    color: AppColors.success.withValues(alpha: 0.1),
                     shape: BoxShape.circle,
                   ),
                   child: Stack(
@@ -978,7 +980,7 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen>
                               decoration: BoxDecoration(
                                 shape: BoxShape.circle,
                                 border: Border.all(
-                                  color: AppColors.success.withOpacity(0.3 * (1.5 - ringValue)),
+                                  color: AppColors.success.withValues(alpha: 0.3 * (1.5 - ringValue)),
                                   width: 3,
                                 ),
                               ),
@@ -1199,7 +1201,7 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen>
             width: 28,
             height: 28,
             decoration: BoxDecoration(
-              color: color.withOpacity(0.1),
+              color: color.withValues(alpha: 0.1),
               borderRadius: BorderRadius.circular(8),
             ),
             child: Center(

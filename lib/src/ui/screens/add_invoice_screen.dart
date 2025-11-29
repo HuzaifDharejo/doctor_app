@@ -325,7 +325,7 @@ class _AddInvoiceScreenState extends ConsumerState<AddInvoiceScreen> {
                               child: Container(
                                 padding: const EdgeInsets.all(10),
                                 decoration: BoxDecoration(
-                                  color: Colors.white.withOpacity(0.2),
+                                  color: Colors.white.withValues(alpha: 0.2),
                                   borderRadius: BorderRadius.circular(12),
                                 ),
                                 child: const Icon(Icons.arrow_back, color: Colors.white, size: 20),
@@ -347,7 +347,7 @@ class _AddInvoiceScreenState extends ConsumerState<AddInvoiceScreen> {
                               child: Container(
                                 padding: const EdgeInsets.all(10),
                                 decoration: BoxDecoration(
-                                  color: Colors.white.withOpacity(0.2),
+                                  color: Colors.white.withValues(alpha: 0.2),
                                   borderRadius: BorderRadius.circular(12),
                                 ),
                                 child: const Icon(Icons.print, color: Colors.white, size: 20),
@@ -363,7 +363,7 @@ class _AddInvoiceScreenState extends ConsumerState<AddInvoiceScreen> {
                             Container(
                               padding: const EdgeInsets.all(16),
                               decoration: BoxDecoration(
-                                color: Colors.white.withOpacity(0.2),
+                                color: Colors.white.withValues(alpha: 0.2),
                                 shape: BoxShape.circle,
                               ),
                               child: const Icon(
@@ -407,7 +407,7 @@ class _AddInvoiceScreenState extends ConsumerState<AddInvoiceScreen> {
                         Text(
                           DateFormat('EEEE, dd MMMM yyyy').format(_invoiceDate),
                           style: TextStyle(
-                            color: Colors.white.withOpacity(0.9),
+                            color: Colors.white.withValues(alpha: 0.9),
                             fontSize: 14,
                           ),
                         ),
@@ -416,7 +416,7 @@ class _AddInvoiceScreenState extends ConsumerState<AddInvoiceScreen> {
                           Text(
                             'Due: ${DateFormat('dd MMM yyyy').format(_dueDate!)}',
                             style: TextStyle(
-                              color: Colors.white.withOpacity(0.8),
+                              color: Colors.white.withValues(alpha: 0.8),
                               fontSize: 12,
                             ),
                           ),
@@ -567,7 +567,7 @@ class _AddInvoiceScreenState extends ConsumerState<AddInvoiceScreen> {
                   Text(
                     patient.phone.isNotEmpty ? patient.phone : 'No phone',
                     style: TextStyle(
-                      color: colorScheme.onSurface.withOpacity(0.7),
+                      color: colorScheme.onSurface.withValues(alpha: 0.7),
                       fontSize: 12,
                     ),
                   ),
@@ -670,7 +670,7 @@ class _AddInvoiceScreenState extends ConsumerState<AddInvoiceScreen> {
       return Container(
         padding: const EdgeInsets.all(32),
         decoration: BoxDecoration(
-          color: colorScheme.surfaceContainerHighest.withOpacity(0.3),
+          color: colorScheme.surfaceContainerHighest.withValues(alpha: 0.3),
           borderRadius: BorderRadius.circular(12),
           border: Border.all(color: colorScheme.outlineVariant, style: BorderStyle.solid),
         ),
@@ -679,18 +679,18 @@ class _AddInvoiceScreenState extends ConsumerState<AddInvoiceScreen> {
             Icon(
               Icons.receipt_long_outlined,
               size: 48,
-              color: colorScheme.onSurface.withOpacity(0.3),
+              color: colorScheme.onSurface.withValues(alpha: 0.3),
             ),
             const SizedBox(height: 12),
             Text(
               'No items added yet',
-              style: TextStyle(color: colorScheme.onSurface.withOpacity(0.5)),
+              style: TextStyle(color: colorScheme.onSurface.withValues(alpha: 0.5)),
             ),
             const SizedBox(height: 8),
             Text(
               'Use Quick Add or click Add Item',
               style: TextStyle(
-                color: colorScheme.onSurface.withOpacity(0.4),
+                color: colorScheme.onSurface.withValues(alpha: 0.4),
                 fontSize: 12,
               ),
             ),
@@ -710,10 +710,10 @@ class _AddInvoiceScreenState extends ConsumerState<AddInvoiceScreen> {
           ),
           child: Row(
             children: [
-              Expanded(flex: 3, child: Text('Description', style: TextStyle(fontWeight: FontWeight.w600, fontSize: 12, color: colorScheme.onSurface.withOpacity(0.7)))),
-              Expanded(child: Text('Qty', textAlign: TextAlign.center, style: TextStyle(fontWeight: FontWeight.w600, fontSize: 12, color: colorScheme.onSurface.withOpacity(0.7)))),
-              Expanded(flex: 2, child: Text('Rate', textAlign: TextAlign.right, style: TextStyle(fontWeight: FontWeight.w600, fontSize: 12, color: colorScheme.onSurface.withOpacity(0.7)))),
-              Expanded(flex: 2, child: Text('Amount', textAlign: TextAlign.right, style: TextStyle(fontWeight: FontWeight.w600, fontSize: 12, color: colorScheme.onSurface.withOpacity(0.7)))),
+              Expanded(flex: 3, child: Text('Description', style: TextStyle(fontWeight: FontWeight.w600, fontSize: 12, color: colorScheme.onSurface.withValues(alpha: 0.7)))),
+              Expanded(child: Text('Qty', textAlign: TextAlign.center, style: TextStyle(fontWeight: FontWeight.w600, fontSize: 12, color: colorScheme.onSurface.withValues(alpha: 0.7)))),
+              Expanded(flex: 2, child: Text('Rate', textAlign: TextAlign.right, style: TextStyle(fontWeight: FontWeight.w600, fontSize: 12, color: colorScheme.onSurface.withValues(alpha: 0.7)))),
+              Expanded(flex: 2, child: Text('Amount', textAlign: TextAlign.right, style: TextStyle(fontWeight: FontWeight.w600, fontSize: 12, color: colorScheme.onSurface.withValues(alpha: 0.7)))),
               const SizedBox(width: 40),
             ],
           ),
@@ -825,7 +825,7 @@ class _AddInvoiceScreenState extends ConsumerState<AddInvoiceScreen> {
               Expanded(
                 child: Text(
                   'Discount',
-                  style: TextStyle(color: colorScheme.onSurface.withOpacity(0.7)),
+                  style: TextStyle(color: colorScheme.onSurface.withValues(alpha: 0.7)),
                 ),
               ),
               SizedBox(
@@ -864,7 +864,7 @@ class _AddInvoiceScreenState extends ConsumerState<AddInvoiceScreen> {
               Expanded(
                 child: Text(
                   'Tax',
-                  style: TextStyle(color: colorScheme.onSurface.withOpacity(0.7)),
+                  style: TextStyle(color: colorScheme.onSurface.withValues(alpha: 0.7)),
                 ),
               ),
               SizedBox(
@@ -927,7 +927,7 @@ class _AddInvoiceScreenState extends ConsumerState<AddInvoiceScreen> {
       children: [
         Text(
           label,
-          style: TextStyle(color: colorScheme.onSurface.withOpacity(0.7)),
+          style: TextStyle(color: colorScheme.onSurface.withValues(alpha: 0.7)),
         ),
         Text(
           'Rs. ${amount.toStringAsFixed(0)}',
@@ -976,7 +976,7 @@ class _AddInvoiceScreenState extends ConsumerState<AddInvoiceScreen> {
               onSelected: (selected) {
                 if (selected) setState(() => _paymentStatus = status);
               },
-              selectedColor: _getStatusColor(status).withOpacity(0.3),
+              selectedColor: _getStatusColor(status).withValues(alpha: 0.3),
             );
           }).toList(),
         ),

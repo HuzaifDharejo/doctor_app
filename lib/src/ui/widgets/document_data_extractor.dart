@@ -8,7 +8,7 @@ import '../../theme/app_theme.dart';
 
 /// Widget for extracting data from images and PDFs
 class DocumentDataExtractor extends StatefulWidget {
-  final Function(Map<String, String> extractedData) onDataExtracted;
+  final void Function(Map<String, String> extractedData) onDataExtracted;
   final VoidCallback? onClose;
 
   const DocumentDataExtractor({
@@ -211,7 +211,7 @@ class _DocumentDataExtractorState extends State<DocumentDataExtractor> {
         color: isDark ? AppColors.darkSurface : Colors.white,
         borderRadius: BorderRadius.circular(20),
         border: Border.all(
-          color: AppColors.primary.withOpacity(0.3),
+          color: AppColors.primary.withValues(alpha: 0.3),
           width: 2,
         ),
       ),
@@ -234,7 +234,7 @@ class _DocumentDataExtractorState extends State<DocumentDataExtractor> {
                 Container(
                   padding: const EdgeInsets.all(8),
                   decoration: BoxDecoration(
-                    color: Colors.white.withOpacity(0.2),
+                    color: Colors.white.withValues(alpha: 0.2),
                     borderRadius: BorderRadius.circular(10),
                   ),
                   child: const Icon(Icons.document_scanner, color: Colors.white, size: 24),
@@ -317,7 +317,7 @@ class _DocumentDataExtractorState extends State<DocumentDataExtractor> {
                   Container(
                     padding: const EdgeInsets.all(16),
                     decoration: BoxDecoration(
-                      color: AppColors.primary.withOpacity(0.1),
+                      color: AppColors.primary.withValues(alpha: 0.1),
                       borderRadius: BorderRadius.circular(12),
                     ),
                     child: Row(
@@ -378,9 +378,9 @@ class _DocumentDataExtractorState extends State<DocumentDataExtractor> {
       return Container(
         padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
-          color: AppColors.error.withOpacity(0.1),
+          color: AppColors.error.withValues(alpha: 0.1),
           borderRadius: BorderRadius.circular(12),
-          border: Border.all(color: AppColors.error.withOpacity(0.3)),
+          border: Border.all(color: AppColors.error.withValues(alpha: 0.3)),
         ),
         child: Row(
           children: [
@@ -409,7 +409,7 @@ class _DocumentDataExtractorState extends State<DocumentDataExtractor> {
         Container(
           padding: const EdgeInsets.all(12),
           decoration: BoxDecoration(
-            color: AppColors.success.withOpacity(0.1),
+            color: AppColors.success.withValues(alpha: 0.1),
             borderRadius: BorderRadius.circular(10),
           ),
           child: Row(
@@ -469,7 +469,7 @@ class _DocumentDataExtractorState extends State<DocumentDataExtractor> {
                       Container(
                         padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                         decoration: BoxDecoration(
-                          color: AppColors.primary.withOpacity(0.1),
+                          color: AppColors.primary.withValues(alpha: 0.1),
                           borderRadius: BorderRadius.circular(6),
                         ),
                         child: Text(
@@ -603,7 +603,7 @@ class _SourceButton extends StatelessWidget {
               Container(
                 padding: const EdgeInsets.all(10),
                 decoration: BoxDecoration(
-                  color: AppColors.primary.withOpacity(0.1),
+                  color: AppColors.primary.withValues(alpha: 0.1),
                   shape: BoxShape.circle,
                 ),
                 child: Icon(icon, color: AppColors.primary, size: 22),

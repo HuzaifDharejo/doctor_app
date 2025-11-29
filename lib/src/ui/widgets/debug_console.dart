@@ -244,7 +244,7 @@ class _DebugConsoleState extends State<DebugConsole> with SingleTickerProviderSt
         borderRadius: BorderRadius.circular(6),
         border: Border.all(
           color: entry.level.priority >= LogLevel.error.priority
-              ? color.withOpacity(0.3)
+              ? color.withValues(alpha: 0.3)
               : Colors.transparent,
           width: 1,
         ),
@@ -262,7 +262,7 @@ class _DebugConsoleState extends State<DebugConsole> with SingleTickerProviderSt
                   Container(
                     padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
                     decoration: BoxDecoration(
-                      color: color.withOpacity(0.15),
+                      color: color.withValues(alpha: 0.15),
                       borderRadius: BorderRadius.circular(4),
                     ),
                     child: Text(
@@ -288,7 +288,7 @@ class _DebugConsoleState extends State<DebugConsole> with SingleTickerProviderSt
                   Container(
                     padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
                     decoration: BoxDecoration(
-                      color: AppColors.primary.withOpacity(0.1),
+                      color: AppColors.primary.withValues(alpha: 0.1),
                       borderRadius: BorderRadius.circular(4),
                     ),
                     child: Text(
@@ -395,7 +395,7 @@ class _DebugConsoleState extends State<DebugConsole> with SingleTickerProviderSt
                 width: 48,
                 height: 48,
                 decoration: BoxDecoration(
-                  color: color.withOpacity(0.1),
+                  color: color.withValues(alpha: 0.1),
                   borderRadius: BorderRadius.circular(8),
                 ),
                 child: Center(
@@ -468,9 +468,9 @@ class _DebugConsoleState extends State<DebugConsole> with SingleTickerProviderSt
             Container(
               padding: const EdgeInsets.all(12),
               decoration: BoxDecoration(
-                color: AppColors.error.withOpacity(0.1),
+                color: AppColors.error.withValues(alpha: 0.1),
                 borderRadius: BorderRadius.circular(8),
-                border: Border.all(color: AppColors.error.withOpacity(0.3)),
+                border: Border.all(color: AppColors.error.withValues(alpha: 0.3)),
               ),
               child: Row(
                 children: [
@@ -556,7 +556,7 @@ class _DebugConsoleState extends State<DebugConsole> with SingleTickerProviderSt
   }
 
   void _showLogDetails(LogEntry entry) {
-    showModalBottomSheet(
+    showModalBottomSheet<void>(
       context: context,
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
@@ -722,7 +722,7 @@ class DebugButton extends StatelessWidget {
         onPressed: () {
           Navigator.push(
             context,
-            MaterialPageRoute(builder: (_) => const DebugConsole()),
+            MaterialPageRoute<void>(builder: (_) => const DebugConsole()),
           );
         },
         child: const Icon(Icons.bug_report, color: Colors.white, size: 20),

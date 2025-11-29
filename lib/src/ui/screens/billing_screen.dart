@@ -69,7 +69,7 @@ class _BillingScreenState extends ConsumerState<BillingScreen> {
       trailing: Container(
         padding: EdgeInsets.all(isCompact ? AppSpacing.xs : AppSpacing.sm),
         decoration: BoxDecoration(
-          color: const Color(0xFF6366F1).withOpacity(0.1),
+          color: const Color(0xFF6366F1).withValues(alpha: 0.1),
           borderRadius: BorderRadius.circular(AppRadius.sm),
         ),
         child: Icon(
@@ -140,7 +140,7 @@ class _BillingScreenState extends ConsumerState<BillingScreen> {
       decoration: BoxDecoration(
         gradient: useGradient 
             ? LinearGradient(
-                colors: [color, color.withOpacity(0.85)],
+                colors: [color, color.withValues(alpha: 0.85)],
                 begin: Alignment.topLeft,
                 end: Alignment.bottomRight,
               )
@@ -148,13 +148,13 @@ class _BillingScreenState extends ConsumerState<BillingScreen> {
         color: useGradient ? null : Theme.of(context).colorScheme.surface,
         borderRadius: BorderRadius.circular(20),
         border: useGradient ? null : Border.all(
-          color: (isDark ? AppColors.darkDivider : AppColors.divider).withOpacity(0.5),
+          color: (isDark ? AppColors.darkDivider : AppColors.divider).withValues(alpha: 0.5),
         ),
         boxShadow: [
           BoxShadow(
             color: useGradient 
-                ? color.withOpacity(0.35)
-                : Colors.black.withOpacity(0.05),
+                ? color.withValues(alpha: 0.35)
+                : Colors.black.withValues(alpha: 0.05),
             blurRadius: 20,
             offset: const Offset(0, 8),
           ),
@@ -171,8 +171,8 @@ class _BillingScreenState extends ConsumerState<BillingScreen> {
                 padding: EdgeInsets.all(isCompact ? 8 : 10),
                 decoration: BoxDecoration(
                   color: useGradient 
-                      ? Colors.white.withOpacity(0.2)
-                      : color.withOpacity(0.12),
+                      ? Colors.white.withValues(alpha: 0.2)
+                      : color.withValues(alpha: 0.12),
                   borderRadius: BorderRadius.circular(12),
                 ),
                 child: Icon(
@@ -185,8 +185,8 @@ class _BillingScreenState extends ConsumerState<BillingScreen> {
                 padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
                 decoration: BoxDecoration(
                   color: useGradient 
-                      ? Colors.white.withOpacity(0.2)
-                      : color.withOpacity(0.1),
+                      ? Colors.white.withValues(alpha: 0.2)
+                      : color.withValues(alpha: 0.1),
                   borderRadius: BorderRadius.circular(12),
                 ),
                 child: Text(
@@ -207,7 +207,7 @@ class _BillingScreenState extends ConsumerState<BillingScreen> {
               fontSize: isCompact ? 11 : 12,
               fontWeight: FontWeight.w500,
               color: useGradient 
-                  ? Colors.white.withOpacity(0.85)
+                  ? Colors.white.withValues(alpha: 0.85)
                   : isDark ? AppColors.darkTextSecondary : AppColors.textSecondary,
             ),
           ),
@@ -251,7 +251,7 @@ class _BillingScreenState extends ConsumerState<BillingScreen> {
                   setState(() => _selectedFilter = filter);
                 },
                 backgroundColor: Theme.of(context).colorScheme.surface,
-                selectedColor: const Color(0xFF6366F1).withOpacity(0.15),
+                selectedColor: const Color(0xFF6366F1).withValues(alpha: 0.15),
                 checkmarkColor: const Color(0xFF6366F1),
                 labelStyle: TextStyle(
                   color: isSelected ? const Color(0xFF6366F1) : (isDark ? AppColors.darkTextSecondary : AppColors.textSecondary),
@@ -345,10 +345,10 @@ class _BillingScreenState extends ConsumerState<BillingScreen> {
           decoration: BoxDecoration(
             color: Theme.of(context).colorScheme.surface,
             borderRadius: BorderRadius.circular(20),
-            border: Border.all(color: (isDark ? AppColors.darkDivider : AppColors.divider).withOpacity(0.5)),
+            border: Border.all(color: (isDark ? AppColors.darkDivider : AppColors.divider).withValues(alpha: 0.5)),
             boxShadow: [
               BoxShadow(
-                color: AppColors.billing.withOpacity(0.06),
+                color: AppColors.billing.withValues(alpha: 0.06),
                 blurRadius: 16,
                 offset: const Offset(0, 6),
               ),
@@ -370,13 +370,13 @@ class _BillingScreenState extends ConsumerState<BillingScreen> {
                         gradient: LinearGradient(
                           colors: [
                             AppColors.billing,
-                            AppColors.billing.withOpacity(0.8),
+                            AppColors.billing.withValues(alpha: 0.8),
                           ],
                         ),
                         borderRadius: BorderRadius.circular(16),
                         boxShadow: [
                           BoxShadow(
-                            color: AppColors.billing.withOpacity(0.3),
+                            color: AppColors.billing.withValues(alpha: 0.3),
                             blurRadius: 8,
                             offset: const Offset(0, 3),
                           ),
@@ -415,8 +415,8 @@ class _BillingScreenState extends ConsumerState<BillingScreen> {
                                 decoration: BoxDecoration(
                                   gradient: LinearGradient(
                                     colors: [
-                                      statusColor.withOpacity(0.2),
-                                      statusColor.withOpacity(0.1),
+                                      statusColor.withValues(alpha: 0.2),
+                                      statusColor.withValues(alpha: 0.1),
                                     ],
                                   ),
                                   borderRadius: BorderRadius.circular(12),
@@ -447,7 +447,7 @@ class _BillingScreenState extends ConsumerState<BillingScreen> {
                                   onTap: patient != null ? () {
                                     Navigator.push(
                                       context,
-                                      MaterialPageRoute(
+                                      MaterialPageRoute<void>(
                                         builder: (_) => PatientViewScreen(patient: patient),
                                       ),
                                     );
@@ -457,7 +457,7 @@ class _BillingScreenState extends ConsumerState<BillingScreen> {
                                       Container(
                                         padding: const EdgeInsets.all(4),
                                         decoration: BoxDecoration(
-                                          color: AppColors.primary.withOpacity(0.1),
+                                          color: AppColors.primary.withValues(alpha: 0.1),
                                           borderRadius: BorderRadius.circular(6),
                                         ),
                                         child: Icon(
@@ -554,7 +554,7 @@ class _BillingScreenState extends ConsumerState<BillingScreen> {
         statusColor = AppColors.info;
     }
 
-    showModalBottomSheet(
+    showModalBottomSheet<void>(
       context: context,
       isScrollControlled: true,
       shape: const RoundedRectangleBorder(
@@ -612,9 +612,9 @@ class _BillingScreenState extends ConsumerState<BillingScreen> {
                     Container(
                       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
                       decoration: BoxDecoration(
-                        color: statusColor.withOpacity(0.1),
+                        color: statusColor.withValues(alpha: 0.1),
                         borderRadius: BorderRadius.circular(20),
-                        border: Border.all(color: statusColor.withOpacity(0.3)),
+                        border: Border.all(color: statusColor.withValues(alpha: 0.3)),
                       ),
                       child: Text(
                         invoice.paymentStatus,
@@ -685,7 +685,7 @@ class _BillingScreenState extends ConsumerState<BillingScreen> {
                             Navigator.pop(context);
                             Navigator.push(
                               context,
-                              MaterialPageRoute(
+                              MaterialPageRoute<void>(
                                 builder: (_) => PatientViewScreen(patient: patient),
                               ),
                             );
@@ -915,7 +915,7 @@ class _BillingScreenState extends ConsumerState<BillingScreen> {
             Container(
               padding: const EdgeInsets.all(24),
               decoration: BoxDecoration(
-                color: const Color(0xFF6366F1).withOpacity(0.1),
+                color: const Color(0xFF6366F1).withValues(alpha: 0.1),
                 shape: BoxShape.circle,
               ),
               child: const Icon(

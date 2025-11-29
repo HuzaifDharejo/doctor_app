@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -26,9 +28,9 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
   final _refreshKey = GlobalKey<RefreshIndicatorState>();
 
   Future<void> _onRefresh() async {
-    HapticFeedback.mediumImpact();
+    unawaited(HapticFeedback.mediumImpact());
     ref.invalidate(doctorDbProvider);
-    await Future.delayed(const Duration(milliseconds: 500));
+    await Future<void>.delayed(const Duration(milliseconds: 500));
   }
 
   @override
@@ -141,7 +143,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                   child: Padding(
                     padding: EdgeInsets.symmetric(horizontal: padding),
                     child: _buildSectionHeader(context, AppStrings.recentPatients, () {
-                      Navigator.push(context, MaterialPageRoute(builder: (_) => const PatientsScreen()));
+                      Navigator.push(context, MaterialPageRoute<void>(builder: (_) => const PatientsScreen()));
                     }, isCompact),
                   ),
                 ),
@@ -152,7 +154,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                     child: EmptyState.patients(
                       onAction: () => Navigator.push(
                         context,
-                        MaterialPageRoute(builder: (_) => const AddPatientScreen()),
+                        MaterialPageRoute<void>(builder: (_) => const AddPatientScreen()),
                       ),
                     ),
                   )
@@ -597,7 +599,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
               icon: Icons.person_add_rounded,
               label: 'Add Patient',
               color: const Color(0xFF6366F1),
-              onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const AddPatientScreen())),
+              onTap: () => Navigator.push(context, MaterialPageRoute<void>(builder: (_) => const AddPatientScreen())),
               isCompact: isCompact,
               isDark: isDark,
             )),
@@ -606,7 +608,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
               icon: Icons.event_note_rounded,
               label: 'New Appointment',
               color: const Color(0xFF14B8A6),
-              onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const AddAppointmentScreen())),
+              onTap: () => Navigator.push(context, MaterialPageRoute<void>(builder: (_) => const AddAppointmentScreen())),
               isCompact: isCompact,
               isDark: isDark,
             )),

@@ -310,7 +310,7 @@ class PrescriptionTemplates {
 }
 
 class MedicationTemplateBottomSheet extends StatefulWidget {
-  final Function(MedicationTemplate) onSelect;
+  final void Function(MedicationTemplate) onSelect;
 
   const MedicationTemplateBottomSheet({super.key, required this.onSelect});
 
@@ -406,7 +406,7 @@ class _MedicationTemplateBottomSheetState extends State<MedicationTemplateBottom
                   onSelected: (selected) => setState(() {
                     _selectedCategory = selected ? category : null;
                   }),
-                  selectedColor: AppColors.primary.withOpacity(0.2),
+                  selectedColor: AppColors.primary.withValues(alpha: 0.2),
                   checkmarkColor: AppColors.primary,
                 );
               }).toList(),
@@ -449,7 +449,7 @@ class _MedicationTemplateBottomSheetState extends State<MedicationTemplateBottom
         leading: Container(
           padding: const EdgeInsets.all(10),
           decoration: BoxDecoration(
-            color: AppColors.primary.withOpacity(0.1),
+            color: AppColors.primary.withValues(alpha: 0.1),
             borderRadius: BorderRadius.circular(10),
           ),
           child: Icon(Icons.medication, color: AppColors.primary),

@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -21,13 +23,13 @@ class _PatientsScreenState extends ConsumerState<PatientsScreen> {
   final _refreshKey = GlobalKey<RefreshIndicatorState>();
 
   Future<void> _onRefresh() async {
-    HapticFeedback.mediumImpact();
+    unawaited(HapticFeedback.mediumImpact());
     
     // Invalidate the provider to force a refresh
     ref.invalidate(doctorDbProvider);
     
     // Wait for a short delay to show the refresh animation
-    await Future.delayed(const Duration(milliseconds: 500));
+    await Future<void>.delayed(const Duration(milliseconds: 500));
   }
 
   @override
@@ -62,7 +64,7 @@ class _PatientsScreenState extends ConsumerState<PatientsScreen> {
         icon: Icons.add,
         onPressed: () => Navigator.push(
           context,
-          MaterialPageRoute(builder: (_) => const AddPatientScreen()),
+          MaterialPageRoute<void>(builder: (_) => const AddPatientScreen()),
         ),
         heroTag: 'patients_fab',
       ),
@@ -78,7 +80,7 @@ class _PatientsScreenState extends ConsumerState<PatientsScreen> {
       trailing: Container(
         padding: EdgeInsets.all(isCompact ? AppSpacing.xs : AppSpacing.xs),
         decoration: BoxDecoration(
-          color: AppColors.primaryLight.withOpacity(0.1),
+          color: AppColors.primaryLight.withValues(alpha: 0.1),
           borderRadius: BorderRadius.circular(AppRadius.xs),
         ),
         child: Icon(
@@ -121,7 +123,7 @@ class _PatientsScreenState extends ConsumerState<PatientsScreen> {
                     selected: isSelected,
                     onSelected: (selected) => setState(() => _filterRisk = filter),
                     backgroundColor: context.colorScheme.surface,
-                    selectedColor: AppColors.primary.withOpacity(0.15),
+                    selectedColor: AppColors.primary.withValues(alpha: 0.15),
                     checkmarkColor: AppColors.primary,
                     labelStyle: TextStyle(
                       color: isSelected ? AppColors.primary : (isDark ? AppColors.darkTextSecondary : AppColors.textSecondary),
@@ -194,7 +196,7 @@ class _PatientsScreenState extends ConsumerState<PatientsScreen> {
           return EmptyState.patients(
             onAction: () => Navigator.push(
               context,
-              MaterialPageRoute(builder: (_) => const AddPatientScreen()),
+              MaterialPageRoute<void>(builder: (_) => const AddPatientScreen()),
             ),
           );
         }

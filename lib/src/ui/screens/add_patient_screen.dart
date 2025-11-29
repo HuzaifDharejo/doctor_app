@@ -129,7 +129,7 @@ class _AddPatientScreenState extends ConsumerState<AddPatientScreen> {
                           child: Container(
                             padding: const EdgeInsets.all(10),
                             decoration: BoxDecoration(
-                              color: Colors.white.withOpacity(0.2),
+                              color: Colors.white.withValues(alpha: 0.2),
                               borderRadius: BorderRadius.circular(12),
                             ),
                             child: const Icon(Icons.arrow_back, color: Colors.white, size: 20),
@@ -149,7 +149,7 @@ class _AddPatientScreenState extends ConsumerState<AddPatientScreen> {
                         Container(
                           padding: const EdgeInsets.all(10),
                           decoration: BoxDecoration(
-                            color: Colors.white.withOpacity(0.2),
+                            color: Colors.white.withValues(alpha: 0.2),
                             borderRadius: BorderRadius.circular(12),
                           ),
                           child: const Icon(Icons.info_outline, color: Colors.white, size: 20),
@@ -170,7 +170,7 @@ class _AddPatientScreenState extends ConsumerState<AddPatientScreen> {
                               shape: BoxShape.circle,
                               boxShadow: [
                                 BoxShadow(
-                                  color: Colors.black.withOpacity(0.2),
+                                  color: Colors.black.withValues(alpha: 0.2),
                                   blurRadius: 20,
                                   offset: const Offset(0, 8),
                                 ),
@@ -190,15 +190,15 @@ class _AddPatientScreenState extends ConsumerState<AddPatientScreen> {
                                           begin: Alignment.topLeft,
                                           end: Alignment.bottomRight,
                                           colors: [
-                                            AppColors.primary.withOpacity(0.1),
-                                            AppColors.accent.withOpacity(0.1),
+                                            AppColors.primary.withValues(alpha: 0.1),
+                                            AppColors.accent.withValues(alpha: 0.1),
                                           ],
                                         ),
                                       ),
                                       child: Icon(
                                         Icons.person_outline,
                                         size: isCompact ? 40 : 50,
-                                        color: AppColors.primary.withOpacity(0.5),
+                                        color: AppColors.primary.withValues(alpha: 0.5),
                                       ),
                                     ),
                             ),
@@ -216,7 +216,7 @@ class _AddPatientScreenState extends ConsumerState<AddPatientScreen> {
                                 border: Border.all(color: Colors.white, width: 3),
                                 boxShadow: [
                                   BoxShadow(
-                                    color: AppColors.accent.withOpacity(0.4),
+                                    color: AppColors.accent.withValues(alpha: 0.4),
                                     blurRadius: 8,
                                     offset: const Offset(0, 2),
                                   ),
@@ -237,7 +237,7 @@ class _AddPatientScreenState extends ConsumerState<AddPatientScreen> {
                       'Tap to add photo',
                       style: TextStyle(
                         fontSize: isCompact ? 12 : 14,
-                        color: Colors.white.withOpacity(0.8),
+                        color: Colors.white.withValues(alpha: 0.8),
                         fontWeight: FontWeight.w500,
                       ),
                     ),
@@ -357,7 +357,7 @@ class _AddPatientScreenState extends ConsumerState<AddPatientScreen> {
                       borderRadius: BorderRadius.circular(20),
                       boxShadow: [
                         BoxShadow(
-                          color: AppColors.primary.withOpacity(0.4),
+                          color: AppColors.primary.withValues(alpha: 0.4),
                           blurRadius: 16,
                           offset: const Offset(0, 6),
                         ),
@@ -384,7 +384,7 @@ class _AddPatientScreenState extends ConsumerState<AddPatientScreen> {
                                     Container(
                                       padding: const EdgeInsets.all(8),
                                       decoration: BoxDecoration(
-                                        color: Colors.white.withOpacity(0.2),
+                                        color: Colors.white.withValues(alpha: 0.2),
                                         borderRadius: BorderRadius.circular(10),
                                       ),
                                       child: const Icon(Icons.check_rounded, color: Colors.white, size: 20),
@@ -429,11 +429,11 @@ class _AddPatientScreenState extends ConsumerState<AddPatientScreen> {
         color: Theme.of(context).colorScheme.surface,
         borderRadius: BorderRadius.circular(20),
         border: Border.all(
-          color: isDark ? AppColors.darkDivider : AppColors.divider.withOpacity(0.5),
+          color: isDark ? AppColors.darkDivider : AppColors.divider.withValues(alpha: 0.5),
         ),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(isDark ? 0.2 : 0.04),
+            color: Colors.black.withValues(alpha: isDark ? 0.2 : 0.04),
             blurRadius: 16,
             offset: const Offset(0, 4),
           ),
@@ -451,12 +451,12 @@ class _AddPatientScreenState extends ConsumerState<AddPatientScreen> {
                   padding: const EdgeInsets.all(10),
                   decoration: BoxDecoration(
                     gradient: LinearGradient(
-                      colors: [iconColor, iconColor.withOpacity(0.7)],
+                      colors: [iconColor, iconColor.withValues(alpha: 0.7)],
                     ),
                     borderRadius: BorderRadius.circular(12),
                     boxShadow: [
                       BoxShadow(
-                        color: iconColor.withOpacity(0.3),
+                        color: iconColor.withValues(alpha: 0.3),
                         blurRadius: 8,
                         offset: const Offset(0, 2),
                       ),
@@ -476,7 +476,7 @@ class _AddPatientScreenState extends ConsumerState<AddPatientScreen> {
           ),
           Divider(
             height: 1,
-            color: isDark ? AppColors.darkDivider : AppColors.divider.withOpacity(0.5),
+            color: isDark ? AppColors.darkDivider : AppColors.divider.withValues(alpha: 0.5),
           ),
           // Section Content
           Padding(
@@ -543,7 +543,7 @@ class _AddPatientScreenState extends ConsumerState<AddPatientScreen> {
             border: Border.all(color: isDark ? AppColors.darkDivider : AppColors.divider),
             boxShadow: [
               BoxShadow(
-                color: Colors.black.withOpacity(0.02),
+                color: Colors.black.withValues(alpha: 0.02),
                 blurRadius: 8,
                 offset: const Offset(0, 2),
               ),
@@ -603,7 +603,7 @@ class _AddPatientScreenState extends ConsumerState<AddPatientScreen> {
           padding: const EdgeInsets.all(8),
           decoration: BoxDecoration(
             color: isDark 
-                ? Colors.black.withOpacity(0.2) 
+                ? Colors.black.withValues(alpha: 0.2) 
                 : AppColors.background,
             borderRadius: BorderRadius.circular(16),
           ),
@@ -634,7 +634,7 @@ class _AddPatientScreenState extends ConsumerState<AddPatientScreen> {
                           ? LinearGradient(
                               begin: Alignment.topLeft,
                               end: Alignment.bottomRight,
-                              colors: [color, color.withOpacity(0.8)],
+                              colors: [color, color.withValues(alpha: 0.8)],
                             )
                           : null,
                       color: isSelected ? null : Theme.of(context).colorScheme.surface,
@@ -646,7 +646,7 @@ class _AddPatientScreenState extends ConsumerState<AddPatientScreen> {
                       boxShadow: isSelected
                           ? [
                               BoxShadow(
-                                color: color.withOpacity(0.4),
+                                color: color.withValues(alpha: 0.4),
                                 blurRadius: 8,
                                 offset: const Offset(0, 2),
                               ),
@@ -671,8 +671,8 @@ class _AddPatientScreenState extends ConsumerState<AddPatientScreen> {
                           height: 6,
                           decoration: BoxDecoration(
                             color: isSelected 
-                                ? Colors.white.withOpacity(0.8) 
-                                : color.withOpacity(0.5),
+                                ? Colors.white.withValues(alpha: 0.8) 
+                                : color.withValues(alpha: 0.5),
                             shape: BoxShape.circle,
                           ),
                         ),
@@ -745,7 +745,7 @@ class _AddPatientScreenState extends ConsumerState<AddPatientScreen> {
   }
 
   void _showPhotoOptions() {
-    showModalBottomSheet(
+    showModalBottomSheet<void>(
       context: context,
       backgroundColor: Colors.transparent,
       builder: (context) {
@@ -758,7 +758,7 @@ class _AddPatientScreenState extends ConsumerState<AddPatientScreen> {
             borderRadius: const BorderRadius.vertical(top: Radius.circular(28)),
             boxShadow: [
               BoxShadow(
-                color: Colors.black.withOpacity(0.1),
+                color: Colors.black.withValues(alpha: 0.1),
                 blurRadius: 20,
                 offset: const Offset(0, -5),
               ),
@@ -783,7 +783,7 @@ class _AddPatientScreenState extends ConsumerState<AddPatientScreen> {
                   shape: BoxShape.circle,
                   boxShadow: [
                     BoxShadow(
-                      color: AppColors.primary.withOpacity(0.3),
+                      color: AppColors.primary.withValues(alpha: 0.3),
                       blurRadius: 12,
                       offset: const Offset(0, 4),
                     ),
@@ -873,9 +873,9 @@ class _AddPatientScreenState extends ConsumerState<AddPatientScreen> {
         child: Container(
           padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 16),
           decoration: BoxDecoration(
-            color: color.withOpacity(0.08),
+            color: color.withValues(alpha: 0.08),
             borderRadius: BorderRadius.circular(16),
-            border: Border.all(color: color.withOpacity(0.2)),
+            border: Border.all(color: color.withValues(alpha: 0.2)),
           ),
           child: Row(
             children: [
@@ -883,12 +883,12 @@ class _AddPatientScreenState extends ConsumerState<AddPatientScreen> {
                 padding: const EdgeInsets.all(12),
                 decoration: BoxDecoration(
                   gradient: LinearGradient(
-                    colors: [color, color.withOpacity(0.8)],
+                    colors: [color, color.withValues(alpha: 0.8)],
                   ),
                   borderRadius: BorderRadius.circular(12),
                   boxShadow: [
                     BoxShadow(
-                      color: color.withOpacity(0.3),
+                      color: color.withValues(alpha: 0.3),
                       blurRadius: 8,
                       offset: const Offset(0, 2),
                     ),
@@ -914,7 +914,7 @@ class _AddPatientScreenState extends ConsumerState<AddPatientScreen> {
                       subtitle,
                       style: TextStyle(
                         fontSize: 12,
-                        color: color.withOpacity(0.7),
+                        color: color.withValues(alpha: 0.7),
                       ),
                     ),
                   ],
@@ -923,7 +923,7 @@ class _AddPatientScreenState extends ConsumerState<AddPatientScreen> {
               Container(
                 padding: const EdgeInsets.all(8),
                 decoration: BoxDecoration(
-                  color: color.withOpacity(0.1),
+                  color: color.withValues(alpha: 0.1),
                   shape: BoxShape.circle,
                 ),
                 child: Icon(Icons.arrow_forward_ios, color: color, size: 14),
@@ -945,7 +945,7 @@ class _AddPatientScreenState extends ConsumerState<AddPatientScreen> {
             Container(
               padding: const EdgeInsets.all(24),
               decoration: BoxDecoration(
-                color: AppColors.error.withOpacity(0.1),
+                color: AppColors.error.withValues(alpha: 0.1),
                 shape: BoxShape.circle,
               ),
               child: const Icon(

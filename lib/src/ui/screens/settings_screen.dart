@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -39,8 +41,8 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> with SingleTick
   }
 
   Future<void> _onRefresh() async {
-    HapticFeedback.mediumImpact();
-    await Future.delayed(const Duration(milliseconds: 500));
+    unawaited(HapticFeedback.mediumImpact());
+    await Future<void>.delayed(const Duration(milliseconds: 500));
   }
 
   @override
@@ -102,7 +104,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> with SingleTick
       trailing: Container(
         padding: EdgeInsets.all(isCompact ? AppSpacing.xs : AppSpacing.xs),
         decoration: BoxDecoration(
-          color: AppColors.primary.withOpacity(0.1),
+          color: AppColors.primary.withValues(alpha: 0.1),
           borderRadius: BorderRadius.circular(AppRadius.xs),
         ),
         child: Icon(
@@ -124,7 +126,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> with SingleTick
         HapticFeedback.lightImpact();
         Navigator.push(
           context,
-          MaterialPageRoute(builder: (_) => const DoctorProfileScreen()),
+          MaterialPageRoute<void>(builder: (_) => const DoctorProfileScreen()),
         );
       },
       child: Container(
@@ -139,7 +141,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> with SingleTick
           borderRadius: BorderRadius.circular(AppRadius.xl),
           boxShadow: [
             BoxShadow(
-              color: AppColors.primary.withOpacity(0.4),
+              color: AppColors.primary.withValues(alpha: 0.4),
               blurRadius: AppSpacing.lg,
               offset: const Offset(0, 10),
             ),
@@ -162,13 +164,13 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> with SingleTick
                 padding: const EdgeInsets.all(3),
                 decoration: BoxDecoration(
                   shape: BoxShape.circle,
-                  border: Border.all(color: Colors.white.withOpacity(0.5), width: 2),
+                  border: Border.all(color: Colors.white.withValues(alpha: 0.5), width: 2),
                 ),
                 child: Container(
                   width: isCompact ? 52 : 64,
                   height: isCompact ? 52 : 64,
                   decoration: BoxDecoration(
-                    color: Colors.white.withOpacity(0.2),
+                    color: Colors.white.withValues(alpha: 0.2),
                     shape: BoxShape.circle,
                   ),
                   child: Center(
@@ -204,13 +206,13 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> with SingleTick
                   Container(
                     padding: const EdgeInsets.symmetric(horizontal: AppSpacing.xs, vertical: AppSpacing.xxs),
                     decoration: BoxDecoration(
-                      color: Colors.white.withOpacity(0.2),
+                      color: Colors.white.withValues(alpha: 0.2),
                       borderRadius: BorderRadius.circular(AppRadius.xs),
                     ),
                     child: Text(
                       profile.specialization.isNotEmpty ? profile.specialization : 'Tap to set up',
                       style: TextStyle(
-                        color: Colors.white.withOpacity(0.95),
+                        color: Colors.white.withValues(alpha: 0.95),
                         fontSize: isCompact ? AppFontSize.xxs : 11,
                         fontWeight: FontWeight.w600,
                       ),
@@ -222,13 +224,13 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> with SingleTick
                     const SizedBox(height: AppSpacing.xxs),
                     Row(
                       children: [
-                        Icon(Icons.email_rounded, size: AppFontSize.xs, color: Colors.white.withOpacity(0.7)),
+                        Icon(Icons.email_rounded, size: AppFontSize.xs, color: Colors.white.withValues(alpha: 0.7)),
                         const SizedBox(width: AppSpacing.xxs),
                         Expanded(
                           child: Text(
                             profile.email,
                             style: TextStyle(
-                              color: Colors.white.withOpacity(0.8),
+                              color: Colors.white.withValues(alpha: 0.8),
                               fontSize: isCompact ? AppFontSize.xxs : 11,
                             ),
                             overflow: TextOverflow.ellipsis,
@@ -243,7 +245,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> with SingleTick
             Container(
               padding: EdgeInsets.all(isCompact ? AppSpacing.xs : AppSpacing.sm),
               decoration: BoxDecoration(
-                color: Colors.white.withOpacity(0.2),
+                color: Colors.white.withValues(alpha: 0.2),
                 borderRadius: BorderRadius.circular(AppRadius.sm),
               ),
               child: Icon(
@@ -381,7 +383,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> with SingleTick
                   log.trackScreen('DebugConsole');
                   Navigator.push(
                     context,
-                    MaterialPageRoute(builder: (_) => const DebugConsole()),
+                    MaterialPageRoute<void>(builder: (_) => const DebugConsole()),
                   );
                 },
               ),
@@ -436,7 +438,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> with SingleTick
     final summary = log.getSummary();
     final errorsByTag = log.errorsByTag;
     
-    showDialog(
+    showDialog<void>(
       context: context,
       builder: (context) => AlertDialog(
         title: const Row(
@@ -477,7 +479,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> with SingleTick
           TextButton(
             onPressed: () {
               Navigator.pop(context);
-              Navigator.push(context, MaterialPageRoute(builder: (_) => const DebugConsole()));
+              Navigator.push(context, MaterialPageRoute<void>(builder: (_) => const DebugConsole()));
             },
             child: const Text('View Details'),
           ),
@@ -501,7 +503,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> with SingleTick
 
   void _showLanguageDialog(BuildContext context, WidgetRef ref, String currentLanguage) {
     final languages = ['English', 'Urdu', 'Arabic', 'Hindi', 'Sindhi'];
-    showDialog(
+    showDialog<void>(
       context: context,
       builder: (context) => AlertDialog(
         title: const Text('Select Language'),
@@ -524,7 +526,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> with SingleTick
   }
 
   void _showBackupDialog(BuildContext context, WidgetRef ref) {
-    showDialog(
+    showDialog<void>(
       context: context,
       builder: (context) => AlertDialog(
         title: const Row(
@@ -600,7 +602,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> with SingleTick
   }
 
   void _showLoadDemoDataDialog(BuildContext context, WidgetRef ref) {
-    showDialog(
+    showDialog<void>(
       context: context,
       builder: (context) => AlertDialog(
         title: const Row(
@@ -666,7 +668,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> with SingleTick
   }
 
   void _showClearDataDialog(BuildContext context, WidgetRef ref) {
-    showDialog(
+    showDialog<void>(
       context: context,
       builder: (context) => AlertDialog(
         title: const Row(
@@ -716,7 +718,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> with SingleTick
   }
 
   void _showPrivacyPolicy(BuildContext context) {
-    showDialog(
+    showDialog<void>(
       context: context,
       builder: (context) => AlertDialog(
         title: const Text('Privacy Policy'),
@@ -747,7 +749,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> with SingleTick
   }
 
   void _showHelpCenter(BuildContext context) {
-    showDialog(
+    showDialog<void>(
       context: context,
       builder: (context) => AlertDialog(
         title: const Row(
@@ -792,7 +794,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> with SingleTick
   }
 
   void _showContactSupport(BuildContext context) {
-    showDialog(
+    showDialog<void>(
       context: context,
       builder: (context) => AlertDialog(
         title: const Row(
@@ -836,7 +838,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> with SingleTick
   }
 
   void _showAboutDialog(BuildContext context) {
-    showDialog(
+    showDialog<void>(
       context: context,
       builder: (context) => AlertDialog(
         title: Row(
@@ -900,7 +902,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> with SingleTick
   }
 
   void _showResetProfileDialog(BuildContext context, WidgetRef ref) {
-    showDialog(
+    showDialog<void>(
       context: context,
       builder: (context) => AlertDialog(
         title: const Row(
@@ -967,10 +969,10 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> with SingleTick
       decoration: BoxDecoration(
         color: context.colorScheme.surface,
         borderRadius: BorderRadius.circular(AppRadius.md),
-        border: Border.all(color: (isDark ? AppColors.darkDivider : AppColors.divider).withOpacity(0.5)),
+        border: Border.all(color: (isDark ? AppColors.darkDivider : AppColors.divider).withValues(alpha: 0.5)),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.04),
+            color: Colors.black.withValues(alpha: 0.04),
             blurRadius: AppSpacing.xs,
             offset: const Offset(0, 4),
           ),
@@ -999,7 +1001,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> with SingleTick
                         Container(
                           padding: const EdgeInsets.all(AppSpacing.xs),
                           decoration: BoxDecoration(
-                            color: item.iconColor.withOpacity(0.1),
+                            color: item.iconColor.withValues(alpha: 0.1),
                             borderRadius: BorderRadius.circular(AppRadius.sm),
                           ),
                           child: Icon(
@@ -1053,7 +1055,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> with SingleTick
                 Divider(
                   height: 1,
                   indent: 60,
-                  color: (isDark ? AppColors.darkDivider : AppColors.divider).withOpacity(0.5),
+                  color: (isDark ? AppColors.darkDivider : AppColors.divider).withValues(alpha: 0.5),
                 ),
             ],
           );
@@ -1072,7 +1074,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> with SingleTick
         decoration: BoxDecoration(
           color: context.colorScheme.surface,
           borderRadius: BorderRadius.circular(AppRadius.md),
-          border: Border.all(color: (isDark ? AppColors.darkDivider : AppColors.divider).withOpacity(0.5)),
+          border: Border.all(color: (isDark ? AppColors.darkDivider : AppColors.divider).withValues(alpha: 0.5)),
         ),
         child: const Center(
           child: CircularProgressIndicator(),
@@ -1085,7 +1087,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> with SingleTick
         decoration: BoxDecoration(
           color: context.colorScheme.surface,
           borderRadius: BorderRadius.circular(AppRadius.md),
-          border: Border.all(color: AppColors.success.withOpacity(0.3)),
+          border: Border.all(color: AppColors.success.withValues(alpha: 0.3)),
         ),
         child: Column(
           children: [
@@ -1096,7 +1098,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> with SingleTick
                 children: [
                   CircleAvatar(
                     radius: 24,
-                    backgroundColor: AppColors.primary.withOpacity(0.1),
+                    backgroundColor: AppColors.primary.withValues(alpha: 0.1),
                     backgroundImage: calendarState.userPhotoUrl != null
                         ? NetworkImage(calendarState.userPhotoUrl!)
                         : null,
@@ -1166,10 +1168,10 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> with SingleTick
       decoration: BoxDecoration(
         color: context.colorScheme.surface,
         borderRadius: BorderRadius.circular(AppRadius.md),
-        border: Border.all(color: (isDark ? AppColors.darkDivider : AppColors.divider).withOpacity(0.5)),
+        border: Border.all(color: (isDark ? AppColors.darkDivider : AppColors.divider).withValues(alpha: 0.5)),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.04),
+            color: Colors.black.withValues(alpha: 0.04),
             blurRadius: AppSpacing.xs,
             offset: const Offset(0, 4),
           ),
@@ -1187,7 +1189,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> with SingleTick
                 Container(
                   padding: const EdgeInsets.all(12),
                   decoration: BoxDecoration(
-                    color: const Color(0xFF4285F4).withOpacity(0.1),
+                    color: const Color(0xFF4285F4).withValues(alpha: 0.1),
                     borderRadius: BorderRadius.circular(12),
                   ),
                   child: Image.network(
@@ -1263,10 +1265,10 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> with SingleTick
       decoration: BoxDecoration(
         color: context.colorScheme.surface,
         borderRadius: BorderRadius.circular(AppRadius.md),
-        border: Border.all(color: (isDark ? AppColors.darkDivider : AppColors.divider).withOpacity(0.5)),
+        border: Border.all(color: (isDark ? AppColors.darkDivider : AppColors.divider).withValues(alpha: 0.5)),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.04),
+            color: Colors.black.withValues(alpha: 0.04),
             blurRadius: AppSpacing.xs,
             offset: const Offset(0, 4),
           ),
@@ -1282,7 +1284,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> with SingleTick
                 Container(
                   padding: const EdgeInsets.all(AppSpacing.xs),
                   decoration: BoxDecoration(
-                    color: AppColors.primary.withOpacity(0.1),
+                    color: AppColors.primary.withValues(alpha: 0.1),
                     borderRadius: BorderRadius.circular(AppRadius.sm),
                   ),
                   child: const Icon(
@@ -1366,7 +1368,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> with SingleTick
                     secondary: Container(
                       padding: const EdgeInsets.all(8),
                       decoration: BoxDecoration(
-                        color: (isEnabled ? AppColors.primary : AppColors.textHint).withOpacity(0.1),
+                        color: (isEnabled ? AppColors.primary : AppColors.textHint).withValues(alpha: 0.1),
                         borderRadius: BorderRadius.circular(8),
                       ),
                       child: Icon(
@@ -1406,7 +1408,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> with SingleTick
                   Divider(
                     height: 1,
                     indent: 60,
-                    color: (isDark ? AppColors.darkDivider : AppColors.divider).withOpacity(0.5),
+                    color: (isDark ? AppColors.darkDivider : AppColors.divider).withValues(alpha: 0.5),
                   ),
               ],
             );
@@ -1436,7 +1438,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> with SingleTick
               Container(
                 padding: const EdgeInsets.all(8),
                 decoration: BoxDecoration(
-                  color: iconColor.withOpacity(0.1),
+                  color: iconColor.withValues(alpha: 0.1),
                   borderRadius: BorderRadius.circular(8),
                 ),
                 child: Icon(icon, color: iconColor, size: 20),
@@ -1522,7 +1524,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> with SingleTick
   }
 
   void _showDisconnectCalendarDialog(BuildContext context, WidgetRef ref) {
-    showDialog(
+    showDialog<void>(
       context: context,
       builder: (context) => AlertDialog(
         title: const Row(
@@ -1564,7 +1566,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> with SingleTick
   }
 
   void _showSelectCalendarDialog(BuildContext context, WidgetRef ref, GoogleCalendarState state) {
-    showDialog(
+    showDialog<void>(
       context: context,
       builder: (context) => AlertDialog(
         title: const Row(
@@ -1610,7 +1612,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> with SingleTick
   }
 
   void _showSyncSettingsDialog(BuildContext context, WidgetRef ref) {
-    showDialog(
+    showDialog<void>(
       context: context,
       builder: (context) => AlertDialog(
         title: const Row(

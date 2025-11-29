@@ -167,7 +167,7 @@ class _AddPrescriptionScreenState extends ConsumerState<AddPrescriptionScreen> {
   }
 
   void _showMedicationTemplates() {
-    showModalBottomSheet(
+    showModalBottomSheet<void>(
       context: context,
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
@@ -367,7 +367,7 @@ class _AddPrescriptionScreenState extends ConsumerState<AddPrescriptionScreen> {
                               child: Container(
                                 padding: const EdgeInsets.all(10),
                                 decoration: BoxDecoration(
-                                  color: Colors.white.withOpacity(0.2),
+                                  color: Colors.white.withValues(alpha: 0.2),
                                   borderRadius: BorderRadius.circular(12),
                                 ),
                                 child: const Icon(Icons.arrow_back, color: Colors.white, size: 20),
@@ -389,7 +389,7 @@ class _AddPrescriptionScreenState extends ConsumerState<AddPrescriptionScreen> {
                               child: Container(
                                 padding: const EdgeInsets.all(10),
                                 decoration: BoxDecoration(
-                                  color: Colors.white.withOpacity(0.2),
+                                  color: Colors.white.withValues(alpha: 0.2),
                                   borderRadius: BorderRadius.circular(12),
                                 ),
                                 child: const Icon(Icons.print, color: Colors.white, size: 20),
@@ -402,7 +402,7 @@ class _AddPrescriptionScreenState extends ConsumerState<AddPrescriptionScreen> {
                         Container(
                           padding: const EdgeInsets.all(16),
                           decoration: BoxDecoration(
-                            color: Colors.white.withOpacity(0.2),
+                            color: Colors.white.withValues(alpha: 0.2),
                             shape: BoxShape.circle,
                           ),
                           child: const Icon(
@@ -415,7 +415,7 @@ class _AddPrescriptionScreenState extends ConsumerState<AddPrescriptionScreen> {
                         Text(
                           DateFormat('EEEE, dd MMMM yyyy').format(DateTime.now()),
                           style: TextStyle(
-                            color: Colors.white.withOpacity(0.9),
+                            color: Colors.white.withValues(alpha: 0.9),
                             fontSize: 14,
                           ),
                         ),
@@ -697,7 +697,7 @@ class _AddPrescriptionScreenState extends ConsumerState<AddPrescriptionScreen> {
                   ),
                   Text(
                     '${age > 0 ? "$age years" : "Age unknown"} • ${patient.phone.isNotEmpty ? patient.phone : "No phone"}',
-                    style: TextStyle(color: colorScheme.onSurface.withOpacity(0.7), fontSize: 12),
+                    style: TextStyle(color: colorScheme.onSurface.withValues(alpha: 0.7), fontSize: 12),
                   ),
                 ],
               ),
@@ -791,7 +791,7 @@ class _AddPrescriptionScreenState extends ConsumerState<AddPrescriptionScreen> {
         decoration: BoxDecoration(
           color: isDark ? colorScheme.surface : Colors.grey.shade50,
           borderRadius: BorderRadius.circular(16),
-          border: Border.all(color: colorScheme.outline.withOpacity(0.2)),
+          border: Border.all(color: colorScheme.outline.withValues(alpha: 0.2)),
         ),
         child: const Center(
           child: CircularProgressIndicator(strokeWidth: 2),
@@ -805,7 +805,7 @@ class _AddPrescriptionScreenState extends ConsumerState<AddPrescriptionScreen> {
         decoration: BoxDecoration(
           color: isDark ? colorScheme.surface : Colors.grey.shade50,
           borderRadius: BorderRadius.circular(16),
-          border: Border.all(color: colorScheme.outline.withOpacity(0.2)),
+          border: Border.all(color: colorScheme.outline.withValues(alpha: 0.2)),
         ),
         child: Center(
           child: Column(
@@ -828,7 +828,7 @@ class _AddPrescriptionScreenState extends ConsumerState<AddPrescriptionScreen> {
         decoration: BoxDecoration(
           color: isDark ? colorScheme.surface : Colors.grey.shade50,
           borderRadius: BorderRadius.circular(16),
-          border: Border.all(color: colorScheme.outline.withOpacity(0.2)),
+          border: Border.all(color: colorScheme.outline.withValues(alpha: 0.2)),
         ),
         child: Center(
           child: Column(
@@ -855,7 +855,7 @@ class _AddPrescriptionScreenState extends ConsumerState<AddPrescriptionScreen> {
       decoration: BoxDecoration(
         color: isDark ? colorScheme.surface : Colors.grey.shade50,
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: colorScheme.outline.withOpacity(0.2)),
+        border: Border.all(color: colorScheme.outline.withValues(alpha: 0.2)),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -952,7 +952,7 @@ class _AddPrescriptionScreenState extends ConsumerState<AddPrescriptionScreen> {
       decoration: BoxDecoration(
         color: isDark ? colorScheme.surfaceContainerHighest : Colors.white,
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: colorScheme.outline.withOpacity(0.1)),
+        border: Border.all(color: colorScheme.outline.withValues(alpha: 0.1)),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -962,7 +962,7 @@ class _AddPrescriptionScreenState extends ConsumerState<AddPrescriptionScreen> {
               Container(
                 padding: const EdgeInsets.all(6),
                 decoration: BoxDecoration(
-                  color: iconColor.withOpacity(0.1),
+                  color: iconColor.withValues(alpha: 0.1),
                   borderRadius: BorderRadius.circular(8),
                 ),
                 child: Icon(icon, size: 16, color: iconColor),
@@ -973,7 +973,7 @@ class _AddPrescriptionScreenState extends ConsumerState<AddPrescriptionScreen> {
                   label,
                   style: TextStyle(
                     fontSize: 11,
-                    color: colorScheme.onSurface.withOpacity(0.6),
+                    color: colorScheme.onSurface.withValues(alpha: 0.6),
                   ),
                 ),
               ),
@@ -998,7 +998,7 @@ class _AddPrescriptionScreenState extends ConsumerState<AddPrescriptionScreen> {
                   suffix,
                   style: TextStyle(
                     fontSize: 12,
-                    color: colorScheme.onSurface.withOpacity(0.5),
+                    color: colorScheme.onSurface.withValues(alpha: 0.5),
                   ),
                 ),
               ],
@@ -1017,7 +1017,7 @@ class _AddPrescriptionScreenState extends ConsumerState<AddPrescriptionScreen> {
             margin: const EdgeInsets.only(bottom: 12),
             padding: const EdgeInsets.all(12),
             decoration: BoxDecoration(
-              color: colorScheme.surfaceContainerHighest.withOpacity(0.5),
+              color: colorScheme.surfaceContainerHighest.withValues(alpha: 0.5),
               borderRadius: BorderRadius.circular(12),
               border: Border.all(color: colorScheme.outlineVariant),
             ),
@@ -1129,7 +1129,7 @@ class _AddPrescriptionScreenState extends ConsumerState<AddPrescriptionScreen> {
                             scrollDirection: Axis.horizontal,
                             child: Row(
                               children: [
-                                Text('Dose: ', style: TextStyle(fontSize: 11, color: colorScheme.onSurface.withOpacity(0.5))),
+                                Text('Dose: ', style: TextStyle(fontSize: 11, color: colorScheme.onSurface.withValues(alpha: 0.5))),
                                 ...PrescriptionSuggestions.dosages.take(8).map((d) =>
                                   Padding(
                                     padding: const EdgeInsets.only(right: 4),
@@ -1145,9 +1145,9 @@ class _AddPrescriptionScreenState extends ConsumerState<AddPrescriptionScreen> {
                                       child: Container(
                                         padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
                                         decoration: BoxDecoration(
-                                          color: colorScheme.primary.withOpacity(0.05),
+                                          color: colorScheme.primary.withValues(alpha: 0.05),
                                           borderRadius: BorderRadius.circular(16),
-                                          border: Border.all(color: colorScheme.primary.withOpacity(0.3)),
+                                          border: Border.all(color: colorScheme.primary.withValues(alpha: 0.3)),
                                         ),
                                         child: Text(d, style: const TextStyle(fontSize: 10)),
                                       ),
@@ -1170,7 +1170,7 @@ class _AddPrescriptionScreenState extends ConsumerState<AddPrescriptionScreen> {
                             scrollDirection: Axis.horizontal,
                             child: Row(
                               children: [
-                                Text('Days: ', style: TextStyle(fontSize: 11, color: colorScheme.onSurface.withOpacity(0.5))),
+                                Text('Days: ', style: TextStyle(fontSize: 11, color: colorScheme.onSurface.withValues(alpha: 0.5))),
                                 ...PrescriptionSuggestions.durations.map((d) =>
                                   Padding(
                                     padding: const EdgeInsets.only(right: 4),
@@ -1186,9 +1186,9 @@ class _AddPrescriptionScreenState extends ConsumerState<AddPrescriptionScreen> {
                                       child: Container(
                                         padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
                                         decoration: BoxDecoration(
-                                          color: colorScheme.primary.withOpacity(0.05),
+                                          color: colorScheme.primary.withValues(alpha: 0.05),
                                           borderRadius: BorderRadius.circular(16),
-                                          border: Border.all(color: colorScheme.primary.withOpacity(0.3)),
+                                          border: Border.all(color: colorScheme.primary.withValues(alpha: 0.3)),
                                         ),
                                         child: Text(d, style: const TextStyle(fontSize: 10)),
                                       ),
@@ -1273,7 +1273,7 @@ class _AddPrescriptionScreenState extends ConsumerState<AddPrescriptionScreen> {
           Container(
             padding: const EdgeInsets.all(12),
             decoration: BoxDecoration(
-              color: colorScheme.tertiaryContainer.withOpacity(0.3),
+              color: colorScheme.tertiaryContainer.withValues(alpha: 0.3),
               borderRadius: BorderRadius.circular(8),
             ),
             child: Row(
@@ -1315,7 +1315,7 @@ class _AddPrescriptionScreenState extends ConsumerState<AddPrescriptionScreen> {
               style: TextStyle(
                 color: _followUpDate != null
                     ? colorScheme.onSurface
-                    : colorScheme.onSurface.withOpacity(0.6),
+                    : colorScheme.onSurface.withValues(alpha: 0.6),
               ),
             ),
           ),

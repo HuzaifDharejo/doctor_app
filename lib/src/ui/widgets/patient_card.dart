@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:intl/intl.dart';
@@ -104,7 +106,7 @@ class _PatientCardState extends State<PatientCard>
 
   Future<void> _makePhoneCall() async {
     if (widget.patient.phone.isEmpty) return;
-    HapticFeedback.lightImpact();
+    unawaited(HapticFeedback.lightImpact());
     final uri = Uri(scheme: 'tel', path: widget.patient.phone);
     if (await canLaunchUrl(uri)) {
       await launchUrl(uri);
@@ -113,7 +115,7 @@ class _PatientCardState extends State<PatientCard>
 
   Future<void> _sendMessage() async {
     if (widget.patient.phone.isEmpty) return;
-    HapticFeedback.lightImpact();
+    unawaited(HapticFeedback.lightImpact());
     final uri = Uri(scheme: 'sms', path: widget.patient.phone);
     if (await canLaunchUrl(uri)) {
       await launchUrl(uri);
@@ -124,7 +126,7 @@ class _PatientCardState extends State<PatientCard>
     HapticFeedback.selectionClick();
     Navigator.push(
       context,
-      PageRouteBuilder(
+      PageRouteBuilder<void>(
         pageBuilder: (context, animation, secondaryAnimation) =>
             PatientViewScreen(patient: widget.patient),
         transitionsBuilder: (context, animation, secondaryAnimation, child) {
@@ -165,11 +167,11 @@ class _PatientCardState extends State<PatientCard>
             color: Theme.of(context).colorScheme.surface,
             borderRadius: BorderRadius.circular(20),
             border: Border.all(
-              color: (isDark ? AppColors.darkDivider : AppColors.divider).withOpacity(0.5),
+              color: (isDark ? AppColors.darkDivider : AppColors.divider).withValues(alpha: 0.5),
             ),
             boxShadow: [
               BoxShadow(
-                color: Colors.black.withOpacity(0.05),
+                color: Colors.black.withValues(alpha: 0.05),
                 blurRadius: 15,
                 offset: const Offset(0, 5),
               ),
@@ -195,8 +197,8 @@ class _PatientCardState extends State<PatientCard>
                               shape: BoxShape.circle,
                               gradient: LinearGradient(
                                 colors: [
-                                  AppColors.primary.withOpacity(0.8),
-                                  AppColors.primaryLight.withOpacity(0.6),
+                                  AppColors.primary.withValues(alpha: 0.8),
+                                  AppColors.primaryLight.withValues(alpha: 0.6),
                                 ],
                                 begin: Alignment.topLeft,
                                 end: Alignment.bottomRight,
@@ -255,8 +257,8 @@ class _PatientCardState extends State<PatientCard>
                                     decoration: BoxDecoration(
                                       gradient: LinearGradient(
                                         colors: [
-                                          riskColor.withOpacity(0.2),
-                                          riskColor.withOpacity(0.1),
+                                          riskColor.withValues(alpha: 0.2),
+                                          riskColor.withValues(alpha: 0.1),
                                         ],
                                       ),
                                       borderRadius: BorderRadius.circular(12),
@@ -338,7 +340,7 @@ class _PatientCardState extends State<PatientCard>
                                     Container(
                                       padding: const EdgeInsets.all(4),
                                       decoration: BoxDecoration(
-                                        color: AppColors.accent.withOpacity(0.1),
+                                        color: AppColors.accent.withValues(alpha: 0.1),
                                         borderRadius: BorderRadius.circular(6),
                                       ),
                                       child: Icon(
@@ -377,8 +379,8 @@ class _PatientCardState extends State<PatientCard>
                                             decoration: BoxDecoration(
                                               gradient: LinearGradient(
                                                 colors: [
-                                                  AppColors.primary.withOpacity(0.12),
-                                                  AppColors.primaryLight.withOpacity(0.08),
+                                                  AppColors.primary.withValues(alpha: 0.12),
+                                                  AppColors.primaryLight.withValues(alpha: 0.08),
                                                 ],
                                               ),
                                               borderRadius: BorderRadius.circular(8),
@@ -426,7 +428,7 @@ class _PatientCardState extends State<PatientCard>
                           Container(
                             padding: const EdgeInsets.all(8),
                             decoration: BoxDecoration(
-                              color: (isDark ? AppColors.darkDivider : AppColors.divider).withOpacity(0.3),
+                              color: (isDark ? AppColors.darkDivider : AppColors.divider).withValues(alpha: 0.3),
                               borderRadius: BorderRadius.circular(10),
                             ),
                             child: Icon(
@@ -466,7 +468,7 @@ class _QuickActionButton extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Material(
-      color: color.withOpacity(0.1),
+      color: color.withValues(alpha: 0.1),
       borderRadius: BorderRadius.circular(10),
       child: InkWell(
         onTap: onTap,

@@ -5,7 +5,7 @@ import '../../theme/app_theme.dart';
 class CalendarWidget extends StatefulWidget {
   final DateTime selectedDate;
   final DateTime? focusedMonth;
-  final Function(DateTime) onDateSelected;
+  final void Function(DateTime) onDateSelected;
   final Map<DateTime, int>? appointmentCounts;
   final bool showMonthPicker;
 
@@ -83,7 +83,7 @@ class _CalendarWidgetState extends State<CalendarWidget> {
             ),
             boxShadow: [
               BoxShadow(
-                color: Colors.black.withOpacity(isDark ? 0.3 : 0.06),
+                color: Colors.black.withValues(alpha: isDark ? 0.3 : 0.06),
                 blurRadius: 20,
                 offset: const Offset(0, 4),
               ),
@@ -151,7 +151,7 @@ class _CalendarWidgetState extends State<CalendarWidget> {
                   vertical: isSmall ? 10 : 12,
                 ),
                 decoration: BoxDecoration(
-                  color: AppColors.primary.withOpacity(isDark ? 0.2 : 0.1),
+                  color: AppColors.primary.withValues(alpha: isDark ? 0.2 : 0.1),
                   borderRadius: BorderRadius.circular(14),
                 ),
                 child: Row(
@@ -280,8 +280,8 @@ class _CalendarWidgetState extends State<CalendarWidget> {
                 color: isSelected 
                     ? null 
                     : (isToday 
-                        ? AppColors.primary.withOpacity(isDark ? 0.2 : 0.1) 
-                        : (isDark ? AppColors.darkBackground.withOpacity(0.5) : null)),
+                        ? AppColors.primary.withValues(alpha: isDark ? 0.2 : 0.1) 
+                        : (isDark ? AppColors.darkBackground.withValues(alpha: 0.5) : null)),
                 borderRadius: BorderRadius.circular(borderRadius),
                 border: isToday && !isSelected
                     ? Border.all(color: AppColors.primary, width: 2)
@@ -313,7 +313,7 @@ class _CalendarWidgetState extends State<CalendarWidget> {
     final isSmallScreen = screenWidth < 360;
     final isDark = Theme.of(context).brightness == Brightness.dark;
     
-    showModalBottomSheet(
+    showModalBottomSheet<void>(
       context: context,
       backgroundColor: Colors.transparent,
       isScrollControlled: true,
@@ -366,7 +366,7 @@ class _CalendarWidgetState extends State<CalendarWidget> {
                     color: isSelected 
                         ? AppColors.primary 
                         : (isCurrentMonth 
-                            ? AppColors.primary.withOpacity(isDark ? 0.2 : 0.1) 
+                            ? AppColors.primary.withValues(alpha: isDark ? 0.2 : 0.1) 
                             : (isDark ? AppColors.darkBackground : AppColors.background)),
                     borderRadius: BorderRadius.circular(12),
                     child: InkWell(

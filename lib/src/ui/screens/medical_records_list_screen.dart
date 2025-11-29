@@ -87,7 +87,7 @@ class _MedicalRecordsListScreenState extends ConsumerState<MedicalRecordsListScr
         data: (db) => RefreshIndicator(
           onRefresh: () async {
             ref.invalidate(doctorDbProvider);
-            await Future.delayed(const Duration(milliseconds: 300));
+            await Future<void>.delayed(const Duration(milliseconds: 300));
           },
           color: AppColors.primary,
           child: CustomScrollView(
@@ -203,7 +203,7 @@ class _Header extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: MedicalRecordConstants.paddingLarge),
       decoration: BoxDecoration(
-        color: Colors.white.withOpacity(0.2),
+        color: Colors.white.withValues(alpha: 0.2),
         borderRadius: BorderRadius.circular(MedicalRecordConstants.radiusLarge),
       ),
       child: TextField(
@@ -211,9 +211,9 @@ class _Header extends StatelessWidget {
         style: const TextStyle(color: Colors.white),
         decoration: InputDecoration(
           hintText: 'Search records...',
-          hintStyle: TextStyle(color: Colors.white.withOpacity(0.7)),
+          hintStyle: TextStyle(color: Colors.white.withValues(alpha: 0.7)),
           border: InputBorder.none,
-          icon: Icon(Icons.search, color: Colors.white.withOpacity(0.7)),
+          icon: Icon(Icons.search, color: Colors.white.withValues(alpha: 0.7)),
           suffixIcon: searchQuery.isNotEmpty
               ? IconButton(
                   icon: const Icon(Icons.clear, color: Colors.white),
@@ -442,7 +442,7 @@ class _DateHeader extends StatelessWidget {
               borderRadius: BorderRadius.circular(MedicalRecordConstants.radiusXLarge),
               boxShadow: [
                 BoxShadow(
-                  color: Colors.black.withOpacity(0.05),
+                  color: Colors.black.withValues(alpha: 0.05),
                   blurRadius: 4,
                   offset: const Offset(0, 2),
                 ),
@@ -468,7 +468,7 @@ class _DateHeader extends StatelessWidget {
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
             decoration: BoxDecoration(
-              color: AppColors.primary.withOpacity(0.1),
+              color: AppColors.primary.withValues(alpha: 0.1),
               borderRadius: BorderRadius.circular(MedicalRecordConstants.radiusMedium),
             ),
             child: Text(
@@ -516,7 +516,7 @@ class _RecordCard extends StatelessWidget {
           borderRadius: BorderRadius.circular(MedicalRecordConstants.radiusLarge),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withOpacity(0.05),
+              color: Colors.black.withValues(alpha: 0.05),
               blurRadius: 10,
               offset: const Offset(0, 4),
             ),
@@ -549,7 +549,7 @@ class _RecordCard extends StatelessWidget {
       width: 56,
       height: 56,
       decoration: BoxDecoration(
-        color: recordInfo.color.withOpacity(0.1),
+        color: recordInfo.color.withValues(alpha: 0.1),
         borderRadius: BorderRadius.circular(14),
       ),
       child: Icon(
@@ -578,7 +578,7 @@ class _RecordCard extends StatelessWidget {
         Container(
           padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
           decoration: BoxDecoration(
-            color: recordInfo.color.withOpacity(0.1),
+            color: recordInfo.color.withValues(alpha: 0.1),
             borderRadius: BorderRadius.circular(MedicalRecordConstants.radiusSmall),
           ),
           child: Text(
@@ -630,7 +630,7 @@ class _RecordCard extends StatelessWidget {
   void _navigateToDetail(BuildContext context) {
     Navigator.push(
       context,
-      MaterialPageRoute(
+      MaterialPageRoute<void>(
         builder: (_) => MedicalRecordDetailScreen(
           record: recordWithPatient.record,
           patient: recordWithPatient.patient,
@@ -657,7 +657,7 @@ class _AddRecordFAB extends StatelessWidget {
         borderRadius: BorderRadius.circular(MedicalRecordConstants.radiusLarge),
         boxShadow: [
           BoxShadow(
-            color: AppColors.primary.withOpacity(0.4),
+            color: AppColors.primary.withValues(alpha: 0.4),
             blurRadius: 12,
             offset: const Offset(0, 4),
           ),
@@ -676,7 +676,7 @@ class _AddRecordFAB extends StatelessWidget {
   Future<void> _addRecord(BuildContext context) async {
     final result = await Navigator.push<bool>(
       context,
-      MaterialPageRoute(
+      MaterialPageRoute<bool>(
         builder: (_) => AddMedicalRecordScreen(
           initialRecordType: selectedRecordType ?? 'general',
         ),
@@ -719,7 +719,7 @@ class _EmptyState extends StatelessWidget {
             Container(
               padding: const EdgeInsets.all(24),
               decoration: BoxDecoration(
-                color: AppColors.primary.withOpacity(0.1),
+                color: AppColors.primary.withValues(alpha: 0.1),
                 shape: BoxShape.circle,
               ),
               child: Icon(
@@ -796,7 +796,7 @@ class _ErrorState extends StatelessWidget {
             Container(
               padding: const EdgeInsets.all(24),
               decoration: BoxDecoration(
-                color: AppColors.error.withOpacity(0.1),
+                color: AppColors.error.withValues(alpha: 0.1),
                 shape: BoxShape.circle,
               ),
               child: const Icon(

@@ -191,7 +191,7 @@ class _PatientAvatarState extends State<PatientAvatar> {
               borderRadius: BorderRadius.circular(widget.borderRadius),
               boxShadow: [
                 BoxShadow(
-                  color: (hasPhoto ? Colors.black : avatarColor).withOpacity(0.3),
+                  color: (hasPhoto ? Colors.black : avatarColor).withValues(alpha: 0.3),
                   blurRadius: 8,
                   offset: const Offset(0, 4),
                 ),
@@ -201,7 +201,7 @@ class _PatientAvatarState extends State<PatientAvatar> {
               borderRadius: BorderRadius.circular(widget.borderRadius),
               child: _loading
                   ? Container(
-                      color: avatarColor.withOpacity(0.3),
+                      color: avatarColor.withValues(alpha: 0.3),
                       child: Center(
                         child: SizedBox(
                           width: widget.size * 0.3,
@@ -239,7 +239,7 @@ class _PatientAvatarState extends State<PatientAvatar> {
                   border: Border.all(color: Colors.white, width: 3),
                   boxShadow: [
                     BoxShadow(
-                      color: Colors.black.withOpacity(0.2),
+                      color: Colors.black.withValues(alpha: 0.2),
                       blurRadius: 4,
                       offset: const Offset(0, 2),
                     ),
@@ -263,7 +263,7 @@ class _PatientAvatarState extends State<PatientAvatar> {
       height: widget.size,
       decoration: BoxDecoration(
         gradient: LinearGradient(
-          colors: [color, color.withOpacity(0.7)],
+          colors: [color, color.withValues(alpha: 0.7)],
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
         ),
@@ -284,7 +284,7 @@ class _PatientAvatarState extends State<PatientAvatar> {
   void _showPhotoOptions() {
     final hasPhoto = _photoBase64 != null && _photoBase64!.isNotEmpty;
 
-    showModalBottomSheet(
+    showModalBottomSheet<void>(
       context: context,
       backgroundColor: Colors.transparent,
       builder: (context) => Container(
@@ -361,7 +361,7 @@ class _PatientAvatarState extends State<PatientAvatar> {
         child: Container(
           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
           decoration: BoxDecoration(
-            border: Border.all(color: color.withOpacity(0.3)),
+            border: Border.all(color: color.withValues(alpha: 0.3)),
             borderRadius: BorderRadius.circular(12),
           ),
           child: Row(
@@ -369,7 +369,7 @@ class _PatientAvatarState extends State<PatientAvatar> {
               Container(
                 padding: const EdgeInsets.all(10),
                 decoration: BoxDecoration(
-                  color: color.withOpacity(0.1),
+                  color: color.withValues(alpha: 0.1),
                   borderRadius: BorderRadius.circular(10),
                 ),
                 child: Icon(icon, color: color, size: 22),
@@ -384,7 +384,7 @@ class _PatientAvatarState extends State<PatientAvatar> {
                 ),
               ),
               const Spacer(),
-              Icon(Icons.chevron_right, color: color.withOpacity(0.5)),
+              Icon(Icons.chevron_right, color: color.withValues(alpha: 0.5)),
             ],
           ),
         ),

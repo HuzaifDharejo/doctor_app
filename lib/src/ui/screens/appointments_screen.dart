@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -23,8 +25,8 @@ class _AppointmentsScreenState extends ConsumerState<AppointmentsScreen> {
   final _refreshKey = GlobalKey<RefreshIndicatorState>();
   
   Future<void> _onRefresh() async {
-    HapticFeedback.mediumImpact();
-    await Future.delayed(const Duration(milliseconds: 500));
+    unawaited(HapticFeedback.mediumImpact());
+    await Future<void>.delayed(const Duration(milliseconds: 500));
   }
   
   @override
@@ -80,9 +82,9 @@ class _AppointmentsScreenState extends ConsumerState<AppointmentsScreen> {
   }
 
   void _navigateToAddAppointment(BuildContext context) async {
-    final result = await Navigator.push(
+    final result = await Navigator.push<bool>(
       context,
-      MaterialPageRoute(
+      MaterialPageRoute<bool>(
         builder: (_) => AddAppointmentScreen(initialDate: _selectedDate),
       ),
     );
@@ -104,7 +106,7 @@ class _AppointmentsScreenState extends ConsumerState<AppointmentsScreen> {
           decoration: BoxDecoration(
             color: _showCalendar 
                 ? AppColors.primary 
-                : AppColors.accent.withOpacity(0.1),
+                : AppColors.accent.withValues(alpha: 0.1),
             borderRadius: BorderRadius.circular(AppRadius.sm),
           ),
           child: Icon(
@@ -148,7 +150,7 @@ class _AppointmentsScreenState extends ConsumerState<AppointmentsScreen> {
                     ? LinearGradient(
                         colors: [
                           AppColors.appointments,
-                          AppColors.appointments.withOpacity(0.85),
+                          AppColors.appointments.withValues(alpha: 0.85),
                         ],
                         begin: Alignment.topCenter,
                         end: Alignment.bottomCenter,
@@ -167,7 +169,7 @@ class _AppointmentsScreenState extends ConsumerState<AppointmentsScreen> {
                 boxShadow: isSelected
                     ? [
                         BoxShadow(
-                          color: AppColors.appointments.withOpacity(0.4),
+                          color: AppColors.appointments.withValues(alpha: 0.4),
                           blurRadius: 12,
                           offset: const Offset(0, 6),
                         ),
@@ -184,7 +186,7 @@ class _AppointmentsScreenState extends ConsumerState<AppointmentsScreen> {
                       fontWeight: FontWeight.w700,
                       letterSpacing: 0.5,
                       color: isSelected 
-                          ? Colors.white.withOpacity(0.85) 
+                          ? Colors.white.withValues(alpha: 0.85) 
                           : (isDark ? AppColors.darkTextSecondary : AppColors.textSecondary),
                     ),
                   ),
@@ -293,7 +295,7 @@ class _AppointmentsScreenState extends ConsumerState<AppointmentsScreen> {
           background: Container(
             margin: EdgeInsets.only(bottom: isCompact ? AppSpacing.sm : AppSpacing.lg),
             decoration: BoxDecoration(
-              color: AppColors.success.withOpacity(0.2),
+              color: AppColors.success.withValues(alpha: 0.2),
               borderRadius: BorderRadius.circular(AppRadius.xl),
             ),
             alignment: Alignment.centerLeft,
@@ -315,7 +317,7 @@ class _AppointmentsScreenState extends ConsumerState<AppointmentsScreen> {
           secondaryBackground: Container(
             margin: EdgeInsets.only(bottom: isCompact ? AppSpacing.sm : AppSpacing.lg),
             decoration: BoxDecoration(
-              color: AppColors.error.withOpacity(0.2),
+              color: AppColors.error.withValues(alpha: 0.2),
               borderRadius: BorderRadius.circular(AppRadius.xl),
             ),
             alignment: Alignment.centerRight,
@@ -336,7 +338,7 @@ class _AppointmentsScreenState extends ConsumerState<AppointmentsScreen> {
             ),
           ),
           confirmDismiss: (direction) async {
-            HapticFeedback.mediumImpact();
+            unawaited(HapticFeedback.mediumImpact());
             if (direction == DismissDirection.startToEnd) {
               // Confirm appointment
               ScaffoldMessenger.of(context).showSnackBar(
@@ -363,10 +365,10 @@ class _AppointmentsScreenState extends ConsumerState<AppointmentsScreen> {
             decoration: BoxDecoration(
               color: context.colorScheme.surface,
               borderRadius: BorderRadius.circular(AppRadius.xl),
-              border: Border.all(color: (isDark ? AppColors.darkDivider : AppColors.divider).withOpacity(0.5)),
+              border: Border.all(color: (isDark ? AppColors.darkDivider : AppColors.divider).withValues(alpha: 0.5)),
               boxShadow: [
                 BoxShadow(
-                  color: AppColors.appointments.withOpacity(0.08),
+                  color: AppColors.appointments.withValues(alpha: 0.08),
                   blurRadius: 20,
                   offset: const Offset(0, 8),
                 ),
@@ -389,7 +391,7 @@ class _AppointmentsScreenState extends ConsumerState<AppointmentsScreen> {
                             gradient: LinearGradient(
                               colors: [
                                 AppColors.appointments,
-                                AppColors.appointments.withOpacity(0.8),
+                                AppColors.appointments.withValues(alpha: 0.8),
                               ],
                               begin: Alignment.topCenter,
                               end: Alignment.bottomCenter,
@@ -414,14 +416,14 @@ class _AppointmentsScreenState extends ConsumerState<AppointmentsScreen> {
                                 style: TextStyle(
                                   fontSize: isCompact ? AppFontSize.xxs : AppFontSize.xs,
                                   fontWeight: FontWeight.w600,
-                                  color: Colors.white.withOpacity(0.85),
+                                  color: Colors.white.withValues(alpha: 0.85),
                                 ),
                               ),
                               SizedBox(height: AppSpacing.xs),
                               Container(
                                 padding: EdgeInsets.symmetric(horizontal: AppSpacing.xs, vertical: AppSpacing.xxs),
                                 decoration: BoxDecoration(
-                                  color: Colors.white.withOpacity(0.2),
+                                  color: Colors.white.withValues(alpha: 0.2),
                                   borderRadius: BorderRadius.circular(AppRadius.xs),
                                 ),
                                 child: Text(
@@ -429,7 +431,7 @@ class _AppointmentsScreenState extends ConsumerState<AppointmentsScreen> {
                                   style: TextStyle(
                                     fontSize: AppFontSize.xxs,
                                     fontWeight: FontWeight.w600,
-                                    color: Colors.white.withOpacity(0.95),
+                                    color: Colors.white.withValues(alpha: 0.95),
                                   ),
                                 ),
                               ),
@@ -466,8 +468,8 @@ class _AppointmentsScreenState extends ConsumerState<AppointmentsScreen> {
                                       decoration: BoxDecoration(
                                         gradient: LinearGradient(
                                           colors: [
-                                            statusColor.withOpacity(0.2),
-                                            statusColor.withOpacity(0.1),
+                                            statusColor.withValues(alpha: 0.2),
+                                            statusColor.withValues(alpha: 0.1),
                                           ],
                                         ),
                                         borderRadius: BorderRadius.circular(AppRadius.sm),
@@ -490,7 +492,7 @@ class _AppointmentsScreenState extends ConsumerState<AppointmentsScreen> {
                                     Container(
                                       padding: EdgeInsets.all(AppSpacing.xs),
                                       decoration: BoxDecoration(
-                                        color: AppColors.prescriptions.withOpacity(0.1),
+                                        color: AppColors.prescriptions.withValues(alpha: 0.1),
                                         borderRadius: BorderRadius.circular(AppRadius.xs),
                                       ),
                                       child: Icon(Icons.medical_services_rounded, size: 14, color: AppColors.prescriptions),
@@ -521,8 +523,8 @@ class _AppointmentsScreenState extends ConsumerState<AppointmentsScreen> {
                       Container(
                         decoration: BoxDecoration(
                           color: isDark 
-                              ? Colors.white.withOpacity(0.03)
-                              : Colors.grey.withOpacity(0.05),
+                              ? Colors.white.withValues(alpha: 0.03)
+                              : Colors.grey.withValues(alpha: 0.05),
                           borderRadius: const BorderRadius.only(
                             bottomLeft: Radius.circular(AppRadius.xl),
                             bottomRight: Radius.circular(AppRadius.xl),
@@ -599,7 +601,7 @@ class _AppointmentsScreenState extends ConsumerState<AppointmentsScreen> {
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
         decoration: BoxDecoration(
-          color: color.withOpacity(0.1),
+          color: color.withValues(alpha: 0.1),
           borderRadius: BorderRadius.circular(8),
         ),
         child: Row(
@@ -622,7 +624,7 @@ class _AppointmentsScreenState extends ConsumerState<AppointmentsScreen> {
   }
   
   Future<void> _callPatient(String phone) async {
-    HapticFeedback.lightImpact();
+    unawaited(HapticFeedback.lightImpact());
     final url = Uri.parse('tel:$phone');
     if (await canLaunchUrl(url)) {
       await launchUrl(url);
@@ -630,7 +632,7 @@ class _AppointmentsScreenState extends ConsumerState<AppointmentsScreen> {
   }
   
   Future<void> _messagePatient(String phone) async {
-    HapticFeedback.lightImpact();
+    unawaited(HapticFeedback.lightImpact());
     final url = Uri.parse('sms:$phone');
     if (await canLaunchUrl(url)) {
       await launchUrl(url);
@@ -668,7 +670,7 @@ class _AppointmentsScreenState extends ConsumerState<AppointmentsScreen> {
         statusIcon = Icons.schedule;
     }
 
-    showModalBottomSheet(
+    showModalBottomSheet<void>(
       context: context,
       isScrollControlled: true,
       backgroundColor: isDark ? AppColors.darkSurface : Colors.white,
@@ -705,7 +707,7 @@ class _AppointmentsScreenState extends ConsumerState<AppointmentsScreen> {
                     child: Container(
                       padding: const EdgeInsets.all(8),
                       decoration: BoxDecoration(
-                        color: (isDark ? AppColors.darkDivider : AppColors.divider).withOpacity(0.5),
+                        color: (isDark ? AppColors.darkDivider : AppColors.divider).withValues(alpha: 0.5),
                         borderRadius: BorderRadius.circular(8),
                       ),
                       child: Icon(
@@ -719,7 +721,7 @@ class _AppointmentsScreenState extends ConsumerState<AppointmentsScreen> {
                   Container(
                     padding: const EdgeInsets.all(12),
                     decoration: BoxDecoration(
-                      color: (isUpcoming ? AppColors.primary : statusColor).withOpacity(0.1),
+                      color: (isUpcoming ? AppColors.primary : statusColor).withValues(alpha: 0.1),
                       borderRadius: BorderRadius.circular(12),
                     ),
                     child: Icon(
@@ -743,7 +745,7 @@ class _AppointmentsScreenState extends ConsumerState<AppointmentsScreen> {
                         Container(
                           padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                           decoration: BoxDecoration(
-                            color: statusColor.withOpacity(0.1),
+                            color: statusColor.withValues(alpha: 0.1),
                             borderRadius: BorderRadius.circular(12),
                           ),
                           child: Row(
@@ -823,14 +825,14 @@ class _AppointmentsScreenState extends ConsumerState<AppointmentsScreen> {
                       decoration: BoxDecoration(
                         gradient: LinearGradient(
                           colors: [
-                            (isUpcoming ? AppColors.primary : statusColor).withOpacity(0.1),
-                            (isUpcoming ? AppColors.primary : statusColor).withOpacity(0.05),
+                            (isUpcoming ? AppColors.primary : statusColor).withValues(alpha: 0.1),
+                            (isUpcoming ? AppColors.primary : statusColor).withValues(alpha: 0.05),
                           ],
                           begin: Alignment.topLeft,
                           end: Alignment.bottomRight,
                         ),
                         borderRadius: BorderRadius.circular(16),
-                        border: Border.all(color: (isUpcoming ? AppColors.primary : statusColor).withOpacity(0.2)),
+                        border: Border.all(color: (isUpcoming ? AppColors.primary : statusColor).withValues(alpha: 0.2)),
                       ),
                       child: Column(
                         children: [
@@ -839,7 +841,7 @@ class _AppointmentsScreenState extends ConsumerState<AppointmentsScreen> {
                               Container(
                                 padding: const EdgeInsets.all(10),
                                 decoration: BoxDecoration(
-                                  color: (isUpcoming ? AppColors.primary : statusColor).withOpacity(0.15),
+                                  color: (isUpcoming ? AppColors.primary : statusColor).withValues(alpha: 0.15),
                                   borderRadius: BorderRadius.circular(10),
                                 ),
                                 child: Icon(Icons.calendar_month, color: isUpcoming ? AppColors.primary : statusColor, size: 22),
@@ -876,7 +878,7 @@ class _AppointmentsScreenState extends ConsumerState<AppointmentsScreen> {
                                     Container(
                                       padding: const EdgeInsets.all(10),
                                       decoration: BoxDecoration(
-                                        color: (isUpcoming ? AppColors.primary : statusColor).withOpacity(0.15),
+                                        color: (isUpcoming ? AppColors.primary : statusColor).withValues(alpha: 0.15),
                                         borderRadius: BorderRadius.circular(10),
                                       ),
                                       child: Icon(Icons.access_time, color: isUpcoming ? AppColors.primary : statusColor, size: 22),
@@ -911,7 +913,7 @@ class _AppointmentsScreenState extends ConsumerState<AppointmentsScreen> {
                                     Container(
                                       padding: const EdgeInsets.all(10),
                                       decoration: BoxDecoration(
-                                        color: (isUpcoming ? AppColors.primary : statusColor).withOpacity(0.15),
+                                        color: (isUpcoming ? AppColors.primary : statusColor).withValues(alpha: 0.15),
                                         borderRadius: BorderRadius.circular(10),
                                       ),
                                       child: Icon(Icons.timer_outlined, color: isUpcoming ? AppColors.primary : statusColor, size: 22),

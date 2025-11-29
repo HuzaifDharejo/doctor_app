@@ -131,6 +131,7 @@ class AppLogger {
   // Configuration
   LogLevel _minLevel = kDebugMode ? LogLevel.verbose : LogLevel.warning;
   bool _enableConsoleOutput = kDebugMode;
+  // ignore: unused_field
   bool _enableFileLogging = false;
   int _maxLogEntries = 1000;
   int _maxPerformanceMetrics = 100;

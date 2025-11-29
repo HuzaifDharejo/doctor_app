@@ -135,11 +135,11 @@ class _SuggestionTextFieldState extends State<SuggestionTextField> {
                     color: isDark ? AppColors.darkSurface : AppColors.surface,
                     borderRadius: BorderRadius.circular(10),
                     border: Border.all(
-                      color: AppColors.primary.withOpacity(0.3),
+                      color: AppColors.primary.withValues(alpha: 0.3),
                     ),
                     boxShadow: [
                       BoxShadow(
-                        color: Colors.black.withOpacity(0.05),
+                        color: Colors.black.withValues(alpha: 0.05),
                         blurRadius: 4,
                         offset: const Offset(0, 2),
                       ),
@@ -161,10 +161,10 @@ class _SuggestionTextFieldState extends State<SuggestionTextField> {
                               child: Container(
                                 padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
                                 decoration: BoxDecoration(
-                                  color: isSelected ? AppColors.primary.withOpacity(0.15) : (isDark ? AppColors.darkBackground : Colors.white),
+                                  color: isSelected ? AppColors.primary.withValues(alpha: 0.15) : (isDark ? AppColors.darkBackground : Colors.white),
                                   borderRadius: BorderRadius.circular(16),
                                   border: Border.all(
-                                    color: isSelected ? AppColors.primary : AppColors.primary.withOpacity(0.3),
+                                    color: isSelected ? AppColors.primary : AppColors.primary.withValues(alpha: 0.3),
                                   ),
                                 ),
                                 child: Row(
@@ -324,7 +324,7 @@ class _VitalTextFieldState extends State<VitalTextField> {
                         visualDensity: VisualDensity.compact,
                         padding: EdgeInsets.zero,
                         side: BorderSide(
-                          color: AppColors.primary.withOpacity(0.3),
+                          color: AppColors.primary.withValues(alpha: 0.3),
                         ),
                       ),
                     );
@@ -420,7 +420,7 @@ void showSuggestionBottomSheet({
 }) {
   final isDark = Theme.of(context).brightness == Brightness.dark;
   
-  showModalBottomSheet(
+  showModalBottomSheet<void>(
     context: context,
     backgroundColor: Colors.transparent,
     isScrollControlled: true,
@@ -494,7 +494,7 @@ void showSuggestionBottomSheet({
                       }
                     },
                     backgroundColor: isSelected 
-                        ? AppColors.primary.withOpacity(0.15)
+                        ? AppColors.primary.withValues(alpha: 0.15)
                         : null,
                     side: BorderSide(
                       color: isSelected 

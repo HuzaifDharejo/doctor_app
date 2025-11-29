@@ -1,3 +1,5 @@
+// ignore_for_file: unused_element
+
 import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -5,7 +7,6 @@ import 'package:intl/intl.dart';
 import 'package:drift/drift.dart' show Value;
 import '../../db/doctor_db.dart';
 import '../../providers/db_provider.dart';
-import '../../services/doctor_settings_service.dart';
 import '../../theme/app_theme.dart';
 import '../../services/whatsapp_service.dart';
 import '../../services/pdf_service.dart';
@@ -195,10 +196,10 @@ class _PatientViewScreenState extends ConsumerState<PatientViewScreen>
       padding: EdgeInsets.only(right: isLast ? 12 : 8),
       child: Container(
         decoration: BoxDecoration(
-          color: bgColor ?? color.withOpacity(0.15),
+          color: bgColor ?? color.withValues(alpha: 0.15),
           borderRadius: BorderRadius.circular(12),
           border: Border.all(
-            color: Colors.white.withOpacity(0.15),
+            color: Colors.white.withValues(alpha: 0.15),
             width: 1,
           ),
         ),
@@ -226,7 +227,7 @@ class _PatientViewScreenState extends ConsumerState<PatientViewScreen>
     final colorScheme = Theme.of(context).colorScheme;
     final surfaceColor = isDark ? AppColors.darkSurface : colorScheme.surface;
     final onSurfaceColor = isDark ? Colors.white : colorScheme.onSurface;
-    final primaryContainer = isDark ? AppColors.primary.withOpacity(0.2) : colorScheme.primaryContainer;
+    final primaryContainer = isDark ? AppColors.primary.withValues(alpha: 0.2) : colorScheme.primaryContainer;
 
     return Scaffold(
       backgroundColor: surfaceColor,
@@ -309,7 +310,7 @@ class _PatientViewScreenState extends ConsumerState<PatientViewScreen>
                         Text(
                           _getPatientSubtitle(patient),
                           style: TextStyle(
-                            color: onSurfaceColor.withOpacity(0.6),
+                            color: onSurfaceColor.withValues(alpha: 0.6),
                             fontSize: 14,
                             fontWeight: FontWeight.w400,
                           ),
@@ -347,7 +348,7 @@ class _PatientViewScreenState extends ConsumerState<PatientViewScreen>
                     color: surfaceColor,
                     border: Border(
                       bottom: BorderSide(
-                        color: onSurfaceColor.withOpacity(0.08),
+                        color: onSurfaceColor.withValues(alpha: 0.08),
                         width: 1,
                       ),
                     ),
@@ -355,7 +356,7 @@ class _PatientViewScreenState extends ConsumerState<PatientViewScreen>
                   child: TabBar(
                     controller: _tabController,
                     labelColor: AppColors.primary,
-                    unselectedLabelColor: onSurfaceColor.withOpacity(0.6),
+                    unselectedLabelColor: onSurfaceColor.withValues(alpha: 0.6),
                     indicatorColor: AppColors.primary,
                     indicatorWeight: 3,
                     dividerColor: Colors.transparent,
@@ -403,7 +404,7 @@ class _PatientViewScreenState extends ConsumerState<PatientViewScreen>
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
       decoration: BoxDecoration(
-        color: color.withOpacity(0.12),
+        color: color.withValues(alpha: 0.12),
         borderRadius: BorderRadius.circular(8),
       ),
       child: Row(
@@ -419,12 +420,12 @@ class _PatientViewScreenState extends ConsumerState<PatientViewScreen>
               ),
             )
           else if (icon != null)
-            Icon(icon, size: 14, color: color.withOpacity(0.8)),
+            Icon(icon, size: 14, color: color.withValues(alpha: 0.8)),
           SizedBox(width: showDot || icon != null ? 6 : 0),
           Text(
             label,
             style: TextStyle(
-              color: color.withOpacity(0.9),
+              color: color.withValues(alpha: 0.9),
               fontWeight: FontWeight.w500,
               fontSize: 12,
             ),
@@ -506,9 +507,9 @@ class _PatientViewScreenState extends ConsumerState<PatientViewScreen>
                         return Container(
                           padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                           decoration: BoxDecoration(
-                            color: tagColor.withOpacity(0.1),
+                            color: tagColor.withValues(alpha: 0.1),
                             borderRadius: BorderRadius.circular(16),
-                            border: Border.all(color: tagColor.withOpacity(0.3)),
+                            border: Border.all(color: tagColor.withValues(alpha: 0.3)),
                           ),
                           child: Text(
                             tag.trim(),
@@ -536,7 +537,7 @@ class _PatientViewScreenState extends ConsumerState<PatientViewScreen>
             right: 76, // FAB is ~56px wide + 16px margin + 4px gap
             child: Material(
               elevation: 8,
-              shadowColor: AppColors.primary.withOpacity(0.3),
+              shadowColor: AppColors.primary.withValues(alpha: 0.3),
               borderRadius: BorderRadius.circular(14),
               child: InkWell(
                 onTap: _isSaving ? null : _saveChanges,
@@ -545,7 +546,7 @@ class _PatientViewScreenState extends ConsumerState<PatientViewScreen>
                   height: 56, // Same height as FAB
                   decoration: BoxDecoration(
                     gradient: LinearGradient(
-                      colors: [AppColors.primary, AppColors.primary.withOpacity(0.8)],
+                      colors: [AppColors.primary, AppColors.primary.withValues(alpha: 0.8)],
                     ),
                     borderRadius: BorderRadius.circular(14),
                   ),
@@ -722,10 +723,10 @@ class _PatientViewScreenState extends ConsumerState<PatientViewScreen>
           decoration: BoxDecoration(
             color: Theme.of(context).colorScheme.surface,
             borderRadius: BorderRadius.circular(16),
-            border: Border.all(color: (isDark ? AppColors.darkDivider : AppColors.divider).withOpacity(0.5)),
+            border: Border.all(color: (isDark ? AppColors.darkDivider : AppColors.divider).withValues(alpha: 0.5)),
             boxShadow: [
               BoxShadow(
-                color: Colors.black.withOpacity(0.04),
+                color: Colors.black.withValues(alpha: 0.04),
                 blurRadius: 10,
                 offset: const Offset(0, 4),
               ),
@@ -746,7 +747,7 @@ class _PatientViewScreenState extends ConsumerState<PatientViewScreen>
                         Container(
                           padding: const EdgeInsets.all(10),
                           decoration: BoxDecoration(
-                            color: recordColor.withOpacity(0.1),
+                            color: recordColor.withValues(alpha: 0.1),
                             borderRadius: BorderRadius.circular(12),
                           ),
                           child: Icon(recordIcon, color: recordColor, size: 24),
@@ -777,7 +778,7 @@ class _PatientViewScreenState extends ConsumerState<PatientViewScreen>
                         Container(
                           padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                           decoration: BoxDecoration(
-                            color: recordColor.withOpacity(0.1),
+                            color: recordColor.withValues(alpha: 0.1),
                             borderRadius: BorderRadius.circular(12),
                           ),
                           child: Text(
@@ -870,9 +871,9 @@ class _PatientViewScreenState extends ConsumerState<PatientViewScreen>
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
       decoration: BoxDecoration(
-        color: chipColor.withOpacity(0.1),
+        color: chipColor.withValues(alpha: 0.1),
         borderRadius: BorderRadius.circular(8),
-        border: Border.all(color: chipColor.withOpacity(0.3)),
+        border: Border.all(color: chipColor.withValues(alpha: 0.3)),
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
@@ -927,14 +928,14 @@ class _PatientViewScreenState extends ConsumerState<PatientViewScreen>
       decoration: BoxDecoration(
         color: Theme.of(context).colorScheme.surface,
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: (isDark ? AppColors.darkDivider : AppColors.divider).withOpacity(0.5)),
+        border: Border.all(color: (isDark ? AppColors.darkDivider : AppColors.divider).withValues(alpha: 0.5)),
       ),
       child: Column(
         children: [
           Container(
             padding: const EdgeInsets.all(16),
             decoration: BoxDecoration(
-              color: AppColors.primary.withOpacity(0.1),
+              color: AppColors.primary.withValues(alpha: 0.1),
               shape: BoxShape.circle,
             ),
             child: const Icon(
@@ -1036,9 +1037,9 @@ class _PatientViewScreenState extends ConsumerState<PatientViewScreen>
       child: Container(
         padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
-          color: color.withOpacity(0.1),
+          color: color.withValues(alpha: 0.1),
           borderRadius: BorderRadius.circular(16),
-          border: Border.all(color: color.withOpacity(0.3)),
+          border: Border.all(color: color.withValues(alpha: 0.3)),
         ),
         child: Column(
           children: [
@@ -1060,9 +1061,9 @@ class _PatientViewScreenState extends ConsumerState<PatientViewScreen>
   }
 
   void _addMedicalRecord(BuildContext context, String recordType) async {
-    final result = await Navigator.push(
+    final result = await Navigator.push<bool>(
       context,
-      MaterialPageRoute(
+      MaterialPageRoute<bool>(
         builder: (_) => AddMedicalRecordScreen(
           preselectedPatient: widget.patient,
           initialRecordType: recordType,
@@ -1075,9 +1076,9 @@ class _PatientViewScreenState extends ConsumerState<PatientViewScreen>
   }
 
   void _openDetailedPsychiatricAssessment(BuildContext context) async {
-    final result = await Navigator.push(
+    final result = await Navigator.push<bool>(
       context,
-      MaterialPageRoute(
+      MaterialPageRoute<bool>(
         builder: (_) => PsychiatricAssessmentScreen(
           preselectedPatient: widget.patient,
         ),
@@ -1092,7 +1093,7 @@ class _PatientViewScreenState extends ConsumerState<PatientViewScreen>
     // Navigate to the new modern medical record detail screen
     Navigator.push(
       context,
-      MaterialPageRoute(
+      MaterialPageRoute<void>(
         builder: (_) => MedicalRecordDetailScreen(
           record: record,
           patient: widget.patient,
@@ -1199,9 +1200,9 @@ class _PatientViewScreenState extends ConsumerState<PatientViewScreen>
       margin: const EdgeInsets.only(top: 16),
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: AppColors.warning.withOpacity(0.1),
+        color: AppColors.warning.withValues(alpha: 0.1),
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: AppColors.warning.withOpacity(0.3)),
+        border: Border.all(color: AppColors.warning.withValues(alpha: 0.3)),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -1311,9 +1312,9 @@ class _PatientViewScreenState extends ConsumerState<PatientViewScreen>
       margin: const EdgeInsets.only(top: 16),
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: AppColors.accent.withOpacity(0.1),
+        color: AppColors.accent.withValues(alpha: 0.1),
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: AppColors.accent.withOpacity(0.3)),
+        border: Border.all(color: AppColors.accent.withValues(alpha: 0.3)),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -1340,7 +1341,7 @@ class _PatientViewScreenState extends ConsumerState<PatientViewScreen>
               return Container(
                 padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
                 decoration: BoxDecoration(
-                  color: AppColors.accent.withOpacity(0.15),
+                  color: AppColors.accent.withValues(alpha: 0.15),
                   borderRadius: BorderRadius.circular(8),
                 ),
                 child: Row(
@@ -1376,9 +1377,9 @@ class _PatientViewScreenState extends ConsumerState<PatientViewScreen>
       margin: const EdgeInsets.only(top: 16),
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: AppColors.info.withOpacity(0.1),
+        color: AppColors.info.withValues(alpha: 0.1),
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: AppColors.info.withOpacity(0.3)),
+        border: Border.all(color: AppColors.info.withValues(alpha: 0.3)),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -1427,7 +1428,7 @@ class _PatientViewScreenState extends ConsumerState<PatientViewScreen>
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
       decoration: BoxDecoration(
-        color: AppColors.info.withOpacity(0.15),
+        color: AppColors.info.withValues(alpha: 0.15),
         borderRadius: BorderRadius.circular(8),
       ),
       child: Row(
@@ -1459,9 +1460,9 @@ class _PatientViewScreenState extends ConsumerState<PatientViewScreen>
       margin: const EdgeInsets.only(top: 16),
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: AppColors.primary.withOpacity(0.1),
+        color: AppColors.primary.withValues(alpha: 0.1),
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: AppColors.primary.withOpacity(0.3)),
+        border: Border.all(color: AppColors.primary.withValues(alpha: 0.3)),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -1520,9 +1521,9 @@ class _PatientViewScreenState extends ConsumerState<PatientViewScreen>
     return Container(
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
-        color: severityColor.withOpacity(0.1),
+        color: severityColor.withValues(alpha: 0.1),
         borderRadius: BorderRadius.circular(10),
-        border: Border.all(color: severityColor.withOpacity(0.3)),
+        border: Border.all(color: severityColor.withValues(alpha: 0.3)),
       ),
       child: Column(
         children: [
@@ -1583,9 +1584,9 @@ class _PatientViewScreenState extends ConsumerState<PatientViewScreen>
       margin: const EdgeInsets.only(bottom: 16),
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: AppColors.warning.withOpacity(0.1),
+        color: AppColors.warning.withValues(alpha: 0.1),
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: AppColors.warning.withOpacity(0.3)),
+        border: Border.all(color: AppColors.warning.withValues(alpha: 0.3)),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -1674,9 +1675,9 @@ class _PatientViewScreenState extends ConsumerState<PatientViewScreen>
       margin: const EdgeInsets.only(bottom: 16),
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: AppColors.info.withOpacity(0.1),
+        color: AppColors.info.withValues(alpha: 0.1),
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: AppColors.info.withOpacity(0.3)),
+        border: Border.all(color: AppColors.info.withValues(alpha: 0.3)),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -1738,9 +1739,9 @@ class _PatientViewScreenState extends ConsumerState<PatientViewScreen>
       margin: const EdgeInsets.only(bottom: 16),
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: AppColors.accent.withOpacity(0.1),
+        color: AppColors.accent.withValues(alpha: 0.1),
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: AppColors.accent.withOpacity(0.3)),
+        border: Border.all(color: AppColors.accent.withValues(alpha: 0.3)),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -1980,12 +1981,12 @@ class _PatientViewScreenState extends ConsumerState<PatientViewScreen>
         borderRadius: BorderRadius.circular(16),
         border: Border.all(
           color: isDark 
-              ? AppColors.darkDivider.withOpacity(0.5)
-              : AppColors.divider.withOpacity(0.5),
+              ? AppColors.darkDivider.withValues(alpha: 0.5)
+              : AppColors.divider.withValues(alpha: 0.5),
         ),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(isDark ? 0.15 : 0.04),
+            color: Colors.black.withValues(alpha: isDark ? 0.15 : 0.04),
             blurRadius: 10,
             offset: const Offset(0, 4),
           ),
@@ -2002,7 +2003,7 @@ class _PatientViewScreenState extends ConsumerState<PatientViewScreen>
                 Container(
                   padding: const EdgeInsets.all(8),
                   decoration: BoxDecoration(
-                    color: color.withOpacity(0.1),
+                    color: color.withValues(alpha: 0.1),
                     borderRadius: BorderRadius.circular(10),
                   ),
                   child: Icon(icon, color: color, size: 20),
@@ -2121,23 +2122,23 @@ class _PatientViewScreenState extends ConsumerState<PatientViewScreen>
                       decoration: InputDecoration(
                         hintText: hint ?? 'Enter $label',
                         hintStyle: TextStyle(
-                          color: isDark ? AppColors.darkTextSecondary.withOpacity(0.5) : AppColors.textSecondary.withOpacity(0.5),
+                          color: isDark ? AppColors.darkTextSecondary.withValues(alpha: 0.5) : AppColors.textSecondary.withValues(alpha: 0.5),
                           fontWeight: FontWeight.normal,
                         ),
                         isDense: true,
                         contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
                         filled: true,
-                        fillColor: isDark ? Colors.white.withOpacity(0.05) : Colors.grey.withOpacity(0.05),
+                        fillColor: isDark ? Colors.white.withValues(alpha: 0.05) : Colors.grey.withValues(alpha: 0.05),
                         border: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(8),
                           borderSide: BorderSide(
-                            color: isDark ? Colors.white.withOpacity(0.1) : Colors.grey.withOpacity(0.2),
+                            color: isDark ? Colors.white.withValues(alpha: 0.1) : Colors.grey.withValues(alpha: 0.2),
                           ),
                         ),
                         enabledBorder: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(8),
                           borderSide: BorderSide(
-                            color: isDark ? Colors.white.withOpacity(0.1) : Colors.grey.withOpacity(0.2),
+                            color: isDark ? Colors.white.withValues(alpha: 0.1) : Colors.grey.withValues(alpha: 0.2),
                           ),
                         ),
                         focusedBorder: OutlineInputBorder(
@@ -2164,9 +2165,9 @@ class _PatientViewScreenState extends ConsumerState<PatientViewScreen>
       margin: const EdgeInsets.only(bottom: 12),
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
-        color: AppColors.warning.withOpacity(0.1),
+        color: AppColors.warning.withValues(alpha: 0.1),
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: AppColors.warning.withOpacity(0.3)),
+        border: Border.all(color: AppColors.warning.withValues(alpha: 0.3)),
       ),
       child: Row(
         children: [
@@ -2250,10 +2251,10 @@ class _PatientViewScreenState extends ConsumerState<PatientViewScreen>
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: color.withOpacity(0.1),
+        color: color.withValues(alpha: 0.1),
         borderRadius: BorderRadius.circular(14),
         border: Border.all(
-          color: color.withOpacity(0.2),
+          color: color.withValues(alpha: 0.2),
         ),
       ),
       child: Row(
@@ -2261,7 +2262,7 @@ class _PatientViewScreenState extends ConsumerState<PatientViewScreen>
           Container(
             padding: const EdgeInsets.all(10),
             decoration: BoxDecoration(
-              color: color.withOpacity(0.15),
+              color: color.withValues(alpha: 0.15),
               borderRadius: BorderRadius.circular(10),
             ),
             child: Icon(icon, color: color, size: 22),
@@ -2318,10 +2319,10 @@ class _PatientViewScreenState extends ConsumerState<PatientViewScreen>
       decoration: BoxDecoration(
         color: Theme.of(context).colorScheme.surface,
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: (isDark ? AppColors.darkDivider : AppColors.divider).withOpacity(0.5)),
+        border: Border.all(color: (isDark ? AppColors.darkDivider : AppColors.divider).withValues(alpha: 0.5)),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.04),
+            color: Colors.black.withValues(alpha: 0.04),
             blurRadius: 10,
             offset: const Offset(0, 4),
           ),
@@ -2343,7 +2344,7 @@ class _PatientViewScreenState extends ConsumerState<PatientViewScreen>
                       padding: const EdgeInsets.all(10),
                       decoration: BoxDecoration(
                         color: (isUpcoming ? AppColors.primary : AppColors.textSecondary)
-                            .withOpacity(0.1),
+                            .withValues(alpha: 0.1),
                         borderRadius: BorderRadius.circular(12),
                       ),
                       child: Icon(
@@ -2378,7 +2379,7 @@ class _PatientViewScreenState extends ConsumerState<PatientViewScreen>
                     Container(
                       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                       decoration: BoxDecoration(
-                        color: statusColor.withOpacity(0.1),
+                        color: statusColor.withValues(alpha: 0.1),
                         borderRadius: BorderRadius.circular(20),
                       ),
                       child: Text(
@@ -2439,10 +2440,10 @@ class _PatientViewScreenState extends ConsumerState<PatientViewScreen>
       decoration: BoxDecoration(
         color: Theme.of(context).colorScheme.surface,
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: (isDark ? AppColors.darkDivider : AppColors.divider).withOpacity(0.5)),
+        border: Border.all(color: (isDark ? AppColors.darkDivider : AppColors.divider).withValues(alpha: 0.5)),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.04),
+            color: Colors.black.withValues(alpha: 0.04),
             blurRadius: 10,
             offset: const Offset(0, 4),
           ),
@@ -2465,7 +2466,7 @@ class _PatientViewScreenState extends ConsumerState<PatientViewScreen>
                     Container(
                       padding: const EdgeInsets.all(10),
                       decoration: BoxDecoration(
-                        color: AppColors.accent.withOpacity(0.1),
+                        color: AppColors.accent.withValues(alpha: 0.1),
                         borderRadius: BorderRadius.circular(12),
                       ),
                       child: const Icon(
@@ -2501,7 +2502,7 @@ class _PatientViewScreenState extends ConsumerState<PatientViewScreen>
                       Container(
                         padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                         decoration: BoxDecoration(
-                          color: AppColors.success.withOpacity(0.1),
+                          color: AppColors.success.withValues(alpha: 0.1),
                           borderRadius: BorderRadius.circular(12),
                         ),
                         child: const Row(
@@ -2542,7 +2543,7 @@ class _PatientViewScreenState extends ConsumerState<PatientViewScreen>
                       return Container(
                         padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
                         decoration: BoxDecoration(
-                          color: AppColors.primaryLight.withOpacity(0.1),
+                          color: AppColors.primaryLight.withValues(alpha: 0.1),
                           borderRadius: BorderRadius.circular(8),
                         ),
                         child: Text(
@@ -2612,14 +2613,14 @@ class _PatientViewScreenState extends ConsumerState<PatientViewScreen>
                   begin: Alignment.topLeft,
                   end: Alignment.bottomRight,
                   colors: [
-                    AppColors.primary.withOpacity(0.15),
-                    AppColors.accent.withOpacity(0.1),
+                    AppColors.primary.withValues(alpha: 0.15),
+                    AppColors.accent.withValues(alpha: 0.1),
                   ],
                 ),
                 shape: BoxShape.circle,
                 boxShadow: [
                   BoxShadow(
-                    color: AppColors.primary.withOpacity(0.1),
+                    color: AppColors.primary.withValues(alpha: 0.1),
                     blurRadius: 20,
                     spreadRadius: 5,
                   ),
@@ -2653,7 +2654,7 @@ class _PatientViewScreenState extends ConsumerState<PatientViewScreen>
                   borderRadius: BorderRadius.circular(14),
                   boxShadow: [
                     BoxShadow(
-                      color: AppColors.primary.withOpacity(0.3),
+                      color: AppColors.primary.withValues(alpha: 0.3),
                       blurRadius: 12,
                       offset: const Offset(0, 6),
                     ),
@@ -2691,7 +2692,7 @@ class _PatientViewScreenState extends ConsumerState<PatientViewScreen>
         borderRadius: BorderRadius.circular(14),
         boxShadow: [
           BoxShadow(
-            color: AppColors.primary.withOpacity(0.3),
+            color: AppColors.primary.withValues(alpha: 0.3),
             blurRadius: 12,
             offset: const Offset(0, 4),
           ),
@@ -2712,7 +2713,7 @@ class _PatientViewScreenState extends ConsumerState<PatientViewScreen>
   void _showModernActionSheet(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     
-    showModalBottomSheet(
+    showModalBottomSheet<void>(
       context: context,
       backgroundColor: isDark ? AppColors.darkSurface : Colors.white,
       shape: const RoundedRectangleBorder(
@@ -2739,7 +2740,7 @@ class _PatientViewScreenState extends ConsumerState<PatientViewScreen>
                 Container(
                   padding: const EdgeInsets.all(8),
                   decoration: BoxDecoration(
-                    color: AppColors.primary.withOpacity(0.1),
+                    color: AppColors.primary.withValues(alpha: 0.1),
                     borderRadius: BorderRadius.circular(10),
                   ),
                   child: const Icon(Icons.flash_on_rounded, color: AppColors.primary, size: 20),
@@ -2860,7 +2861,7 @@ class _PatientViewScreenState extends ConsumerState<PatientViewScreen>
       leading: Container(
         padding: const EdgeInsets.all(8),
         decoration: BoxDecoration(
-          color: color.withOpacity(0.1),
+          color: color.withValues(alpha: 0.1),
           borderRadius: BorderRadius.circular(10),
         ),
         child: Icon(icon, color: color, size: 20),
@@ -2885,7 +2886,7 @@ class _PatientViewScreenState extends ConsumerState<PatientViewScreen>
       leading: Container(
         padding: const EdgeInsets.all(10),
         decoration: BoxDecoration(
-          color: color.withOpacity(0.1),
+          color: color.withValues(alpha: 0.1),
           borderRadius: BorderRadius.circular(10),
         ),
         child: Icon(icon, color: color),
@@ -2897,7 +2898,7 @@ class _PatientViewScreenState extends ConsumerState<PatientViewScreen>
   }
 
   void _showOptionsMenu(BuildContext context) {
-    showModalBottomSheet(
+    showModalBottomSheet<void>(
       context: context,
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
@@ -2959,7 +2960,7 @@ class _PatientViewScreenState extends ConsumerState<PatientViewScreen>
     final dateFormat = DateFormat('MMMM d, yyyy');
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
-    showModalBottomSheet(
+    showModalBottomSheet<void>(
       context: context,
       isScrollControlled: true,
       backgroundColor: isDark ? AppColors.darkSurface : Colors.white,
@@ -2996,7 +2997,7 @@ class _PatientViewScreenState extends ConsumerState<PatientViewScreen>
                     child: Container(
                       padding: const EdgeInsets.all(8),
                       decoration: BoxDecoration(
-                        color: (isDark ? AppColors.darkDivider : AppColors.divider).withOpacity(0.5),
+                        color: (isDark ? AppColors.darkDivider : AppColors.divider).withValues(alpha: 0.5),
                         borderRadius: BorderRadius.circular(8),
                       ),
                       child: Icon(
@@ -3010,7 +3011,7 @@ class _PatientViewScreenState extends ConsumerState<PatientViewScreen>
                   Container(
                     padding: const EdgeInsets.all(12),
                     decoration: BoxDecoration(
-                      color: AppColors.accent.withOpacity(0.1),
+                      color: AppColors.accent.withValues(alpha: 0.1),
                       borderRadius: BorderRadius.circular(12),
                     ),
                     child: const Icon(
@@ -3058,7 +3059,7 @@ class _PatientViewScreenState extends ConsumerState<PatientViewScreen>
                               Container(
                                 padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
                                 decoration: BoxDecoration(
-                                  color: AppColors.success.withOpacity(0.1),
+                                  color: AppColors.success.withValues(alpha: 0.1),
                                   borderRadius: BorderRadius.circular(8),
                                 ),
                                 child: Row(
@@ -3090,12 +3091,12 @@ class _PatientViewScreenState extends ConsumerState<PatientViewScreen>
                 padding: const EdgeInsets.all(16),
                 decoration: BoxDecoration(
                   gradient: LinearGradient(
-                    colors: [AppColors.accent.withOpacity(0.1), AppColors.primary.withOpacity(0.05)],
+                    colors: [AppColors.accent.withValues(alpha: 0.1), AppColors.primary.withValues(alpha: 0.05)],
                     begin: Alignment.topLeft,
                     end: Alignment.bottomRight,
                   ),
                   borderRadius: BorderRadius.circular(12),
-                  border: Border.all(color: AppColors.accent.withOpacity(0.2)),
+                  border: Border.all(color: AppColors.accent.withValues(alpha: 0.2)),
                 ),
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.spaceAround,
@@ -3161,7 +3162,7 @@ class _PatientViewScreenState extends ConsumerState<PatientViewScreen>
                                 Container(
                                   padding: const EdgeInsets.all(8),
                                   decoration: BoxDecoration(
-                                    color: AppColors.accent.withOpacity(0.1),
+                                    color: AppColors.accent.withValues(alpha: 0.1),
                                     borderRadius: BorderRadius.circular(8),
                                   ),
                                   child: Text(
@@ -3211,7 +3212,7 @@ class _PatientViewScreenState extends ConsumerState<PatientViewScreen>
                               Container(
                                 padding: const EdgeInsets.all(10),
                                 decoration: BoxDecoration(
-                                  color: AppColors.info.withOpacity(0.1),
+                                  color: AppColors.info.withValues(alpha: 0.1),
                                   borderRadius: BorderRadius.circular(8),
                                 ),
                                 child: Row(
@@ -3256,9 +3257,9 @@ class _PatientViewScreenState extends ConsumerState<PatientViewScreen>
                       Container(
                         padding: const EdgeInsets.all(16),
                         decoration: BoxDecoration(
-                          color: AppColors.info.withOpacity(0.1),
+                          color: AppColors.info.withValues(alpha: 0.1),
                           borderRadius: BorderRadius.circular(12),
-                          border: Border.all(color: AppColors.info.withOpacity(0.3)),
+                          border: Border.all(color: AppColors.info.withValues(alpha: 0.3)),
                         ),
                         child: Row(
                           crossAxisAlignment: CrossAxisAlignment.start,
@@ -3370,9 +3371,9 @@ class _PatientViewScreenState extends ConsumerState<PatientViewScreen>
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
       decoration: BoxDecoration(
-        color: isDark ? AppColors.darkBackground.withOpacity(0.5) : AppColors.background,
+        color: isDark ? AppColors.darkBackground.withValues(alpha: 0.5) : AppColors.background,
         borderRadius: BorderRadius.circular(8),
-        border: Border.all(color: (isDark ? AppColors.darkDivider : AppColors.divider).withOpacity(0.5)),
+        border: Border.all(color: (isDark ? AppColors.darkDivider : AppColors.divider).withValues(alpha: 0.5)),
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
@@ -3435,7 +3436,7 @@ class _PatientViewScreenState extends ConsumerState<PatientViewScreen>
         statusIcon = Icons.schedule;
     }
 
-    showModalBottomSheet(
+    showModalBottomSheet<void>(
       context: context,
       isScrollControlled: true,
       backgroundColor: isDark ? AppColors.darkSurface : Colors.white,
@@ -3472,7 +3473,7 @@ class _PatientViewScreenState extends ConsumerState<PatientViewScreen>
                     child: Container(
                       padding: const EdgeInsets.all(8),
                       decoration: BoxDecoration(
-                        color: (isDark ? AppColors.darkDivider : AppColors.divider).withOpacity(0.5),
+                        color: (isDark ? AppColors.darkDivider : AppColors.divider).withValues(alpha: 0.5),
                         borderRadius: BorderRadius.circular(8),
                       ),
                       child: Icon(
@@ -3486,7 +3487,7 @@ class _PatientViewScreenState extends ConsumerState<PatientViewScreen>
                   Container(
                     padding: const EdgeInsets.all(12),
                     decoration: BoxDecoration(
-                      color: (isUpcoming ? AppColors.primary : statusColor).withOpacity(0.1),
+                      color: (isUpcoming ? AppColors.primary : statusColor).withValues(alpha: 0.1),
                       borderRadius: BorderRadius.circular(12),
                     ),
                     child: Icon(
@@ -3510,7 +3511,7 @@ class _PatientViewScreenState extends ConsumerState<PatientViewScreen>
                         Container(
                           padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                           decoration: BoxDecoration(
-                            color: statusColor.withOpacity(0.1),
+                            color: statusColor.withValues(alpha: 0.1),
                             borderRadius: BorderRadius.circular(12),
                           ),
                           child: Row(
@@ -3547,14 +3548,14 @@ class _PatientViewScreenState extends ConsumerState<PatientViewScreen>
                       decoration: BoxDecoration(
                         gradient: LinearGradient(
                           colors: [
-                            (isUpcoming ? AppColors.primary : statusColor).withOpacity(0.1),
-                            (isUpcoming ? AppColors.primary : statusColor).withOpacity(0.05),
+                            (isUpcoming ? AppColors.primary : statusColor).withValues(alpha: 0.1),
+                            (isUpcoming ? AppColors.primary : statusColor).withValues(alpha: 0.05),
                           ],
                           begin: Alignment.topLeft,
                           end: Alignment.bottomRight,
                         ),
                         borderRadius: BorderRadius.circular(16),
-                        border: Border.all(color: (isUpcoming ? AppColors.primary : statusColor).withOpacity(0.2)),
+                        border: Border.all(color: (isUpcoming ? AppColors.primary : statusColor).withValues(alpha: 0.2)),
                       ),
                       child: Column(
                         children: [
@@ -3792,7 +3793,7 @@ class _PatientViewScreenState extends ConsumerState<PatientViewScreen>
         Container(
           padding: const EdgeInsets.all(10),
           decoration: BoxDecoration(
-            color: color.withOpacity(0.15),
+            color: color.withValues(alpha: 0.15),
             borderRadius: BorderRadius.circular(10),
           ),
           child: Icon(icon, color: color, size: 22),
@@ -3894,7 +3895,7 @@ class _PatientViewScreenState extends ConsumerState<PatientViewScreen>
   void _scheduleAppointment(BuildContext context) {
     Navigator.push(
       context,
-      MaterialPageRoute(
+      MaterialPageRoute<void>(
         builder: (_) => AddAppointmentScreen(preselectedPatient: widget.patient),
       ),
     );
@@ -3903,7 +3904,7 @@ class _PatientViewScreenState extends ConsumerState<PatientViewScreen>
   void _createPrescription(BuildContext context) {
     Navigator.push(
       context,
-      MaterialPageRoute(
+      MaterialPageRoute<void>(
         builder: (_) => AddPrescriptionScreen(preselectedPatient: widget.patient),
       ),
     );
@@ -3912,7 +3913,7 @@ class _PatientViewScreenState extends ConsumerState<PatientViewScreen>
   void _createInvoice(BuildContext context) {
     Navigator.push(
       context,
-      MaterialPageRoute(
+      MaterialPageRoute<void>(
         builder: (_) => AddInvoiceScreen(
           patientId: widget.patient.id,
           patientName: '${widget.patient.firstName} ${widget.patient.lastName}',
@@ -3932,7 +3933,7 @@ class _HeaderPatternPainter extends CustomPainter {
 
     // Draw subtle curved lines
     for (int i = 0; i < 5; i++) {
-      paint.color = Colors.white.withOpacity(0.03 + (i * 0.01));
+      paint.color = Colors.white.withValues(alpha: 0.03 + (i * 0.01));
       
       final path = Path();
       final startY = size.height * (0.2 + (i * 0.15));
@@ -3956,7 +3957,7 @@ class _HeaderPatternPainter extends CustomPainter {
 
     // Add subtle dots
     final dotPaint = Paint()
-      ..color = Colors.white.withOpacity(0.05)
+      ..color = Colors.white.withValues(alpha: 0.05)
       ..style = PaintingStyle.fill;
 
     for (int i = 0; i < 20; i++) {

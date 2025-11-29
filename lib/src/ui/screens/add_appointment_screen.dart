@@ -89,7 +89,7 @@ class _AddAppointmentScreenState extends ConsumerState<AddAppointmentScreen> {
                               child: Container(
                                 padding: const EdgeInsets.all(10),
                                 decoration: BoxDecoration(
-                                  color: Colors.white.withOpacity(0.2),
+                                  color: Colors.white.withValues(alpha: 0.2),
                                   borderRadius: BorderRadius.circular(12),
                                 ),
                                 child: const Icon(Icons.arrow_back, color: Colors.white, size: 20),
@@ -114,7 +114,7 @@ class _AddAppointmentScreenState extends ConsumerState<AddAppointmentScreen> {
                         Container(
                           padding: const EdgeInsets.all(16),
                           decoration: BoxDecoration(
-                            color: Colors.white.withOpacity(0.2),
+                            color: Colors.white.withValues(alpha: 0.2),
                             shape: BoxShape.circle,
                           ),
                           child: const Icon(
@@ -127,7 +127,7 @@ class _AddAppointmentScreenState extends ConsumerState<AddAppointmentScreen> {
                         Text(
                           DateFormat('EEEE, dd MMMM yyyy').format(_selectedDate),
                           style: TextStyle(
-                            color: Colors.white.withOpacity(0.9),
+                            color: Colors.white.withValues(alpha: 0.9),
                             fontSize: 14,
                           ),
                         ),
@@ -213,7 +213,7 @@ class _AddAppointmentScreenState extends ConsumerState<AddAppointmentScreen> {
             borderRadius: BorderRadius.circular(20),
             boxShadow: [
               BoxShadow(
-                color: AppColors.primary.withOpacity(0.3),
+                color: AppColors.primary.withValues(alpha: 0.3),
                 blurRadius: 20,
                 offset: const Offset(0, 10),
               ),
@@ -234,7 +234,7 @@ class _AddAppointmentScreenState extends ConsumerState<AddAppointmentScreen> {
               Container(
                 width: 1,
                 height: 50,
-                color: Colors.white.withOpacity(0.3),
+                color: Colors.white.withValues(alpha: 0.3),
               ),
               Expanded(
                 child: GestureDetector(
@@ -278,8 +278,8 @@ class _AddAppointmentScreenState extends ConsumerState<AddAppointmentScreen> {
                             avatar: const Icon(Icons.edit, size: 14),
                             onPressed: () => _selectTime(context),
                             visualDensity: VisualDensity.compact,
-                            side: BorderSide(color: AppColors.primary.withOpacity(0.3)),
-                            backgroundColor: AppColors.primary.withOpacity(0.05),
+                            side: BorderSide(color: AppColors.primary.withValues(alpha: 0.3)),
+                            backgroundColor: AppColors.primary.withValues(alpha: 0.05),
                           ),
                         ),
                       ],
@@ -321,12 +321,12 @@ class _AddAppointmentScreenState extends ConsumerState<AddAppointmentScreen> {
   }) {
     return Column(
       children: [
-        Icon(icon, color: Colors.white.withOpacity(0.8), size: 24),
+        Icon(icon, color: Colors.white.withValues(alpha: 0.8), size: 24),
         const SizedBox(height: 8),
         Text(
           label,
           style: TextStyle(
-            color: Colors.white.withOpacity(0.7),
+            color: Colors.white.withValues(alpha: 0.7),
             fontSize: 12,
           ),
         ),
@@ -349,7 +349,7 @@ class _AddAppointmentScreenState extends ConsumerState<AddAppointmentScreen> {
         Container(
           padding: const EdgeInsets.all(8),
           decoration: BoxDecoration(
-            color: AppColors.primary.withOpacity(0.1),
+            color: AppColors.primary.withValues(alpha: 0.1),
             borderRadius: BorderRadius.circular(10),
           ),
           child: Icon(icon, color: AppColors.primary, size: 18),
@@ -440,7 +440,7 @@ class _AddAppointmentScreenState extends ConsumerState<AddAppointmentScreen> {
                       setState(() => _reason = selected ? reason : '');
                     },
                     backgroundColor: isDark ? AppColors.darkBackground : AppColors.background,
-                    selectedColor: AppColors.accent.withOpacity(0.2),
+                    selectedColor: AppColors.accent.withValues(alpha: 0.2),
                     labelStyle: TextStyle(
                       color: isSelected ? AppColors.accent : (isDark ? AppColors.darkTextSecondary : AppColors.textSecondary),
                       fontWeight: isSelected ? FontWeight.w600 : FontWeight.normal,
@@ -488,7 +488,7 @@ class _AddAppointmentScreenState extends ConsumerState<AddAppointmentScreen> {
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                 decoration: BoxDecoration(
-                  color: AppColors.primary.withOpacity(0.1),
+                  color: AppColors.primary.withValues(alpha: 0.1),
                   borderRadius: BorderRadius.circular(8),
                 ),
                 child: Text(
@@ -565,7 +565,7 @@ class _AddAppointmentScreenState extends ConsumerState<AddAppointmentScreen> {
           Container(
             padding: const EdgeInsets.all(10),
             decoration: BoxDecoration(
-              color: AppColors.warning.withOpacity(0.1),
+              color: AppColors.warning.withValues(alpha: 0.1),
               borderRadius: BorderRadius.circular(12),
             ),
             child: const Icon(
@@ -616,7 +616,7 @@ class _AddAppointmentScreenState extends ConsumerState<AddAppointmentScreen> {
           borderRadius: BorderRadius.circular(16),
           boxShadow: _isSaving ? null : [
             BoxShadow(
-              color: AppColors.primary.withOpacity(0.4),
+              color: AppColors.primary.withValues(alpha: 0.4),
               blurRadius: 20,
               offset: const Offset(0, 8),
             ),
@@ -670,7 +670,7 @@ class _AddAppointmentScreenState extends ConsumerState<AddAppointmentScreen> {
             Container(
               padding: const EdgeInsets.all(24),
               decoration: BoxDecoration(
-                color: AppColors.error.withOpacity(0.1),
+                color: AppColors.error.withValues(alpha: 0.1),
                 shape: BoxShape.circle,
               ),
               child: const Icon(

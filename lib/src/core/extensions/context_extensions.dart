@@ -84,16 +84,16 @@ extension NavigationExtension on BuildContext {
   
   /// Push a new route
   Future<T?> push<T>(Widget page) => navigator.push<T>(
-    MaterialPageRoute(builder: (_) => page),
+    MaterialPageRoute<T>(builder: (_) => page),
   );
   
   /// Push and replace current route
   Future<T?> pushReplacement<T>(Widget page) => navigator.pushReplacement<T, void>(
-    MaterialPageRoute(builder: (_) => page),
+    MaterialPageRoute<T>(builder: (_) => page),
   );
   
   /// Pop current route
-  void pop<T>([T? result]) => navigator.pop(result);
+  void pop<T>([T? result]) => navigator.pop<T>(result);
   
   /// Pop until condition is met
   void popUntil(bool Function(Route<dynamic>) predicate) => 
@@ -175,11 +175,11 @@ extension DialogExtension on BuildContext {
         content: Text(message),
         actions: [
           TextButton(
-            onPressed: () => context.pop(false),
+            onPressed: () => context.pop<bool>(false),
             child: Text(cancelText),
           ),
           TextButton(
-            onPressed: () => context.pop(true),
+            onPressed: () => context.pop<bool>(true),
             style: isDestructive 
                 ? TextButton.styleFrom(foregroundColor: context.errorColor)
                 : null,
@@ -193,7 +193,7 @@ extension DialogExtension on BuildContext {
   
   /// Show loading dialog
   void showLoadingDialog({String? message}) {
-    showDialog(
+    showDialog<void>(
       context: this,
       barrierDismissible: false,
       builder: (_) => PopScope(

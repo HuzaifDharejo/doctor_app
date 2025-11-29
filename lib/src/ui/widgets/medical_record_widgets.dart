@@ -228,7 +228,7 @@ class InfoCard extends StatelessWidget {
         borderRadius: BorderRadius.circular(MedicalRecordConstants.radiusLarge),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.05),
+            color: Colors.black.withValues(alpha: 0.05),
             blurRadius: 10,
             offset: const Offset(0, 4),
           ),
@@ -279,7 +279,7 @@ class StatCard extends StatelessWidget {
         borderRadius: BorderRadius.circular(MedicalRecordConstants.radiusLarge),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.05),
+            color: Colors.black.withValues(alpha: 0.05),
             blurRadius: 10,
             offset: const Offset(0, 4),
           ),
@@ -344,7 +344,7 @@ class ChipsSection extends StatelessWidget {
         borderRadius: BorderRadius.circular(MedicalRecordConstants.radiusLarge),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.05),
+            color: Colors.black.withValues(alpha: 0.05),
             blurRadius: 10,
             offset: const Offset(0, 4),
           ),
@@ -388,7 +388,7 @@ class VitalItem extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.all(MedicalRecordConstants.paddingMedium),
       decoration: BoxDecoration(
-        color: color.withOpacity(0.1),
+        color: color.withValues(alpha: 0.1),
         borderRadius: BorderRadius.circular(MedicalRecordConstants.radiusMedium),
       ),
       child: Row(
@@ -448,9 +448,9 @@ class RiskBadge extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.all(MedicalRecordConstants.paddingMedium),
       decoration: BoxDecoration(
-        color: _color.withOpacity(0.1),
+        color: _color.withValues(alpha: 0.1),
         borderRadius: BorderRadius.circular(MedicalRecordConstants.radiusMedium),
-        border: Border.all(color: _color.withOpacity(0.3)),
+        border: Border.all(color: _color.withValues(alpha: 0.3)),
       ),
       child: Column(
         children: [
@@ -507,7 +507,7 @@ class RecordTypeFilterChip extends StatelessWidget {
             color: isSelected ? color : (isDark ? AppColors.darkDivider : AppColors.divider),
           ),
           boxShadow: isSelected
-              ? [BoxShadow(color: color.withOpacity(0.3), blurRadius: 8, offset: const Offset(0, 2))]
+              ? [BoxShadow(color: color.withValues(alpha: 0.3), blurRadius: 8, offset: const Offset(0, 2))]
               : null,
         ),
         child: Row(
@@ -556,7 +556,7 @@ class _CardHeader extends StatelessWidget {
         Container(
           padding: const EdgeInsets.all(10),
           decoration: BoxDecoration(
-            color: color.withOpacity(0.1),
+            color: color.withValues(alpha: 0.1),
             borderRadius: BorderRadius.circular(10),
           ),
           child: Icon(icon, color: color, size: MedicalRecordConstants.iconLarge),
@@ -588,9 +588,9 @@ class _Chip extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
       decoration: BoxDecoration(
-        color: color.withOpacity(0.1),
+        color: color.withValues(alpha: 0.1),
         borderRadius: BorderRadius.circular(MedicalRecordConstants.radiusXLarge),
-        border: Border.all(color: color.withOpacity(0.3)),
+        border: Border.all(color: color.withValues(alpha: 0.3)),
       ),
       child: Text(
         text,

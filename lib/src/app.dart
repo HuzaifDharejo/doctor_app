@@ -433,8 +433,8 @@ class _HomeShellState extends ConsumerState<HomeShell> {
                     title: AppStrings.doctorProfile,
                     subtitle: 'Manage your profile',
                     onTap: () {
-                      context.pop();
-                      context.pushNamed(AppRoutes.doctorProfile);
+                      context.pop<void>();
+                      context.pushNamed<void>(AppRoutes.doctorProfile);
                     },
                     color: const Color(0xFF6366F1),
                     isDark: isDarkMode,
@@ -444,8 +444,8 @@ class _HomeShellState extends ConsumerState<HomeShell> {
                     title: AppStrings.settings,
                     subtitle: 'App preferences',
                     onTap: () {
-                      context.pop();
-                      context.pushNamed(AppRoutes.settings);
+                      context.pop<void>();
+                      context.pushNamed<void>(AppRoutes.settings);
                     },
                     color: const Color(0xFF64748B),
                     isDark: isDarkMode,
@@ -460,10 +460,10 @@ class _HomeShellState extends ConsumerState<HomeShell> {
                     title: 'Medical Records',
                     subtitle: 'View all records',
                     onTap: () {
-                      context.pop();
-                      Navigator.push(
+                      context.pop<void>();
+                      Navigator.push<void>(
                         context,
-                        MaterialPageRoute(builder: (_) => const MedicalRecordsListScreen()),
+                        MaterialPageRoute<void>(builder: (_) => const MedicalRecordsListScreen()),
                       );
                     },
                     color: const Color(0xFF10B981),
@@ -476,8 +476,8 @@ class _HomeShellState extends ConsumerState<HomeShell> {
                       title: AppStrings.psychiatricAssessment,
                       subtitle: 'Patient assessment',
                       onTap: () {
-                        context.pop();
-                        context.pushNamed(AppRoutes.psychiatricAssessment);
+                        context.pop<void>();
+                        context.pushNamed<void>(AppRoutes.psychiatricAssessment);
                       },
                       color: const Color(0xFF0EA5E9),
                       isDark: isDarkMode,

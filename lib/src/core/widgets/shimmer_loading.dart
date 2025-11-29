@@ -178,7 +178,7 @@ class PatientCardShimmer extends StatelessWidget {
           color: isDark ? AppColors.darkSurface : Colors.white,
           borderRadius: BorderRadius.circular(20),
           border: Border.all(
-            color: (isDark ? AppColors.darkDivider : AppColors.divider).withOpacity(0.5),
+            color: (isDark ? AppColors.darkDivider : AppColors.divider).withValues(alpha: 0.5),
           ),
         ),
         child: Row(
@@ -237,7 +237,7 @@ class ScheduleItemShimmer extends StatelessWidget {
           color: isDark ? AppColors.darkSurface : Colors.white,
           borderRadius: BorderRadius.circular(16),
           border: Border.all(
-            color: (isDark ? AppColors.darkDivider : AppColors.divider).withOpacity(0.5),
+            color: (isDark ? AppColors.darkDivider : AppColors.divider).withValues(alpha: 0.5),
           ),
         ),
         child: Row(

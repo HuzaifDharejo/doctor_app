@@ -120,7 +120,7 @@ class _Header extends StatelessWidget {
     return Container(
       decoration: BoxDecoration(
         gradient: LinearGradient(
-          colors: [recordInfo.color, recordInfo.color.withOpacity(0.7)],
+          colors: [recordInfo.color, recordInfo.color.withValues(alpha: 0.7)],
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
         ),
@@ -179,7 +179,7 @@ class _Header extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.all(MedicalRecordConstants.paddingLarge),
       decoration: BoxDecoration(
-        color: Colors.white.withOpacity(0.2),
+        color: Colors.white.withValues(alpha: 0.2),
         borderRadius: BorderRadius.circular(MedicalRecordConstants.radiusXLarge),
       ),
       child: Icon(recordInfo.icon, size: MedicalRecordConstants.iconHeader, color: Colors.white),
@@ -214,7 +214,7 @@ class _Header extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
       decoration: BoxDecoration(
-        color: Colors.white.withOpacity(0.2),
+        color: Colors.white.withValues(alpha: 0.2),
         borderRadius: BorderRadius.circular(MedicalRecordConstants.radiusXLarge),
       ),
       child: Text(
@@ -234,14 +234,14 @@ class _Header extends StatelessWidget {
       children: [
         Icon(
           Icons.calendar_today_outlined,
-          color: Colors.white.withOpacity(0.8),
+          color: Colors.white.withValues(alpha: 0.8),
           size: MedicalRecordConstants.iconSmall,
         ),
         const SizedBox(width: 6),
         Text(
           _dateFormat.format(record.recordDate),
           style: TextStyle(
-            color: Colors.white.withOpacity(0.9),
+            color: Colors.white.withValues(alpha: 0.9),
             fontSize: MedicalRecordConstants.fontMedium,
           ),
         ),
@@ -289,7 +289,7 @@ class _PatientCard extends StatelessWidget {
           borderRadius: BorderRadius.circular(MedicalRecordConstants.radiusLarge),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withOpacity(0.05),
+              color: Colors.black.withValues(alpha: 0.05),
               blurRadius: 10,
               offset: const Offset(0, 4),
             ),
@@ -356,7 +356,7 @@ class _PatientCard extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.all(MedicalRecordConstants.paddingSmall),
       decoration: BoxDecoration(
-        color: AppColors.primary.withOpacity(0.1),
+        color: AppColors.primary.withValues(alpha: 0.1),
         borderRadius: BorderRadius.circular(10),
       ),
       child: const Icon(Icons.person, color: AppColors.primary, size: MedicalRecordConstants.iconLarge),
@@ -548,7 +548,7 @@ class _LabResultContent extends StatelessWidget {
         borderRadius: BorderRadius.circular(MedicalRecordConstants.radiusLarge),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.05),
+            color: Colors.black.withValues(alpha: 0.05),
             blurRadius: 10,
             offset: const Offset(0, 4),
           ),
@@ -575,7 +575,7 @@ class _LabResultContent extends StatelessWidget {
         Container(
           padding: const EdgeInsets.all(10),
           decoration: BoxDecoration(
-            color: AppColors.warning.withOpacity(0.1),
+            color: AppColors.warning.withValues(alpha: 0.1),
             borderRadius: BorderRadius.circular(10),
           ),
           child: const Icon(Icons.science_outlined, color: AppColors.warning, size: MedicalRecordConstants.iconLarge),
@@ -624,7 +624,7 @@ class _LabResultContent extends StatelessWidget {
       width: double.infinity,
       padding: const EdgeInsets.all(MedicalRecordConstants.paddingMedium),
       decoration: BoxDecoration(
-        color: AppColors.info.withOpacity(0.1),
+        color: AppColors.info.withValues(alpha: 0.1),
         borderRadius: BorderRadius.circular(10),
       ),
       child: Row(
@@ -805,7 +805,7 @@ class _VitalsSection extends StatelessWidget {
             borderRadius: BorderRadius.circular(MedicalRecordConstants.radiusLarge),
             boxShadow: [
               BoxShadow(
-                color: Colors.black.withOpacity(0.05),
+                color: Colors.black.withValues(alpha: 0.05),
                 blurRadius: 10,
                 offset: const Offset(0, 4),
               ),
@@ -834,7 +834,7 @@ class _VitalsSection extends StatelessWidget {
         Container(
           padding: const EdgeInsets.all(10),
           decoration: BoxDecoration(
-            color: AppColors.error.withOpacity(0.1),
+            color: AppColors.error.withValues(alpha: 0.1),
             borderRadius: BorderRadius.circular(10),
           ),
           child: const Icon(Icons.favorite_border, color: AppColors.error, size: MedicalRecordConstants.iconLarge),
@@ -897,7 +897,7 @@ class _MseSection extends StatelessWidget {
         borderRadius: BorderRadius.circular(MedicalRecordConstants.radiusLarge),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.05),
+            color: Colors.black.withValues(alpha: 0.05),
             blurRadius: 10,
             offset: const Offset(0, 4),
           ),
@@ -920,7 +920,7 @@ class _MseSection extends StatelessWidget {
         Container(
           padding: const EdgeInsets.all(10),
           decoration: BoxDecoration(
-            color: AppColors.primary.withOpacity(0.1),
+            color: AppColors.primary.withValues(alpha: 0.1),
             borderRadius: BorderRadius.circular(10),
           ),
           child: const Icon(Icons.psychology, color: AppColors.primary, size: MedicalRecordConstants.iconLarge),
@@ -978,7 +978,7 @@ class _MseGridItem extends StatelessWidget {
       ),
       child: Row(
         children: [
-          Icon(config.icon, size: MedicalRecordConstants.fontTitle, color: AppColors.primary.withOpacity(0.7)),
+          Icon(config.icon, size: MedicalRecordConstants.fontTitle, color: AppColors.primary.withValues(alpha: 0.7)),
           const SizedBox(width: MedicalRecordConstants.paddingSmall),
           Expanded(
             child: Column(
@@ -1026,9 +1026,9 @@ class _RiskAssessmentSection extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.all(MedicalRecordConstants.paddingLarge),
       decoration: BoxDecoration(
-        color: AppColors.warning.withOpacity(0.1),
+        color: AppColors.warning.withValues(alpha: 0.1),
         borderRadius: BorderRadius.circular(MedicalRecordConstants.radiusLarge),
-        border: Border.all(color: AppColors.warning.withOpacity(0.3)),
+        border: Border.all(color: AppColors.warning.withValues(alpha: 0.3)),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -1063,7 +1063,7 @@ class _RiskAssessmentSection extends StatelessWidget {
         Container(
           padding: const EdgeInsets.all(10),
           decoration: BoxDecoration(
-            color: AppColors.warning.withOpacity(0.2),
+            color: AppColors.warning.withValues(alpha: 0.2),
             borderRadius: BorderRadius.circular(10),
           ),
           child: const Icon(Icons.warning_amber_rounded, color: AppColors.warning, size: MedicalRecordConstants.iconLarge),
@@ -1097,7 +1097,7 @@ class _ChestAuscultationSection extends StatelessWidget {
             borderRadius: BorderRadius.circular(MedicalRecordConstants.radiusLarge),
             boxShadow: [
               BoxShadow(
-                color: Colors.black.withOpacity(0.05),
+                color: Colors.black.withValues(alpha: 0.05),
                 blurRadius: 10,
                 offset: const Offset(0, 4),
               ),
@@ -1129,7 +1129,7 @@ class _ChestAuscultationSection extends StatelessWidget {
         Container(
           padding: const EdgeInsets.all(10),
           decoration: BoxDecoration(
-            color: MedicalRecordConstants.pulmonaryColor.withOpacity(0.1),
+            color: MedicalRecordConstants.pulmonaryColor.withValues(alpha: 0.1),
             borderRadius: BorderRadius.circular(10),
           ),
           child: const Icon(Icons.hearing, color: MedicalRecordConstants.pulmonaryColor, size: MedicalRecordConstants.iconLarge),
@@ -1194,9 +1194,9 @@ class _ChestAuscultationSection extends StatelessWidget {
           children: sounds.map((sound) => Container(
             padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
             decoration: BoxDecoration(
-              color: AppColors.accent.withOpacity(0.1),
+              color: AppColors.accent.withValues(alpha: 0.1),
               borderRadius: BorderRadius.circular(MedicalRecordConstants.radiusXLarge),
-              border: Border.all(color: AppColors.accent.withOpacity(0.3)),
+              border: Border.all(color: AppColors.accent.withValues(alpha: 0.3)),
             ),
             child: Text(
               sound,
@@ -1246,7 +1246,7 @@ class _LungZonesDisplay extends StatelessWidget {
                 child: Icon(
                   Icons.air,
                   size: 40,
-                  color: MedicalRecordConstants.pulmonaryColor.withOpacity(0.3),
+                  color: MedicalRecordConstants.pulmonaryColor.withValues(alpha: 0.3),
                 ),
               ),
               Expanded(child: _buildLungColumn('LEFT', ['left_upper_zone', 'left_middle_zone', 'left_lower_zone'])),
@@ -1291,11 +1291,11 @@ class _ZoneBox extends StatelessWidget {
       padding: const EdgeInsets.all(MedicalRecordConstants.paddingSmall),
       decoration: BoxDecoration(
         color: _hasValue
-            ? MedicalRecordConstants.pulmonaryColor.withOpacity(0.1)
-            : (isDark ? Colors.white.withOpacity(0.05) : Colors.grey.withOpacity(0.1)),
+            ? MedicalRecordConstants.pulmonaryColor.withValues(alpha: 0.1)
+            : (isDark ? Colors.white.withValues(alpha: 0.05) : Colors.grey.withValues(alpha: 0.1)),
         borderRadius: BorderRadius.circular(MedicalRecordConstants.radiusSmall),
         border: Border.all(
-          color: _hasValue ? MedicalRecordConstants.pulmonaryColor.withOpacity(0.3) : Colors.transparent,
+          color: _hasValue ? MedicalRecordConstants.pulmonaryColor.withValues(alpha: 0.3) : Colors.transparent,
         ),
       ),
       child: Column(
@@ -1347,7 +1347,7 @@ class _ActionButtons extends StatelessWidget {
               borderRadius: BorderRadius.circular(14),
               boxShadow: [
                 BoxShadow(
-                  color: AppColors.primary.withOpacity(0.3),
+                  color: AppColors.primary.withValues(alpha: 0.3),
                   blurRadius: 12,
                   offset: const Offset(0, 4),
                 ),
@@ -1391,7 +1391,7 @@ class _ActionButtons extends StatelessWidget {
   }
 
   void _handleDelete(BuildContext context) {
-    showDialog(
+    showDialog<void>(
       context: context,
       builder: (context) => AlertDialog(
         title: const Text('Delete Record'),

@@ -493,7 +493,7 @@ class _AddMedicalRecordScreenState extends ConsumerState<AddMedicalRecordScreen>
                               child: Container(
                                 padding: const EdgeInsets.all(10),
                                 decoration: BoxDecoration(
-                                  color: Colors.white.withOpacity(0.2),
+                                  color: Colors.white.withValues(alpha: 0.2),
                                   borderRadius: BorderRadius.circular(12),
                                 ),
                                 child: const Icon(Icons.arrow_back, color: Colors.white, size: 20),
@@ -518,7 +518,7 @@ class _AddMedicalRecordScreenState extends ConsumerState<AddMedicalRecordScreen>
                         Container(
                           padding: const EdgeInsets.all(16),
                           decoration: BoxDecoration(
-                            color: Colors.white.withOpacity(0.2),
+                            color: Colors.white.withValues(alpha: 0.2),
                             shape: BoxShape.circle,
                           ),
                           child: const Icon(
@@ -531,7 +531,7 @@ class _AddMedicalRecordScreenState extends ConsumerState<AddMedicalRecordScreen>
                         Text(
                           DateFormat('EEEE, dd MMMM yyyy').format(_recordDate),
                           style: TextStyle(
-                            color: Colors.white.withOpacity(0.9),
+                            color: Colors.white.withValues(alpha: 0.9),
                             fontSize: 14,
                           ),
                         ),
@@ -717,7 +717,7 @@ class _AddMedicalRecordScreenState extends ConsumerState<AddMedicalRecordScreen>
                         setState(() => _recordType = type);
                       }
                     },
-                    selectedColor: AppColors.primary.withOpacity(0.15),
+                    selectedColor: AppColors.primary.withValues(alpha: 0.15),
                     backgroundColor: isDark ? AppColors.darkBackground : AppColors.background,
                     labelStyle: TextStyle(
                       color: isSelected ? AppColors.primary : (isDark ? AppColors.darkTextSecondary : AppColors.textSecondary),
@@ -843,15 +843,15 @@ class _AddMedicalRecordScreenState extends ConsumerState<AddMedicalRecordScreen>
             decoration: BoxDecoration(
               gradient: LinearGradient(
                 colors: [
-                  AppColors.info.withOpacity(0.1),
-                  AppColors.primary.withOpacity(0.1),
+                  AppColors.info.withValues(alpha: 0.1),
+                  AppColors.primary.withValues(alpha: 0.1),
                 ],
                 begin: Alignment.topLeft,
                 end: Alignment.bottomRight,
               ),
               borderRadius: BorderRadius.circular(16),
               border: Border.all(
-                color: AppColors.primary.withOpacity(0.3),
+                color: AppColors.primary.withValues(alpha: 0.3),
                 width: 1.5,
               ),
             ),
@@ -860,7 +860,7 @@ class _AddMedicalRecordScreenState extends ConsumerState<AddMedicalRecordScreen>
                 Container(
                   padding: const EdgeInsets.all(12),
                   decoration: BoxDecoration(
-                    color: AppColors.primary.withOpacity(0.15),
+                    color: AppColors.primary.withValues(alpha: 0.15),
                     borderRadius: BorderRadius.circular(12),
                   ),
                   child: const Icon(
@@ -1342,7 +1342,7 @@ class _AddMedicalRecordScreenState extends ConsumerState<AddMedicalRecordScreen>
     required String label,
     required List<String> options,
     required List<String> selectedOptions,
-    required Function(List<String>) onChanged,
+    required void Function(List<String>) onChanged,
     Color color = AppColors.primary,
   }) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
@@ -1351,10 +1351,10 @@ class _AddMedicalRecordScreenState extends ConsumerState<AddMedicalRecordScreen>
       width: double.infinity,
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
-        color: isDark ? Colors.white.withOpacity(0.05) : Colors.grey.withOpacity(0.05),
+        color: isDark ? Colors.white.withValues(alpha: 0.05) : Colors.grey.withValues(alpha: 0.05),
         borderRadius: BorderRadius.circular(12),
         border: Border.all(
-          color: isDark ? Colors.white.withOpacity(0.1) : Colors.grey.withOpacity(0.2),
+          color: isDark ? Colors.white.withValues(alpha: 0.1) : Colors.grey.withValues(alpha: 0.2),
         ),
       ),
       child: Wrap(
@@ -1382,7 +1382,7 @@ class _AddMedicalRecordScreenState extends ConsumerState<AddMedicalRecordScreen>
             },
             selectedColor: color,
             checkmarkColor: Colors.white,
-            backgroundColor: isDark ? Colors.white.withOpacity(0.08) : Colors.grey.withOpacity(0.1),
+            backgroundColor: isDark ? Colors.white.withValues(alpha: 0.08) : Colors.grey.withValues(alpha: 0.1),
             shape: RoundedRectangleBorder(
               borderRadius: BorderRadius.circular(20),
               side: BorderSide(
@@ -1401,10 +1401,10 @@ class _AddMedicalRecordScreenState extends ConsumerState<AddMedicalRecordScreen>
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
       decoration: BoxDecoration(
-        color: isDark ? Colors.white.withOpacity(0.05) : Colors.grey.withOpacity(0.05),
+        color: isDark ? Colors.white.withValues(alpha: 0.05) : Colors.grey.withValues(alpha: 0.05),
         borderRadius: BorderRadius.circular(12),
         border: Border.all(
-          color: isDark ? Colors.white.withOpacity(0.1) : Colors.grey.withOpacity(0.2),
+          color: isDark ? Colors.white.withValues(alpha: 0.1) : Colors.grey.withValues(alpha: 0.2),
         ),
       ),
       child: Row(
@@ -1464,12 +1464,12 @@ class _AddMedicalRecordScreenState extends ConsumerState<AddMedicalRecordScreen>
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
       decoration: BoxDecoration(
-        color: isDark ? Colors.white.withOpacity(0.05) : Colors.grey.withOpacity(0.05),
+        color: isDark ? Colors.white.withValues(alpha: 0.05) : Colors.grey.withValues(alpha: 0.05),
         borderRadius: BorderRadius.circular(12),
         border: Border.all(
           color: isFocused 
-            ? AppColors.primary.withOpacity(0.5) 
-            : (isDark ? Colors.white.withOpacity(0.1) : Colors.grey.withOpacity(0.2)),
+            ? AppColors.primary.withValues(alpha: 0.5) 
+            : (isDark ? Colors.white.withValues(alpha: 0.1) : Colors.grey.withValues(alpha: 0.2)),
           width: isFocused ? 1.5 : 1,
         ),
       ),
@@ -1836,9 +1836,9 @@ class _AddMedicalRecordScreenState extends ConsumerState<AddMedicalRecordScreen>
                               child: Container(
                                 padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
                                 decoration: BoxDecoration(
-                                  color: AppColors.primary.withOpacity(0.05),
+                                  color: AppColors.primary.withValues(alpha: 0.05),
                                   borderRadius: BorderRadius.circular(16),
-                                  border: Border.all(color: AppColors.primary.withOpacity(0.3)),
+                                  border: Border.all(color: AppColors.primary.withValues(alpha: 0.3)),
                                 ),
                                 child: Text(s, style: const TextStyle(fontSize: 10)),
                               ),
@@ -1855,7 +1855,7 @@ class _AddMedicalRecordScreenState extends ConsumerState<AddMedicalRecordScreen>
     );
   }
 
-  Widget _buildRiskSelector(String label, String value, Function(String) onChanged) {
+  Widget _buildRiskSelector(String label, String value, void Function(String) onChanged) {
     final risks = ['None', 'Low', 'Moderate', 'High'];
     
     return Builder(
@@ -1898,7 +1898,7 @@ class _AddMedicalRecordScreenState extends ConsumerState<AddMedicalRecordScreen>
                   onSelected: (selected) {
                     if (selected) onChanged(risk);
                   },
-                  selectedColor: chipColor.withOpacity(0.2),
+                  selectedColor: chipColor.withValues(alpha: 0.2),
                   backgroundColor: isDark ? AppColors.darkBackground : AppColors.background,
                   labelStyle: TextStyle(
                     color: isSelected ? chipColor : (isDark ? AppColors.darkTextSecondary : AppColors.textSecondary),
@@ -1925,7 +1925,7 @@ class _AddMedicalRecordScreenState extends ConsumerState<AddMedicalRecordScreen>
         Container(
           padding: const EdgeInsets.all(8),
           decoration: BoxDecoration(
-            color: AppColors.primary.withOpacity(0.1),
+            color: AppColors.primary.withValues(alpha: 0.1),
             borderRadius: BorderRadius.circular(10),
           ),
           child: Icon(icon, color: AppColors.primary, size: 18),
@@ -1965,7 +1965,7 @@ class _AddMedicalRecordScreenState extends ConsumerState<AddMedicalRecordScreen>
                   Container(
                     padding: const EdgeInsets.all(8),
                     decoration: BoxDecoration(
-                      color: AppColors.primary.withOpacity(0.1),
+                      color: AppColors.primary.withValues(alpha: 0.1),
                       borderRadius: BorderRadius.circular(8),
                     ),
                     child: Icon(icon, color: AppColors.primary, size: 18),
@@ -2059,7 +2059,7 @@ class _AddMedicalRecordScreenState extends ConsumerState<AddMedicalRecordScreen>
               borderRadius: BorderRadius.circular(16),
               boxShadow: _isSaving ? null : [
                 BoxShadow(
-                  color: AppColors.primary.withOpacity(0.4),
+                  color: AppColors.primary.withValues(alpha: 0.4),
                   blurRadius: 20,
                   offset: const Offset(0, 8),
                 ),

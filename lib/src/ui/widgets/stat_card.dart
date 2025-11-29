@@ -32,7 +32,7 @@ class StatCard extends StatelessWidget {
       decoration: BoxDecoration(
         gradient: useGradient 
             ? LinearGradient(
-                colors: [color, color.withOpacity(0.8)],
+                colors: [color, color.withValues(alpha: 0.8)],
                 begin: Alignment.topLeft,
                 end: Alignment.bottomRight,
               )
@@ -40,13 +40,13 @@ class StatCard extends StatelessWidget {
         color: useGradient ? null : Theme.of(context).colorScheme.surface,
         borderRadius: BorderRadius.circular(20),
         border: useGradient ? null : Border.all(
-          color: (isDark ? AppColors.darkDivider : AppColors.divider).withOpacity(0.5),
+          color: (isDark ? AppColors.darkDivider : AppColors.divider).withValues(alpha: 0.5),
         ),
         boxShadow: [
           BoxShadow(
             color: useGradient 
-                ? color.withOpacity(0.3)
-                : Colors.black.withOpacity(0.06),
+                ? color.withValues(alpha: 0.3)
+                : Colors.black.withValues(alpha: 0.06),
             blurRadius: 20,
             offset: const Offset(0, 8),
           ),
@@ -62,8 +62,8 @@ class StatCard extends StatelessWidget {
                 padding: EdgeInsets.all(isCompact ? 10 : 12),
                 decoration: BoxDecoration(
                   color: useGradient 
-                      ? Colors.white.withOpacity(0.2)
-                      : color.withOpacity(0.12),
+                      ? Colors.white.withValues(alpha: 0.2)
+                      : color.withValues(alpha: 0.12),
                   borderRadius: BorderRadius.circular(14),
                 ),
                 child: Icon(
@@ -78,12 +78,12 @@ class StatCard extends StatelessWidget {
                     padding: EdgeInsets.symmetric(horizontal: isCompact ? 6 : 8, vertical: 4),
                     decoration: BoxDecoration(
                       color: useGradient 
-                          ? Colors.white.withOpacity(0.2)
+                          ? Colors.white.withValues(alpha: 0.2)
                           : trendUp == true
-                              ? AppColors.success.withOpacity(0.12)
+                              ? AppColors.success.withValues(alpha: 0.12)
                               : trendUp == false
-                                  ? AppColors.error.withOpacity(0.12)
-                                  : AppColors.textSecondary.withOpacity(0.12),
+                                  ? AppColors.error.withValues(alpha: 0.12)
+                                  : AppColors.textSecondary.withValues(alpha: 0.12),
                       borderRadius: BorderRadius.circular(20),
                     ),
                     child: Row(
@@ -105,7 +105,7 @@ class StatCard extends StatelessWidget {
                               fontSize: isCompact ? 9 : 10,
                               fontWeight: FontWeight.w600,
                               color: useGradient 
-                                  ? Colors.white.withOpacity(0.9)
+                                  ? Colors.white.withValues(alpha: 0.9)
                                   : trendUp == true
                                       ? AppColors.success
                                       : trendUp == false
@@ -145,7 +145,7 @@ class StatCard extends StatelessWidget {
               fontSize: isCompact ? 10 : 11,
               fontWeight: FontWeight.w500,
               color: useGradient 
-                  ? Colors.white.withOpacity(0.85)
+                  ? Colors.white.withValues(alpha: 0.85)
                   : isDark ? AppColors.darkTextSecondary : AppColors.textSecondary,
             ),
             maxLines: 1,

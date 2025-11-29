@@ -47,7 +47,7 @@ class AppHeader extends StatelessWidget {
           // Back button
           if (showBackButton) ...[
             IconButton(
-              onPressed: onBackPressed ?? () => context.pop(),
+              onPressed: onBackPressed ?? () => context.pop<void>(),
               icon: Icon(
                 Icons.arrow_back_rounded,
                 color: context.onSurfaceColor,

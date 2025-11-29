@@ -1,4 +1,5 @@
-﻿import 'dart:convert';
+import 'dart:async';
+import 'dart:convert';
 import 'dart:typed_data';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -104,7 +105,7 @@ class _SignaturePadState extends State<SignaturePad> {
 
   Future<void> _captureFromCamera() async {
     // Lock screen orientation when using camera
-    _lockOrientation();
+    unawaited(_lockOrientation());
     try {
       final XFile? photo = await _picker.pickImage(
         source: ImageSource.camera,
@@ -139,7 +140,7 @@ class _SignaturePadState extends State<SignaturePad> {
 
   Future<void> _pickFromGallery() async {
     // Lock screen orientation when using gallery
-    _lockOrientation();
+    unawaited(_lockOrientation());
     try {
       final XFile? image = await _picker.pickImage(
         source: ImageSource.gallery,
@@ -306,7 +307,7 @@ class _SignaturePadState extends State<SignaturePad> {
                       onTap: _clearSignature,
                       child: Container(
                         padding: const EdgeInsets.all(8),
-                        decoration: BoxDecoration(color: AppColors.error.withOpacity(0.1), borderRadius: BorderRadius.circular(20)),
+                        decoration: BoxDecoration(color: AppColors.error.withValues(alpha: 0.1), borderRadius: BorderRadius.circular(20)),
                         child: const Icon(Icons.clear, size: 20, color: AppColors.error),
                       ),
                     ),
@@ -445,9 +446,9 @@ class _SignatureBackgroundPainter extends CustomPainter {
 
   @override
   void paint(Canvas canvas, Size size) {
-    final paint = Paint()..color = (isDark ? Colors.white : Colors.grey).withOpacity(0.05)..strokeWidth = 1;
+    final paint = Paint()..color = (isDark ? Colors.white : Colors.grey).withValues(alpha: 0.05)..strokeWidth = 1;
     for (double y = 20; y < size.height; y += 20) canvas.drawLine(Offset(0, y), Offset(size.width, y), paint);
-    final baselinePaint = Paint()..color = (isDark ? Colors.white : Colors.grey).withOpacity(0.15)..strokeWidth = 2;
+    final baselinePaint = Paint()..color = (isDark ? Colors.white : Colors.grey).withValues(alpha: 0.15)..strokeWidth = 2;
     canvas.drawLine(Offset(20, size.height - 40), Offset(size.width - 20, size.height - 40), baselinePaint);
   }
 

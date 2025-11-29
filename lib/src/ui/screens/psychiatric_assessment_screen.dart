@@ -422,7 +422,7 @@ class _PsychiatricAssessmentScreenState
           IconButton(
             icon: const Icon(Icons.refresh),
             onPressed: () {
-              showDialog(
+              showDialog<void>(
                 context: context,
                 builder: (context) => AlertDialog(
                   title: const Text('Clear Form?'),
@@ -701,7 +701,7 @@ class _PsychiatricAssessmentScreenState
                     doctorProfile.specialization,
                     style: TextStyle(
                       fontSize: 14,
-                      color: colorScheme.onPrimaryContainer.withOpacity(0.8),
+                      color: colorScheme.onPrimaryContainer.withValues(alpha: 0.8),
                     ),
                   ),
                 ],
@@ -734,7 +734,7 @@ class _PsychiatricAssessmentScreenState
         borderRadius: BorderRadius.circular(12),
         side: BorderSide(
           color: isExpanded
-              ? colorScheme.primary.withOpacity(0.5)
+              ? colorScheme.primary.withValues(alpha: 0.5)
               : colorScheme.outlineVariant,
         ),
       ),
@@ -749,7 +749,7 @@ class _PsychiatricAssessmentScreenState
             padding: const EdgeInsets.all(8),
             decoration: BoxDecoration(
               color: isExpanded
-                  ? colorScheme.primary.withOpacity(0.1)
+                  ? colorScheme.primary.withValues(alpha: 0.1)
                   : colorScheme.surfaceContainerHighest,
               borderRadius: BorderRadius.circular(8),
             ),
@@ -790,7 +790,7 @@ class _PsychiatricAssessmentScreenState
           style: TextStyle(
             color: _selectedDate != null
                 ? Theme.of(context).colorScheme.onSurface
-                : Theme.of(context).colorScheme.onSurface.withOpacity(0.6),
+                : Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.6),
           ),
         ),
       ),
@@ -840,7 +840,7 @@ class _PsychiatricAssessmentScreenState
             style: TextStyle(
               fontSize: 14,
               fontWeight: FontWeight.w500,
-              color: colorScheme.onSurface.withOpacity(0.8),
+              color: colorScheme.onSurface.withValues(alpha: 0.8),
             ),
           ),
         ),
@@ -1222,7 +1222,7 @@ class _PsychiatricAssessmentScreenState
         Container(
           padding: const EdgeInsets.all(12),
           decoration: BoxDecoration(
-            color: colorScheme.surfaceContainerHighest.withOpacity(0.5),
+            color: colorScheme.surfaceContainerHighest.withValues(alpha: 0.5),
             borderRadius: BorderRadius.circular(8),
           ),
           child: Column(
@@ -1254,7 +1254,7 @@ class _PsychiatricAssessmentScreenState
         Container(
           padding: const EdgeInsets.all(12),
           decoration: BoxDecoration(
-            color: colorScheme.surfaceContainerHighest.withOpacity(0.5),
+            color: colorScheme.surfaceContainerHighest.withValues(alpha: 0.5),
             borderRadius: BorderRadius.circular(8),
           ),
           child: Column(

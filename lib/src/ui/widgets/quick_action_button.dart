@@ -76,20 +76,20 @@ class _QuickActionButtonState extends State<QuickActionButton>
               decoration: BoxDecoration(
                 gradient: LinearGradient(
                   colors: [
-                    widget.color.withOpacity(_isPressed ? 0.25 : 0.15),
-                    widget.color.withOpacity(_isPressed ? 0.15 : 0.08),
+                    widget.color.withValues(alpha: _isPressed ? 0.25 : 0.15),
+                    widget.color.withValues(alpha: _isPressed ? 0.15 : 0.08),
                   ],
                   begin: Alignment.topLeft,
                   end: Alignment.bottomRight,
                 ),
                 borderRadius: BorderRadius.circular(20),
                 border: Border.all(
-                  color: widget.color.withOpacity(0.25),
+                  color: widget.color.withValues(alpha: 0.25),
                   width: 1.5,
                 ),
                 boxShadow: [
                   BoxShadow(
-                    color: widget.color.withOpacity(0.15),
+                    color: widget.color.withValues(alpha: 0.15),
                     blurRadius: 12,
                     offset: const Offset(0, 4),
                   ),

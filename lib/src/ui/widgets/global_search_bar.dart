@@ -1,12 +1,43 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:intl/intl.dart';
+
 import '../../db/doctor_db.dart';
 import '../../providers/db_provider.dart';
-import '../../services/search_service.dart';
-import '../../theme/app_theme.dart';
 import '../screens/patient_view_screen.dart';
 
+/// Represents a search result item
+class SearchResult {
+  const SearchResult({
+    required this.title,
+    required this.subtitle,
+    required this.type,
+    required this.data,
+  });
+
+  final String title;
+  final String subtitle;
+  final String type;
+  final dynamic data;
+
+  IconData get icon {
+    switch (type) {
+      case 'patient':
+        return Icons.person;
+      case 'appointment':
+        return Icons.calendar_today;
+      case 'prescription':
+        return Icons.medication;
+      case 'invoice':
+        return Icons.receipt;
+      default:
+        return Icons.search;
+    }
+  }
+}
+
+/// A global search bar widget that searches across patients, appointments, etc.
 class GlobalSearchBar extends ConsumerStatefulWidget {
   const GlobalSearchBar({super.key});
 
@@ -17,80 +48,128 @@ class GlobalSearchBar extends ConsumerStatefulWidget {
 class _GlobalSearchBarState extends ConsumerState<GlobalSearchBar> {
   final TextEditingController _controller = TextEditingController();
   final FocusNode _focusNode = FocusNode();
+  final LayerLink _layerLink = LayerLink();
+  
+  OverlayEntry? _overlayEntry;
   List<SearchResult> _results = [];
-  bool _isLoading = false;
-  bool _showResults = false;
+  bool _isSearching = false;
+  Timer? _debounce;
 
   @override
   void initState() {
     super.initState();
-    _focusNode.addListener(() {
-      if (!_focusNode.hasFocus) {
-        Future.delayed(const Duration(milliseconds: 200), () {
-          if (mounted) setState(() => _showResults = false);
-        });
-      }
-    });
+    _focusNode.addListener(_onFocusChange);
   }
 
   @override
   void dispose() {
+    _debounce?.cancel();
     _controller.dispose();
+    _focusNode.removeListener(_onFocusChange);
     _focusNode.dispose();
+    _removeOverlay();
     super.dispose();
   }
 
-  Future<void> _search(String query) async {
+  void _onFocusChange() {
+    if (!_focusNode.hasFocus) {
+      _removeOverlay();
+    }
+  }
+
+  void _removeOverlay() {
+    _overlayEntry?.remove();
+    _overlayEntry = null;
+  }
+
+  void _showOverlay() {
+    _removeOverlay();
+    _overlayEntry = _createOverlayEntry();
+    Overlay.of(context).insert(_overlayEntry!);
+  }
+
+  void _onSearchChanged(String query) {
+    _debounce?.cancel();
     if (query.isEmpty) {
       setState(() {
         _results = [];
-        _showResults = false;
+        _isSearching = false;
       });
+      _removeOverlay();
       return;
     }
 
-    setState(() => _isLoading = true);
+    setState(() => _isSearching = true);
+    _debounce = Timer(const Duration(milliseconds: 300), () {
+      _performSearch(query);
+    });
+  }
 
+  Future<void> _performSearch(String query) async {
     final dbAsync = ref.read(doctorDbProvider);
+    final lowerQuery = query.toLowerCase();
+    
     dbAsync.whenData((db) async {
-      final searchService = SearchService(db);
-      final results = await searchService.search(query);
-      if (mounted) {
-        setState(() {
-          _results = results;
-          _isLoading = false;
-          _showResults = true;
-        });
+      // Search patients by name
+      final allPatients = await db.getAllPatients();
+      final patients = allPatients.where((p) {
+        final fullName = '${p.firstName} ${p.lastName}'.toLowerCase();
+        return fullName.contains(lowerQuery) ||
+          p.phone.toLowerCase().contains(lowerQuery);
+      }).take(5).toList();
+      
+      if (!mounted) return;
+      
+      final results = <SearchResult>[];
+      
+      for (final patient in patients) {
+        results.add(SearchResult(
+          title: '${patient.firstName} ${patient.lastName}',
+          subtitle: patient.phone.isEmpty ? 'No phone' : patient.phone,
+          type: 'patient',
+          data: patient,
+        ));
+      }
+      
+      setState(() {
+        _results = results;
+        _isSearching = false;
+      });
+      
+      if (results.isNotEmpty) {
+        _showOverlay();
+      } else {
+        _removeOverlay();
       }
     });
   }
 
   void _onResultTap(SearchResult result) {
-    _focusNode.unfocus();
-    setState(() => _showResults = false);
+    _removeOverlay();
     _controller.clear();
-
+    _focusNode.unfocus();
+    
     switch (result.type) {
       case 'patient':
-        Navigator.push(
+        final patient = result.data as Patient;
+        Navigator.push<void>(
           context,
-          MaterialPageRoute(
-            builder: (_) => PatientViewScreen(patient: result.data as Patient),
+          MaterialPageRoute<void>(
+            builder: (_) => PatientViewScreen(patient: patient),
           ),
         );
         break;
       case 'appointment':
       case 'prescription':
       case 'invoice':
-        // Navigate to patient view for now
         final dbAsync = ref.read(doctorDbProvider);
         dbAsync.whenData((db) async {
           final int patientId = (result.data as dynamic).patientId as int;
           final patient = await db.getPatientById(patientId);
           if (patient != null && mounted) {
-            Navigator.push(
+            Navigator.push<void>(
               context,
-              MaterialPageRoute(
+              MaterialPageRoute<void>(
                 builder: (_) => PatientViewScreen(patient: patient),
               ),
             );
@@ -100,219 +179,97 @@ class _GlobalSearchBarState extends ConsumerState<GlobalSearchBar> {
     }
   }
 
-  @override
-  Widget build(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-    final screenWidth = MediaQuery.of(context).size.width;
-    final isCompact = screenWidth < 400;
+  OverlayEntry _createOverlayEntry() {
+    final renderBox = context.findRenderObject()! as RenderBox;
+    final size = renderBox.size;
 
-    return Column(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        Container(
-          height: isCompact ? 40 : 48,
-          decoration: BoxDecoration(
-            color: isDark ? AppColors.darkBackground : AppColors.background,
-            borderRadius: BorderRadius.circular(10),
-            border: Border.all(
-              color: _focusNode.hasFocus 
-                  ? AppColors.primary 
-                  : (isDark ? AppColors.darkDivider : AppColors.divider),
+    return OverlayEntry(
+      builder: (context) => Positioned(
+        width: size.width,
+        child: CompositedTransformFollower(
+          link: _layerLink,
+          showWhenUnlinked: false,
+          offset: Offset(0, size.height + 4),
+          child: Material(
+            elevation: 8,
+            borderRadius: BorderRadius.circular(12),
+            child: Container(
+              constraints: const BoxConstraints(maxHeight: 300),
+              decoration: BoxDecoration(
+                color: Theme.of(context).colorScheme.surface,
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(
+                  color: Theme.of(context).colorScheme.outline.withValues(alpha: 0.2),
+                ),
+              ),
+              child: _isSearching
+                  ? const Padding(
+                      padding: EdgeInsets.all(16),
+                      child: Center(child: CircularProgressIndicator()),
+                    )
+                  : _results.isEmpty
+                      ? const Padding(
+                          padding: EdgeInsets.all(16),
+                          child: Text('No results found'),
+                        )
+                      : ListView.builder(
+                          padding: EdgeInsets.zero,
+                          shrinkWrap: true,
+                          itemCount: _results.length,
+                          itemBuilder: (context, index) {
+                            final result = _results[index];
+                            return ListTile(
+                              leading: CircleAvatar(
+                                backgroundColor: Theme.of(context)
+                                    .colorScheme
+                                    .primaryContainer,
+                                child: Icon(
+                                  result.icon,
+                                  color: Theme.of(context)
+                                      .colorScheme
+                                      .onPrimaryContainer,
+                                ),
+                              ),
+                              title: Text(result.title),
+                              subtitle: Text(result.subtitle),
+                              onTap: () => _onResultTap(result),
+                            );
+                          },
+                        ),
             ),
-          ),
-          child: Row(
-            children: [
-              SizedBox(width: isCompact ? 10 : 12),
-              Icon(
-                Icons.search,
-                color: isDark ? AppColors.darkTextSecondary : AppColors.textSecondary,
-                size: isCompact ? 18 : 20,
-              ),
-              SizedBox(width: isCompact ? 6 : 8),
-              Expanded(
-                child: TextField(
-                  controller: _controller,
-                  focusNode: _focusNode,
-                  onChanged: _search,
-                  style: TextStyle(
-                    fontSize: isCompact ? 12 : 14,
-                    color: isDark ? AppColors.darkTextPrimary : AppColors.textPrimary,
-                  ),
-                  decoration: InputDecoration(
-                    hintText: 'Search patients, appointments...',
-                    hintStyle: TextStyle(
-                      color: isDark ? AppColors.darkTextSecondary : AppColors.textHint,
-                      fontSize: isCompact ? 11 : 14,
-                    ),
-                    border: InputBorder.none,
-                    contentPadding: EdgeInsets.zero,
-                  ),
-                ),
-              ),
-              if (_isLoading)
-                Padding(
-                  padding: EdgeInsets.only(right: isCompact ? 10 : 12),
-                  child: SizedBox(
-                    width: isCompact ? 14 : 16,
-                    height: 16,
-                    child: CircularProgressIndicator(
-                      strokeWidth: 2,
-                      color: AppColors.primary,
-                    ),
-                  ),
-                )
-              else if (_controller.text.isNotEmpty)
-                IconButton(
-                  icon: Icon(
-                    Icons.close,
-                    size: 18,
-                    color: isDark ? AppColors.darkTextSecondary : AppColors.textSecondary,
-                  ),
-                  onPressed: () {
-                    _controller.clear();
-                    setState(() {
-                      _results = [];
-                      _showResults = false;
-                    });
-                  },
-                ),
-            ],
           ),
         ),
-        if (_showResults && _results.isNotEmpty)
-          Container(
-            margin: const EdgeInsets.only(top: 4),
-            constraints: const BoxConstraints(maxHeight: 300),
-            decoration: BoxDecoration(
-              color: isDark ? AppColors.darkSurface : Colors.white,
-              borderRadius: BorderRadius.circular(12),
-              border: Border.all(color: isDark ? AppColors.darkDivider : AppColors.divider),
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.black.withOpacity(0.1),
-                  blurRadius: 10,
-                  offset: const Offset(0, 4),
-                ),
-              ],
-            ),
-            child: ClipRRect(
-              borderRadius: BorderRadius.circular(12),
-              child: ListView.separated(
-                shrinkWrap: true,
-                padding: EdgeInsets.zero,
-                itemCount: _results.length,
-                separatorBuilder: (_, __) => Divider(
-                  height: 1,
-                  color: isDark ? AppColors.darkDivider : AppColors.divider,
-                ),
-                itemBuilder: (context, index) {
-                  final result = _results[index];
-                  return _buildResultItem(result, isDark);
-                },
-              ),
-            ),
-          ),
-        if (_showResults && _results.isEmpty && !_isLoading && _controller.text.isNotEmpty)
-          Container(
-            margin: const EdgeInsets.only(top: 4),
-            padding: const EdgeInsets.all(16),
-            decoration: BoxDecoration(
-              color: isDark ? AppColors.darkSurface : Colors.white,
-              borderRadius: BorderRadius.circular(12),
-              border: Border.all(color: isDark ? AppColors.darkDivider : AppColors.divider),
-            ),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Icon(Icons.search_off, color: isDark ? AppColors.darkTextSecondary : AppColors.textSecondary),
-                const SizedBox(width: 8),
-                Text(
-                  'No results found',
-                  style: TextStyle(
-                    color: isDark ? AppColors.darkTextSecondary : AppColors.textSecondary,
-                  ),
-                ),
-              ],
-            ),
-          ),
-      ],
+      ),
     );
   }
 
-  Widget _buildResultItem(SearchResult result, bool isDark) {
-    IconData icon;
-    Color color;
-
-    switch (result.type) {
-      case 'patient':
-        icon = Icons.person;
-        color = AppColors.primary;
-        break;
-      case 'appointment':
-        icon = Icons.calendar_today;
-        color = AppColors.accent;
-        break;
-      case 'prescription':
-        icon = Icons.medication;
-        color = AppColors.warning;
-        break;
-      case 'invoice':
-        icon = Icons.receipt_long;
-        color = AppColors.success;
-        break;
-      default:
-        icon = Icons.search;
-        color = AppColors.textSecondary;
-    }
-
-    return Material(
-      color: Colors.transparent,
-      child: InkWell(
-        onTap: () => _onResultTap(result),
-        child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-          child: Row(
-            children: [
-              Container(
-                padding: const EdgeInsets.all(8),
-                decoration: BoxDecoration(
-                  color: color.withOpacity(0.1),
-                  borderRadius: BorderRadius.circular(8),
-                ),
-                child: Icon(icon, color: color, size: 18),
-              ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      result.title,
-                      style: TextStyle(
-                        fontWeight: FontWeight.w500,
-                        color: isDark ? AppColors.darkTextPrimary : AppColors.textPrimary,
-                      ),
-                    ),
-                    Text(
-                      result.subtitle,
-                      style: TextStyle(
-                        fontSize: 12,
-                        color: isDark ? AppColors.darkTextSecondary : AppColors.textSecondary,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-              if (result.date != null)
-                Text(
-                  DateFormat('MMM d').format(result.date!),
-                  style: TextStyle(
-                    fontSize: 11,
-                    color: isDark ? AppColors.darkTextSecondary : AppColors.textSecondary,
-                  ),
-                ),
-            ],
+  @override
+  Widget build(BuildContext context) {
+    return CompositedTransformTarget(
+      link: _layerLink,
+      child: TextField(
+        controller: _controller,
+        focusNode: _focusNode,
+        onChanged: _onSearchChanged,
+        decoration: InputDecoration(
+          hintText: 'Search patients, appointments...',
+          prefixIcon: const Icon(Icons.search),
+          suffixIcon: _controller.text.isNotEmpty
+              ? IconButton(
+                  icon: const Icon(Icons.clear),
+                  onPressed: () {
+                    _controller.clear();
+                    _onSearchChanged('');
+                  },
+                )
+              : null,
+          filled: true,
+          fillColor: Theme.of(context).colorScheme.surfaceContainerHighest.withValues(alpha: 0.5),
+          border: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(12),
+            borderSide: BorderSide.none,
           ),
+          contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
         ),
       ),
     );
