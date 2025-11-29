@@ -1638,7 +1638,7 @@ class _PatientViewScreenState extends ConsumerState<PatientViewScreen>
                 ],
               ),
             );
-          }).toList(),
+          }),
         ],
       ),
     );
@@ -1713,7 +1713,7 @@ class _PatientViewScreenState extends ConsumerState<PatientViewScreen>
                 ],
               ),
             );
-          }).toList(),
+          }),
         ],
       ),
     );
@@ -1841,7 +1841,7 @@ class _PatientViewScreenState extends ConsumerState<PatientViewScreen>
                 ],
               ),
             );
-          }).toList(),
+          }),
         ],
       ),
     );
@@ -3221,7 +3221,7 @@ class _PatientViewScreenState extends ConsumerState<PatientViewScreen>
                           ],
                         ),
                       );
-                    }).toList(),
+                    }),
                     // Doctor's instructions
                     if (prescription.instructions.isNotEmpty) ...[
                       const SizedBox(height: 8),

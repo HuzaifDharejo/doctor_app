@@ -741,7 +741,7 @@ class PrescriptionsScreen extends ConsumerWidget {
                           ],
                         ),
                       );
-                    }).toList(),
+                    }),
                     // Doctor's instructions
                     if (prescription.instructions.isNotEmpty) ...[
                       const SizedBox(height: 8),

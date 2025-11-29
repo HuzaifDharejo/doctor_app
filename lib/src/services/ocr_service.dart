@@ -56,7 +56,7 @@ class OcrService {
     } catch (e) {
       return OcrResult(
         success: false,
-        errorMessage: 'Failed to process image: ${e.toString()}',
+        errorMessage: 'Failed to process image: $e',
       );
     }
   }
@@ -87,7 +87,7 @@ class OcrService {
     } catch (e) {
       return OcrResult(
         success: false,
-        errorMessage: 'Failed to process image: ${e.toString()}',
+        errorMessage: 'Failed to process image: $e',
       );
     }
   }
@@ -101,7 +101,7 @@ class OcrService {
     } catch (e) {
       return OcrResult(
         success: false,
-        errorMessage: 'Failed to read PDF file: ${e.toString()}',
+        errorMessage: 'Failed to read PDF file: $e',
       );
     }
   }
@@ -145,7 +145,7 @@ class OcrService {
     } catch (e) {
       return OcrResult(
         success: false,
-        errorMessage: 'Failed to process PDF: ${e.toString()}',
+        errorMessage: 'Failed to process PDF: $e',
       );
     }
   }
