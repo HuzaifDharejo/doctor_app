@@ -15,4 +15,5 @@ export 'input_validators.dart';
 export 'number_formatter.dart';
 export 'pagination.dart';
 export 'result.dart';
+export 'string_utils.dart';
 export 'validators.dart';
