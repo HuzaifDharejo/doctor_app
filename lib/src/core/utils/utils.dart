@@ -12,6 +12,7 @@ export 'date_formatters.dart';
 export 'date_time_formatter.dart';
 export 'debouncer.dart';
 export 'input_validators.dart';
+export 'number_formatter.dart';
 export 'pagination.dart';
 export 'result.dart';
 export 'validators.dart';
