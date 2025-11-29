@@ -1087,7 +1087,7 @@ class _AddPrescriptionScreenState extends ConsumerState<AddPrescriptionScreen> {
                     const SizedBox(width: 8),
                     Expanded(
                       child: DropdownButtonFormField<String>(
-                        value: _medications[i].frequency,
+                        initialValue: _medications[i].frequency,
                         decoration: InputDecoration(
                           labelText: 'Frequency',
                           border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),

@@ -284,7 +284,8 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> with SingleTick
                 onChanged: (v) {
                   ref.read(appSettingsProvider).setNotificationsEnabled(v);
                 },
-                activeColor: AppColors.primary,
+                activeTrackColor: AppColors.primary.withValues(alpha: 0.5),
+                activeThumbColor: AppColors.primary,
               ),
             ),
             _SettingItem(
@@ -297,7 +298,8 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> with SingleTick
                 onChanged: (v) {
                   ref.read(appSettingsProvider).setDarkModeEnabled(v);
                 },
-                activeColor: AppColors.primary,
+                activeTrackColor: AppColors.primary.withValues(alpha: 0.5),
+                activeThumbColor: AppColors.primary,
               ),
             ),
             _SettingItem(
@@ -1634,7 +1636,8 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> with SingleTick
                 onChanged: (v) {
                   // TODO: Implement sync settings persistence
                 },
-                activeColor: AppColors.primary,
+                activeTrackColor: AppColors.primary.withValues(alpha: 0.5),
+                activeThumbColor: AppColors.primary,
               ),
             ),
             ListTile(
@@ -1646,7 +1649,8 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> with SingleTick
                 onChanged: (v) {
                   // TODO: Implement reminder settings
                 },
-                activeColor: AppColors.primary,
+                activeTrackColor: AppColors.primary.withValues(alpha: 0.5),
+                activeThumbColor: AppColors.primary,
               ),
             ),
             const Divider(),

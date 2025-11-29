@@ -379,7 +379,7 @@ class _AddAppointmentScreenState extends ConsumerState<AddAppointmentScreen> {
             border: Border.all(color: isDark ? AppColors.darkDivider : AppColors.divider),
           ),
           child: DropdownButtonFormField<int>(
-            value: _selectedPatientId,
+            initialValue: _selectedPatientId,
             decoration: InputDecoration(
               hintText: 'Select a patient',
               prefixIcon: Icon(Icons.person_search_rounded, color: isDark ? AppColors.darkTextSecondary : AppColors.textHint),
@@ -597,7 +597,8 @@ class _AddAppointmentScreenState extends ConsumerState<AddAppointmentScreen> {
           Switch(
             value: _setReminder,
             onChanged: (value) => setState(() => _setReminder = value),
-            activeColor: AppColors.primary,
+            activeTrackColor: AppColors.primary.withValues(alpha: 0.5),
+            activeThumbColor: AppColors.primary,
           ),
         ],
       ),

@@ -755,7 +755,7 @@ class _AddMedicalRecordScreenState extends ConsumerState<AddMedicalRecordScreen>
                 border: Border.all(color: isDark ? AppColors.darkDivider : AppColors.divider),
               ),
               child: DropdownButtonFormField<int>(
-                value: _selectedPatientId,
+                initialValue: _selectedPatientId,
                 decoration: InputDecoration(
                   hintText: 'Select a patient',
                   prefixIcon: Icon(Icons.person_search_rounded, color: isDark ? AppColors.darkTextSecondary : AppColors.textHint),

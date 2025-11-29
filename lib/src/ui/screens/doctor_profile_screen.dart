@@ -872,7 +872,7 @@ class _DoctorProfileScreenState extends ConsumerState<DoctorProfileScreen>
               ],
             ),
           ),
-          Switch.adaptive(value: isEnabled, onChanged: (value) { setState(() => _workingHours[day]!['enabled'] = value); _checkForChanges(); }, activeColor: AppColors.success),
+          Switch.adaptive(value: isEnabled, onChanged: (value) { setState(() => _workingHours[day]!['enabled'] = value); _checkForChanges(); }, activeTrackColor: AppColors.success.withValues(alpha: 0.5), activeThumbColor: AppColors.success),
         ],
       ),
     );
