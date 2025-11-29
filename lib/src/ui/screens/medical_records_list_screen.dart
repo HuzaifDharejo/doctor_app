@@ -6,8 +6,8 @@ import '../../db/doctor_db.dart';
 import '../../providers/db_provider.dart';
 import '../../theme/app_theme.dart';
 import '../widgets/medical_record_widgets.dart';
-import 'medical_record_detail_screen.dart';
 import 'add_medical_record_screen.dart';
+import 'medical_record_detail_screen.dart';
 
 /// A modern screen to list all medical records with filtering and search
 /// 

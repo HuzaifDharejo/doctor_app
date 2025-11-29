@@ -1,13 +1,13 @@
 import 'dart:typed_data';
-import 'package:flutter/material.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:drift/drift.dart' hide Column;
 import 'package:file_picker/file_picker.dart';
+import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../db/doctor_db.dart';
 import '../../providers/db_provider.dart';
-import '../../theme/app_theme.dart';
 import '../../services/photo_service.dart';
 import '../../services/suggestions_service.dart';
+import '../../theme/app_theme.dart';
 import '../widgets/suggestion_text_field.dart';
 
 class AddPatientScreen extends ConsumerStatefulWidget {

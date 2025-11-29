@@ -1,22 +1,22 @@
 // ignore_for_file: unused_element
 
 import 'dart:convert';
+import 'package:drift/drift.dart' show Value;
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
-import 'package:drift/drift.dart' show Value;
 import '../../db/doctor_db.dart';
 import '../../providers/db_provider.dart';
-import '../../theme/app_theme.dart';
-import '../../services/whatsapp_service.dart';
 import '../../services/pdf_service.dart';
+import '../../services/whatsapp_service.dart';
+import '../../theme/app_theme.dart';
 import '../widgets/patient_avatar.dart';
 import 'add_appointment_screen.dart';
 import 'add_invoice_screen.dart';
-import 'add_prescription_screen.dart';
 import 'add_medical_record_screen.dart';
-import 'psychiatric_assessment_screen.dart';
+import 'add_prescription_screen.dart';
 import 'medical_record_detail_screen.dart';
+import 'psychiatric_assessment_screen.dart';
 
 class PatientViewScreen extends ConsumerStatefulWidget {
   final Patient patient;

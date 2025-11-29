@@ -1,14 +1,14 @@
 import 'dart:convert';
+import 'package:drift/drift.dart' hide Column;
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
-import 'package:drift/drift.dart' hide Column;
 import '../../db/doctor_db.dart';
 import '../../providers/db_provider.dart';
-import '../../theme/app_theme.dart';
 import '../../services/suggestions_service.dart';
-import '../widgets/suggestion_text_field.dart';
+import '../../theme/app_theme.dart';
 import '../widgets/document_data_extractor.dart';
+import '../widgets/suggestion_text_field.dart';
 
 class AddMedicalRecordScreen extends ConsumerStatefulWidget {
   final Patient? preselectedPatient;

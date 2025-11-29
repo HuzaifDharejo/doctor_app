@@ -3,10 +3,10 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import '../../theme/app_theme.dart';
 import '../../providers/db_provider.dart';
 import '../../providers/google_calendar_provider.dart';
 import '../../services/google_calendar_service.dart';
+import '../../theme/app_theme.dart';
 
 /// Onboarding screen shown when the app is first launched
 /// Uses Google SSO for authentication and auto-fills profile from Google account

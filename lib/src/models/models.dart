@@ -8,9 +8,9 @@
 /// - Immutability with copyWith methods
 library;
 
-export 'patient.dart';
 export 'appointment.dart';
-export 'prescription.dart';
-export 'medical_record.dart';
 export 'invoice.dart';
+export 'medical_record.dart';
+export 'patient.dart';
+export 'prescription.dart';
 export 'pulmonary_evaluation.dart';

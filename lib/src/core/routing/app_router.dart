@@ -2,6 +2,7 @@
 library;
 
 import 'package:flutter/material.dart';
+import '../../db/doctor_db.dart';
 import '../../ui/screens/add_appointment_screen.dart';
 import '../../ui/screens/add_invoice_screen.dart';
 import '../../ui/screens/add_medical_record_screen.dart';
@@ -10,12 +11,11 @@ import '../../ui/screens/add_prescription_screen.dart';
 import '../../ui/screens/appointments_screen.dart';
 import '../../ui/screens/billing_screen.dart';
 import '../../ui/screens/doctor_profile_screen.dart';
-import '../../ui/screens/patients_screen.dart';
 import '../../ui/screens/patient_view_screen.dart';
+import '../../ui/screens/patients_screen.dart';
 import '../../ui/screens/prescriptions_screen.dart';
 import '../../ui/screens/psychiatric_assessment_screen.dart';
 import '../../ui/screens/settings_screen.dart';
-import '../../db/doctor_db.dart';
 
 /// Route names as constants
 abstract class AppRoutes {

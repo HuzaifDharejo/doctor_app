@@ -1,8 +1,8 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../db/doctor_db.dart';
-import '../services/seed_data_service.dart';
 import '../services/doctor_settings_service.dart';
 import '../services/logger_service.dart';
+import '../services/seed_data_service.dart';
 
 final doctorDbProvider = FutureProvider<DoctorDatabase>((ref) async {
   log.i('DB', 'Initializing database...');

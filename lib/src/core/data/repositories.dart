@@ -4,10 +4,10 @@
 /// providing a clean API and proper error handling.
 library;
 
-import '../utils/result.dart';
-import '../utils/app_exceptions.dart';
 import '../../db/doctor_db.dart';
 import '../../services/logger_service.dart';
+import '../utils/app_exceptions.dart';
+import '../utils/result.dart';
 
 /// Base repository class with common functionality
 abstract class BaseRepository {

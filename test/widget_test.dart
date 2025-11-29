@@ -1,7 +1,7 @@
 // Basic app smoke test for Doctor App
-import 'package:flutter_test/flutter_test.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:doctor_app/src/app.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_test/flutter_test.dart';
 
 void main() {
   testWidgets('Doctor App smoke test', (WidgetTester tester) async {

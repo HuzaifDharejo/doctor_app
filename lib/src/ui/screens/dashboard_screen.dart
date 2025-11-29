@@ -8,12 +8,12 @@ import '../../core/core.dart';
 import '../../db/doctor_db.dart';
 import '../../providers/db_provider.dart';
 import '../../theme/app_theme.dart';
-import '../widgets/patient_card.dart';
-import '../widgets/global_search_bar.dart';
 import '../widgets/dashboard_charts.dart';
-import 'patients_screen.dart';
-import 'add_patient_screen.dart';
+import '../widgets/global_search_bar.dart';
+import '../widgets/patient_card.dart';
 import 'add_appointment_screen.dart';
+import 'add_patient_screen.dart';
+import 'patients_screen.dart';
 
 class DashboardScreen extends ConsumerStatefulWidget {
   final VoidCallback? onMenuTap;
