@@ -167,8 +167,7 @@ class GoogleCalendarService {
     if (_currentUser == null) return null;
 
     final authHeaders = await _currentUser!.authHeaders;
-    final authenticatedClient = GoogleAuthClient(authHeaders);
-    _calendarApi = gcal.CalendarApi(authenticatedClient);
+    _calendarApi = gcal.CalendarApi(GoogleAuthClient(authHeaders));
     return _calendarApi;
   }
 

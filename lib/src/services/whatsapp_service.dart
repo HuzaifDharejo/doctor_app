@@ -33,14 +33,14 @@ class WhatsAppService {
       ..writeln();
     
     // Patient info
-    buffer.writeln('*Patient:* ${patient.firstName} ${patient.lastName}');
+    buffer
+      ..writeln('*Patient:* ${patient.firstName} ${patient.lastName}');
     if (patient.phone.isNotEmpty) {
       buffer.writeln('📱 ${patient.phone}');
     }
-    buffer.writeln();
-    
-    // Medications
     buffer
+      ..writeln()
+      // Medications
       ..writeln('*💊 Medications:*')
       ..writeln('───────────────────');
     for (int i = 0; i < medications.length; i++) {
@@ -61,15 +61,17 @@ class WhatsAppService {
         buffer.writeln('   Route: ${med['route']}');
       }
     }
-    buffer.writeln();
     
     // Instructions
     if (prescription.instructions.isNotEmpty) {
       buffer
+        ..writeln()
         ..writeln('*📋 Instructions:*')
         ..writeln('───────────────────')
         ..writeln(prescription.instructions)
         ..writeln();
+    } else {
+      buffer.writeln();
     }
     
     // Footer
@@ -113,15 +115,11 @@ class WhatsAppService {
       ..writeln()
       ..writeln('*INVOICE: ${invoice.invoiceNumber}*')
       ..writeln('📅 ${_formatDate(invoice.invoiceDate)}')
-      ..writeln();
-    
-    // Patient info
-    buffer
+      ..writeln()
+      // Patient info
       ..writeln('*Bill To:* ${patient.firstName} ${patient.lastName}')
-      ..writeln();
-    
-    // Items
-    buffer
+      ..writeln()
+      // Items
       ..writeln('*📋 Services:*')
       ..writeln('───────────────────');
     for (final item in items) {
@@ -129,10 +127,9 @@ class WhatsAppService {
     }
     buffer
       ..writeln('───────────────────')
-      ..writeln();
-    
-    // Totals
-    buffer.writeln('Subtotal: Rs. ${invoice.subtotal.toStringAsFixed(0)}');
+      ..writeln()
+      // Totals
+      ..writeln('Subtotal: Rs. ${invoice.subtotal.toStringAsFixed(0)}');
     if (invoice.discountAmount > 0) {
       buffer.writeln('Discount: -Rs. ${invoice.discountAmount.toStringAsFixed(0)}');
     }

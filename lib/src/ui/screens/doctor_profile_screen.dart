@@ -961,8 +961,8 @@ class _SignaturePreviewPainter extends CustomPainter {
 
     for (final stroke in strokes) {
       if (stroke.length < 2) continue;
-      final path = Path();
-      path.moveTo(stroke.first.dx * scale + offsetX, stroke.first.dy * scale + offsetY);
+      final path = Path()
+        ..moveTo(stroke.first.dx * scale + offsetX, stroke.first.dy * scale + offsetY);
       for (int i = 1; i < stroke.length; i++) {
         path.lineTo(stroke[i].dx * scale + offsetX, stroke[i].dy * scale + offsetY);
       }

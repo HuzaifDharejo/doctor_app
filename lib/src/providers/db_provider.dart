@@ -5,8 +5,9 @@ import '../services/logger_service.dart';
 import '../services/seed_data_service.dart';
 
 final doctorDbProvider = FutureProvider<DoctorDatabase>((ref) async {
-  log.i('DB', 'Initializing database...');
-  log.startMetric('database_init');
+  log
+    ..i('DB', 'Initializing database...')
+    ..startMetric('database_init');
   
   final db = DoctorDatabase();
   ref.onDispose(() {
@@ -23,23 +24,20 @@ final doctorDbProvider = FutureProvider<DoctorDatabase>((ref) async {
     log.w('DB', 'Database seeding failed', error: e, stackTrace: st);
   }
   
-  log.stopMetric('database_init');
-  log.i('DB', 'Database initialized successfully');
+  log
+    ..stopMetric('database_init')
+    ..i('DB', 'Database initialized successfully');
   return db;
 });
 
 // Doctor profile/settings provider
 final doctorSettingsProvider = ChangeNotifierProvider<DoctorSettingsService>((ref) {
   log.d('SETTINGS', 'Loading doctor settings...');
-  final service = DoctorSettingsService();
-  service.loadProfile();
-  return service;
+  return DoctorSettingsService()..loadProfile();
 });
 
 // App settings provider (notifications, dark mode, language, etc.)
 final appSettingsProvider = ChangeNotifierProvider<AppSettingsService>((ref) {
   log.d('SETTINGS', 'Loading app settings...');
-  final service = AppSettingsService();
-  service.loadSettings();
-  return service;
+  return AppSettingsService()..loadSettings();
 });

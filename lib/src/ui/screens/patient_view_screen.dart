@@ -3913,22 +3913,21 @@ class _HeaderPatternPainter extends CustomPainter {
     for (int i = 0; i < 5; i++) {
       paint.color = Colors.white.withValues(alpha: 0.03 + (i * 0.01));
       
-      final path = Path();
       final startY = size.height * (0.2 + (i * 0.15));
-      
-      path.moveTo(0, startY);
-      path.quadraticBezierTo(
-        size.width * 0.25,
-        startY - 30 + (i * 10),
-        size.width * 0.5,
-        startY + 20,
-      );
-      path.quadraticBezierTo(
-        size.width * 0.75,
-        startY + 50 - (i * 8),
-        size.width,
-        startY - 10,
-      );
+      final path = Path()
+        ..moveTo(0, startY)
+        ..quadraticBezierTo(
+          size.width * 0.25,
+          startY - 30 + (i * 10),
+          size.width * 0.5,
+          startY + 20,
+        )
+        ..quadraticBezierTo(
+          size.width * 0.75,
+          startY + 50 - (i * 8),
+          size.width,
+          startY - 10,
+        );
       
       canvas.drawPath(path, paint);
     }

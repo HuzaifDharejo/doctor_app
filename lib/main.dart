@@ -10,12 +10,11 @@ void main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
   // Configure logger
-  log.configure(
-    minLevel: kDebugMode ? LogLevel.verbose : LogLevel.warning,
-    enableConsoleOutput: kDebugMode,
-  );
-
   log
+    ..configure(
+      minLevel: kDebugMode ? LogLevel.verbose : LogLevel.warning,
+      enableConsoleOutput: kDebugMode,
+    )
     ..i('APP', '═══════════════════════════════════════════════')
     ..i('APP', '  Doctor App Starting...')
     ..i('APP', '  Debug Mode: $kDebugMode')

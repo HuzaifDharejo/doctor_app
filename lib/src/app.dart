@@ -124,8 +124,7 @@ class _HomeShellState extends ConsumerState<HomeShell> {
   }
 
   Future<void> _loadBadgeCounts() async {
-    final dbAsync = ref.read(doctorDbProvider);
-    dbAsync.whenData((db) async {
+    ref.read(doctorDbProvider).whenData((db) async {
       final todayAppts = await db.getAppointmentsForDay(DateTime.now());
       final pendingCount = todayAppts.where((a) => 
         a.status == 'pending' || a.status == 'scheduled',

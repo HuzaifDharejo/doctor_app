@@ -42,8 +42,9 @@ class _SuggestionTextFieldState extends State<SuggestionTextField> {
 
   @override
   void dispose() {
-    _focusNode.removeListener(_onFocusChange);
-    _focusNode.dispose();
+    _focusNode
+      ..removeListener(_onFocusChange)
+      ..dispose();
     super.dispose();
   }
 
@@ -236,8 +237,9 @@ class _VitalTextFieldState extends State<VitalTextField> {
 
   @override
   void dispose() {
-    _focusNode.removeListener(_onFocusChange);
-    _focusNode.dispose();
+    _focusNode
+      ..removeListener(_onFocusChange)
+      ..dispose();
     _removeOverlay();
     super.dispose();
   }

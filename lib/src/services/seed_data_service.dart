@@ -926,9 +926,8 @@ Future<void> _insertSampleData(DoctorDatabase db) async {
       invoiceCount++;
     }
   }
-  log.i('SEED', '✓ Inserted $invoiceCount invoices');
-
   log
+    ..i('SEED', '✓ Inserted $invoiceCount invoices')
     ..i('SEED', '')
     ..i('SEED', '═══════════════════════════════════════════════════════════')
     ..i('SEED', '  DATABASE SEEDING COMPLETE')

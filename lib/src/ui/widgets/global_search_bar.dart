@@ -65,8 +65,9 @@ class _GlobalSearchBarState extends ConsumerState<GlobalSearchBar> {
   void dispose() {
     _debounce?.cancel();
     _controller.dispose();
-    _focusNode.removeListener(_onFocusChange);
-    _focusNode.dispose();
+    _focusNode
+      ..removeListener(_onFocusChange)
+      ..dispose();
     _removeOverlay();
     super.dispose();
   }
