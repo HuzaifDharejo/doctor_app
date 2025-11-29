@@ -10,6 +10,7 @@ export 'empty_state.dart';
 export 'error_display.dart';
 export 'error_state.dart';
 export 'gradient_fab.dart';
+export 'info_row.dart';
 export 'loading_button.dart';
 export 'loading_state.dart';
 export 'search_field.dart';
