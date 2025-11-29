@@ -104,7 +104,7 @@ class GradientExtendedFAB extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
+    return DecoratedBox(
       decoration: BoxDecoration(
         gradient: gradient ?? AppColors.primaryGradient,
         borderRadius: AppRadius.largeRadius,

@@ -67,7 +67,7 @@ class _AddAppointmentScreenState extends ConsumerState<AddAppointmentScreen> {
           slivers: [
             // Gradient Header
             SliverToBoxAdapter(
-              child: Container(
+              child: DecoratedBox(
                 decoration: BoxDecoration(
                   gradient: AppColors.primaryGradient,
                   borderRadius: const BorderRadius.only(
@@ -372,7 +372,7 @@ class _AddAppointmentScreenState extends ConsumerState<AddAppointmentScreen> {
       builder: (context, snapshot) {
         final patients = snapshot.data ?? [];
         
-        return Container(
+        return DecoratedBox(
           decoration: BoxDecoration(
             color: Theme.of(context).colorScheme.surface,
             borderRadius: BorderRadius.circular(16),
@@ -405,7 +405,7 @@ class _AddAppointmentScreenState extends ConsumerState<AddAppointmentScreen> {
 
   Widget _buildReasonSelector(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    return Container(
+    return DecoratedBox(
       decoration: BoxDecoration(
         color: Theme.of(context).colorScheme.surface,
         borderRadius: BorderRadius.circular(16),

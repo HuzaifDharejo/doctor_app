@@ -19,16 +19,18 @@ class WhatsAppService {
     final buffer = StringBuffer();
     
     // Header
-    buffer.writeln('═══════════════════════');
-    buffer.writeln('*$clinicName*');
+    buffer
+      ..writeln('═══════════════════════')
+      ..writeln('*$clinicName*');
     if (clinicPhone != null && clinicPhone.isNotEmpty) {
       buffer.writeln('📞 $clinicPhone');
     }
-    buffer.writeln('═══════════════════════');
-    buffer.writeln('');
-    buffer.writeln('*PRESCRIPTION*');
-    buffer.writeln('📅 ${_formatDate(prescription.createdAt)}');
-    buffer.writeln('');
+    buffer
+      ..writeln('═══════════════════════')
+      ..writeln('')
+      ..writeln('*PRESCRIPTION*')
+      ..writeln('📅 ${_formatDate(prescription.createdAt)}')
+      ..writeln('');
     
     // Patient info
     buffer.writeln('*Patient:* ${patient.firstName} ${patient.lastName}');
@@ -38,12 +40,14 @@ class WhatsAppService {
     buffer.writeln('');
     
     // Medications
-    buffer.writeln('*💊 Medications:*');
-    buffer.writeln('───────────────────');
+    buffer
+      ..writeln('*💊 Medications:*')
+      ..writeln('───────────────────');
     for (int i = 0; i < medications.length; i++) {
       final med = medications[i];
-      buffer.writeln('');
-      buffer.writeln('${i + 1}. *${med['name'] ?? 'Unknown'}*');
+      buffer
+        ..writeln('')
+        ..writeln('${i + 1}. *${med['name'] ?? 'Unknown'}*');
       if (med['dosage'] != null && med['dosage'].toString().isNotEmpty) {
         buffer.writeln('   Dose: ${med['dosage']}');
       }
@@ -61,17 +65,19 @@ class WhatsAppService {
     
     // Instructions
     if (prescription.instructions.isNotEmpty) {
-      buffer.writeln('*📋 Instructions:*');
-      buffer.writeln('───────────────────');
-      buffer.writeln(prescription.instructions);
-      buffer.writeln('');
+      buffer
+        ..writeln('*📋 Instructions:*')
+        ..writeln('───────────────────')
+        ..writeln(prescription.instructions)
+        ..writeln('');
     }
     
     // Footer
-    buffer.writeln('───────────────────');
-    buffer.writeln('*Dr. $doctorName*');
-    buffer.writeln('');
-    buffer.writeln('_Get well soon! 🙏_');
+    buffer
+      ..writeln('───────────────────')
+      ..writeln('*Dr. $doctorName*')
+      ..writeln('')
+      ..writeln('_Get well soon! 🙏_');
     
     final message = Uri.encodeComponent(buffer.toString());
     final whatsappUrl = 'https://wa.me/${patient.phone.replaceAll(RegExp(r'[^0-9+]'), '')}?text=$message';
@@ -96,29 +102,34 @@ class WhatsAppService {
     final buffer = StringBuffer();
     
     // Header
-    buffer.writeln('═══════════════════════');
-    buffer.writeln('*$clinicName*');
+    buffer
+      ..writeln('═══════════════════════')
+      ..writeln('*$clinicName*');
     if (clinicPhone != null && clinicPhone.isNotEmpty) {
       buffer.writeln('📞 $clinicPhone');
     }
-    buffer.writeln('═══════════════════════');
-    buffer.writeln('');
-    buffer.writeln('*INVOICE: ${invoice.invoiceNumber}*');
-    buffer.writeln('📅 ${_formatDate(invoice.invoiceDate)}');
-    buffer.writeln('');
+    buffer
+      ..writeln('═══════════════════════')
+      ..writeln('')
+      ..writeln('*INVOICE: ${invoice.invoiceNumber}*')
+      ..writeln('📅 ${_formatDate(invoice.invoiceDate)}')
+      ..writeln('');
     
     // Patient info
-    buffer.writeln('*Bill To:* ${patient.firstName} ${patient.lastName}');
-    buffer.writeln('');
+    buffer
+      ..writeln('*Bill To:* ${patient.firstName} ${patient.lastName}')
+      ..writeln('');
     
     // Items
-    buffer.writeln('*📋 Services:*');
-    buffer.writeln('───────────────────');
+    buffer
+      ..writeln('*📋 Services:*')
+      ..writeln('───────────────────');
     for (final item in items) {
       buffer.writeln('• ${item['description']} - Rs. ${item['total']}');
     }
-    buffer.writeln('───────────────────');
-    buffer.writeln('');
+    buffer
+      ..writeln('───────────────────')
+      ..writeln('');
     
     // Totals
     buffer.writeln('Subtotal: Rs. ${invoice.subtotal.toStringAsFixed(0)}');
@@ -128,13 +139,14 @@ class WhatsAppService {
     if (invoice.taxAmount > 0) {
       buffer.writeln('Tax: Rs. ${invoice.taxAmount.toStringAsFixed(0)}');
     }
-    buffer.writeln('');
-    buffer.writeln('*Grand Total: Rs. ${invoice.grandTotal.toStringAsFixed(0)}*');
-    buffer.writeln('');
-    buffer.writeln('Status: ${invoice.paymentStatus}');
-    buffer.writeln('');
-    buffer.writeln('───────────────────');
-    buffer.writeln('_Thank you for your visit!_');
+    buffer
+      ..writeln('')
+      ..writeln('*Grand Total: Rs. ${invoice.grandTotal.toStringAsFixed(0)}*')
+      ..writeln('')
+      ..writeln('Status: ${invoice.paymentStatus}')
+      ..writeln('')
+      ..writeln('───────────────────')
+      ..writeln('_Thank you for your visit!_');
     
     final message = Uri.encodeComponent(buffer.toString());
     final whatsappUrl = 'https://wa.me/${patient.phone.replaceAll(RegExp(r'[^0-9+]'), '')}?text=$message';

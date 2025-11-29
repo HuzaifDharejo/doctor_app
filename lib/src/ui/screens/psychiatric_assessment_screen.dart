@@ -1,13 +1,13 @@
 import 'dart:convert';
+import 'package:drift/drift.dart' hide Column;
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
-import 'package:drift/drift.dart' hide Column;
-import '../widgets/suggestion_text_field.dart';
-import '../../services/suggestions_service.dart';
-import '../../providers/db_provider.dart';
 import '../../db/doctor_db.dart';
+import '../../providers/db_provider.dart';
+import '../../services/suggestions_service.dart';
 import '../../theme/app_theme.dart';
+import '../widgets/suggestion_text_field.dart';
 
 class PsychiatricAssessmentScreen extends ConsumerStatefulWidget {
   final Patient? preselectedPatient;

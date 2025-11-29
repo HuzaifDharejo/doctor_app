@@ -1,10 +1,10 @@
 import 'dart:async';
 import 'dart:convert';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:flutter/foundation.dart';
-import '../../theme/app_theme.dart';
 import '../../services/logger_service.dart';
+import '../../theme/app_theme.dart';
 
 /// Debug console widget for viewing logs in-app
 /// Only visible in debug mode

@@ -49,7 +49,7 @@ class AppSearchBar extends StatelessWidget {
     // Show clear button if there's text and onClear is provided
     final showClear = (value?.isNotEmpty ?? effectiveController?.text.isNotEmpty ?? false) && onClear != null;
 
-    return Container(
+    return DecoratedBox(
       decoration: BoxDecoration(
         color: context.surfaceColor,
         borderRadius: AppRadius.mediumRadius,

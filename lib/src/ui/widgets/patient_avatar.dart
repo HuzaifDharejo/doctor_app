@@ -1,8 +1,8 @@
 import 'dart:convert';
-import 'package:flutter/material.dart';
 import 'package:file_picker/file_picker.dart';
-import '../../theme/app_theme.dart';
+import 'package:flutter/material.dart';
 import '../../services/photo_service.dart';
+import '../../theme/app_theme.dart';
 
 /// A widget that displays a patient's photo or initials
 /// With optional ability to pick a new photo
