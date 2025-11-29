@@ -9,5 +9,7 @@ library;
 export 'app_exceptions.dart';
 export 'date_formatters.dart';
 export 'debouncer.dart';
+export 'input_validators.dart';
+export 'pagination.dart';
 export 'result.dart';
 export 'validators.dart';
