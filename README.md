@@ -96,6 +96,29 @@ flutter build apk --release
 
 ---
 
+## 🏗️ Architecture & Best Practices
+
+This project follows modern Flutter best practices and clean architecture principles:
+
+### Code Quality
+- **Strict Type Safety** — Enabled `strict-casts`, `strict-inference`, and `strict-raw-types` for maximum type safety
+- **Comprehensive Linting** — 40+ lint rules configured in `analysis_options.yaml`
+- **Zero Analyzer Errors** — All code passes strict static analysis
+
+### Design Patterns
+- **Result Type** — Functional error handling with `Result<T, E>` sealed classes (no exceptions for expected errors)
+- **Repository Pattern** — Clean data layer abstraction between UI and database
+- **Provider Pattern** — Riverpod for dependency injection and state management
+
+### Utilities
+- **Validators** — Centralized form validation with composable validators
+- **Debouncer** — Rate-limiting for search and input operations
+- **Date Formatters** — Consistent date/time formatting across the app
+- **App Exceptions** — Typed exception hierarchy for better error categorization
+- **Logger Service** — Developer-focused logging for debugging and error tracking
+
+---
+
 ## 📁 Project Structure
 
 ```
@@ -103,12 +126,28 @@ lib/
 ├── main.dart                    # App entry point
 └── src/
     ├── app.dart                 # App configuration with theme & routing
+    ├── core/                    # Core utilities and patterns
+    │   ├── core.dart            # Barrel export
+    │   ├── data/
+    │   │   └── repositories.dart # Repository base classes
+    │   └── utils/
+    │       ├── result.dart      # Result<T,E> type for error handling
+    │       ├── app_exceptions.dart # Typed exception hierarchy
+    │       ├── validators.dart  # Form validation utilities
+    │       ├── debouncer.dart   # Rate-limiting utility
+    │       └── date_formatters.dart # Date formatting helpers
     ├── db/
     │   └── doctor_db.dart       # Drift database schema & queries
+    ├── models/                  # Data models
+    │   ├── patient.dart
+    │   ├── appointment.dart
+    │   ├── prescription.dart
+    │   └── ...
     ├── providers/
     │   └── db_provider.dart     # Riverpod providers for state management
     ├── services/
     │   ├── backup_service.dart  # Database backup/restore functionality
+    │   ├── logger_service.dart  # Developer logging service
     │   ├── suggestions_service.dart # Auto-suggestion data
     │   ├── doctor_settings_service.dart # Doctor profile settings
     │   ├── pdf_service.dart     # PDF generation for prescriptions
@@ -124,10 +163,14 @@ lib/
         │   ├── prescriptions_screen.dart
         │   ├── billing_screen.dart
         │   ├── psychiatric_assessment_screen.dart
+        │   ├── medical_record_detail_screen.dart
+        │   ├── medical_records_list_screen.dart
         │   └── settings_screen.dart
         └── widgets/             # Reusable UI components
             ├── patient_card.dart
             ├── suggestion_text_field.dart
+            ├── debug_console.dart   # Developer debug panel
+            ├── medical_record_widgets.dart
             └── ...
 ```
 
