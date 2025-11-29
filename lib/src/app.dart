@@ -4,16 +4,16 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import 'core/core.dart';
 import 'core/routing/app_router.dart';
-import 'theme/app_theme.dart';
 import 'providers/db_provider.dart';
 import 'services/logger_service.dart';
-import 'ui/screens/dashboard_screen.dart';
-import 'ui/screens/patients_screen.dart';
+import 'theme/app_theme.dart';
 import 'ui/screens/appointments_screen.dart';
-import 'ui/screens/prescriptions_screen.dart';
 import 'ui/screens/billing_screen.dart';
-import 'ui/screens/onboarding_screen.dart';
+import 'ui/screens/dashboard_screen.dart';
 import 'ui/screens/medical_records_list_screen.dart';
+import 'ui/screens/onboarding_screen.dart';
+import 'ui/screens/patients_screen.dart';
+import 'ui/screens/prescriptions_screen.dart';
 
 class DoctorApp extends ConsumerWidget {
   const DoctorApp({super.key});
@@ -51,8 +51,9 @@ class _LoggingNavigatorObserver extends NavigatorObserver {
     super.didPush(route, previousRoute);
     final name = route.settings.name ?? route.runtimeType.toString();
     final prevName = previousRoute?.settings.name ?? 'none';
-    log.logNavigation(prevName, name);
-    log.trackScreen(name);
+    log
+      ..logNavigation(prevName, name)
+      ..trackScreen(name);
   }
 
   @override
@@ -549,13 +550,13 @@ class _HomeShellState extends ConsumerState<HomeShell> {
                     child: Row(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
-                        Icon(
+                        const Icon(
                           Icons.logout_rounded,
                           color: AppColors.error,
                           size: 20,
                         ),
                         const SizedBox(width: 10),
-                        Text(
+                        const Text(
                           AppStrings.logout,
                           style: TextStyle(
                             color: AppColors.error,

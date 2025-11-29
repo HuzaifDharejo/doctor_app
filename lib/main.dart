@@ -15,10 +15,11 @@ void main() async {
     enableConsoleOutput: kDebugMode,
   );
 
-  log.i('APP', '═══════════════════════════════════════════════');
-  log.i('APP', '  Doctor App Starting...');
-  log.i('APP', '  Debug Mode: $kDebugMode');
-  log.i('APP', '═══════════════════════════════════════════════');
+  log
+    ..i('APP', '═══════════════════════════════════════════════')
+    ..i('APP', '  Doctor App Starting...')
+    ..i('APP', '  Debug Mode: $kDebugMode')
+    ..i('APP', '═══════════════════════════════════════════════');
 
   // Catch Flutter framework errors
   FlutterError.onError = (FlutterErrorDetails details) {

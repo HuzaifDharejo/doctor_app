@@ -6,40 +6,40 @@ import 'package:flutter/material.dart';
 /// Spacing and padding constants
 abstract class AppSpacing {
   // Base unit
-  static const double unit = 4.0;
+  static const double unit = 4;
   
   // Spacing values
-  static const double xxs = 2.0;
-  static const double xs = 4.0;
-  static const double sm = 8.0;
-  static const double md = 12.0;
-  static const double lg = 16.0;
-  static const double xl = 20.0;
-  static const double xxl = 24.0;
-  static const double xxxl = 32.0;
+  static const double xxs = 2;
+  static const double xs = 4;
+  static const double sm = 8;
+  static const double md = 12;
+  static const double lg = 16;
+  static const double xl = 20;
+  static const double xxl = 24;
+  static const double xxxl = 32;
   
   // Screen padding
-  static const double screenPadding = 20.0;
-  static const double screenPaddingCompact = 12.0;
+  static const double screenPadding = 20;
+  static const double screenPaddingCompact = 12;
   
   // Card padding
-  static const double cardPadding = 16.0;
-  static const double cardPaddingCompact = 12.0;
+  static const double cardPadding = 16;
+  static const double cardPaddingCompact = 12;
   
   // List item spacing
-  static const double listItemSpacing = 12.0;
-  static const double listItemSpacingCompact = 8.0;
+  static const double listItemSpacing = 12;
+  static const double listItemSpacingCompact = 8;
 }
 
 /// Border radius constants
 abstract class AppRadius {
-  static const double xs = 4.0;
-  static const double sm = 8.0;
-  static const double md = 12.0;
-  static const double lg = 16.0;
-  static const double xl = 20.0;
-  static const double xxl = 24.0;
-  static const double full = 999.0;
+  static const double xs = 4;
+  static const double sm = 8;
+  static const double md = 12;
+  static const double lg = 16;
+  static const double xl = 20;
+  static const double xxl = 24;
+  static const double full = 999;
   
   // Common border radius
   static const BorderRadius smallRadius = BorderRadius.all(Radius.circular(sm));
@@ -53,37 +53,37 @@ abstract class AppRadius {
 
 /// Icon sizes
 abstract class AppIconSize {
-  static const double xs = 16.0;
-  static const double sm = 20.0;
-  static const double md = 24.0;
-  static const double lg = 28.0;
-  static const double xl = 32.0;
-  static const double xxl = 48.0;
+  static const double xs = 16;
+  static const double sm = 20;
+  static const double md = 24;
+  static const double lg = 28;
+  static const double xl = 32;
+  static const double xxl = 48;
   
   // Compact mode sizes
-  static const double smCompact = 18.0;
-  static const double mdCompact = 22.0;
-  static const double lgCompact = 26.0;
+  static const double smCompact = 18;
+  static const double mdCompact = 22;
+  static const double lgCompact = 26;
 }
 
 /// Font sizes
 abstract class AppFontSize {
-  static const double xxs = 10.0;
-  static const double xs = 11.0;
-  static const double sm = 12.0;
-  static const double md = 13.0;
-  static const double lg = 14.0;
-  static const double xl = 16.0;
-  static const double xxl = 18.0;
-  static const double xxxl = 22.0;
-  static const double display = 26.0;
+  static const double xxs = 10;
+  static const double xs = 11;
+  static const double sm = 12;
+  static const double md = 13;
+  static const double lg = 14;
+  static const double xl = 16;
+  static const double xxl = 18;
+  static const double xxxl = 22;
+  static const double display = 26;
   
   // Compact mode sizes
-  static const double smCompact = 10.0;
-  static const double mdCompact = 11.0;
-  static const double lgCompact = 13.0;
-  static const double xlCompact = 15.0;
-  static const double xxlCompact = 18.0;
+  static const double smCompact = 10;
+  static const double mdCompact = 11;
+  static const double lgCompact = 13;
+  static const double xlCompact = 15;
+  static const double xxlCompact = 18;
 }
 
 /// Animation durations
@@ -104,10 +104,10 @@ abstract class AppDuration {
 
 /// Breakpoints for responsive design
 abstract class AppBreakpoint {
-  static const double compact = 400.0;
-  static const double medium = 600.0;
-  static const double expanded = 840.0;
-  static const double large = 1200.0;
+  static const double compact = 400;
+  static const double medium = 600;
+  static const double expanded = 840;
+  static const double large = 1200;
   
   /// Check if width is compact
   static bool isCompact(double width) => width < compact;
@@ -121,12 +121,12 @@ abstract class AppBreakpoint {
 
 /// Elevation values
 abstract class AppElevation {
-  static const double none = 0.0;
-  static const double xs = 1.0;
-  static const double sm = 2.0;
-  static const double md = 4.0;
-  static const double lg = 8.0;
-  static const double xl = 16.0;
+  static const double none = 0;
+  static const double xs = 1;
+  static const double sm = 2;
+  static const double md = 4;
+  static const double lg = 8;
+  static const double xl = 16;
 }
 
 /// Common box shadows
