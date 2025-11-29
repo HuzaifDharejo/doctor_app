@@ -2,6 +2,7 @@ import 'package:drift/drift.dart' hide Column;
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../../core/utils/input_validators.dart';
 import '../../db/doctor_db.dart';
 import '../../providers/db_provider.dart';
 import '../../services/photo_service.dart';
@@ -273,7 +274,10 @@ class _AddPatientScreenState extends ConsumerState<AddPatientScreen> {
                               label: 'First Name',
                               hint: 'John',
                               icon: Icons.badge_outlined,
-                              validator: (v) => (v == null || v.isEmpty) ? 'Required' : null,
+                              validator: (v) {
+                                final result = InputValidators.validateName(v, fieldName: 'First name');
+                                return result.isValid ? null : result.errorMessage;
+                              },
                             ),
                           ),
                           const SizedBox(width: 12),
@@ -283,6 +287,11 @@ class _AddPatientScreenState extends ConsumerState<AddPatientScreen> {
                               label: 'Last Name',
                               hint: 'Doe',
                               icon: Icons.badge_outlined,
+                              validator: (v) {
+                                if (v == null || v.isEmpty) return null; // Optional
+                                final result = InputValidators.validateName(v, fieldName: 'Last name');
+                                return result.isValid ? null : result.errorMessage;
+                              },
                             ),
                           ),
                         ],
@@ -304,6 +313,10 @@ class _AddPatientScreenState extends ConsumerState<AddPatientScreen> {
                         hint: '+1 (555) 123-4567',
                         icon: Icons.phone_outlined,
                         keyboardType: TextInputType.phone,
+                        validator: (v) {
+                          final result = InputValidators.validatePhone(v);
+                          return result.isValid ? null : result.errorMessage;
+                        },
                       ),
                       const SizedBox(height: 12),
                       _buildTextField(
@@ -312,6 +325,10 @@ class _AddPatientScreenState extends ConsumerState<AddPatientScreen> {
                         hint: 'john.doe@email.com',
                         icon: Icons.email_outlined,
                         keyboardType: TextInputType.emailAddress,
+                        validator: (v) {
+                          final result = InputValidators.validateEmail(v);
+                          return result.isValid ? null : result.errorMessage;
+                        },
                       ),
                       const SizedBox(height: 12),
                       _buildTextField(

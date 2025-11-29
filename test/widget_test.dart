@@ -8,8 +8,9 @@ void main() {
     // Build our app and trigger a frame.
     await tester.pumpWidget(const ProviderScope(child: DoctorApp()));
 
-    // Wait for any async operations
-    await tester.pumpAndSettle();
+    // Pump a few frames to allow initial build
+    // Don't use pumpAndSettle as the app has persistent animations
+    await tester.pump(const Duration(seconds: 1));
 
     // Verify that the app starts without errors
     // The app should show some content
