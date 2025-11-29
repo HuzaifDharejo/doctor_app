@@ -1618,71 +1618,79 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> with SingleTick
   }
 
   void _showSyncSettingsDialog(BuildContext context, WidgetRef ref) {
+    final appSettings = ref.read(appSettingsProvider);
+    var autoSync = appSettings.settings.autoSyncAppointments;
+    var reminders = appSettings.settings.calendarReminders;
+    
     showDialog<void>(
       context: context,
-      builder: (context) => AlertDialog(
-        title: const Row(
-          children: [
-            Icon(Icons.sync, color: AppColors.accent),
-            SizedBox(width: 12),
-            Text('Sync Settings'),
-          ],
-        ),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            ListTile(
-              leading: const Icon(Icons.event_available, color: AppColors.success),
-              title: const Text('Auto-sync new appointments'),
-              subtitle: const Text('Create calendar events automatically'),
-              trailing: Switch(
-                value: true,
-                onChanged: (v) {
-                  // TODO(developer): Implement sync settings persistence
-                },
-                activeTrackColor: AppColors.primary.withValues(alpha: 0.5),
-                activeThumbColor: AppColors.primary,
-              ),
-            ),
-            ListTile(
-              leading: const Icon(Icons.notifications_active, color: AppColors.warning),
-              title: const Text('Calendar reminders'),
-              subtitle: const Text('30 min and 10 min before'),
-              trailing: Switch(
-                value: true,
-                onChanged: (v) {
-                  // TODO(developer): Implement reminder settings
-                },
-                activeTrackColor: AppColors.primary.withValues(alpha: 0.5),
-                activeThumbColor: AppColors.primary,
-              ),
-            ),
-            const Divider(),
-            ListTile(
-              leading: const Icon(Icons.refresh, color: AppColors.info),
-              title: const Text('Refresh Calendars'),
-              onTap: () async {
-                Navigator.pop(context);
-                await ref.read(googleCalendarProvider.notifier).refreshCalendars();
-                if (context.mounted) {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(
-                      content: const Text('Calendars refreshed'),
-                      behavior: SnackBarBehavior.floating,
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-                    ),
-                  );
-                }
-              },
-            ),
-          ],
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('Close'),
+      builder: (dialogContext) => StatefulBuilder(
+        builder: (dialogContext, setDialogState) => AlertDialog(
+          title: const Row(
+            children: [
+              Icon(Icons.sync, color: AppColors.accent),
+              SizedBox(width: 12),
+              Text('Sync Settings'),
+            ],
           ),
-        ],
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              ListTile(
+                leading: const Icon(Icons.event_available, color: AppColors.success),
+                title: const Text('Auto-sync new appointments'),
+                subtitle: const Text('Create calendar events automatically'),
+                trailing: Switch(
+                  value: autoSync,
+                  onChanged: (v) {
+                    setDialogState(() => autoSync = v);
+                    ref.read(appSettingsProvider).setAutoSyncAppointments(v);
+                  },
+                  activeTrackColor: AppColors.primary.withValues(alpha: 0.5),
+                  activeThumbColor: AppColors.primary,
+                ),
+              ),
+              ListTile(
+                leading: const Icon(Icons.notifications_active, color: AppColors.warning),
+                title: const Text('Calendar reminders'),
+                subtitle: const Text('30 min and 10 min before'),
+                trailing: Switch(
+                  value: reminders,
+                  onChanged: (v) {
+                    setDialogState(() => reminders = v);
+                    ref.read(appSettingsProvider).setCalendarReminders(v);
+                  },
+                  activeTrackColor: AppColors.primary.withValues(alpha: 0.5),
+                  activeThumbColor: AppColors.primary,
+                ),
+              ),
+              const Divider(),
+              ListTile(
+                leading: const Icon(Icons.refresh, color: AppColors.info),
+                title: const Text('Refresh Calendars'),
+                onTap: () async {
+                  Navigator.pop(dialogContext);
+                  await ref.read(googleCalendarProvider.notifier).refreshCalendars();
+                  if (context.mounted) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(
+                        content: const Text('Calendars refreshed'),
+                        behavior: SnackBarBehavior.floating,
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                      ),
+                    );
+                  }
+                },
+              ),
+            ],
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(dialogContext),
+              child: const Text('Close'),
+            ),
+          ],
+        ),
       ),
     );
   }

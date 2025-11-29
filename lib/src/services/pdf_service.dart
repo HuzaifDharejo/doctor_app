@@ -94,6 +94,361 @@ class PdfService {
     );
   }
 
+  /// Generate and share a medical record PDF
+  static Future<void> shareMedicalRecordPdf({
+    required Patient patient,
+    required MedicalRecord record,
+    required String doctorName,
+    required String clinicName,
+    String? clinicPhone,
+    String? clinicAddress,
+  }) async {
+    await _initFonts();
+    final pdf = await _generateMedicalRecordPdf(
+      patient: patient,
+      record: record,
+      doctorName: doctorName,
+      clinicName: clinicName,
+      clinicPhone: clinicPhone,
+      clinicAddress: clinicAddress,
+    );
+    
+    await Printing.sharePdf(
+      bytes: pdf,
+      filename: 'medical_record_${record.id}_${_formatDateForFile(record.recordDate)}.pdf',
+    );
+  }
+
+  /// Print a medical record PDF
+  static Future<void> printMedicalRecordPdf({
+    required Patient patient,
+    required MedicalRecord record,
+    required String doctorName,
+    required String clinicName,
+    String? clinicPhone,
+    String? clinicAddress,
+  }) async {
+    await _initFonts();
+    final pdf = await _generateMedicalRecordPdf(
+      patient: patient,
+      record: record,
+      doctorName: doctorName,
+      clinicName: clinicName,
+      clinicPhone: clinicPhone,
+      clinicAddress: clinicAddress,
+    );
+    
+    await Printing.layoutPdf(
+      onLayout: (_) => pdf,
+      name: 'Medical Record - ${patient.firstName} ${patient.lastName}',
+    );
+  }
+
+  static Future<Uint8List> _generateMedicalRecordPdf({
+    required Patient patient,
+    required MedicalRecord record,
+    required String doctorName,
+    required String clinicName,
+    String? clinicPhone,
+    String? clinicAddress,
+  }) async {
+    final theme = _getTheme();
+    final pdf = theme != null ? pw.Document(theme: theme) : pw.Document();
+    
+    // Parse record data
+    Map<String, dynamic> data = {};
+    if (record.dataJson.isNotEmpty && record.dataJson != '{}') {
+      try {
+        data = jsonDecode(record.dataJson) as Map<String, dynamic>;
+      } catch (e) {
+        log.w('PDF', 'Error parsing record data: $e');
+      }
+    }
+    
+    pdf.addPage(
+      pw.MultiPage(
+        pageFormat: PdfPageFormat.a4,
+        margin: const pw.EdgeInsets.all(40),
+        build: (context) {
+          return [
+            // Header
+            _buildPdfHeader(clinicName, clinicPhone, clinicAddress, doctorName),
+            pw.SizedBox(height: 20),
+            pw.Divider(color: PdfColors.blue800),
+            pw.SizedBox(height: 10),
+            
+            // Record Type and Date
+            pw.Row(
+              mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
+              children: [
+                pw.Container(
+                  padding: const pw.EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                  decoration: pw.BoxDecoration(
+                    color: PdfColors.blue100,
+                    borderRadius: pw.BorderRadius.circular(4),
+                  ),
+                  child: pw.Text(
+                    _formatRecordType(record.recordType),
+                    style: pw.TextStyle(fontWeight: pw.FontWeight.bold, color: PdfColors.blue900),
+                  ),
+                ),
+                pw.Text('Date: ${_formatDate(record.recordDate)}', style: const pw.TextStyle(fontSize: 11)),
+              ],
+            ),
+            pw.SizedBox(height: 20),
+            
+            // Patient Info
+            pw.Container(
+              padding: const pw.EdgeInsets.all(12),
+              decoration: pw.BoxDecoration(
+                color: PdfColors.grey100,
+                borderRadius: pw.BorderRadius.circular(6),
+              ),
+              child: pw.Row(
+                children: [
+                  pw.Column(
+                    crossAxisAlignment: pw.CrossAxisAlignment.start,
+                    children: [
+                      pw.Text('Patient:', style: const pw.TextStyle(fontSize: 10, color: PdfColors.grey600)),
+                      pw.Text(
+                        '${patient.firstName} ${patient.lastName}',
+                        style: pw.TextStyle(fontSize: 14, fontWeight: pw.FontWeight.bold),
+                      ),
+                    ],
+                  ),
+                  pw.SizedBox(width: 40),
+                  if (patient.dateOfBirth != null)
+                    pw.Column(
+                      crossAxisAlignment: pw.CrossAxisAlignment.start,
+                      children: [
+                        pw.Text('Age:', style: const pw.TextStyle(fontSize: 10, color: PdfColors.grey600)),
+                        pw.Text('${_calculateAge(patient.dateOfBirth!)} years', style: const pw.TextStyle(fontSize: 12)),
+                      ],
+                    ),
+                ],
+              ),
+            ),
+            pw.SizedBox(height: 20),
+            
+            // Title
+            pw.Text(
+              record.title,
+              style: pw.TextStyle(fontSize: 18, fontWeight: pw.FontWeight.bold),
+            ),
+            pw.SizedBox(height: 16),
+            
+            // Description
+            if (record.description.isNotEmpty) ...[
+              _buildSectionHeader('Description'),
+              pw.SizedBox(height: 8),
+              pw.Text(record.description, style: const pw.TextStyle(fontSize: 11)),
+              pw.SizedBox(height: 16),
+            ],
+            
+            // Diagnosis
+            if (record.diagnosis.isNotEmpty) ...[
+              _buildSectionHeader('Diagnosis'),
+              pw.SizedBox(height: 8),
+              pw.Text(record.diagnosis, style: const pw.TextStyle(fontSize: 11)),
+              pw.SizedBox(height: 16),
+            ],
+            
+            // Treatment
+            if (record.treatment.isNotEmpty) ...[
+              _buildSectionHeader('Treatment Plan'),
+              pw.SizedBox(height: 8),
+              pw.Text(record.treatment, style: const pw.TextStyle(fontSize: 11)),
+              pw.SizedBox(height: 16),
+            ],
+            
+            // Type-specific data
+            ..._buildTypeSpecificContent(record.recordType, data),
+            
+            // Doctor's Notes
+            if (record.doctorNotes.isNotEmpty) ...[
+              _buildSectionHeader("Doctor's Notes"),
+              pw.SizedBox(height: 8),
+              pw.Container(
+                padding: const pw.EdgeInsets.all(12),
+                decoration: pw.BoxDecoration(
+                  color: PdfColors.amber50,
+                  borderRadius: pw.BorderRadius.circular(6),
+                  border: pw.Border.all(color: PdfColors.amber200),
+                ),
+                child: pw.Text(record.doctorNotes, style: const pw.TextStyle(fontSize: 11)),
+              ),
+            ],
+            
+            pw.SizedBox(height: 30),
+            
+            // Signature
+            pw.Row(
+              mainAxisAlignment: pw.MainAxisAlignment.end,
+              children: [
+                pw.Column(
+                  children: [
+                    pw.Container(width: 150, height: 1, color: PdfColors.grey400),
+                    pw.SizedBox(height: 4),
+                    pw.Text('Dr. $doctorName', style: pw.TextStyle(fontSize: 11, fontWeight: pw.FontWeight.bold)),
+                    pw.Text('Signature', style: const pw.TextStyle(fontSize: 9, color: PdfColors.grey600)),
+                  ],
+                ),
+              ],
+            ),
+          ];
+        },
+      ),
+    );
+
+    return pdf.save();
+  }
+
+  static pw.Widget _buildSectionHeader(String title) {
+    return pw.Container(
+      padding: const pw.EdgeInsets.only(bottom: 4),
+      decoration: const pw.BoxDecoration(
+        border: pw.Border(bottom: pw.BorderSide(color: PdfColors.blue800, width: 2)),
+      ),
+      child: pw.Text(
+        title,
+        style: pw.TextStyle(
+          fontSize: 13,
+          fontWeight: pw.FontWeight.bold,
+          color: PdfColors.blue900,
+        ),
+      ),
+    );
+  }
+
+  static List<pw.Widget> _buildTypeSpecificContent(String recordType, Map<String, dynamic> data) {
+    if (data.isEmpty) return [];
+    
+    final widgets = <pw.Widget>[];
+    
+    switch (recordType) {
+      case 'psychiatric_assessment':
+        if (data['symptoms'] != null && data['symptoms'].toString().isNotEmpty) {
+          widgets.addAll([
+            _buildSectionHeader('Presenting Symptoms'),
+            pw.SizedBox(height: 8),
+            pw.Text(data['symptoms'].toString(), style: const pw.TextStyle(fontSize: 11)),
+            pw.SizedBox(height: 16),
+          ]);
+        }
+        if (data['mse'] != null) {
+          final mse = data['mse'] as Map<String, dynamic>;
+          widgets.addAll([
+            _buildSectionHeader('Mental Status Examination'),
+            pw.SizedBox(height: 8),
+            _buildKeyValueTable(mse),
+            pw.SizedBox(height: 16),
+          ]);
+        }
+        
+      case 'pulmonary_evaluation':
+        if (data['chestExam'] != null) {
+          final chest = data['chestExam'] as Map<String, dynamic>;
+          widgets.addAll([
+            _buildSectionHeader('Chest Examination'),
+            pw.SizedBox(height: 8),
+            _buildKeyValueTable(chest),
+            pw.SizedBox(height: 16),
+          ]);
+        }
+        if (data['spirometry'] != null) {
+          final spirometry = data['spirometry'] as Map<String, dynamic>;
+          widgets.addAll([
+            _buildSectionHeader('Spirometry'),
+            pw.SizedBox(height: 8),
+            _buildKeyValueTable(spirometry),
+            pw.SizedBox(height: 16),
+          ]);
+        }
+        
+      case 'lab_result':
+        widgets.addAll([
+          _buildSectionHeader('Lab Results'),
+          pw.SizedBox(height: 8),
+          _buildKeyValueTable(data),
+          pw.SizedBox(height: 16),
+        ]);
+        
+      case 'imaging':
+        if (data['findings'] != null) {
+          widgets.addAll([
+            _buildSectionHeader('Imaging Findings'),
+            pw.SizedBox(height: 8),
+            pw.Text(data['findings'].toString(), style: const pw.TextStyle(fontSize: 11)),
+            pw.SizedBox(height: 16),
+          ]);
+        }
+        if (data['impression'] != null) {
+          widgets.addAll([
+            _buildSectionHeader('Impression'),
+            pw.SizedBox(height: 8),
+            pw.Text(data['impression'].toString(), style: const pw.TextStyle(fontSize: 11)),
+            pw.SizedBox(height: 16),
+          ]);
+        }
+    }
+    
+    return widgets;
+  }
+
+  static pw.Widget _buildKeyValueTable(Map<String, dynamic> data) {
+    final entries = data.entries.where((e) => e.value != null && e.value.toString().isNotEmpty).toList();
+    if (entries.isEmpty) return pw.SizedBox();
+    
+    return pw.Table(
+      border: pw.TableBorder.all(color: PdfColors.grey300),
+      children: entries.map((e) => pw.TableRow(
+        children: [
+          pw.Container(
+            padding: const pw.EdgeInsets.all(8),
+            color: PdfColors.grey100,
+            child: pw.Text(_formatLabel(e.key), style: pw.TextStyle(fontSize: 10, fontWeight: pw.FontWeight.bold)),
+          ),
+          pw.Container(
+            padding: const pw.EdgeInsets.all(8),
+            child: pw.Text(e.value.toString(), style: const pw.TextStyle(fontSize: 10)),
+          ),
+        ],
+      ),).toList(),
+    );
+  }
+
+  static String _formatLabel(String key) {
+    return key
+        .replaceAllMapped(RegExp('([A-Z])'), (m) => ' ${m.group(1)}')
+        .replaceAll('_', ' ')
+        .trim()
+        .split(' ')
+        .map((word) => word.isNotEmpty ? '${word[0].toUpperCase()}${word.substring(1)}' : '')
+        .join(' ');
+  }
+
+  static String _formatRecordType(String type) {
+    const types = {
+      'general': 'General Consultation',
+      'psychiatric_assessment': 'Psychiatric Assessment',
+      'pulmonary_evaluation': 'Pulmonary Evaluation',
+      'lab_result': 'Lab Result',
+      'imaging': 'Imaging',
+      'procedure': 'Procedure',
+      'follow_up': 'Follow-up',
+    };
+    return types[type] ?? type;
+  }
+
+  static int _calculateAge(DateTime birthDate) {
+    final today = DateTime.now();
+    int age = today.year - birthDate.year;
+    if (today.month < birthDate.month || (today.month == birthDate.month && today.day < birthDate.day)) {
+      age--;
+    }
+    return age;
+  }
+
   static Future<Uint8List> _generatePrescriptionPdf({
     required Patient patient,
     required Prescription prescription,

@@ -1,9 +1,13 @@
 import 'dart:convert';
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 import '../../db/doctor_db.dart';
+import '../../providers/db_provider.dart';
+import '../../services/pdf_service.dart';
 import '../../theme/app_theme.dart';
 import '../widgets/medical_record_widgets.dart';
+import 'add_medical_record_screen.dart';
 
 /// A modern, accessible medical record detail screen
 /// 
@@ -12,7 +16,7 @@ import '../widgets/medical_record_widgets.dart';
 /// - Modern gradient header design
 /// - Accessible semantic labels
 /// - Dark mode support
-class MedicalRecordDetailScreen extends StatelessWidget {
+class MedicalRecordDetailScreen extends ConsumerWidget {
 
   const MedicalRecordDetailScreen({
     required this.record, required this.patient, super.key,
@@ -32,7 +36,7 @@ class MedicalRecordDetailScreen extends StatelessWidget {
   }
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final recordInfo = RecordTypeInfo.fromType(record.recordType);
     
@@ -40,7 +44,14 @@ class MedicalRecordDetailScreen extends StatelessWidget {
       backgroundColor: isDark ? AppColors.darkBackground : AppColors.background,
       body: CustomScrollView(
         slivers: [
-          SliverToBoxAdapter(child: _Header(record: record, patient: patient, recordInfo: recordInfo)),
+          SliverToBoxAdapter(
+            child: _Header(
+              record: record,
+              patient: patient,
+              recordInfo: recordInfo,
+              ref: ref,
+            ),
+          ),
           SliverPadding(
             padding: const EdgeInsets.all(MedicalRecordConstants.paddingLarge),
             sliver: SliverList(
@@ -50,7 +61,12 @@ class MedicalRecordDetailScreen extends StatelessWidget {
                 _RecordContent(record: record, data: _data, isDark: isDark),
                 ..._buildCommonSections(isDark),
                 const SizedBox(height: 32),
-                _ActionButtons(isDark: isDark),
+                _ActionButtons(
+                  record: record,
+                  patient: patient,
+                  isDark: isDark,
+                  ref: ref,
+                ),
                 const SizedBox(height: 40),
               ]),
             ),
@@ -106,10 +122,12 @@ class _Header extends StatelessWidget {
     required this.record,
     required this.patient,
     required this.recordInfo,
+    required this.ref,
   });
   final MedicalRecord record;
   final Patient patient;
   final RecordTypeInfo recordInfo;
+  final WidgetRef ref;
 
   static final _dateFormat = DateFormat('EEEE, MMMM d, yyyy');
 
@@ -248,16 +266,28 @@ class _Header extends StatelessWidget {
   }
 
   void _handleShare(BuildContext context) {
-    // TODO(developer): Implement share functionality
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Share feature coming soon')),
+    final doctorSettings = ref.read(doctorSettingsProvider);
+    final profile = doctorSettings.profile;
+    PdfService.shareMedicalRecordPdf(
+      patient: patient, 
+      record: record,
+      doctorName: profile.displayName,
+      clinicName: profile.clinicName,
+      clinicPhone: profile.clinicPhone.isNotEmpty ? profile.clinicPhone : null,
+      clinicAddress: profile.clinicAddress.isNotEmpty ? profile.clinicAddress : null,
     );
   }
 
   void _handlePrint(BuildContext context) {
-    // TODO(developer): Implement print functionality
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Print feature coming soon')),
+    final doctorSettings = ref.read(doctorSettingsProvider);
+    final profile = doctorSettings.profile;
+    PdfService.printMedicalRecordPdf(
+      patient: patient, 
+      record: record,
+      doctorName: profile.displayName,
+      clinicName: profile.clinicName,
+      clinicPhone: profile.clinicPhone.isNotEmpty ? profile.clinicPhone : null,
+      clinicAddress: profile.clinicAddress.isNotEmpty ? profile.clinicAddress : null,
     );
   }
 }
@@ -1331,8 +1361,16 @@ class _ZoneBox extends StatelessWidget {
 
 class _ActionButtons extends StatelessWidget {
 
-  const _ActionButtons({required this.isDark});
+  const _ActionButtons({
+    required this.record,
+    required this.patient,
+    required this.isDark,
+    required this.ref,
+  });
+  final MedicalRecord record;
+  final Patient patient;
   final bool isDark;
+  final WidgetRef ref;
 
   @override
   Widget build(BuildContext context) {
@@ -1382,30 +1420,55 @@ class _ActionButtons extends StatelessWidget {
   }
 
   void _handleEdit(BuildContext context) {
-    // TODO(developer): Navigate to edit screen
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Edit feature coming soon')),
+    // Navigate to add screen with patient preselected
+    // Full edit support would require AddMedicalRecordScreen to accept existingRecord
+    Navigator.push<void>(
+      context,
+      MaterialPageRoute(
+        builder: (context) => AddMedicalRecordScreen(
+          preselectedPatient: patient,
+          initialRecordType: record.recordType,
+        ),
+      ),
     );
   }
 
   void _handleDelete(BuildContext context) {
     showDialog<void>(
       context: context,
-      builder: (context) => AlertDialog(
+      builder: (dialogContext) => AlertDialog(
         title: const Text('Delete Record'),
         content: const Text('Are you sure you want to delete this record? This action cannot be undone.'),
         actions: [
           TextButton(
-            onPressed: () => Navigator.pop(context),
+            onPressed: () => Navigator.pop(dialogContext),
             child: const Text('Cancel'),
           ),
           TextButton(
-            onPressed: () {
-              Navigator.pop(context);
-              // TODO(developer): Implement actual deletion
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(content: Text('Delete feature coming soon')),
-              );
+            onPressed: () async {
+              Navigator.pop(dialogContext);
+              try {
+                final db = await ref.read(doctorDbProvider.future);
+                await db.deleteMedicalRecord(record.id);
+                if (context.mounted) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(
+                      content: Text('Record deleted successfully'),
+                      backgroundColor: Colors.green,
+                    ),
+                  );
+                  Navigator.pop(context); // Go back to previous screen
+                }
+              } catch (e) {
+                if (context.mounted) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                      content: Text('Failed to delete record: $e'),
+                      backgroundColor: AppColors.error,
+                    ),
+                  );
+                }
+              }
             },
             style: TextButton.styleFrom(foregroundColor: AppColors.error),
             child: const Text('Delete'),

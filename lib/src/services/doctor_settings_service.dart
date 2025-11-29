@@ -261,6 +261,8 @@ class AppSettings {
     this.language = 'English',
     this.lastBackupDate,
     this.onboardingComplete = false,
+    this.autoSyncAppointments = true,
+    this.calendarReminders = true,
     List<String>? enabledMedicalRecordTypes,
   }) : enabledMedicalRecordTypes = enabledMedicalRecordTypes ?? List.from(allMedicalRecordTypes);
 
@@ -272,6 +274,8 @@ class AppSettings {
         ? DateTime.parse(json['lastBackupDate'] as String) 
         : null,
     onboardingComplete: (json['onboardingComplete'] as bool?) ?? false,
+    autoSyncAppointments: (json['autoSyncAppointments'] as bool?) ?? true,
+    calendarReminders: (json['calendarReminders'] as bool?) ?? true,
     enabledMedicalRecordTypes: json['enabledMedicalRecordTypes'] != null
         ? List<String>.from(json['enabledMedicalRecordTypes'] as Iterable)
         : null,
@@ -281,6 +285,8 @@ class AppSettings {
   final String language;
   final DateTime? lastBackupDate;
   final bool onboardingComplete;
+  final bool autoSyncAppointments;
+  final bool calendarReminders;
   final List<String> enabledMedicalRecordTypes;
 
   // Default medical record types
@@ -320,6 +326,8 @@ class AppSettings {
     String? language,
     DateTime? lastBackupDate,
     bool? onboardingComplete,
+    bool? autoSyncAppointments,
+    bool? calendarReminders,
     List<String>? enabledMedicalRecordTypes,
   }) {
     return AppSettings(
@@ -328,6 +336,8 @@ class AppSettings {
       language: language ?? this.language,
       lastBackupDate: lastBackupDate ?? this.lastBackupDate,
       onboardingComplete: onboardingComplete ?? this.onboardingComplete,
+      autoSyncAppointments: autoSyncAppointments ?? this.autoSyncAppointments,
+      calendarReminders: calendarReminders ?? this.calendarReminders,
       enabledMedicalRecordTypes: enabledMedicalRecordTypes ?? this.enabledMedicalRecordTypes,
     );
   }
@@ -338,6 +348,8 @@ class AppSettings {
     'language': language,
     'lastBackupDate': lastBackupDate?.toIso8601String(),
     'onboardingComplete': onboardingComplete,
+    'autoSyncAppointments': autoSyncAppointments,
+    'calendarReminders': calendarReminders,
     'enabledMedicalRecordTypes': enabledMedicalRecordTypes,
   };
 }
@@ -440,5 +452,19 @@ class AppSettingsService extends ChangeNotifier {
 
   bool isMedicalRecordTypeEnabled(String type) {
     return _settings.enabledMedicalRecordTypes.contains(type);
+  }
+
+  // ignore: avoid_positional_boolean_parameters
+  Future<void> setAutoSyncAppointments(bool enabled) async {
+    _settings = _settings.copyWith(autoSyncAppointments: enabled);
+    await _saveSettings();
+    notifyListeners();
+  }
+
+  // ignore: avoid_positional_boolean_parameters
+  Future<void> setCalendarReminders(bool enabled) async {
+    _settings = _settings.copyWith(calendarReminders: enabled);
+    await _saveSettings();
+    notifyListeners();
   }
 }
