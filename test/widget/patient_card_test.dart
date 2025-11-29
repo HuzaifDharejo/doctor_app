@@ -130,7 +130,7 @@ void main() {
       await pumpPatientCard(tester, buildTestWidget(
         patient: testPatient,
         lastVisit: yesterday,
-      ));
+      ),);
 
       expect(find.text('Yesterday'), findsOneWidget);
       expect(find.byIcon(Icons.history_rounded), findsOneWidget);
@@ -142,7 +142,7 @@ void main() {
       await pumpPatientCard(tester, buildTestWidget(
         patient: testPatient,
         nextAppointment: tomorrow,
-      ));
+      ),);
 
       expect(find.byIcon(Icons.event_rounded), findsOneWidget);
     });
@@ -209,7 +209,7 @@ void main() {
         id: 5,
         firstName: 'Charlie',
         lastName: 'Davis',
-        dateOfBirth: DateTime(1988, 12, 1),
+        dateOfBirth: DateTime(1988, 12),
         phone: '5555555555',
         email: '',
         address: '',

@@ -15,7 +15,7 @@ void main() {
     testWidgets('displays message', (tester) async {
       await tester.pumpWidget(buildTestWidget(
         const ErrorDisplay(message: 'Something went wrong'),
-      ));
+      ),);
 
       expect(find.text('Something went wrong'), findsOneWidget);
     });
@@ -26,7 +26,7 @@ void main() {
           title: 'Error Title',
           message: 'Error message',
         ),
-      ));
+      ),);
 
       expect(find.text('Error Title'), findsOneWidget);
       expect(find.text('Error message'), findsOneWidget);
@@ -38,7 +38,7 @@ void main() {
           message: 'Custom icon error',
           icon: Icons.cloud_off,
         ),
-      ));
+      ),);
 
       expect(find.byIcon(Icons.cloud_off), findsOneWidget);
     });
@@ -49,7 +49,7 @@ void main() {
           message: 'Retryable error',
           onRetry: () {},
         ),
-      ));
+      ),);
 
       expect(find.text('Try Again'), findsOneWidget);
       expect(find.byIcon(Icons.refresh), findsOneWidget);
@@ -58,7 +58,7 @@ void main() {
     testWidgets('hides retry button when onRetry is null', (tester) async {
       await tester.pumpWidget(buildTestWidget(
         const ErrorDisplay(message: 'No retry error'),
-      ));
+      ),);
 
       expect(find.text('Try Again'), findsNothing);
     });
@@ -70,7 +70,7 @@ void main() {
           message: 'Retryable error',
           onRetry: () => retried = true,
         ),
-      ));
+      ),);
 
       await tester.tap(find.text('Try Again'));
       await tester.pumpAndSettle();
@@ -85,7 +85,7 @@ void main() {
           onRetry: () {},
           retryLabel: 'Reload',
         ),
-      ));
+      ),);
 
       expect(find.text('Reload'), findsOneWidget);
       expect(find.text('Try Again'), findsNothing);
@@ -95,7 +95,7 @@ void main() {
       testWidgets('network() shows connection error', (tester) async {
         await tester.pumpWidget(buildTestWidget(
           ErrorDisplay.network(),
-        ));
+        ),);
 
         expect(find.text('Connection Error'), findsOneWidget);
         expect(find.byIcon(Icons.wifi_off_rounded), findsOneWidget);
@@ -104,7 +104,7 @@ void main() {
       testWidgets('loadFailed() shows load error', (tester) async {
         await tester.pumpWidget(buildTestWidget(
           ErrorDisplay.loadFailed(),
-        ));
+        ),);
 
         expect(find.text('Failed to Load'), findsOneWidget);
         expect(find.byIcon(Icons.error_outline_rounded), findsOneWidget);
@@ -113,7 +113,7 @@ void main() {
       testWidgets('loadFailed() accepts custom message', (tester) async {
         await tester.pumpWidget(buildTestWidget(
           ErrorDisplay.loadFailed(message: 'Custom load error'),
-        ));
+        ),);
 
         expect(find.text('Custom load error'), findsOneWidget);
       });
@@ -121,7 +121,7 @@ void main() {
       testWidgets('empty() shows empty state', (tester) async {
         await tester.pumpWidget(buildTestWidget(
           ErrorDisplay.empty(message: 'No items found'),
-        ));
+        ),);
 
         expect(find.text('Nothing Here'), findsOneWidget);
         expect(find.text('No items found'), findsOneWidget);
@@ -135,7 +135,7 @@ void main() {
             message: 'Add your first patient',
             icon: Icons.person_add_outlined,
           ),
-        ));
+        ),);
 
         expect(find.text('No Patients'), findsOneWidget);
         expect(find.byIcon(Icons.person_add_outlined), findsOneWidget);
@@ -146,7 +146,7 @@ void main() {
       testWidgets('inline() renders compact version', (tester) async {
         await tester.pumpWidget(buildTestWidget(
           ErrorDisplay.inline(message: 'Inline error'),
-        ));
+        ),);
 
         expect(find.text('Inline error'), findsOneWidget);
         // Should have error icon
@@ -159,7 +159,7 @@ void main() {
             message: 'Inline retry error',
             onRetry: () {},
           ),
-        ));
+        ),);
 
         expect(find.text('Try Again'), findsOneWidget);
       });

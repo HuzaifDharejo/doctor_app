@@ -22,7 +22,7 @@ void main() {
       final singleName = DoctorProfile(name: 'John');
       expect(singleName.initials, equals('J'));
 
-      final empty = DoctorProfile(name: '');
+      final empty = DoctorProfile();
       expect(empty.initials, equals('DR'));
     });
 
@@ -30,7 +30,7 @@ void main() {
       final profile = DoctorProfile(name: 'Dr. John Smith');
       expect(profile.displayName, equals('Dr. John Smith'));
 
-      final empty = DoctorProfile(name: '');
+      final empty = DoctorProfile();
       expect(empty.displayName, equals('Doctor'));
     });
 

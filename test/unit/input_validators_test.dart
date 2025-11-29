@@ -104,7 +104,7 @@ void main() {
       });
 
       test('returns invalid for dates too far in the past', () {
-        final ancientDate = DateTime(1800, 1, 1);
+        final ancientDate = DateTime(1800);
         expect(InputValidators.validateDateOfBirth(ancientDate).isValid, isFalse);
       });
     });
@@ -140,8 +140,8 @@ void main() {
 
     group('validateAmount', () {
       test('returns valid for normal amounts', () {
-        expect(InputValidators.validateAmount(100.0).isValid, isTrue);
-        expect(InputValidators.validateAmount(0.0).isValid, isTrue);
+        expect(InputValidators.validateAmount(100).isValid, isTrue);
+        expect(InputValidators.validateAmount(0).isValid, isTrue);
         expect(InputValidators.validateAmount(999999.99).isValid, isTrue);
       });
 
@@ -154,20 +154,20 @@ void main() {
       });
 
       test('returns invalid for negative amounts', () {
-        expect(InputValidators.validateAmount(-100.0).isValid, isFalse);
+        expect(InputValidators.validateAmount(-100).isValid, isFalse);
       });
 
       test('returns invalid for amounts exceeding max', () {
-        expect(InputValidators.validateAmount(2000000.0).isValid, isFalse);
+        expect(InputValidators.validateAmount(2000000).isValid, isFalse);
       });
 
       test('respects custom min and max', () {
         expect(
-          InputValidators.validateAmount(50.0, minAmount: 100).isValid,
+          InputValidators.validateAmount(50, minAmount: 100).isValid,
           isFalse,
         );
         expect(
-          InputValidators.validateAmount(200.0, maxAmount: 100).isValid,
+          InputValidators.validateAmount(200, maxAmount: 100).isValid,
           isFalse,
         );
       });
@@ -234,7 +234,7 @@ void main() {
           lastName: 'Doe',
           phone: '1234567890',
           email: 'john@example.com',
-          dateOfBirth: DateTime(1990, 1, 1),
+          dateOfBirth: DateTime(1990),
         );
 
         expect(results.length, equals(5));
