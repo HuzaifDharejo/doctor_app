@@ -685,31 +685,24 @@ class _PatientViewScreenState extends ConsumerState<PatientViewScreen>
       case 'pulmonary_evaluation':
         recordIcon = Icons.air;
         recordColor = const Color(0xFF00ACC1); // Cyan color for pulmonary
-        break;
       case 'psychiatric_assessment':
         recordIcon = Icons.psychology;
         recordColor = AppColors.primary;
-        break;
       case 'detailed_psychiatric_assessment':
         recordIcon = Icons.psychology_alt;
         recordColor = const Color(0xFF8E44AD);
-        break;
       case 'lab_result':
         recordIcon = Icons.science_outlined;
         recordColor = AppColors.warning;
-        break;
       case 'imaging':
         recordIcon = Icons.image_outlined;
         recordColor = AppColors.info;
-        break;
       case 'procedure':
         recordIcon = Icons.healing_outlined;
         recordColor = AppColors.accent;
-        break;
       case 'follow_up':
         recordIcon = Icons.event_repeat;
         recordColor = AppColors.success;
-        break;
       default:
         recordIcon = Icons.medical_services_outlined;
         recordColor = AppColors.primary;
@@ -857,13 +850,10 @@ class _PatientViewScreenState extends ConsumerState<PatientViewScreen>
     switch (risk.toLowerCase()) {
       case 'high':
         chipColor = AppColors.error;
-        break;
       case 'moderate':
         chipColor = AppColors.warning;
-        break;
       case 'low':
         chipColor = AppColors.info;
-        break;
       default:
         chipColor = AppColors.success;
     }
@@ -1506,14 +1496,11 @@ class _PatientViewScreenState extends ConsumerState<PatientViewScreen>
     switch (severity.toLowerCase()) {
       case 'severe':
         severityColor = AppColors.error;
-        break;
       case 'moderately severe':
       case 'moderate':
         severityColor = AppColors.warning;
-        break;
       case 'mild':
         severityColor = AppColors.info;
-        break;
       default:
         severityColor = AppColors.success;
     }
@@ -2306,10 +2293,8 @@ class _PatientViewScreenState extends ConsumerState<PatientViewScreen>
     switch (appointment.status.toLowerCase()) {
       case 'completed':
         statusColor = AppColors.success;
-        break;
       case 'cancelled':
         statusColor = AppColors.error;
-        break;
       default:
         statusColor = AppColors.primary;
     }
@@ -3418,19 +3403,15 @@ class _PatientViewScreenState extends ConsumerState<PatientViewScreen>
       case 'completed':
         statusColor = AppColors.success;
         statusIcon = Icons.check_circle;
-        break;
       case 'cancelled':
         statusColor = AppColors.error;
         statusIcon = Icons.cancel;
-        break;
       case 'no-show':
         statusColor = AppColors.warning;
         statusIcon = Icons.person_off;
-        break;
       case 'confirmed':
         statusColor = AppColors.primary;
         statusIcon = Icons.verified;
-        break;
       default:
         statusColor = AppColors.info;
         statusIcon = Icons.schedule;

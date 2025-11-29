@@ -745,7 +745,6 @@ Future<void> _insertSampleData(DoctorDatabase db) async {
           diagnosis = record['diagnosis'] as String;
           treatment = record['treatment'] as String;
           doctorNotes = record['notes'] as String;
-          break;
         case 'psychiatric_assessment':
           final record = psychiatricRecords[random.nextInt(psychiatricRecords.length)];
           title = record['title'] as String;
@@ -754,7 +753,6 @@ Future<void> _insertSampleData(DoctorDatabase db) async {
           treatment = record['treatment'] as String;
           doctorNotes = record['notes'] as String;
           dataJson = record['data'] as Map<String, dynamic>;
-          break;
         case 'lab_result':
           final record = labRecords[random.nextInt(labRecords.length)];
           title = record['title'] as String;
@@ -763,7 +761,6 @@ Future<void> _insertSampleData(DoctorDatabase db) async {
           treatment = 'Based on results';
           doctorNotes = record['notes'] as String;
           dataJson = record['data'] as Map<String, dynamic>;
-          break;
         case 'imaging':
           final record = imagingRecords[random.nextInt(imagingRecords.length)];
           title = record['title'] as String;
@@ -772,7 +769,6 @@ Future<void> _insertSampleData(DoctorDatabase db) async {
           treatment = 'Based on findings';
           doctorNotes = record['notes'] as String;
           dataJson = record['data'] as Map<String, dynamic>;
-          break;
         case 'procedure':
           final record = procedureRecords[random.nextInt(procedureRecords.length)];
           title = record['title'] as String;
@@ -781,7 +777,6 @@ Future<void> _insertSampleData(DoctorDatabase db) async {
           treatment = 'As documented';
           doctorNotes = record['notes'] as String;
           dataJson = record['data'] as Map<String, dynamic>;
-          break;
         case 'pulmonary_evaluation':
           final record = pulmonaryRecords[random.nextInt(pulmonaryRecords.length)];
           title = record['title'] as String;
@@ -791,7 +786,6 @@ Future<void> _insertSampleData(DoctorDatabase db) async {
           treatment = data['treatmentPlan'] as String? ?? 'Pending';
           doctorNotes = record['notes'] as String;
           dataJson = data;
-          break;
         default:
           title = 'General Visit';
           description = 'Routine visit';

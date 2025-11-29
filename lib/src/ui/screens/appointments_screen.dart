@@ -652,19 +652,15 @@ class _AppointmentsScreenState extends ConsumerState<AppointmentsScreen> {
       case 'completed':
         statusColor = AppColors.success;
         statusIcon = Icons.check_circle;
-        break;
       case 'cancelled':
         statusColor = AppColors.error;
         statusIcon = Icons.cancel;
-        break;
       case 'no-show':
         statusColor = AppColors.warning;
         statusIcon = Icons.person_off;
-        break;
       case 'confirmed':
         statusColor = AppColors.primary;
         statusIcon = Icons.verified;
-        break;
       default:
         statusColor = AppColors.info;
         statusIcon = Icons.schedule;

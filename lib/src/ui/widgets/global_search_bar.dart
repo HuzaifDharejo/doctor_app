@@ -158,7 +158,6 @@ class _GlobalSearchBarState extends ConsumerState<GlobalSearchBar> {
             builder: (_) => PatientViewScreen(patient: patient),
           ),
         );
-        break;
       case 'appointment':
       case 'prescription':
       case 'invoice':
@@ -175,7 +174,6 @@ class _GlobalSearchBarState extends ConsumerState<GlobalSearchBar> {
             );
           }
         });
-        break;
     }
   }
 

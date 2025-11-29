@@ -308,19 +308,15 @@ class _BillingScreenState extends ConsumerState<BillingScreen> {
       case 'Paid':
         statusColor = AppColors.success;
         statusIcon = Icons.check_circle_rounded;
-        break;
       case 'Pending':
         statusColor = AppColors.warning;
         statusIcon = Icons.schedule_rounded;
-        break;
       case 'Overdue':
         statusColor = AppColors.error;
         statusIcon = Icons.error_rounded;
-        break;
       case 'Partial':
         statusColor = AppColors.info;
         statusIcon = Icons.pie_chart_rounded;
-        break;
       default:
         statusColor = AppColors.textSecondary;
         statusIcon = Icons.receipt_long_rounded;
@@ -543,13 +539,10 @@ class _BillingScreenState extends ConsumerState<BillingScreen> {
     switch (invoice.paymentStatus) {
       case 'Paid':
         statusColor = AppColors.success;
-        break;
       case 'Pending':
         statusColor = AppColors.warning;
-        break;
       case 'Overdue':
         statusColor = AppColors.error;
-        break;
       default:
         statusColor = AppColors.info;
     }

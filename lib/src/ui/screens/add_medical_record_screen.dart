@@ -1881,13 +1881,10 @@ class _AddMedicalRecordScreenState extends ConsumerState<AddMedicalRecordScreen>
                 switch (risk) {
                   case 'High':
                     chipColor = AppColors.error;
-                    break;
                   case 'Moderate':
                     chipColor = AppColors.warning;
-                    break;
                   case 'Low':
                     chipColor = AppColors.info;
-                    break;
                   default:
                     chipColor = AppColors.success;
                 }

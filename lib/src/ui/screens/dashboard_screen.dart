@@ -1031,18 +1031,14 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
         switch (appt.status.toLowerCase()) {
           case 'completed':
             completed++;
-            break;
           case 'scheduled':
           case 'pending':
             scheduled++;
-            break;
           case 'cancelled':
             cancelled++;
-            break;
           case 'no-show':
           case 'noshow':
             noShow++;
-            break;
         }
       }
     }
