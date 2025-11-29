@@ -28,6 +28,9 @@ dependencies:
   fl_chart: ^0.68.0
   pdf: ^3.10.8
   printing: ^5.12.0
+  image_picker: ^1.0.7
+  google_mlkit_text_recognition: ^0.14.0
+  syncfusion_flutter_pdf: ^27.1.48
 
 dev_dependencies:
   flutter_test:

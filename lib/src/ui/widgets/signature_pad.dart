@@ -1,12 +1,14 @@
-import 'dart:convert';
+﻿import 'dart:convert';
 import 'dart:typed_data';
-import 'dart:ui' as ui;
 import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart' show kIsWeb;
+import 'package:flutter/services.dart';
+import 'package:image_picker/image_picker.dart';
 import '../../theme/app_theme.dart';
 
 /// A signature pad widget for capturing handwritten signatures
 class SignaturePad extends StatefulWidget {
-  final String? initialSignature; // Base64 encoded signature
+  final String? initialSignature;
   final ValueChanged<String?> onSignatureChanged;
   final double height;
   final Color strokeColor;
@@ -19,7 +21,7 @@ class SignaturePad extends StatefulWidget {
     required this.onSignatureChanged,
     this.height = 200,
     this.strokeColor = const Color(0xFF1E3A8A),
-    this.strokeWidth = 2.5,
+    this.strokeWidth = 3.0,
     this.readOnly = false,
   });
 
@@ -30,92 +32,214 @@ class SignaturePad extends StatefulWidget {
 class _SignaturePadState extends State<SignaturePad> {
   List<List<Offset>> _strokes = [];
   List<Offset> _currentStroke = [];
-  bool _hasSignature = false;
+  bool _hasInitialSignature = false;
+  Uint8List? _initialImageBytes;
+  bool _isDrawing = false;
+  Uint8List? _capturedImageBytes;
+  final ImagePicker _picker = ImagePicker();
+  bool _isOrientationLocked = false;
 
   @override
   void initState() {
     super.initState();
-    _hasSignature = widget.initialSignature != null && widget.initialSignature!.isNotEmpty;
+    _loadInitialSignature();
   }
 
-  void _onPanStart(DragStartDetails details) {
+  @override
+  void dispose() {
+    // Restore all orientations when signature pad is closed
+    if (_isOrientationLocked) {
+      _unlockOrientation();
+    }
+    super.dispose();
+  }
+
+  Future<void> _lockOrientation() async {
+    if (_isOrientationLocked) return;
+    _isOrientationLocked = true;
+    await SystemChrome.setPreferredOrientations([
+      DeviceOrientation.portraitUp,
+      DeviceOrientation.portraitDown,
+    ]);
+  }
+
+  Future<void> _unlockOrientation() async {
+    _isOrientationLocked = false;
+    await SystemChrome.setPreferredOrientations([
+      DeviceOrientation.portraitUp,
+      DeviceOrientation.portraitDown,
+      DeviceOrientation.landscapeLeft,
+      DeviceOrientation.landscapeRight,
+    ]);
+  }
+
+  void _loadInitialSignature() {
+    if (widget.initialSignature != null && widget.initialSignature!.isNotEmpty) {
+      try {
+        final data = jsonDecode(widget.initialSignature!);
+        if (data is Map && data['strokes'] != null) {
+          final strokesData = data['strokes'] as List;
+          _strokes = strokesData.map((stroke) {
+            return (stroke as List).map((point) {
+              return Offset((point['x'] as num).toDouble(), (point['y'] as num).toDouble());
+            }).toList();
+          }).toList();
+          setState(() {});
+          return;
+        }
+        // Check if it's image data
+        if (data is Map && data['image'] != null) {
+          _capturedImageBytes = base64Decode(data['image']);
+          setState(() {});
+          return;
+        }
+      } catch (_) {
+        try {
+          _initialImageBytes = base64Decode(widget.initialSignature!);
+          _hasInitialSignature = true;
+          setState(() {});
+        } catch (_) {}
+      }
+    }
+  }
+
+  Future<void> _captureFromCamera() async {
+    // Lock screen orientation when using camera
+    _lockOrientation();
+    try {
+      final XFile? photo = await _picker.pickImage(
+        source: ImageSource.camera,
+        maxWidth: 800,
+        maxHeight: 400,
+        imageQuality: 85,
+      );
+      
+      if (photo != null) {
+        final bytes = await photo.readAsBytes();
+        setState(() {
+          _capturedImageBytes = bytes;
+          _strokes = [];
+          _currentStroke = [];
+          _hasInitialSignature = false;
+          _initialImageBytes = null;
+        });
+        // Save as base64 image
+        widget.onSignatureChanged(jsonEncode({'image': base64Encode(bytes)}));
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Failed to capture image: $e'),
+            backgroundColor: AppColors.error,
+          ),
+        );
+      }
+    }
+  }
+
+  Future<void> _pickFromGallery() async {
+    // Lock screen orientation when using gallery
+    _lockOrientation();
+    try {
+      final XFile? image = await _picker.pickImage(
+        source: ImageSource.gallery,
+        maxWidth: 800,
+        maxHeight: 400,
+        imageQuality: 85,
+      );
+      
+      if (image != null) {
+        final bytes = await image.readAsBytes();
+        setState(() {
+          _capturedImageBytes = bytes;
+          _strokes = [];
+          _currentStroke = [];
+          _hasInitialSignature = false;
+          _initialImageBytes = null;
+        });
+        // Save as base64 image
+        widget.onSignatureChanged(jsonEncode({'image': base64Encode(bytes)}));
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Failed to pick image: $e'),
+            backgroundColor: AppColors.error,
+          ),
+        );
+      }
+    }
+  }
+
+  void _handlePointerDown(PointerDownEvent event) {
     if (widget.readOnly) return;
+    // Lock screen orientation when user starts drawing
+    _lockOrientation();
+    final RenderBox box = context.findRenderObject() as RenderBox;
+    final localPosition = box.globalToLocal(event.position);
     setState(() {
-      _currentStroke = [details.localPosition];
-      _hasSignature = false; // Clear initial signature when drawing
+      _isDrawing = true;
+      _currentStroke = [localPosition];
+      _hasInitialSignature = false;
+      _initialImageBytes = null;
+      _capturedImageBytes = null;
     });
   }
 
-  void _onPanUpdate(DragUpdateDetails details) {
-    if (widget.readOnly) return;
+  void _handlePointerMove(PointerMoveEvent event) {
+    if (widget.readOnly || !_isDrawing) return;
+    final RenderBox box = context.findRenderObject() as RenderBox;
+    final localPosition = box.globalToLocal(event.position);
     setState(() {
-      _currentStroke = [..._currentStroke, details.localPosition];
+      _currentStroke = [..._currentStroke, localPosition];
     });
   }
 
-  void _onPanEnd(DragEndDetails details) async {
-    if (widget.readOnly) return;
+  void _handlePointerUp(PointerUpEvent event) {
+    if (widget.readOnly || !_isDrawing) return;
     setState(() {
-      _strokes = [..._strokes, _currentStroke];
+      _isDrawing = false;
+      if (_currentStroke.isNotEmpty) {
+        _strokes = [..._strokes, _currentStroke];
+      }
       _currentStroke = [];
     });
-    await _saveSignature();
+    _saveSignature();
   }
 
-  Future<void> _saveSignature() async {
+  void _saveSignature() {
     if (_strokes.isEmpty) {
       widget.onSignatureChanged(null);
       return;
     }
-
-    try {
-      final recorder = ui.PictureRecorder();
-      final canvas = Canvas(recorder);
-      
-      final paint = Paint()
-        ..color = widget.strokeColor
-        ..strokeWidth = widget.strokeWidth
-        ..strokeCap = StrokeCap.round
-        ..strokeJoin = StrokeJoin.round
-        ..style = PaintingStyle.stroke;
-
-      // Draw all strokes
-      for (final stroke in _strokes) {
-        if (stroke.length < 2) continue;
-        final path = Path();
-        path.moveTo(stroke.first.dx, stroke.first.dy);
-        for (int i = 1; i < stroke.length; i++) {
-          path.lineTo(stroke[i].dx, stroke[i].dy);
-        }
-        canvas.drawPath(path, paint);
-      }
-
-      final picture = recorder.endRecording();
-      final img = await picture.toImage(300, widget.height.toInt());
-      final byteData = await img.toByteData(format: ui.ImageByteFormat.png);
-      
-      if (byteData != null) {
-        final base64 = base64Encode(byteData.buffer.asUint8List());
-        widget.onSignatureChanged(base64);
-      }
-    } catch (e) {
-      debugPrint('Error saving signature: $e');
-    }
+    final strokesData = _strokes.map((stroke) {
+      return stroke.map((point) => {'x': point.dx, 'y': point.dy}).toList();
+    }).toList();
+    widget.onSignatureChanged(jsonEncode({'strokes': strokesData}));
   }
 
   void _clearSignature() {
     setState(() {
       _strokes = [];
       _currentStroke = [];
-      _hasSignature = false;
+      _hasInitialSignature = false;
+      _initialImageBytes = null;
+      _capturedImageBytes = null;
+      _isDrawing = false;
     });
     widget.onSignatureChanged(null);
   }
 
+  bool get _hasAnySignature => 
+      _strokes.isNotEmpty || 
+      _hasInitialSignature || 
+      _capturedImageBytes != null;
+
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -125,100 +249,66 @@ class _SignaturePadState extends State<SignaturePad> {
             color: isDark ? AppColors.darkSurface : Colors.white,
             borderRadius: BorderRadius.circular(16),
             border: Border.all(
-              color: isDark ? AppColors.darkDivider : AppColors.divider,
+              color: _isDrawing ? AppColors.primary : (isDark ? AppColors.darkDivider : AppColors.divider),
               width: 2,
             ),
-            boxShadow: [
-              BoxShadow(
-                color: Colors.black.withValues(alpha: 0.05),
-                blurRadius: 10,
-                offset: const Offset(0, 4),
-              ),
-            ],
           ),
           child: ClipRRect(
             borderRadius: BorderRadius.circular(14),
             child: Stack(
               children: [
-                // Background pattern
-                CustomPaint(
-                  size: Size.infinite,
-                  painter: _SignatureBackgroundPainter(
-                    isDark: isDark,
-                  ),
-                ),
-                
-                // Drawing area - always show GestureDetector for interaction
-                GestureDetector(
-                  onPanStart: _onPanStart,
-                  onPanUpdate: _onPanUpdate,
-                  onPanEnd: _onPanEnd,
-                  child: _hasSignature && widget.initialSignature != null
-                      ? Center(
-                          child: _buildSignatureImage(widget.initialSignature!),
-                        )
-                      : CustomPaint(
-                          size: Size.infinite,
-                          painter: _SignaturePainter(
-                            strokes: _strokes,
-                            currentStroke: _currentStroke,
-                            strokeColor: widget.strokeColor,
-                            strokeWidth: widget.strokeWidth,
-                          ),
-                        ),
-                ),
-                
-                // Placeholder text
-                if (_strokes.isEmpty && !_hasSignature)
-                  Center(
-                    child: Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Icon(
-                          Icons.draw_outlined,
-                          size: 40,
-                          color: isDark 
-                              ? AppColors.darkTextHint 
-                              : AppColors.textHint,
-                        ),
-                        const SizedBox(height: 8),
-                        Text(
-                          widget.readOnly 
-                              ? 'No signature' 
-                              : 'Draw your signature here',
-                          style: TextStyle(
-                            color: isDark 
-                                ? AppColors.darkTextHint 
-                                : AppColors.textHint,
-                            fontSize: 14,
-                          ),
-                        ),
-                      ],
+                Positioned.fill(child: CustomPaint(painter: _SignatureBackgroundPainter(isDark: isDark))),
+                Positioned.fill(
+                  child: GestureDetector(
+                    // Block all vertical/horizontal drags to prevent parent scroll
+                    onVerticalDragStart: (_) {},
+                    onVerticalDragUpdate: (_) {},
+                    onVerticalDragEnd: (_) {},
+                    onHorizontalDragStart: (_) {},
+                    onHorizontalDragUpdate: (_) {},
+                    onHorizontalDragEnd: (_) {},
+                    child: Listener(
+                      onPointerDown: _handlePointerDown,
+                      onPointerMove: _handlePointerMove,
+                      onPointerUp: _handlePointerUp,
+                      behavior: HitTestBehavior.opaque,
+                      child: _capturedImageBytes != null
+                          ? Center(child: Image.memory(_capturedImageBytes!, fit: BoxFit.contain))
+                          : _hasInitialSignature && _initialImageBytes != null
+                              ? Center(child: Image.memory(_initialImageBytes!, fit: BoxFit.contain))
+                              : CustomPaint(painter: _SignaturePainter(strokes: _strokes, currentStroke: _currentStroke, strokeColor: widget.strokeColor, strokeWidth: widget.strokeWidth)),
                     ),
                   ),
-                
-                // Clear button
-                if ((_strokes.isNotEmpty || _hasSignature) && !widget.readOnly)
+                ),
+                if (_strokes.isEmpty && _currentStroke.isEmpty && !_hasInitialSignature && _capturedImageBytes == null)
+                  Positioned.fill(
+                    child: IgnorePointer(
+                      child: Center(
+                        child: Column(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Icon(Icons.draw_outlined, size: 40, color: isDark ? AppColors.darkTextHint : AppColors.textHint),
+                            const SizedBox(height: 8),
+                            Text(widget.readOnly ? 'No signature' : 'Draw your signature here', style: TextStyle(color: isDark ? AppColors.darkTextHint : AppColors.textHint, fontSize: 14)),
+                            if (!widget.readOnly) ...[
+                              const SizedBox(height: 4),
+                              Text('or use camera/gallery below', style: TextStyle(color: isDark ? AppColors.darkTextHint : AppColors.textHint, fontSize: 12)),
+                            ],
+                          ],
+                        ),
+                      ),
+                    ),
+                  ),
+                if (_hasAnySignature && !widget.readOnly)
                   Positioned(
                     top: 8,
                     right: 8,
-                    child: Material(
-                      color: Colors.transparent,
-                      child: InkWell(
-                        onTap: _clearSignature,
-                        borderRadius: BorderRadius.circular(20),
-                        child: Container(
-                          padding: const EdgeInsets.all(8),
-                          decoration: BoxDecoration(
-                            color: AppColors.error.withValues(alpha: 0.1),
-                            borderRadius: BorderRadius.circular(20),
-                          ),
-                          child: const Icon(
-                            Icons.clear,
-                            size: 20,
-                            color: AppColors.error,
-                          ),
-                        ),
+                    child: GestureDetector(
+                      onTap: _clearSignature,
+                      child: Container(
+                        padding: const EdgeInsets.all(8),
+                        decoration: BoxDecoration(color: AppColors.error.withOpacity(0.1), borderRadius: BorderRadius.circular(20)),
+                        child: const Icon(Icons.clear, size: 20, color: AppColors.error),
                       ),
                     ),
                   ),
@@ -226,44 +316,93 @@ class _SignaturePadState extends State<SignaturePad> {
             ),
           ),
         ),
-        
         if (!widget.readOnly) ...[
-          const SizedBox(height: 8),
+          const SizedBox(height: 12),
           Row(
             children: [
-              Icon(
-                Icons.info_outline,
-                size: 14,
-                color: isDark ? AppColors.darkTextHint : AppColors.textHint,
+              Expanded(
+                child: _ActionButton(
+                  icon: Icons.camera_alt_outlined,
+                  label: 'Camera',
+                  onTap: _captureFromCamera,
+                  isDark: isDark,
+                ),
               ),
-              const SizedBox(width: 6),
-              Flexible(
-                child: Text(
-                  'This signature will appear on prescriptions and invoices',
-                  style: TextStyle(
-                    fontSize: 12,
-                    color: isDark ? AppColors.darkTextHint : AppColors.textHint,
-                  ),
-                  overflow: TextOverflow.ellipsis,
+              const SizedBox(width: 12),
+              Expanded(
+                child: _ActionButton(
+                  icon: Icons.photo_library_outlined,
+                  label: 'Gallery',
+                  onTap: _pickFromGallery,
+                  isDark: isDark,
                 ),
               ),
             ],
           ),
+          const SizedBox(height: 8),
+          Row(children: [
+            Icon(Icons.info_outline, size: 14, color: isDark ? AppColors.darkTextHint : AppColors.textHint),
+            const SizedBox(width: 6),
+            Expanded(
+              child: Text(
+                'Draw signature, capture from camera, or pick from gallery',
+                style: TextStyle(fontSize: 12, color: isDark ? AppColors.darkTextHint : AppColors.textHint),
+              ),
+            ),
+          ]),
         ],
       ],
     );
   }
+}
 
-  Widget _buildSignatureImage(String base64Data) {
-    try {
-      final bytes = base64Decode(base64Data);
-      return Image.memory(
-        Uint8List.fromList(bytes),
-        fit: BoxFit.contain,
-      );
-    } catch (e) {
-      return const SizedBox();
-    }
+class _ActionButton extends StatelessWidget {
+  final IconData icon;
+  final String label;
+  final VoidCallback onTap;
+  final bool isDark;
+
+  const _ActionButton({
+    required this.icon,
+    required this.label,
+    required this.onTap,
+    required this.isDark,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Material(
+      color: isDark ? AppColors.darkSurface : Colors.grey.shade100,
+      borderRadius: BorderRadius.circular(12),
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(12),
+        child: Container(
+          padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(
+              color: isDark ? AppColors.darkDivider : AppColors.divider,
+            ),
+          ),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(icon, size: 20, color: AppColors.primary),
+              const SizedBox(width: 8),
+              Text(
+                label,
+                style: TextStyle(
+                  fontSize: 14,
+                  fontWeight: FontWeight.w500,
+                  color: isDark ? AppColors.darkTextPrimary : AppColors.textPrimary,
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
   }
 }
 
@@ -273,160 +412,90 @@ class _SignaturePainter extends CustomPainter {
   final Color strokeColor;
   final double strokeWidth;
 
-  _SignaturePainter({
-    required this.strokes,
-    required this.currentStroke,
-    required this.strokeColor,
-    required this.strokeWidth,
-  });
+  _SignaturePainter({required this.strokes, required this.currentStroke, required this.strokeColor, required this.strokeWidth});
 
   @override
   void paint(Canvas canvas, Size size) {
-    final paint = Paint()
-      ..color = strokeColor
-      ..strokeWidth = strokeWidth
-      ..strokeCap = StrokeCap.round
-      ..strokeJoin = StrokeJoin.round
-      ..style = PaintingStyle.stroke;
-
-    // Draw all completed strokes
+    final paint = Paint()..color = strokeColor..strokeWidth = strokeWidth..strokeCap = StrokeCap.round..strokeJoin = StrokeJoin.round..style = PaintingStyle.stroke;
     for (final stroke in strokes) {
       if (stroke.length < 2) continue;
-      final path = Path();
-      path.moveTo(stroke.first.dx, stroke.first.dy);
+      final path = Path()..moveTo(stroke.first.dx, stroke.first.dy);
       for (int i = 1; i < stroke.length; i++) {
-        // Smooth the line using quadratic bezier curves
         if (i < stroke.length - 1) {
-          final xc = (stroke[i].dx + stroke[i + 1].dx) / 2;
-          final yc = (stroke[i].dy + stroke[i + 1].dy) / 2;
-          path.quadraticBezierTo(stroke[i].dx, stroke[i].dy, xc, yc);
+          path.quadraticBezierTo(stroke[i].dx, stroke[i].dy, (stroke[i].dx + stroke[i + 1].dx) / 2, (stroke[i].dy + stroke[i + 1].dy) / 2);
         } else {
           path.lineTo(stroke[i].dx, stroke[i].dy);
         }
       }
       canvas.drawPath(path, paint);
     }
-
-    // Draw current stroke
     if (currentStroke.length >= 2) {
-      final path = Path();
-      path.moveTo(currentStroke.first.dx, currentStroke.first.dy);
-      for (int i = 1; i < currentStroke.length; i++) {
-        path.lineTo(currentStroke[i].dx, currentStroke[i].dy);
-      }
+      final path = Path()..moveTo(currentStroke.first.dx, currentStroke.first.dy);
+      for (int i = 1; i < currentStroke.length; i++) path.lineTo(currentStroke[i].dx, currentStroke[i].dy);
       canvas.drawPath(path, paint);
     }
   }
 
   @override
-  bool shouldRepaint(covariant _SignaturePainter oldDelegate) {
-    return true;
-  }
+  bool shouldRepaint(covariant _SignaturePainter oldDelegate) => strokes != oldDelegate.strokes || currentStroke != oldDelegate.currentStroke;
 }
 
 class _SignatureBackgroundPainter extends CustomPainter {
   final bool isDark;
-
   _SignatureBackgroundPainter({required this.isDark});
 
   @override
   void paint(Canvas canvas, Size size) {
-    final paint = Paint()
-      ..color = (isDark ? Colors.white : Colors.grey).withValues(alpha: 0.05)
-      ..strokeWidth = 1;
-
-    // Draw horizontal lines
-    const spacing = 20.0;
-    for (double y = spacing; y < size.height; y += spacing) {
-      canvas.drawLine(
-        Offset(0, y),
-        Offset(size.width, y),
-        paint,
-      );
-    }
-
-    // Draw a baseline
-    final baselinePaint = Paint()
-      ..color = (isDark ? Colors.white : Colors.grey).withValues(alpha: 0.1)
-      ..strokeWidth = 1.5;
-    
-    canvas.drawLine(
-      Offset(20, size.height - 40),
-      Offset(size.width - 20, size.height - 40),
-      baselinePaint,
-    );
+    final paint = Paint()..color = (isDark ? Colors.white : Colors.grey).withOpacity(0.05)..strokeWidth = 1;
+    for (double y = 20; y < size.height; y += 20) canvas.drawLine(Offset(0, y), Offset(size.width, y), paint);
+    final baselinePaint = Paint()..color = (isDark ? Colors.white : Colors.grey).withOpacity(0.15)..strokeWidth = 2;
+    canvas.drawLine(Offset(20, size.height - 40), Offset(size.width - 20, size.height - 40), baselinePaint);
   }
 
   @override
   bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
 }
 
-/// Compact signature preview widget for displaying saved signatures
 class SignaturePreview extends StatelessWidget {
   final String? signatureData;
   final double height;
   final VoidCallback? onTap;
 
-  const SignaturePreview({
-    super.key,
-    this.signatureData,
-    this.height = 80,
-    this.onTap,
-  });
+  const SignaturePreview({super.key, this.signatureData, this.height = 80, this.onTap});
 
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    
     return GestureDetector(
       onTap: onTap,
       child: Container(
         height: height,
-        decoration: BoxDecoration(
-          color: isDark ? AppColors.darkSurface : Colors.grey.shade50,
-          borderRadius: BorderRadius.circular(12),
-          border: Border.all(
-            color: isDark ? AppColors.darkDivider : AppColors.divider,
-          ),
-        ),
+        decoration: BoxDecoration(color: isDark ? AppColors.darkSurface : Colors.grey.shade50, borderRadius: BorderRadius.circular(12), border: Border.all(color: isDark ? AppColors.darkDivider : AppColors.divider)),
         child: signatureData != null && signatureData!.isNotEmpty
-            ? ClipRRect(
-                borderRadius: BorderRadius.circular(11),
-                child: _buildSignatureImage(signatureData!),
-              )
-            : Center(
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    Icon(
-                      Icons.draw,
-                      size: 18,
-                      color: isDark ? AppColors.darkTextHint : AppColors.textHint,
-                    ),
-                    const SizedBox(width: 8),
-                    Text(
-                      'Tap to add signature',
-                      style: TextStyle(
-                        color: isDark ? AppColors.darkTextHint : AppColors.textHint,
-                        fontSize: 13,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
+            ? ClipRRect(borderRadius: BorderRadius.circular(11), child: _buildSignatureWidget(signatureData!, isDark))
+            : Center(child: Row(mainAxisAlignment: MainAxisAlignment.center, children: [Icon(Icons.draw, size: 18, color: isDark ? AppColors.darkTextHint : AppColors.textHint), const SizedBox(width: 8), Text('Tap to add signature', style: TextStyle(color: isDark ? AppColors.darkTextHint : AppColors.textHint, fontSize: 13))])),
       ),
     );
   }
 
-  Widget _buildSignatureImage(String base64Data) {
+  Widget _buildSignatureWidget(String data, bool isDark) {
     try {
-      final bytes = base64Decode(base64Data);
-      return Image.memory(
-        Uint8List.fromList(bytes),
-        fit: BoxFit.contain,
-      );
-    } catch (e) {
-      return const SizedBox();
+      final jsonData = jsonDecode(data);
+      if (jsonData is Map) {
+        // Handle strokes format
+        if (jsonData['strokes'] != null) {
+          final strokes = (jsonData['strokes'] as List).map((stroke) => (stroke as List).map((point) => Offset((point['x'] as num).toDouble(), (point['y'] as num).toDouble())).toList()).toList();
+          return CustomPaint(size: Size.infinite, painter: _SignaturePainter(strokes: strokes, currentStroke: [], strokeColor: const Color(0xFF1E3A8A), strokeWidth: 2.5));
+        }
+        // Handle image format
+        if (jsonData['image'] != null) {
+          final imageBytes = base64Decode(jsonData['image']);
+          return Image.memory(imageBytes, fit: BoxFit.contain);
+        }
+      }
+    } catch (_) {
+      try { return Image.memory(Uint8List.fromList(base64Decode(data)), fit: BoxFit.contain); } catch (_) {}
     }
+    return const SizedBox();
   }
 }

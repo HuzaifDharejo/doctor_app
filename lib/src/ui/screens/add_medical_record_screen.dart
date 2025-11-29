@@ -8,6 +8,7 @@ import '../../providers/db_provider.dart';
 import '../../theme/app_theme.dart';
 import '../../services/suggestions_service.dart';
 import '../widgets/suggestion_text_field.dart';
+import '../widgets/document_data_extractor.dart';
 
 class AddMedicalRecordScreen extends ConsumerStatefulWidget {
   final Patient? preselectedPatient;
@@ -27,6 +28,7 @@ class _AddMedicalRecordScreenState extends ConsumerState<AddMedicalRecordScreen>
   final _formKey = GlobalKey<FormState>();
   final _scrollController = ScrollController();
   bool _isSaving = false;
+  bool _showDataExtractor = false;
 
   // Common fields
   int? _selectedPatientId;
@@ -124,6 +126,63 @@ class _AddMedicalRecordScreenState extends ConsumerState<AddMedicalRecordScreen>
     super.initState();
     _selectedPatientId = widget.preselectedPatient?.id;
     _recordType = widget.initialRecordType;
+  }
+
+  void _applyExtractedData(Map<String, String> data) {
+    setState(() {
+      // Apply extracted data to relevant fields
+      if (data.containsKey('diagnosis')) {
+        _diagnosisController.text = data['diagnosis']!;
+      }
+      if (data.containsKey('treatment')) {
+        _treatmentController.text = data['treatment']!;
+      }
+      if (data.containsKey('blood_pressure')) {
+        _bpController.text = data['blood_pressure']!;
+      }
+      if (data.containsKey('pulse')) {
+        _pulseController.text = data['pulse']!;
+      }
+      if (data.containsKey('temperature')) {
+        _tempController.text = data['temperature']!;
+      }
+      if (data.containsKey('weight')) {
+        _weightController.text = data['weight']!;
+      }
+      
+      // Lab result fields
+      if (data.containsKey('test_name')) {
+        _labTestNameController.text = data['test_name']!;
+      }
+      if (data.containsKey('result')) {
+        _labResultController.text = data['result']!;
+      }
+      if (data.containsKey('reference_range')) {
+        _referenceRangeController.text = data['reference_range']!;
+      }
+
+      // If full text is available and description is empty, use it
+      if (data.containsKey('full_text') && _descriptionController.text.isEmpty) {
+        // Don't fill with full text, it's too long
+      }
+
+      _showDataExtractor = false;
+    });
+
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: const Row(
+          children: [
+            Icon(Icons.check_circle, color: Colors.white),
+            SizedBox(width: 12),
+            Text('Data applied to form fields'),
+          ],
+        ),
+        backgroundColor: AppColors.success,
+        behavior: SnackBarBehavior.floating,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+      ),
+    );
   }
 
   @override
@@ -439,6 +498,10 @@ class _AddMedicalRecordScreenState extends ConsumerState<AddMedicalRecordScreen>
             _buildDateSelector(),
             const SizedBox(height: 20),
 
+            // Document Data Extractor Toggle/Widget
+            _buildExtractFromDocumentSection(),
+            const SizedBox(height: 20),
+
             // Title
             _buildSectionHeader('Title', Icons.title),
             const SizedBox(height: 12),
@@ -642,6 +705,95 @@ class _AddMedicalRecordScreenState extends ConsumerState<AddMedicalRecordScreen>
                 ),
                 const Spacer(),
                 Icon(Icons.edit, color: isDark ? AppColors.darkTextSecondary : AppColors.textSecondary, size: 20),
+              ],
+            ),
+          ),
+        );
+      },
+    );
+  }
+
+  Widget _buildExtractFromDocumentSection() {
+    return Builder(
+      builder: (context) {
+        final isDark = Theme.of(context).brightness == Brightness.dark;
+        
+        if (_showDataExtractor) {
+          return DocumentDataExtractor(
+            onDataExtracted: _applyExtractedData,
+            onClose: () => setState(() => _showDataExtractor = false),
+          );
+        }
+
+        return GestureDetector(
+          onTap: () => setState(() => _showDataExtractor = true),
+          child: Container(
+            padding: const EdgeInsets.all(16),
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                colors: [
+                  AppColors.info.withOpacity(0.1),
+                  AppColors.primary.withOpacity(0.1),
+                ],
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+              ),
+              borderRadius: BorderRadius.circular(16),
+              border: Border.all(
+                color: AppColors.primary.withOpacity(0.3),
+                width: 1.5,
+              ),
+            ),
+            child: Row(
+              children: [
+                Container(
+                  padding: const EdgeInsets.all(12),
+                  decoration: BoxDecoration(
+                    color: AppColors.primary.withOpacity(0.15),
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: const Icon(
+                    Icons.document_scanner,
+                    color: AppColors.primary,
+                    size: 24,
+                  ),
+                ),
+                const SizedBox(width: 16),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'Extract from Document',
+                        style: TextStyle(
+                          fontWeight: FontWeight.bold,
+                          fontSize: 15,
+                          color: isDark ? AppColors.darkTextPrimary : AppColors.textPrimary,
+                        ),
+                      ),
+                      const SizedBox(height: 4),
+                      Text(
+                        'Scan image or PDF to auto-fill fields',
+                        style: TextStyle(
+                          fontSize: 12,
+                          color: isDark ? AppColors.darkTextSecondary : AppColors.textSecondary,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                Container(
+                  padding: const EdgeInsets.all(8),
+                  decoration: BoxDecoration(
+                    color: AppColors.primary,
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                  child: const Icon(
+                    Icons.arrow_forward,
+                    color: Colors.white,
+                    size: 18,
+                  ),
+                ),
               ],
             ),
           ),

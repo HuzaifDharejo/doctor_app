@@ -701,7 +701,7 @@ class _DoctorProfileScreenState extends ConsumerState<DoctorProfileScreen>
                         width: 150,
                         decoration: BoxDecoration(border: Border(bottom: BorderSide(color: isDark ? AppColors.darkDivider : AppColors.divider))),
                         child: _signatureData != null
-                            ? Image.memory(base64Decode(_signatureData!), fit: BoxFit.contain)
+                            ? _buildSignaturePreviewWidget(_signatureData!, isDark)
                             : Center(child: Text('No signature', style: TextStyle(color: isDark ? AppColors.darkTextHint : AppColors.textHint, fontStyle: FontStyle.italic))),
                       ),
                       const SizedBox(height: 8),
@@ -718,6 +718,43 @@ class _DoctorProfileScreenState extends ConsumerState<DoctorProfileScreen>
         ],
       ),
     );
+  }
+
+  Widget _buildSignaturePreviewWidget(String data, bool isDark) {
+    try {
+      // Try to parse as JSON (stroke data or image data)
+      final jsonData = jsonDecode(data);
+      if (jsonData is Map) {
+        // Handle stroke format
+        if (jsonData['strokes'] != null) {
+          final strokesData = jsonData['strokes'] as List;
+          final strokes = strokesData.map((stroke) {
+            return (stroke as List).map((point) {
+              return Offset(
+                (point['x'] as num).toDouble(),
+                (point['y'] as num).toDouble(),
+              );
+            }).toList();
+          }).toList();
+          
+          return CustomPaint(
+            size: const Size(150, 60),
+            painter: _SignaturePreviewPainter(strokes: strokes),
+          );
+        }
+        // Handle image format from camera/gallery
+        if (jsonData['image'] != null) {
+          final imageBytes = base64Decode(jsonData['image']);
+          return Image.memory(imageBytes, fit: BoxFit.contain);
+        }
+      }
+    } catch (_) {
+      // Try as raw base64 image
+      try {
+        return Image.memory(base64Decode(data), fit: BoxFit.contain);
+      } catch (_) {}
+    }
+    return Center(child: Text('No signature', style: TextStyle(color: isDark ? AppColors.darkTextHint : AppColors.textHint, fontStyle: FontStyle.italic)));
   }
 
   Widget _buildCard({required bool isDark, required String title, required IconData icon, required Widget child, Widget? trailing}) {
@@ -876,4 +913,63 @@ class _DoctorProfileScreenState extends ConsumerState<DoctorProfileScreen>
       ),
     );
   }
+}
+
+/// Custom painter for signature preview
+class _SignaturePreviewPainter extends CustomPainter {
+  final List<List<Offset>> strokes;
+
+  _SignaturePreviewPainter({required this.strokes});
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    if (strokes.isEmpty) return;
+    
+    // Calculate bounds of the signature
+    double minX = double.infinity, minY = double.infinity;
+    double maxX = double.negativeInfinity, maxY = double.negativeInfinity;
+    
+    for (final stroke in strokes) {
+      for (final point in stroke) {
+        if (point.dx < minX) minX = point.dx;
+        if (point.dy < minY) minY = point.dy;
+        if (point.dx > maxX) maxX = point.dx;
+        if (point.dy > maxY) maxY = point.dy;
+      }
+    }
+    
+    final signatureWidth = maxX - minX;
+    final signatureHeight = maxY - minY;
+    
+    if (signatureWidth <= 0 || signatureHeight <= 0) return;
+    
+    // Calculate scale to fit in preview
+    final scaleX = (size.width - 10) / signatureWidth;
+    final scaleY = (size.height - 10) / signatureHeight;
+    final scale = scaleX < scaleY ? scaleX : scaleY;
+    
+    // Calculate offset to center
+    final offsetX = (size.width - signatureWidth * scale) / 2 - minX * scale;
+    final offsetY = (size.height - signatureHeight * scale) / 2 - minY * scale;
+    
+    final paint = Paint()
+      ..color = const Color(0xFF1E3A8A)
+      ..strokeWidth = 2.0 * scale
+      ..strokeCap = StrokeCap.round
+      ..strokeJoin = StrokeJoin.round
+      ..style = PaintingStyle.stroke;
+
+    for (final stroke in strokes) {
+      if (stroke.length < 2) continue;
+      final path = Path();
+      path.moveTo(stroke.first.dx * scale + offsetX, stroke.first.dy * scale + offsetY);
+      for (int i = 1; i < stroke.length; i++) {
+        path.lineTo(stroke[i].dx * scale + offsetX, stroke[i].dy * scale + offsetY);
+      }
+      canvas.drawPath(path, paint);
+    }
+  }
+
+  @override
+  bool shouldRepaint(covariant CustomPainter oldDelegate) => true;
 }
