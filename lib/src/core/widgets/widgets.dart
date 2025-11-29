@@ -5,6 +5,7 @@ export 'animations.dart';
 export 'app_card.dart';
 export 'app_header.dart';
 export 'app_search_bar.dart';
+export 'confirmation_dialog.dart';
 export 'empty_state.dart';
 export 'error_display.dart';
 export 'error_state.dart';
