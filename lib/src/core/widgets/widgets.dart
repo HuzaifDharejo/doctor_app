@@ -14,4 +14,5 @@ export 'loading_button.dart';
 export 'loading_state.dart';
 export 'search_field.dart';
 export 'shimmer_loading.dart';
+export 'stat_card.dart';
 export 'sync_status_indicator.dart';

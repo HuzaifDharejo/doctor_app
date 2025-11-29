@@ -51,7 +51,7 @@
 - [x] Add ConnectivityService for network monitoring
 - [x] Add retry mechanism with exponential backoff (withRetry)
 - [x] Add OfflineQueue for operation queuing
-- [ ] Add sync status indicator widget
+- [x] Add sync status indicator widget (21 tests)
 - [ ] Implement conflict resolution for calendar
 
 ## 🟢 Nice to Have (P2)
@@ -76,6 +76,14 @@
 - [ ] Add dartdoc comments to public APIs
 - [ ] Standardize data access patterns
 
+### Reusable Widgets Library
+- [x] LoadingButton with variants (14 tests)
+- [x] SearchField with debouncing (29 tests)
+- [x] ConfirmationDialog variants (26 tests)
+- [ ] FormFieldWrapper with validation
+- [ ] DateTimePicker with presets
+- [ ] StatCard for dashboard
+
 ### Future Features
 - [ ] Export monthly reports (PDF)
 - [ ] Push notification reminders
@@ -87,10 +95,11 @@
 Last Updated: 2025-02-03
 
 ## Progress Summary
-- **156 tests passing** (93 unit + 33 widget + 1 smoke + 29 pagination)
+- **246 tests passing** (93 unit + 122 widget + 1 smoke + 29 pagination + connectivity)
 - **0 errors, minor info-level lint suggestions**
 - Input validation integrated into patient form
 - Error handling widgets ready for use
 - Auto-backup system enhanced with metadata and verification
 - Pagination utilities ready for integration
 - Connectivity and retry utilities ready for use
+- Reusable widget library growing
