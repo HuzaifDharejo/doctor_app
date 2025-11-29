@@ -174,181 +174,399 @@ class _HomeShellState extends ConsumerState<HomeShell> {
     final isDarkMode = context.isDarkMode;
     
     return Drawer(
+      backgroundColor: Colors.transparent,
       child: Container(
-        color: isDarkMode ? AppColors.darkSurface : Colors.white,
-        child: ListView(
-          padding: EdgeInsets.zero,
+        decoration: BoxDecoration(
+          gradient: LinearGradient(
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+            colors: isDarkMode 
+                ? [const Color(0xFF1E1E2E), const Color(0xFF2D2D3F)]
+                : [Colors.white, const Color(0xFFF8FAFF)],
+          ),
+        ),
+        child: Column(
           children: [
-            // Modern gradient header
+            // Modern gradient header with profile
             Container(
-              padding: const EdgeInsets.fromLTRB(AppSpacing.lg, 60, AppSpacing.lg, AppSpacing.xl),
-              decoration: const BoxDecoration(
-                gradient: LinearGradient(
-                  colors: [Color(0xFF6366F1), Color(0xFF8B5CF6), Color(0xFFA78BFA)],
+              padding: const EdgeInsets.fromLTRB(24, 60, 24, 28),
+              decoration: BoxDecoration(
+                gradient: const LinearGradient(
+                  colors: [Color(0xFF6366F1), Color(0xFF8B5CF6), Color(0xFFA855F7)],
                   begin: Alignment.topLeft,
                   end: Alignment.bottomRight,
                 ),
+                borderRadius: const BorderRadius.only(
+                  bottomRight: Radius.circular(40),
+                ),
+                boxShadow: [
+                  BoxShadow(
+                    color: const Color(0xFF6366F1).withValues(alpha: 0.3),
+                    blurRadius: 20,
+                    offset: const Offset(0, 10),
+                  ),
+                ],
               ),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  // Avatar with border
-                  Container(
-                    padding: const EdgeInsets.all(3),
-                    decoration: BoxDecoration(
-                      shape: BoxShape.circle,
-                      border: Border.all(color: Colors.white.withValues(alpha: 0.5), width: 2),
-                      boxShadow: [
-                        BoxShadow(
-                          color: Colors.black.withValues(alpha: 0.2),
-                          blurRadius: AppSpacing.sm,
-                          offset: const Offset(0, 4),
-                        ),
-                      ],
-                    ),
-                    child: CircleAvatar(
-                      radius: 36,
-                      backgroundColor: Colors.white.withValues(alpha: 0.2),
-                      child: Text(
-                        profile.initials,
-                        style: const TextStyle(
-                          fontSize: AppFontSize.xl,
-                          fontWeight: FontWeight.w800,
-                          color: Colors.white,
-                        ),
-                      ),
-                    ),
-                  ),
-                  const SizedBox(height: AppSpacing.md),
-                  Text(
-                    profile.displayName,
-                    style: const TextStyle(
-                      color: Colors.white,
-                      fontSize: AppFontSize.lg,
-                      fontWeight: FontWeight.w700,
-                      letterSpacing: -0.3,
-                    ),
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                  const SizedBox(height: AppSpacing.xxs),
                   Row(
                     children: [
+                      // Avatar with glow effect
                       Container(
-                        padding: const EdgeInsets.symmetric(horizontal: AppSpacing.xs, vertical: 3),
+                        padding: const EdgeInsets.all(3),
+                        decoration: BoxDecoration(
+                          shape: BoxShape.circle,
+                          gradient: LinearGradient(
+                            colors: [
+                              Colors.white.withValues(alpha: 0.8),
+                              Colors.white.withValues(alpha: 0.4),
+                            ],
+                          ),
+                          boxShadow: [
+                            BoxShadow(
+                              color: Colors.black.withValues(alpha: 0.2),
+                              blurRadius: 15,
+                              offset: const Offset(0, 5),
+                            ),
+                          ],
+                        ),
+                        child: CircleAvatar(
+                          radius: 32,
+                          backgroundColor: Colors.white.withValues(alpha: 0.2),
+                          child: Text(
+                            profile.initials,
+                            style: const TextStyle(
+                              fontSize: 22,
+                              fontWeight: FontWeight.w800,
+                              color: Colors.white,
+                            ),
+                          ),
+                        ),
+                      ),
+                      const Spacer(),
+                      // Status indicator
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                         decoration: BoxDecoration(
                           color: Colors.white.withValues(alpha: 0.2),
-                          borderRadius: BorderRadius.circular(AppRadius.xs),
-                        ),
-                        child: Text(
-                          profile.specialization.isNotEmpty ? profile.specialization : AppStrings.setupProfile,
-                          style: TextStyle(
-                            color: Colors.white.withValues(alpha: 0.95),
-                            fontSize: AppFontSize.xs,
-                            fontWeight: FontWeight.w500,
+                          borderRadius: BorderRadius.circular(20),
+                          border: Border.all(
+                            color: Colors.white.withValues(alpha: 0.3),
                           ),
+                        ),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Container(
+                              width: 8,
+                              height: 8,
+                              decoration: const BoxDecoration(
+                                color: Color(0xFF4ADE80),
+                                shape: BoxShape.circle,
+                              ),
+                            ),
+                            const SizedBox(width: 6),
+                            const Text(
+                              'Online',
+                              style: TextStyle(
+                                color: Colors.white,
+                                fontSize: 12,
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
+                          ],
                         ),
                       ),
                     ],
                   ),
+                  const SizedBox(height: 16),
+                  Text(
+                    profile.displayName,
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontSize: 22,
+                      fontWeight: FontWeight.w700,
+                      letterSpacing: -0.5,
+                    ),
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                  const SizedBox(height: 6),
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                    decoration: BoxDecoration(
+                      color: Colors.white.withValues(alpha: 0.15),
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: Text(
+                      profile.specialization.isNotEmpty ? profile.specialization : AppStrings.setupProfile,
+                      style: TextStyle(
+                        color: Colors.white.withValues(alpha: 0.95),
+                        fontSize: 13,
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                  ),
                 ],
               ),
             ),
-            const SizedBox(height: AppSpacing.xs),
-            _buildDrawerItem(Icons.person_outline_rounded, AppStrings.doctorProfile, () {
-              context.pop();
-              context.pushNamed(AppRoutes.doctorProfile);
-            }, color: AppColors.primary),
-            _buildDrawerItem(Icons.settings_rounded, AppStrings.settings, () {
-              context.pop();
-              context.pushNamed(AppRoutes.settings);
-            }, color: AppColors.textSecondary),
-            const Padding(
-              padding: EdgeInsets.symmetric(horizontal: AppSpacing.lg, vertical: AppSpacing.xs),
-              child: Divider(),
+            
+            // Menu items
+            Expanded(
+              child: ListView(
+                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 20),
+                children: [
+                  _buildModernDrawerItem(
+                    icon: Icons.person_outline_rounded,
+                    title: AppStrings.doctorProfile,
+                    subtitle: 'Manage your profile',
+                    onTap: () {
+                      context.pop();
+                      context.pushNamed(AppRoutes.doctorProfile);
+                    },
+                    color: const Color(0xFF6366F1),
+                    isDark: isDarkMode,
+                  ),
+                  _buildModernDrawerItem(
+                    icon: Icons.settings_outlined,
+                    title: AppStrings.settings,
+                    subtitle: 'App preferences',
+                    onTap: () {
+                      context.pop();
+                      context.pushNamed(AppRoutes.settings);
+                    },
+                    color: const Color(0xFF64748B),
+                    isDark: isDarkMode,
+                  ),
+                  
+                  const SizedBox(height: 16),
+                  _buildSectionTitle('QUICK ACTIONS', isDarkMode),
+                  const SizedBox(height: 8),
+                  
+                  _buildModernDrawerItem(
+                    icon: Icons.psychology_rounded,
+                    title: AppStrings.psychiatricAssessment,
+                    subtitle: 'Patient assessment',
+                    onTap: () {
+                      context.pop();
+                      context.pushNamed(AppRoutes.psychiatricAssessment);
+                    },
+                    color: const Color(0xFF0EA5E9),
+                    isDark: isDarkMode,
+                  ),
+
+                  
+                  const SizedBox(height: 16),
+                  _buildSectionTitle('MORE', isDarkMode),
+                  const SizedBox(height: 8),
+                  
+                  _buildModernDrawerItem(
+                    icon: Icons.notifications_outlined,
+                    title: AppStrings.notifications,
+                    subtitle: 'Alerts & reminders',
+                    onTap: () {},
+                    color: const Color(0xFFF59E0B),
+                    isDark: isDarkMode,
+                    badge: '3',
+                  ),
+                  _buildModernDrawerItem(
+                    icon: Icons.cloud_sync_outlined,
+                    title: AppStrings.backupSync,
+                    subtitle: 'Cloud backup',
+                    onTap: () {},
+                    color: const Color(0xFF14B8A6),
+                    isDark: isDarkMode,
+                  ),
+                  _buildModernDrawerItem(
+                    icon: Icons.help_outline_rounded,
+                    title: AppStrings.helpSupport,
+                    subtitle: 'Get help',
+                    onTap: () {},
+                    color: const Color(0xFF06B6D4),
+                    isDark: isDarkMode,
+                  ),
+                ],
+              ),
             ),
-            Padding(
-              padding: const EdgeInsets.only(left: AppSpacing.lg, top: AppSpacing.xs, bottom: AppSpacing.xs),
-              child: Text(
-                AppStrings.quickAccess,
-                style: TextStyle(
-                  fontSize: 11,
-                  fontWeight: FontWeight.w700,
-                  color: isDarkMode ? AppColors.darkTextHint : AppColors.textHint,
-                  letterSpacing: 1.2,
+            
+            // Bottom logout section
+            Container(
+              padding: const EdgeInsets.all(16),
+              decoration: BoxDecoration(
+                color: isDarkMode 
+                    ? Colors.white.withValues(alpha: 0.03)
+                    : Colors.grey.withValues(alpha: 0.05),
+                border: Border(
+                  top: BorderSide(
+                    color: isDarkMode 
+                        ? Colors.white.withValues(alpha: 0.08)
+                        : Colors.grey.withValues(alpha: 0.15),
+                  ),
+                ),
+              ),
+              child: SafeArea(
+                top: false,
+                child: InkWell(
+                  onTap: () {},
+                  borderRadius: BorderRadius.circular(12),
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                    decoration: BoxDecoration(
+                      color: AppColors.error.withValues(alpha: 0.1),
+                      borderRadius: BorderRadius.circular(12),
+                      border: Border.all(
+                        color: AppColors.error.withValues(alpha: 0.2),
+                      ),
+                    ),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Icon(
+                          Icons.logout_rounded,
+                          color: AppColors.error,
+                          size: 20,
+                        ),
+                        const SizedBox(width: 10),
+                        Text(
+                          AppStrings.logout,
+                          style: TextStyle(
+                            color: AppColors.error,
+                            fontWeight: FontWeight.w600,
+                            fontSize: 15,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
                 ),
               ),
             ),
-            _buildDrawerItem(Icons.psychology_rounded, AppStrings.psychiatricAssessment, () {
-              context.pop();
-              context.pushNamed(AppRoutes.psychiatricAssessment);
-            }, color: AppColors.info),
-            _buildDrawerItem(Icons.medication_rounded, AppStrings.addPrescription, () {
-              context.pop();
-              context.pushNamed(AppRoutes.addPrescription);
-            }, color: AppColors.prescriptions),
-            _buildDrawerItem(Icons.receipt_long_rounded, AppStrings.createInvoice, () {
-              context.pop();
-              context.pushNamed(AppRoutes.addInvoice);
-            }, color: AppColors.billing),
-            const Padding(
-              padding: EdgeInsets.symmetric(horizontal: AppSpacing.lg, vertical: AppSpacing.xs),
-              child: Divider(),
-            ),
-            _buildDrawerItem(Icons.notifications_rounded, AppStrings.notifications, () {}, color: AppColors.warning),
-            _buildDrawerItem(Icons.cloud_sync_rounded, AppStrings.backupSync, () {}, color: AppColors.appointments),
-            _buildDrawerItem(Icons.help_outline_rounded, AppStrings.helpSupport, () {}, color: AppColors.accent),
-            const Padding(
-              padding: EdgeInsets.symmetric(horizontal: AppSpacing.lg, vertical: AppSpacing.xs),
-              child: Divider(),
-            ),
-            _buildDrawerItem(Icons.logout_rounded, AppStrings.logout, () {}, color: AppColors.error, isDestructive: true),
-            const SizedBox(height: AppSpacing.lg),
           ],
         ),
       ),
     );
   }
 
-  Widget _buildDrawerItem(IconData icon, String title, VoidCallback onTap, {Color? color, bool isDestructive = false}) {
-    final isDarkMode = context.isDarkMode;
-    final itemColor = color ?? (isDarkMode ? AppColors.darkTextSecondary : AppColors.textSecondary);
-    
+  Widget _buildSectionTitle(String title, bool isDark) {
+    return Padding(
+      padding: const EdgeInsets.only(left: 4, bottom: 4),
+      child: Text(
+        title,
+        style: TextStyle(
+          fontSize: 11,
+          fontWeight: FontWeight.w700,
+          color: isDark ? const Color(0xFF64748B) : const Color(0xFF94A3B8),
+          letterSpacing: 1.5,
+        ),
+      ),
+    );
+  }
+
+  Widget _buildModernDrawerItem({
+    required IconData icon,
+    required String title,
+    required String subtitle,
+    required VoidCallback onTap,
+    required Color color,
+    required bool isDark,
+    String? badge,
+  }) {
     return Container(
-      margin: const EdgeInsets.symmetric(horizontal: AppSpacing.sm, vertical: 2),
+      margin: const EdgeInsets.only(bottom: 8),
       child: Material(
         color: Colors.transparent,
-        borderRadius: BorderRadius.circular(AppRadius.sm),
+        borderRadius: BorderRadius.circular(16),
         child: InkWell(
           onTap: onTap,
-          borderRadius: BorderRadius.circular(AppRadius.sm),
-          child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: AppSpacing.sm, vertical: AppSpacing.sm),
+          borderRadius: BorderRadius.circular(16),
+          child: Container(
+            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
+            decoration: BoxDecoration(
+              color: isDark 
+                  ? Colors.white.withValues(alpha: 0.05)
+                  : Colors.white,
+              borderRadius: BorderRadius.circular(16),
+              border: Border.all(
+                color: isDark 
+                    ? Colors.white.withValues(alpha: 0.08)
+                    : Colors.grey.withValues(alpha: 0.12),
+              ),
+              boxShadow: isDark ? null : [
+                BoxShadow(
+                  color: Colors.black.withValues(alpha: 0.04),
+                  blurRadius: 8,
+                  offset: const Offset(0, 2),
+                ),
+              ],
+            ),
             child: Row(
               children: [
                 Container(
-                  padding: const EdgeInsets.all(AppSpacing.xs),
+                  padding: const EdgeInsets.all(10),
                   decoration: BoxDecoration(
-                    color: itemColor.withValues(alpha: 0.12),
-                    borderRadius: BorderRadius.circular(AppRadius.xs),
-                  ),
-                  child: Icon(icon, color: itemColor, size: AppIconSize.sm),
-                ),
-                const SizedBox(width: AppSpacing.sm),
-                Expanded(
-                  child: Text(
-                    title,
-                    style: TextStyle(
-                      color: isDestructive ? AppColors.error : (isDarkMode ? AppColors.darkTextPrimary : AppColors.textPrimary),
-                      fontWeight: FontWeight.w600,
-                      fontSize: AppFontSize.sm,
+                    gradient: LinearGradient(
+                      colors: [
+                        color.withValues(alpha: 0.2),
+                        color.withValues(alpha: 0.1),
+                      ],
+                      begin: Alignment.topLeft,
+                      end: Alignment.bottomRight,
                     ),
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: Icon(icon, color: color, size: 22),
+                ),
+                const SizedBox(width: 14),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        title,
+                        style: TextStyle(
+                          color: isDark ? Colors.white : const Color(0xFF1E293B),
+                          fontWeight: FontWeight.w600,
+                          fontSize: 15,
+                        ),
+                      ),
+                      const SizedBox(height: 2),
+                      Text(
+                        subtitle,
+                        style: TextStyle(
+                          color: isDark 
+                              ? const Color(0xFF94A3B8)
+                              : const Color(0xFF64748B),
+                          fontSize: 12,
+                          fontWeight: FontWeight.w400,
+                        ),
+                      ),
+                    ],
                   ),
                 ),
-                Icon(
-                  Icons.chevron_right_rounded,
-                  color: isDarkMode ? AppColors.darkTextHint : AppColors.textHint,
-                  size: AppIconSize.sm,
-                ),
+                if (badge != null)
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                    decoration: BoxDecoration(
+                      color: color,
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                    child: Text(
+                      badge,
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontSize: 11,
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
+                  )
+                else
+                  Icon(
+                    Icons.arrow_forward_ios_rounded,
+                    color: isDark 
+                        ? const Color(0xFF64748B)
+                        : const Color(0xFFCBD5E1),
+                    size: 16,
+                  ),
               ],
             ),
           ),

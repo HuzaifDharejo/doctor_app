@@ -59,6 +59,11 @@ class AddMedicalRecordArgs {
   const AddMedicalRecordArgs({required this.patient});
 }
 
+class PsychiatricAssessmentArgs {
+  final Patient? patient;
+  const PsychiatricAssessmentArgs({this.patient});
+}
+
 class AddInvoiceArgs {
   final int? patientId;
   final String? patientName;
@@ -119,7 +124,11 @@ class AppRouter {
         return _buildRoute(const DoctorProfileScreen(), settings);
         
       case AppRoutes.psychiatricAssessment:
-        return _buildRoute(const PsychiatricAssessmentScreen(), settings);
+        final args = settings.arguments as PsychiatricAssessmentArgs?;
+        return _buildRoute(
+          PsychiatricAssessmentScreen(preselectedPatient: args?.patient),
+          settings,
+        );
         
       case AppRoutes.addMedicalRecord:
         final args = settings.arguments as AddMedicalRecordArgs;

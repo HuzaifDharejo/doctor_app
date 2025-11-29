@@ -8,6 +8,7 @@ import 'package:intl/intl.dart';
 import '../../db/doctor_db.dart';
 import '../../providers/db_provider.dart';
 import '../../services/suggestions_service.dart';
+import '../../theme/app_theme.dart';
 import '../widgets/suggestion_text_field.dart';
 
 class AddInvoiceScreen extends ConsumerStatefulWidget {
@@ -316,41 +317,154 @@ class _AddInvoiceScreenState extends ConsumerState<AddInvoiceScreen> {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final screenWidth = MediaQuery.of(context).size.width;
+    final isCompact = screenWidth < 400;
+    final padding = isCompact ? 12.0 : 20.0;
 
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Create Invoice'),
-        centerTitle: true,
-        elevation: 0,
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.print),
-            onPressed: _printInvoice,
-            tooltip: 'Print',
-          ),
-          FilledButton.icon(
-            onPressed: _saveInvoice,
-            icon: const Icon(Icons.save, size: 18),
-            label: const Text('Save'),
-            style: FilledButton.styleFrom(
-              visualDensity: VisualDensity.compact,
-            ),
-          ),
-          const SizedBox(width: 8),
-        ],
-      ),
+      backgroundColor: isDark ? AppColors.darkBackground : AppColors.background,
       body: Form(
         key: _formKey,
-        child: SingleChildScrollView(
+        child: CustomScrollView(
           controller: _scrollController,
-          padding: const EdgeInsets.all(16),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              // Invoice Header
-              _buildInvoiceHeader(colorScheme),
-              const SizedBox(height: 16),
-
+          slivers: [
+            // Gradient Header
+            SliverToBoxAdapter(
+              child: Container(
+                decoration: BoxDecoration(
+                  gradient: const LinearGradient(
+                    colors: [Color(0xFF6366F1), Color(0xFF8B5CF6)],
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                  ),
+                  borderRadius: const BorderRadius.only(
+                    bottomLeft: Radius.circular(32),
+                    bottomRight: Radius.circular(32),
+                  ),
+                ),
+                child: SafeArea(
+                  bottom: false,
+                  child: Padding(
+                    padding: EdgeInsets.all(padding),
+                    child: Column(
+                      children: [
+                        // Custom App Bar
+                        Row(
+                          children: [
+                            GestureDetector(
+                              onTap: () => Navigator.pop(context),
+                              child: Container(
+                                padding: const EdgeInsets.all(10),
+                                decoration: BoxDecoration(
+                                  color: Colors.white.withOpacity(0.2),
+                                  borderRadius: BorderRadius.circular(12),
+                                ),
+                                child: const Icon(Icons.arrow_back, color: Colors.white, size: 20),
+                              ),
+                            ),
+                            const Expanded(
+                              child: Text(
+                                'Create Invoice',
+                                textAlign: TextAlign.center,
+                                style: TextStyle(
+                                  color: Colors.white,
+                                  fontSize: 20,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                            ),
+                            GestureDetector(
+                              onTap: _printInvoice,
+                              child: Container(
+                                padding: const EdgeInsets.all(10),
+                                decoration: BoxDecoration(
+                                  color: Colors.white.withOpacity(0.2),
+                                  borderRadius: BorderRadius.circular(12),
+                                ),
+                                child: const Icon(Icons.print, color: Colors.white, size: 20),
+                              ),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 20),
+                        // Invoice Icon with Status Badge
+                        Stack(
+                          alignment: Alignment.center,
+                          children: [
+                            Container(
+                              padding: const EdgeInsets.all(16),
+                              decoration: BoxDecoration(
+                                color: Colors.white.withOpacity(0.2),
+                                shape: BoxShape.circle,
+                              ),
+                              child: const Icon(
+                                Icons.receipt_long_rounded,
+                                size: 48,
+                                color: Colors.white,
+                              ),
+                            ),
+                            Positioned(
+                              bottom: 0,
+                              right: 0,
+                              child: Container(
+                                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                                decoration: BoxDecoration(
+                                  color: _getStatusColor(_paymentStatus),
+                                  borderRadius: BorderRadius.circular(12),
+                                  border: Border.all(color: Colors.white, width: 2),
+                                ),
+                                child: Text(
+                                  _paymentStatus,
+                                  style: const TextStyle(
+                                    color: Colors.white,
+                                    fontSize: 10,
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 12),
+                        Text(
+                          _invoiceNumber,
+                          style: const TextStyle(
+                            color: Colors.white,
+                            fontSize: 16,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                        const SizedBox(height: 4),
+                        Text(
+                          DateFormat('EEEE, dd MMMM yyyy').format(_invoiceDate),
+                          style: TextStyle(
+                            color: Colors.white.withOpacity(0.9),
+                            fontSize: 14,
+                          ),
+                        ),
+                        if (_dueDate != null) ...[
+                          const SizedBox(height: 4),
+                          Text(
+                            'Due: ${DateFormat('dd MMM yyyy').format(_dueDate!)}',
+                            style: TextStyle(
+                              color: Colors.white.withOpacity(0.8),
+                              fontSize: 12,
+                            ),
+                          ),
+                        ],
+                        const SizedBox(height: 16),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+            ),
+            // Body Content
+            SliverPadding(
+              padding: EdgeInsets.all(padding),
+              sliver: SliverList(
+                delegate: SliverChildListDelegate([
               // Patient Selection
               _buildSectionCard(
                 title: 'Bill To',
@@ -445,160 +559,11 @@ class _AddInvoiceScreenState extends ConsumerState<AddInvoiceScreen> {
                 ],
               ),
               const SizedBox(height: 32),
-            ],
-          ),
+                ]),
+              ),
+            ),
+          ],
         ),
-      ),
-    );
-  }
-
-  Widget _buildInvoiceHeader(ColorScheme colorScheme) {
-    return Container(
-      padding: const EdgeInsets.all(20),
-      decoration: BoxDecoration(
-        gradient: LinearGradient(
-          colors: [colorScheme.primary, colorScheme.primary.withBlue(200)],
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-        ),
-        borderRadius: BorderRadius.circular(16),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  const Text(
-                    'INVOICE',
-                    style: TextStyle(
-                      color: Colors.white70,
-                      fontSize: 12,
-                      fontWeight: FontWeight.w500,
-                      letterSpacing: 2,
-                    ),
-                  ),
-                  const SizedBox(height: 4),
-                  Text(
-                    _invoiceNumber,
-                    style: const TextStyle(
-                      color: Colors.white,
-                      fontSize: 20,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                ],
-              ),
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                decoration: BoxDecoration(
-                  color: _getStatusColor(_paymentStatus),
-                  borderRadius: BorderRadius.circular(20),
-                ),
-                child: Text(
-                  _paymentStatus,
-                  style: const TextStyle(
-                    color: Colors.white,
-                    fontWeight: FontWeight.w600,
-                    fontSize: 12,
-                  ),
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 20),
-          Row(
-            children: [
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    const Text(
-                      'Invoice Date',
-                      style: TextStyle(color: Colors.white70, fontSize: 12),
-                    ),
-                    const SizedBox(height: 4),
-                    Text(
-                      DateFormat('dd MMM yyyy').format(_invoiceDate),
-                      style: const TextStyle(
-                        color: Colors.white,
-                        fontWeight: FontWeight.w600,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-              Expanded(
-                child: InkWell(
-                  onTap: _selectDueDate,
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Row(
-                        children: [
-                          const Text(
-                            'Due Date',
-                            style: TextStyle(color: Colors.white70, fontSize: 12),
-                          ),
-                          const SizedBox(width: 4),
-                          const Icon(Icons.edit, size: 12, color: Colors.white70),
-                        ],
-                      ),
-                      const SizedBox(height: 4),
-                      Text(
-                        _dueDate != null
-                            ? DateFormat('dd MMM yyyy').format(_dueDate!)
-                            : 'Select',
-                        style: const TextStyle(
-                          color: Colors.white,
-                          fontWeight: FontWeight.w600,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-            ],
-          ),
-          const Divider(color: Colors.white24, height: 32),
-          Builder(
-            builder: (context) {
-              final profile = ref.watch(doctorSettingsProvider).profile;
-              return Row(
-                children: [
-                  CircleAvatar(
-                    radius: 20,
-                    backgroundColor: Colors.white24,
-                    child: Text(
-                      profile.name.isNotEmpty ? profile.name[0].toUpperCase() : 'D',
-                      style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
-                    ),
-                  ),
-                  const SizedBox(width: 12),
-                  Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        profile.name.isNotEmpty ? profile.name : 'Doctor Name',
-                        style: const TextStyle(
-                          color: Colors.white,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                      Text(
-                        profile.clinicName.isNotEmpty ? '${profile.clinicName}, ${profile.clinicAddress}' : 'Clinic Info',
-                        style: const TextStyle(color: Colors.white70, fontSize: 12),
-                      ),
-                    ],
-                  ),
-                ],
-              );
-            },
-          ),
-        ],
       ),
     );
   }

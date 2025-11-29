@@ -1,7 +1,12 @@
+import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:file_picker/file_picker.dart';
+import '../../core/core.dart';
 import '../../providers/db_provider.dart';
 import '../../services/doctor_settings_service.dart';
+import '../../theme/app_theme.dart';
+import '../widgets/signature_pad.dart';
 
 class DoctorProfileScreen extends ConsumerStatefulWidget {
   const DoctorProfileScreen({super.key});
@@ -10,9 +15,14 @@ class DoctorProfileScreen extends ConsumerStatefulWidget {
   ConsumerState<DoctorProfileScreen> createState() => _DoctorProfileScreenState();
 }
 
-class _DoctorProfileScreenState extends ConsumerState<DoctorProfileScreen> {
-  bool _isEditing = false;
+class _DoctorProfileScreenState extends ConsumerState<DoctorProfileScreen>
+    with SingleTickerProviderStateMixin {
+  late TabController _tabController;
+  bool _hasChanges = false;
   final _formKey = GlobalKey<FormState>();
+  
+  // Store initial values to detect changes
+  late DoctorProfile _initialProfile;
 
   // Profile Controllers
   late TextEditingController _nameController;
@@ -40,14 +50,16 @@ class _DoctorProfileScreenState extends ConsumerState<DoctorProfileScreen> {
   // Languages
   late List<String> _languages;
 
-  // Achievements (placeholder for future implementation)
-  final List<String> _achievements = [];
+  // Signature
+  String? _signatureData;
+  String? _photoData;
 
   bool _isInitialized = false;
 
   @override
   void initState() {
     super.initState();
+    _tabController = TabController(length: 4, vsync: this);
     _nameController = TextEditingController();
     _specializationController = TextEditingController();
     _qualificationsController = TextEditingController();
@@ -70,21 +82,30 @@ class _DoctorProfileScreenState extends ConsumerState<DoctorProfileScreen> {
     if (_isInitialized) return;
     _isInitialized = true;
     
+    _initialProfile = profile;
     _nameController.text = profile.name;
+    
+    // Add listeners to detect changes
+    _addChangeListeners();
     _specializationController.text = profile.specialization;
     _qualificationsController.text = profile.qualifications;
     _licenseController.text = profile.licenseNumber;
-    _experienceController.text = profile.experienceYears > 0 ? profile.experienceYears.toString() : '';
+    _experienceController.text =
+        profile.experienceYears > 0 ? profile.experienceYears.toString() : '';
     _bioController.text = profile.bio;
     _phoneController.text = profile.phone;
     _emailController.text = profile.email;
     _clinicNameController.text = profile.clinicName;
     _clinicAddressController.text = profile.clinicAddress;
     _clinicPhoneController.text = profile.clinicPhone;
-    _consultationFeeController.text = profile.consultationFee > 0 ? profile.consultationFee.toStringAsFixed(0) : '';
-    _followUpFeeController.text = profile.followUpFee > 0 ? profile.followUpFee.toStringAsFixed(0) : '';
-    _emergencyFeeController.text = profile.emergencyFee > 0 ? profile.emergencyFee.toStringAsFixed(0) : '';
-    _workingHours = Map.from(profile.workingHours.map((k, v) => MapEntry(k, Map<String, dynamic>.from(v))));
+    _consultationFeeController.text =
+        profile.consultationFee > 0 ? profile.consultationFee.toStringAsFixed(0) : '';
+    _followUpFeeController.text =
+        profile.followUpFee > 0 ? profile.followUpFee.toStringAsFixed(0) : '';
+    _emergencyFeeController.text =
+        profile.emergencyFee > 0 ? profile.emergencyFee.toStringAsFixed(0) : '';
+    _workingHours = Map.from(
+        profile.workingHours.map((k, v) => MapEntry(k, Map<String, dynamic>.from(v))));
     if (_workingHours.isEmpty) {
       _workingHours = {
         'Monday': {'enabled': true, 'start': '09:00', 'end': '17:00'},
@@ -100,10 +121,49 @@ class _DoctorProfileScreenState extends ConsumerState<DoctorProfileScreen> {
     if (_languages.isEmpty) {
       _languages = ['English'];
     }
+    _signatureData = profile.signatureData;
+    _photoData = profile.photoData;
+  }
+  
+  void _addChangeListeners() {
+    final controllers = [
+      _nameController, _specializationController, _qualificationsController,
+      _licenseController, _experienceController, _bioController,
+      _phoneController, _emailController, _clinicNameController,
+      _clinicAddressController, _clinicPhoneController,
+      _consultationFeeController, _followUpFeeController, _emergencyFeeController,
+    ];
+    for (final controller in controllers) {
+      controller.addListener(_checkForChanges);
+    }
+  }
+  
+  void _checkForChanges() {
+    final hasChanges = _nameController.text != _initialProfile.name ||
+        _specializationController.text != _initialProfile.specialization ||
+        _qualificationsController.text != _initialProfile.qualifications ||
+        _licenseController.text != _initialProfile.licenseNumber ||
+        _experienceController.text != (_initialProfile.experienceYears > 0 ? _initialProfile.experienceYears.toString() : '') ||
+        _bioController.text != _initialProfile.bio ||
+        _phoneController.text != _initialProfile.phone ||
+        _emailController.text != _initialProfile.email ||
+        _clinicNameController.text != _initialProfile.clinicName ||
+        _clinicAddressController.text != _initialProfile.clinicAddress ||
+        _clinicPhoneController.text != _initialProfile.clinicPhone ||
+        _consultationFeeController.text != (_initialProfile.consultationFee > 0 ? _initialProfile.consultationFee.toStringAsFixed(0) : '') ||
+        _followUpFeeController.text != (_initialProfile.followUpFee > 0 ? _initialProfile.followUpFee.toStringAsFixed(0) : '') ||
+        _emergencyFeeController.text != (_initialProfile.emergencyFee > 0 ? _initialProfile.emergencyFee.toStringAsFixed(0) : '') ||
+        _signatureData != _initialProfile.signatureData ||
+        _photoData != _initialProfile.photoData;
+    
+    if (hasChanges != _hasChanges) {
+      setState(() => _hasChanges = hasChanges);
+    }
   }
 
   @override
   void dispose() {
+    _tabController.dispose();
     _nameController.dispose();
     _specializationController.dispose();
     _qualificationsController.dispose();
@@ -131,8 +191,24 @@ class _DoctorProfileScreenState extends ConsumerState<DoctorProfileScreen> {
     return '${words[0][0]}${words[words.length - 1][0]}'.toUpperCase();
   }
 
-  void _toggleEdit() {
-    setState(() => _isEditing = !_isEditing);
+  Future<void> _pickPhoto() async {
+    try {
+      final result = await FilePicker.platform.pickFiles(
+        type: FileType.image,
+        allowMultiple: false,
+      );
+      if (result != null && result.files.isNotEmpty) {
+        final bytes = result.files.first.bytes;
+        if (bytes != null) {
+          setState(() {
+            _photoData = base64Encode(bytes);
+          });
+          _checkForChanges();
+        }
+      }
+    } catch (e) {
+      debugPrint('Error picking photo: $e');
+    }
   }
 
   Future<void> _saveProfile() async {
@@ -154,11 +230,15 @@ class _DoctorProfileScreenState extends ConsumerState<DoctorProfileScreen> {
         emergencyFee: double.tryParse(_emergencyFeeController.text) ?? 0,
         languages: _languages,
         workingHours: _workingHours,
+        signatureData: _signatureData,
+        photoData: _photoData,
       );
 
       await ref.read(doctorSettingsProvider).saveProfile(newProfile);
-
-      setState(() => _isEditing = false);
+      
+      // Update initial profile to reflect saved state
+      _initialProfile = newProfile;
+      setState(() => _hasChanges = false);
 
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -170,9 +250,10 @@ class _DoctorProfileScreenState extends ConsumerState<DoctorProfileScreen> {
                 Text('Profile updated successfully!'),
               ],
             ),
-            backgroundColor: Colors.green,
+            backgroundColor: AppColors.success,
             behavior: SnackBarBehavior.floating,
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+            margin: const EdgeInsets.all(16),
           ),
         );
       }
@@ -181,490 +262,489 @@ class _DoctorProfileScreenState extends ConsumerState<DoctorProfileScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final colorScheme = theme.colorScheme;
     final profile = ref.watch(doctorSettingsProvider).profile;
-    
-    // Initialize controllers from profile
+    final isDark = context.isDarkMode;
+    final isCompact = context.isCompact;
+
     _initializeFromProfile(profile);
 
     return Scaffold(
+      backgroundColor: isDark ? AppColors.darkBackground : AppColors.background,
       body: Form(
         key: _formKey,
         child: CustomScrollView(
           slivers: [
-            // Profile Header
-            SliverAppBar(
-              expandedHeight: 280,
-              pinned: true,
-              leading: IconButton(
-                icon: const Icon(Icons.arrow_back_rounded, color: Colors.white),
-                onPressed: () => Navigator.pop(context),
-              ),
-              actions: [
-                if (_isEditing)
-                  TextButton.icon(
-                    onPressed: _saveProfile,
-                    icon: const Icon(Icons.save, color: Colors.white),
-                    label: const Text('Save', style: TextStyle(color: Colors.white)),
-                  )
-                else
-                  IconButton(
-                    icon: const Icon(Icons.edit, color: Colors.white),
-                    onPressed: _toggleEdit,
-                  ),
-                const SizedBox(width: 8),
-              ],
-              flexibleSpace: FlexibleSpaceBar(
-                background: Container(
-                  decoration: BoxDecoration(
-                    gradient: LinearGradient(
-                      colors: [
-                        colorScheme.primary,
-                        colorScheme.primary.withBlue(200),
+            _buildSliverAppBar(isDark, isCompact),
+            SliverFillRemaining(
+              child: Column(
+                children: [
+                  Container(
+                    margin: EdgeInsets.symmetric(
+                      horizontal: isCompact ? 12 : 20,
+                      vertical: 8,
+                    ),
+                    decoration: BoxDecoration(
+                      color: isDark ? AppColors.darkSurface : Colors.white,
+                      borderRadius: BorderRadius.circular(16),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.black.withValues(alpha: 0.05),
+                          blurRadius: 10,
+                          offset: const Offset(0, 2),
+                        ),
                       ],
-                      begin: Alignment.topLeft,
-                      end: Alignment.bottomRight,
+                    ),
+                    child: TabBar(
+                      controller: _tabController,
+                      labelColor: AppColors.primary,
+                      unselectedLabelColor:
+                          isDark ? AppColors.darkTextSecondary : AppColors.textSecondary,
+                      indicatorSize: TabBarIndicatorSize.tab,
+                      dividerColor: Colors.transparent,
+                      indicator: BoxDecoration(
+                        color: AppColors.primary.withValues(alpha: 0.1),
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      labelStyle: const TextStyle(fontWeight: FontWeight.w600, fontSize: 13),
+                      tabs: [
+                        _buildTab(Icons.person_outline, 'Profile'),
+                        _buildTab(Icons.business_outlined, 'Clinic'),
+                        _buildTab(Icons.schedule_outlined, 'Schedule'),
+                        _buildTab(Icons.draw_outlined, 'Signature'),
+                      ],
                     ),
                   ),
-                  child: SafeArea(
-                    child: Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
+                  Expanded(
+                    child: TabBarView(
+                      controller: _tabController,
                       children: [
-                        const SizedBox(height: 40),
-                        Stack(
-                          children: [
-                            Container(
-                              padding: const EdgeInsets.all(4),
-                              decoration: BoxDecoration(
-                                shape: BoxShape.circle,
-                                border: Border.all(color: Colors.white, width: 3),
-                              ),
-                              child: CircleAvatar(
-                                radius: 50,
-                                backgroundColor: Colors.white24,
-                                child: Text(
+                        _buildProfileTab(isDark, isCompact),
+                        _buildClinicTab(isDark, isCompact),
+                        _buildScheduleTab(isDark, isCompact),
+                        _buildSignatureTab(isDark, isCompact),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
+      floatingActionButton: _hasChanges
+          ? Container(
+              decoration: BoxDecoration(
+                gradient: const LinearGradient(
+                  colors: [AppColors.primary, AppColors.accent],
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                ),
+                borderRadius: BorderRadius.circular(16),
+                boxShadow: [
+                  BoxShadow(
+                    color: AppColors.primary.withValues(alpha: 0.4),
+                    blurRadius: 12,
+                    offset: const Offset(0, 4),
+                  ),
+                ],
+              ),
+              child: Material(
+                color: Colors.transparent,
+                child: InkWell(
+                  onTap: _saveProfile,
+                  borderRadius: BorderRadius.circular(16),
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 14),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: const [
+                        Icon(Icons.check_circle_outline_rounded, color: Colors.white, size: 22),
+                        SizedBox(width: 10),
+                        Text(
+                          'Save Changes',
+                          style: TextStyle(
+                            color: Colors.white,
+                            fontSize: 16,
+                            fontWeight: FontWeight.w600,
+                            letterSpacing: 0.3,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+            )
+          : null,
+    );
+  }
+
+  Widget _buildTab(IconData icon, String label) {
+    return Tab(
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Icon(icon, size: 18),
+          const SizedBox(width: 6),
+          Flexible(child: Text(label, overflow: TextOverflow.ellipsis)),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildSliverAppBar(bool isDark, bool isCompact) {
+    return SliverAppBar(
+      expandedHeight: 320,
+      pinned: true,
+      backgroundColor: AppColors.primary,
+      leading: IconButton(
+        icon: Container(
+          padding: const EdgeInsets.all(8),
+          decoration: BoxDecoration(
+            color: Colors.white.withValues(alpha: 0.2),
+            borderRadius: BorderRadius.circular(12),
+          ),
+          child: const Icon(Icons.arrow_back_rounded, color: Colors.white, size: 20),
+        ),
+        onPressed: () => Navigator.pop(context),
+      ),
+      flexibleSpace: FlexibleSpaceBar(
+        background: Container(
+          decoration: const BoxDecoration(
+            gradient: LinearGradient(
+              colors: [AppColors.primary, AppColors.primaryDark],
+              begin: Alignment.topCenter,
+              end: Alignment.bottomCenter,
+            ),
+          ),
+          child: SafeArea(
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                const SizedBox(height: 50),
+                GestureDetector(
+                  onTap: _pickPhoto,
+                  child: Stack(
+                    children: [
+                      Container(
+                        padding: const EdgeInsets.all(4),
+                        decoration: BoxDecoration(
+                          shape: BoxShape.circle,
+                          border: Border.all(color: Colors.white, width: 3),
+                          boxShadow: [
+                            BoxShadow(
+                              color: Colors.black.withValues(alpha: 0.2),
+                              blurRadius: 20,
+                              offset: const Offset(0, 10),
+                            ),
+                          ],
+                        ),
+                        child: CircleAvatar(
+                          radius: 55,
+                          backgroundColor: Colors.white.withValues(alpha: 0.2),
+                          backgroundImage: _photoData != null
+                              ? MemoryImage(base64Decode(_photoData!))
+                              : null,
+                          child: _photoData == null
+                              ? Text(
                                   _getInitials(_nameController.text),
                                   style: const TextStyle(
-                                    fontSize: 32,
+                                    fontSize: 36,
                                     fontWeight: FontWeight.bold,
                                     color: Colors.white,
                                   ),
-                                ),
-                              ),
-                            ),
-                            if (_isEditing)
-                              Positioned(
-                                bottom: 0,
-                                right: 0,
-                                child: Container(
-                                  padding: const EdgeInsets.all(8),
-                                  decoration: BoxDecoration(
-                                    color: colorScheme.secondary,
-                                    shape: BoxShape.circle,
-                                  ),
-                                  child: const Icon(Icons.camera_alt, size: 20, color: Colors.white),
-                                ),
-                              ),
-                          ],
+                                )
+                              : null,
                         ),
-                        const SizedBox(height: 12),
-                        if (_isEditing)
-                          SizedBox(
-                            width: 250,
-                            child: TextFormField(
-                              controller: _nameController,
-                              style: const TextStyle(
-                                fontSize: 20,
-                                fontWeight: FontWeight.bold,
-                                color: Colors.white,
-                              ),
-                              textAlign: TextAlign.center,
-                              decoration: const InputDecoration(
-                                border: InputBorder.none,
-                                contentPadding: EdgeInsets.zero,
-                              ),
-                            ),
-                          )
-                        else
-                          Text(
-                            _nameController.text,
-                            style: const TextStyle(
-                              fontSize: 22,
-                              fontWeight: FontWeight.bold,
-                              color: Colors.white,
-                            ),
-                          ),
-                        const SizedBox(height: 4),
-                        Text(
-                          _specializationController.text,
-                          style: TextStyle(
-                            fontSize: 16,
-                            color: Colors.white.withOpacity(0.9),
-                          ),
-                        ),
-                        const SizedBox(height: 8),
-                        Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                      ),
+                      Positioned(
+                        bottom: 0,
+                        right: 0,
+                        child: Container(
+                          padding: const EdgeInsets.all(10),
                           decoration: BoxDecoration(
-                            color: Colors.white24,
-                            borderRadius: BorderRadius.circular(20),
+                            color: AppColors.accent,
+                            shape: BoxShape.circle,
+                            border: Border.all(color: Colors.white, width: 2),
                           ),
-                          child: Row(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              const Icon(Icons.verified, size: 16, color: Colors.white),
-                              const SizedBox(width: 4),
-                              Text(
-                                _licenseController.text,
-                                style: const TextStyle(color: Colors.white, fontSize: 13),
-                              ),
-                            ],
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
-              ),
-            ),
-
-            // Stats Row
-            SliverToBoxAdapter(
-              child: Container(
-                padding: const EdgeInsets.all(16),
-                child: Row(
-                  children: [
-                    _buildStatCard(
-                      icon: Icons.access_time,
-                      value: '${_experienceController.text}+',
-                      label: 'Years Exp.',
-                      colorScheme: colorScheme,
-                    ),
-                    const SizedBox(width: 12),
-                    _buildStatCard(
-                      icon: Icons.people,
-                      value: '5000+',
-                      label: 'Patients',
-                      colorScheme: colorScheme,
-                    ),
-                    const SizedBox(width: 12),
-                    _buildStatCard(
-                      icon: Icons.star,
-                      value: '4.9',
-                      label: 'Rating',
-                      colorScheme: colorScheme,
-                    ),
-                    const SizedBox(width: 12),
-                    _buildStatCard(
-                      icon: Icons.article,
-                      value: '15+',
-                      label: 'Publications',
-                      colorScheme: colorScheme,
-                    ),
-                  ],
-                ),
-              ),
-            ),
-
-            // Content Sections
-            SliverToBoxAdapter(
-              child: Padding(
-                padding: const EdgeInsets.all(16),
-                child: Column(
-                  children: [
-                    // About Section
-                    _buildSection(
-                      title: 'About',
-                      icon: Icons.person_outline,
-                      colorScheme: colorScheme,
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          if (_isEditing)
-                            TextFormField(
-                              controller: _bioController,
-                              maxLines: 4,
-                              decoration: InputDecoration(
-                                border: OutlineInputBorder(
-                                  borderRadius: BorderRadius.circular(12),
-                                ),
-                                filled: true,
-                              ),
-                            )
-                          else
-                            Text(
-                              _bioController.text,
-                              style: TextStyle(
-                                fontSize: 14,
-                                height: 1.6,
-                                color: colorScheme.onSurface.withOpacity(0.8),
-                              ),
-                            ),
-                          const SizedBox(height: 16),
-                          _buildInfoRow(Icons.school, 'Qualifications', 
-                            _qualificationsController, _isEditing, colorScheme),
-                          const SizedBox(height: 12),
-                          _buildInfoRow(Icons.work_history, 'Experience', 
-                            _experienceController, _isEditing, colorScheme, suffix: ' years'),
-                        ],
-                      ),
-                    ),
-                    const SizedBox(height: 16),
-
-                    // Contact Section
-                    _buildSection(
-                      title: 'Contact Information',
-                      icon: Icons.contact_phone_outlined,
-                      colorScheme: colorScheme,
-                      child: Column(
-                        children: [
-                          _buildContactTile(Icons.phone, 'Phone', 
-                            _phoneController, _isEditing, colorScheme),
-                          const Divider(),
-                          _buildContactTile(Icons.email, 'Email', 
-                            _emailController, _isEditing, colorScheme),
-                          const Divider(),
-                          _buildContactTile(Icons.business, 'Clinic Name', 
-                            _clinicNameController, _isEditing, colorScheme),
-                          const Divider(),
-                          _buildContactTile(Icons.location_on, 'Clinic Address', 
-                            _clinicAddressController, _isEditing, colorScheme, maxLines: 2),
-                          const Divider(),
-                          _buildContactTile(Icons.call, 'Clinic Phone', 
-                            _clinicPhoneController, _isEditing, colorScheme),
-                        ],
-                      ),
-                    ),
-                    const SizedBox(height: 16),
-
-                    // Working Hours Section
-                    _buildSection(
-                      title: 'Working Hours',
-                      icon: Icons.schedule,
-                      colorScheme: colorScheme,
-                      child: Column(
-                        children: _workingHours.entries.map((entry) {
-                          return _buildWorkingHourTile(
-                            entry.key,
-                            entry.value,
-                            colorScheme,
-                          );
-                        }).toList(),
-                      ),
-                    ),
-                    const SizedBox(height: 16),
-
-                    // Consultation Fees Section
-                    _buildSection(
-                      title: 'Consultation Fees',
-                      icon: Icons.payments_outlined,
-                      colorScheme: colorScheme,
-                      child: Column(
-                        children: [
-                          _buildFeeRow('Consultation', _consultationFeeController, 
-                            Icons.chat_outlined, colorScheme),
-                          const SizedBox(height: 12),
-                          _buildFeeRow('Follow-up', _followUpFeeController, 
-                            Icons.replay, colorScheme),
-                          const SizedBox(height: 12),
-                          _buildFeeRow('Emergency', _emergencyFeeController, 
-                            Icons.emergency_outlined, colorScheme),
-                        ],
-                      ),
-                    ),
-                    const SizedBox(height: 16),
-
-                    // Languages Section
-                    _buildSection(
-                      title: 'Languages',
-                      icon: Icons.language,
-                      colorScheme: colorScheme,
-                      child: Wrap(
-                        spacing: 8,
-                        runSpacing: 8,
-                        children: _languages.map((lang) {
-                          return Chip(
-                            label: Text(lang),
-                            backgroundColor: colorScheme.primaryContainer,
-                            labelStyle: TextStyle(color: colorScheme.onPrimaryContainer),
-                          );
-                        }).toList(),
-                      ),
-                    ),
-                    const SizedBox(height: 16),
-
-                    // Achievements Section
-                    _buildSection(
-                      title: 'Achievements & Awards',
-                      icon: Icons.emoji_events_outlined,
-                      colorScheme: colorScheme,
-                      child: Column(
-                        children: _achievements.asMap().entries.map((entry) {
-                          return Padding(
-                            padding: const EdgeInsets.symmetric(vertical: 8),
-                            child: Row(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Container(
-                                  padding: const EdgeInsets.all(6),
-                                  decoration: BoxDecoration(
-                                    color: colorScheme.tertiaryContainer,
-                                    shape: BoxShape.circle,
-                                  ),
-                                  child: Icon(
-                                    Icons.star,
-                                    size: 14,
-                                    color: colorScheme.tertiary,
-                                  ),
-                                ),
-                                const SizedBox(width: 12),
-                                Expanded(
-                                  child: Text(
-                                    entry.value,
-                                    style: TextStyle(
-                                      fontSize: 14,
-                                      color: colorScheme.onSurface.withOpacity(0.8),
-                                    ),
-                                  ),
-                                ),
-                              ],
-                            ),
-                          );
-                        }).toList(),
-                      ),
-                    ),
-                    const SizedBox(height: 32),
-
-                    // Action Buttons
-                    if (!_isEditing) ...[
-                      SizedBox(
-                        width: double.infinity,
-                        child: OutlinedButton.icon(
-                          onPressed: () {
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              const SnackBar(
-                                content: Text('Share profile feature coming soon'),
-                                behavior: SnackBarBehavior.floating,
-                              ),
-                            );
-                          },
-                          icon: const Icon(Icons.share),
-                          label: const Text('Share Profile'),
-                          style: OutlinedButton.styleFrom(
-                            padding: const EdgeInsets.symmetric(vertical: 14),
-                          ),
-                        ),
-                      ),
-                      const SizedBox(height: 12),
-                      SizedBox(
-                        width: double.infinity,
-                        child: OutlinedButton.icon(
-                          onPressed: () {
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              const SnackBar(
-                                content: Text('QR Code generation coming soon'),
-                                behavior: SnackBarBehavior.floating,
-                              ),
-                            );
-                          },
-                          icon: const Icon(Icons.qr_code),
-                          label: const Text('Generate QR Code'),
-                          style: OutlinedButton.styleFrom(
-                            padding: const EdgeInsets.symmetric(vertical: 14),
-                          ),
+                          child: const Icon(Icons.camera_alt, size: 18, color: Colors.white),
                         ),
                       ),
                     ],
-                    const SizedBox(height: 32),
+                  ),
+                ),
+                const SizedBox(height: 16),
+                Text(
+                  _nameController.text.isNotEmpty
+                      ? 'Dr. ${_nameController.text}'
+                      : 'Doctor Name',
+                  style: const TextStyle(
+                    fontSize: 24,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.white,
+                  ),
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  _specializationController.text.isNotEmpty
+                      ? _specializationController.text
+                      : 'Specialization',
+                  style: TextStyle(fontSize: 15, color: Colors.white.withValues(alpha: 0.9)),
+                ),
+                const SizedBox(height: 12),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    _buildQuickStat(Icons.work_history,
+                        '${_experienceController.text.isNotEmpty ? _experienceController.text : "0"}+ yrs'),
+                    _buildStatDivider(),
+                    _buildQuickStat(Icons.verified,
+                        _licenseController.text.isNotEmpty ? _licenseController.text : 'License #'),
+                    _buildStatDivider(),
+                    _buildQuickStat(Icons.language, '${_languages.length} Languages'),
                   ],
                 ),
-              ),
+              ],
             ),
-          ],
+          ),
         ),
       ),
     );
   }
 
-  Widget _buildStatCard({
-    required IconData icon,
-    required String value,
-    required String label,
-    required ColorScheme colorScheme,
-  }) {
-    return Expanded(
-      child: Container(
-        padding: const EdgeInsets.symmetric(vertical: 16),
-        decoration: BoxDecoration(
-          color: colorScheme.surfaceContainerHighest,
-          borderRadius: BorderRadius.circular(12),
-        ),
-        child: Column(
-          children: [
-            Icon(icon, color: colorScheme.primary, size: 24),
-            const SizedBox(height: 8),
-            Text(
-              value,
-              style: TextStyle(
-                fontSize: 18,
-                fontWeight: FontWeight.bold,
-                color: colorScheme.primary,
-              ),
+  Widget _buildQuickStat(IconData icon, String text) {
+    return Row(
+      children: [
+        Icon(icon, size: 14, color: Colors.white.withValues(alpha: 0.8)),
+        const SizedBox(width: 4),
+        Text(text, style: TextStyle(fontSize: 12, color: Colors.white.withValues(alpha: 0.9))),
+      ],
+    );
+  }
+
+  Widget _buildStatDivider() {
+    return Container(
+      height: 12,
+      width: 1,
+      margin: const EdgeInsets.symmetric(horizontal: 12),
+      color: Colors.white.withValues(alpha: 0.3),
+    );
+  }
+
+  Widget _buildProfileTab(bool isDark, bool isCompact) {
+    return SingleChildScrollView(
+      padding: EdgeInsets.all(isCompact ? 12 : 20),
+      child: Column(
+        children: [
+          _buildCard(
+            isDark: isDark,
+            title: 'Personal Information',
+            icon: Icons.person_outline,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                _buildEditableField(label: 'Display Name', controller: _nameController, isDark: isDark, icon: Icons.badge_outlined, hint: 'Dr. John Smith'),
+                const SizedBox(height: 16),
+                _buildEditableField(label: 'Bio', controller: _bioController, isDark: isDark, maxLines: 4, hint: 'Write a brief description...'),
+              ],
             ),
-            const SizedBox(height: 4),
-            Text(
-              label,
-              style: TextStyle(
-                fontSize: 11,
-                color: colorScheme.onSurface.withOpacity(0.6),
-              ),
+          ),
+          const SizedBox(height: 16),
+          _buildCard(
+            isDark: isDark,
+            title: 'Professional Details',
+            icon: Icons.info_outline,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    Expanded(child: _buildEditableField(label: 'Specialization', controller: _specializationController, isDark: isDark, icon: Icons.medical_services_outlined)),
+                    const SizedBox(width: 12),
+                    Expanded(child: _buildEditableField(label: 'Experience (Years)', controller: _experienceController, isDark: isDark, icon: Icons.work_history_outlined, keyboardType: TextInputType.number)),
+                  ],
+                ),
+                const SizedBox(height: 16),
+                _buildEditableField(label: 'Qualifications', controller: _qualificationsController, isDark: isDark, icon: Icons.school_outlined, hint: 'MBBS, MD, etc.'),
+                const SizedBox(height: 16),
+                _buildEditableField(label: 'License Number', controller: _licenseController, isDark: isDark, icon: Icons.verified_outlined),
+              ],
             ),
-          ],
-        ),
+          ),
+          const SizedBox(height: 16),
+          _buildCard(
+            isDark: isDark,
+            title: 'Contact Information',
+            icon: Icons.contact_phone_outlined,
+            child: Row(
+              children: [
+                Expanded(child: _buildEditableField(label: 'Phone', controller: _phoneController, isDark: isDark, icon: Icons.phone_outlined, keyboardType: TextInputType.phone)),
+                const SizedBox(width: 12),
+                Expanded(child: _buildEditableField(label: 'Email', controller: _emailController, isDark: isDark, icon: Icons.email_outlined, keyboardType: TextInputType.emailAddress)),
+              ],
+            ),
+          ),
+          const SizedBox(height: 16),
+          _buildCard(
+            isDark: isDark,
+            title: 'Languages',
+            icon: Icons.language,
+            trailing: IconButton(onPressed: _addLanguage, icon: const Icon(Icons.add_circle_outline), color: AppColors.primary),
+            child: Wrap(
+              spacing: 8,
+              runSpacing: 8,
+              children: _languages.asMap().entries.map((entry) => _buildLanguageChip(entry.value, entry.key, isDark)).toList(),
+            ),
+          ),
+          const SizedBox(height: 80),
+        ],
       ),
     );
   }
 
-  Widget _buildSection({
-    required String title,
-    required IconData icon,
-    required ColorScheme colorScheme,
-    required Widget child,
-  }) {
-    return Card(
-      elevation: 0,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(16),
-        side: BorderSide(color: colorScheme.outlineVariant),
+  Widget _buildClinicTab(bool isDark, bool isCompact) {
+    return SingleChildScrollView(
+      padding: EdgeInsets.all(isCompact ? 12 : 20),
+      child: Column(
+        children: [
+          _buildCard(
+            isDark: isDark,
+            title: 'Clinic Details',
+            icon: Icons.business_outlined,
+            child: Column(
+              children: [
+                _buildEditableField(label: 'Clinic Name', controller: _clinicNameController, isDark: isDark, icon: Icons.local_hospital_outlined),
+                const SizedBox(height: 16),
+                _buildEditableField(label: 'Address', controller: _clinicAddressController, isDark: isDark, icon: Icons.location_on_outlined, maxLines: 2),
+                const SizedBox(height: 16),
+                _buildEditableField(label: 'Clinic Phone', controller: _clinicPhoneController, isDark: isDark, icon: Icons.phone_outlined, keyboardType: TextInputType.phone),
+              ],
+            ),
+          ),
+          const SizedBox(height: 16),
+          _buildCard(
+            isDark: isDark,
+            title: 'Consultation Fees',
+            icon: Icons.payments_outlined,
+            child: Column(
+              children: [
+                _buildFeeField(label: 'Consultation Fee', controller: _consultationFeeController, isDark: isDark, icon: Icons.chat_outlined, color: AppColors.primary),
+                const SizedBox(height: 12),
+                _buildFeeField(label: 'Follow-up Fee', controller: _followUpFeeController, isDark: isDark, icon: Icons.replay, color: AppColors.accent),
+                const SizedBox(height: 12),
+                _buildFeeField(label: 'Emergency Fee', controller: _emergencyFeeController, isDark: isDark, icon: Icons.emergency_outlined, color: AppColors.error),
+              ],
+            ),
+          ),
+          const SizedBox(height: 80),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildScheduleTab(bool isDark, bool isCompact) {
+    return SingleChildScrollView(
+      padding: EdgeInsets.all(isCompact ? 12 : 20),
+      child: Column(
+        children: [
+          _buildCard(
+            isDark: isDark,
+            title: 'Working Hours',
+            icon: Icons.schedule,
+            child: Column(children: _workingHours.entries.map((e) => _buildDaySchedule(e.key, e.value, isDark)).toList()),
+          ),
+          const SizedBox(height: 80),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildSignatureTab(bool isDark, bool isCompact) {
+    return SingleChildScrollView(
+      padding: EdgeInsets.all(isCompact ? 12 : 20),
+      child: Column(
+        children: [
+          _buildCard(
+            isDark: isDark,
+            title: 'Digital Signature',
+            icon: Icons.draw,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text('Your signature will be automatically added to prescriptions and invoices',
+                    style: TextStyle(fontSize: 13, color: isDark ? AppColors.darkTextSecondary : AppColors.textSecondary)),
+                const SizedBox(height: 16),
+                SignaturePad(initialSignature: _signatureData, onSignatureChanged: (data) { setState(() => _signatureData = data); _checkForChanges(); }, height: 200, readOnly: false),
+              ],
+            ),
+          ),
+          const SizedBox(height: 16),
+          _buildCard(
+            isDark: isDark,
+            title: 'Signature Preview',
+            icon: Icons.preview_outlined,
+            child: Container(
+              padding: const EdgeInsets.all(20),
+              decoration: BoxDecoration(
+                color: isDark ? AppColors.darkBackground : Colors.grey.shade50,
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(color: isDark ? AppColors.darkDivider : AppColors.divider),
+              ),
+              child: Column(
+                children: [
+                  const Text('This is how your signature will appear on documents:', style: TextStyle(fontSize: 12)),
+                  const SizedBox(height: 16),
+                  Column(
+                    children: [
+                      Container(
+                        height: 60,
+                        width: 150,
+                        decoration: BoxDecoration(border: Border(bottom: BorderSide(color: isDark ? AppColors.darkDivider : AppColors.divider))),
+                        child: _signatureData != null
+                            ? Image.memory(base64Decode(_signatureData!), fit: BoxFit.contain)
+                            : Center(child: Text('No signature', style: TextStyle(color: isDark ? AppColors.darkTextHint : AppColors.textHint, fontStyle: FontStyle.italic))),
+                      ),
+                      const SizedBox(height: 8),
+                      Text('Dr. ${_nameController.text.isNotEmpty ? _nameController.text : "Your Name"}', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
+                      Text(_specializationController.text.isNotEmpty ? _specializationController.text : 'Specialization',
+                          style: TextStyle(fontSize: 12, color: isDark ? AppColors.darkTextSecondary : AppColors.textSecondary)),
+                    ],
+                  ),
+                ],
+              ),
+            ),
+          ),
+          const SizedBox(height: 80),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildCard({required bool isDark, required String title, required IconData icon, required Widget child, Widget? trailing}) {
+    return Container(
+      decoration: BoxDecoration(
+        color: isDark ? AppColors.darkSurface : Colors.white,
+        borderRadius: BorderRadius.circular(20),
+        boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.05), blurRadius: 20, offset: const Offset(0, 4))],
       ),
       child: Padding(
-        padding: const EdgeInsets.all(16),
+        padding: const EdgeInsets.all(20),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Row(
               children: [
                 Container(
-                  padding: const EdgeInsets.all(8),
-                  decoration: BoxDecoration(
-                    color: colorScheme.primaryContainer,
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                  child: Icon(icon, color: colorScheme.primary, size: 20),
+                  padding: const EdgeInsets.all(10),
+                  decoration: BoxDecoration(gradient: const LinearGradient(colors: [AppColors.primary, AppColors.primaryLight]), borderRadius: BorderRadius.circular(12)),
+                  child: Icon(icon, color: Colors.white, size: 20),
                 ),
                 const SizedBox(width: 12),
-                Text(
-                  title,
-                  style: TextStyle(
-                    fontSize: 16,
-                    fontWeight: FontWeight.bold,
-                    color: colorScheme.onSurface,
-                  ),
-                ),
+                Expanded(child: Text(title, style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: isDark ? AppColors.darkTextPrimary : AppColors.textPrimary))),
+                if (trailing != null) trailing,
               ],
             ),
-            const SizedBox(height: 16),
+            const SizedBox(height: 20),
             child,
           ],
         ),
@@ -672,181 +752,126 @@ class _DoctorProfileScreenState extends ConsumerState<DoctorProfileScreen> {
     );
   }
 
-  Widget _buildInfoRow(IconData icon, String label, TextEditingController controller,
-      bool isEditing, ColorScheme colorScheme, {String suffix = ''}) {
-    return Row(
-      children: [
-        Icon(icon, size: 18, color: colorScheme.primary),
-        const SizedBox(width: 12),
-        Text(
-          '$label: ',
-          style: TextStyle(
-            fontWeight: FontWeight.w500,
-            color: colorScheme.onSurface.withOpacity(0.7),
-          ),
-        ),
-        Expanded(
-          child: isEditing
-              ? TextFormField(
-                  controller: controller,
-                  decoration: const InputDecoration(
-                    isDense: true,
-                    border: UnderlineInputBorder(),
-                  ),
-                )
-              : Text(
-                  '${controller.text}$suffix',
-                  style: TextStyle(
-                    fontWeight: FontWeight.w600,
-                    color: colorScheme.onSurface,
-                  ),
-                ),
-        ),
-      ],
+  Widget _buildEditableField({required String label, required TextEditingController controller, required bool isDark, IconData? icon, int maxLines = 1, String? hint, TextInputType keyboardType = TextInputType.text}) {
+    return TextFormField(
+      controller: controller,
+      maxLines: maxLines,
+      keyboardType: keyboardType,
+      style: TextStyle(color: isDark ? AppColors.darkTextPrimary : AppColors.textPrimary),
+      decoration: InputDecoration(
+        labelText: label,
+        hintText: hint,
+        prefixIcon: icon != null ? Icon(icon, color: AppColors.primary) : null,
+        filled: true,
+        fillColor: isDark ? AppColors.darkBackground : Colors.grey.shade50,
+        border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide.none),
+        enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide(color: isDark ? AppColors.darkDivider : AppColors.divider)),
+        focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: const BorderSide(color: AppColors.primary, width: 2)),
+      ),
     );
   }
 
-  Widget _buildContactTile(IconData icon, String label, TextEditingController controller,
-      bool isEditing, ColorScheme colorScheme, {int maxLines = 1}) {
-    return ListTile(
-      contentPadding: EdgeInsets.zero,
-      leading: Container(
-        padding: const EdgeInsets.all(8),
-        decoration: BoxDecoration(
-          color: colorScheme.surfaceContainerHighest,
-          borderRadius: BorderRadius.circular(8),
-        ),
-        child: Icon(icon, color: colorScheme.primary, size: 20),
-      ),
-      title: Text(
-        label,
-        style: TextStyle(
-          fontSize: 12,
-          color: colorScheme.onSurface.withOpacity(0.6),
-        ),
-      ),
-      subtitle: isEditing
-          ? TextFormField(
-              controller: controller,
-              maxLines: maxLines,
-              decoration: const InputDecoration(
-                isDense: true,
-                border: UnderlineInputBorder(),
-              ),
-            )
-          : Text(
-              controller.text,
-              style: const TextStyle(
-                fontWeight: FontWeight.w500,
-              ),
-            ),
-    );
-  }
-
-  Widget _buildWorkingHourTile(String day, Map<String, dynamic> hours, ColorScheme colorScheme) {
-    final isEnabled = hours['enabled'] as bool;
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 6),
+  Widget _buildFeeField({required String label, required TextEditingController controller, required bool isDark, required IconData icon, required Color color}) {
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(color: color.withValues(alpha: 0.05), borderRadius: BorderRadius.circular(16), border: Border.all(color: color.withValues(alpha: 0.2))),
       child: Row(
         children: [
-          SizedBox(
-            width: 100,
-            child: Text(
-              day,
-              style: TextStyle(
-                fontWeight: FontWeight.w500,
-                color: isEnabled ? colorScheme.onSurface : colorScheme.onSurface.withOpacity(0.4),
-              ),
-            ),
-          ),
-          if (_isEditing)
-            Switch(
-              value: isEnabled,
-              onChanged: (value) {
-                setState(() {
-                  _workingHours[day]!['enabled'] = value;
-                });
-              },
-            ),
+          Container(padding: const EdgeInsets.all(10), decoration: BoxDecoration(color: color.withValues(alpha: 0.1), borderRadius: BorderRadius.circular(12)), child: Icon(icon, color: color, size: 20)),
+          const SizedBox(width: 16),
           Expanded(
-            child: Text(
-              isEnabled ? '${hours['start']} - ${hours['end']}' : 'Closed',
-              style: TextStyle(
-                color: isEnabled ? colorScheme.primary : colorScheme.onSurface.withOpacity(0.4),
-                fontWeight: isEnabled ? FontWeight.w600 : FontWeight.normal,
+            child: Text(label, style: TextStyle(fontSize: 12, color: isDark ? AppColors.darkTextSecondary : AppColors.textSecondary)),
+          ),
+          SizedBox(
+            width: 120,
+            child: TextFormField(
+              controller: controller,
+              keyboardType: TextInputType.number,
+              textAlign: TextAlign.center,
+              style: TextStyle(fontWeight: FontWeight.bold, color: color),
+              decoration: InputDecoration(
+                prefixText: 'Rs. ',
+                prefixStyle: TextStyle(color: color, fontWeight: FontWeight.w500),
+                isDense: true,
+                filled: true,
+                fillColor: isDark ? AppColors.darkBackground : Colors.white,
+                border: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: BorderSide(color: color.withValues(alpha: 0.3))),
+                enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: BorderSide(color: color.withValues(alpha: 0.3))),
+                focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: BorderSide(color: color, width: 2)),
               ),
             ),
           ),
-          if (isEnabled)
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-              decoration: BoxDecoration(
-                color: Colors.green.withOpacity(0.1),
-                borderRadius: BorderRadius.circular(12),
-              ),
-              child: const Text(
-                'Open',
-                style: TextStyle(
-                  fontSize: 11,
-                  color: Colors.green,
-                  fontWeight: FontWeight.w500,
-                ),
-              ),
-            ),
         ],
       ),
     );
   }
 
-  Widget _buildFeeRow(String label, TextEditingController controller, 
-      IconData icon, ColorScheme colorScheme) {
+  Widget _buildDaySchedule(String day, Map<String, dynamic> hours, bool isDark) {
+    final isEnabled = hours['enabled'] as bool;
     return Container(
-      padding: const EdgeInsets.all(12),
+      margin: const EdgeInsets.only(bottom: 12),
+      padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
-        color: colorScheme.surfaceContainerHighest,
-        borderRadius: BorderRadius.circular(12),
+        color: isEnabled ? AppColors.success.withValues(alpha: 0.05) : (isDark ? AppColors.darkBackground : Colors.grey.shade50),
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(color: isEnabled ? AppColors.success.withValues(alpha: 0.2) : (isDark ? AppColors.darkDivider : AppColors.divider)),
       ),
       child: Row(
         children: [
           Container(
-            padding: const EdgeInsets.all(8),
-            decoration: BoxDecoration(
-              color: colorScheme.primaryContainer,
-              borderRadius: BorderRadius.circular(8),
-            ),
-            child: Icon(icon, size: 18, color: colorScheme.primary),
+            width: 48,
+            height: 48,
+            decoration: BoxDecoration(color: isEnabled ? AppColors.success.withValues(alpha: 0.1) : (isDark ? AppColors.darkDivider : Colors.grey.shade200), borderRadius: BorderRadius.circular(12)),
+            child: Center(child: Text(day.substring(0, 3), style: TextStyle(fontWeight: FontWeight.bold, color: isEnabled ? AppColors.success : (isDark ? AppColors.darkTextHint : AppColors.textHint)))),
           ),
-          const SizedBox(width: 12),
-          Text(
-            label,
-            style: const TextStyle(fontWeight: FontWeight.w500),
-          ),
-          const Spacer(),
-          if (_isEditing)
-            SizedBox(
-              width: 100,
-              child: TextFormField(
-                controller: controller,
-                keyboardType: TextInputType.number,
-                textAlign: TextAlign.center,
-                decoration: InputDecoration(
-                  prefixText: 'Rs. ',
-                  isDense: true,
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                ),
-              ),
-            )
-          else
-            Text(
-              'Rs. ${controller.text}',
-              style: TextStyle(
-                fontSize: 16,
-                fontWeight: FontWeight.bold,
-                color: colorScheme.primary,
-              ),
+          const SizedBox(width: 14),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(day, style: TextStyle(fontWeight: FontWeight.w600, color: isDark ? AppColors.darkTextPrimary : AppColors.textPrimary)),
+                const SizedBox(height: 2),
+                Text(isEnabled ? '${hours['start']} - ${hours['end']}' : 'Closed', style: TextStyle(fontSize: 13, color: isEnabled ? AppColors.success : (isDark ? AppColors.darkTextHint : AppColors.textHint))),
+              ],
             ),
+          ),
+          Switch.adaptive(value: isEnabled, onChanged: (value) { setState(() => _workingHours[day]!['enabled'] = value); _checkForChanges(); }, activeColor: AppColors.success),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildLanguageChip(String language, int index, bool isDark) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+      decoration: BoxDecoration(
+        gradient: LinearGradient(colors: [AppColors.primary.withValues(alpha: 0.1), AppColors.primaryLight.withValues(alpha: 0.1)]),
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: AppColors.primary.withValues(alpha: 0.2)),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          const Icon(Icons.language, size: 16, color: AppColors.primary),
+          const SizedBox(width: 6),
+          Text(language, style: const TextStyle(color: AppColors.primary, fontWeight: FontWeight.w500)),
+          const SizedBox(width: 6),
+          GestureDetector(onTap: () { setState(() => _languages.removeAt(index)); _checkForChanges(); }, child: Icon(Icons.close, size: 16, color: AppColors.error.withValues(alpha: 0.8))),
+        ],
+      ),
+    );
+  }
+
+  void _addLanguage() {
+    final controller = TextEditingController();
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Add Language'),
+        content: TextField(controller: controller, decoration: const InputDecoration(hintText: 'Enter language', border: OutlineInputBorder()), autofocus: true),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(context), child: const Text('Cancel')),
+          FilledButton(onPressed: () { if (controller.text.isNotEmpty) { setState(() => _languages.add(controller.text)); Navigator.pop(context); } }, child: const Text('Add')),
         ],
       ),
     );

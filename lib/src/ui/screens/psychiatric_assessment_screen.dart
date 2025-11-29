@@ -1,12 +1,18 @@
+import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
+import 'package:drift/drift.dart' hide Column;
 import '../widgets/suggestion_text_field.dart';
 import '../../services/suggestions_service.dart';
 import '../../providers/db_provider.dart';
+import '../../db/doctor_db.dart';
+import '../../theme/app_theme.dart';
 
 class PsychiatricAssessmentScreen extends ConsumerStatefulWidget {
-  const PsychiatricAssessmentScreen({super.key});
+  final Patient? preselectedPatient;
+  
+  const PsychiatricAssessmentScreen({super.key, this.preselectedPatient});
 
   @override
   ConsumerState<PsychiatricAssessmentScreen> createState() =>
@@ -126,6 +132,27 @@ class _PsychiatricAssessmentScreenState
     'life_history': false,
     'treatment': false,
   };
+  
+  // Patient ID for saving
+  int? _patientId;
+  bool _isSaving = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _selectedDate = DateTime.now();
+    if (widget.preselectedPatient != null) {
+      _patientId = widget.preselectedPatient!.id;
+      _nameController.text = '${widget.preselectedPatient!.firstName} ${widget.preselectedPatient!.lastName}'.trim();
+      _phoneController.text = widget.preselectedPatient!.phone;
+      _addressController.text = widget.preselectedPatient!.address;
+      // Calculate age from DOB if available
+      if (widget.preselectedPatient!.dateOfBirth != null) {
+        final age = DateTime.now().year - widget.preselectedPatient!.dateOfBirth!.year;
+        _ageController.text = age.toString();
+      }
+    }
+  }
 
   @override
   void dispose() {
@@ -309,21 +336,66 @@ class _PsychiatricAssessmentScreenState
     };
   }
 
-  void _saveForm() {
+  Future<void> _saveForm() async {
     if (_formKey.currentState!.validate()) {
-      final jsonData = _buildFormJson();
-      debugPrint('=== PSYCHIATRIC ASSESSMENT FORM DATA ===');
-      debugPrint(jsonData.toString());
-      debugPrint('========================================');
-
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: const Text('Assessment saved successfully!'),
-          backgroundColor: Theme.of(context).colorScheme.primary,
-          behavior: SnackBarBehavior.floating,
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-        ),
-      );
+      if (_patientId == null) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: const Text('Please select a patient first'),
+            backgroundColor: Theme.of(context).colorScheme.error,
+            behavior: SnackBarBehavior.floating,
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+          ),
+        );
+        return;
+      }
+      
+      setState(() => _isSaving = true);
+      
+      try {
+        final db = ref.read(doctorDbProvider).value!;
+        final jsonData = _buildFormJson();
+        
+        // Save as medical record
+        final record = MedicalRecordsCompanion(
+          patientId: Value(_patientId!),
+          recordDate: Value(_selectedDate ?? DateTime.now()),
+          recordType: const Value('detailed_psychiatric_assessment'),
+          title: Value('Comprehensive Psychiatric Assessment - ${DateFormat('MMM dd, yyyy').format(_selectedDate ?? DateTime.now())}'),
+          description: Value(_pcController.text),
+          diagnosis: Value(jsonData['mental_state_examination']?['thoughts']?.toString() ?? ''),
+          treatment: Value(_treatmentNotesController.text),
+          doctorNotes: Value(jsonEncode(jsonData)),
+          createdAt: Value(DateTime.now()),
+        );
+        
+        await db.insertMedicalRecord(record);
+        
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: const Text('Psychiatric Assessment saved successfully!'),
+              backgroundColor: AppColors.success,
+              behavior: SnackBarBehavior.floating,
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+            ),
+          );
+          Navigator.pop(context, true);
+        }
+      } catch (e) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('Error saving assessment: $e'),
+              backgroundColor: Theme.of(context).colorScheme.error,
+              behavior: SnackBarBehavior.floating,
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+            ),
+          );
+        }
+      } finally {
+        if (mounted) setState(() => _isSaving = false);
+      }
     } else {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(

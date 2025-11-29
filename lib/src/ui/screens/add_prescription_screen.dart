@@ -1,3 +1,4 @@
+import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
@@ -5,6 +6,7 @@ import '../../db/doctor_db.dart';
 import '../../providers/db_provider.dart';
 import '../../services/prescription_templates.dart';
 import '../../services/suggestions_service.dart';
+import '../../theme/app_theme.dart';
 import '../widgets/suggestion_text_field.dart';
 
 class AddPrescriptionScreen extends ConsumerStatefulWidget {
@@ -40,11 +42,10 @@ class _AddPrescriptionScreenState extends ConsumerState<AddPrescriptionScreen> {
   // Medications List
   final List<MedicationEntry> _medications = [];
 
-  // Vitals
-  final _bpController = TextEditingController();
-  final _pulseController = TextEditingController();
-  final _temperatureController = TextEditingController();
-  final _weightController = TextEditingController();
+  // Last Visit Vitals (read-only from previous prescription)
+  Map<String, dynamic>? _lastVisitVitals;
+  DateTime? _lastVisitDate;
+  bool _loadingVitals = false;
 
   // Additional Notes
   final _notesController = TextEditingController();
@@ -94,8 +95,40 @@ class _AddPrescriptionScreenState extends ConsumerState<AddPrescriptionScreen> {
       _patients = patients;
       if (_selectedPatientId != null && _selectedPatient == null) {
         _selectedPatient = _patients.where((p) => p.id == _selectedPatientId).firstOrNull;
+        if (_selectedPatient != null) {
+          _loadLastVisitVitals(_selectedPatientId!);
+        }
       }
     });
+  }
+
+  Future<void> _loadLastVisitVitals(int patientId) async {
+    setState(() => _loadingVitals = true);
+    try {
+      final db = await ref.read(doctorDbProvider.future);
+      final lastPrescription = await db.getLastPrescriptionForPatient(patientId);
+      
+      if (lastPrescription != null) {
+        final data = jsonDecode(lastPrescription.itemsJson) as Map<String, dynamic>;
+        setState(() {
+          _lastVisitVitals = data['vitals'] as Map<String, dynamic>?;
+          _lastVisitDate = lastPrescription.createdAt;
+          _loadingVitals = false;
+        });
+      } else {
+        setState(() {
+          _lastVisitVitals = null;
+          _lastVisitDate = null;
+          _loadingVitals = false;
+        });
+      }
+    } catch (e) {
+      setState(() {
+        _lastVisitVitals = null;
+        _lastVisitDate = null;
+        _loadingVitals = false;
+      });
+    }
   }
 
   String _getPatientName(Patient patient) {
@@ -118,10 +151,6 @@ class _AddPrescriptionScreenState extends ConsumerState<AddPrescriptionScreen> {
     _searchController.dispose();
     _diagnosisController.dispose();
     _symptomsController.dispose();
-    _bpController.dispose();
-    _pulseController.dispose();
-    _temperatureController.dispose();
-    _weightController.dispose();
     _notesController.dispose();
     _adviceController.dispose();
     _followUpNotesController.dispose();
@@ -217,12 +246,7 @@ class _AddPrescriptionScreenState extends ConsumerState<AddPrescriptionScreen> {
     return {
       'prescription_date': DateTime.now().toIso8601String(),
       'patient': patientData,
-      'vitals': {
-        'bp': _bpController.text,
-        'pulse': _pulseController.text,
-        'temperature': _temperatureController.text,
-        'weight': _weightController.text,
-      },
+      'vitals': _lastVisitVitals ?? {},  // Use last visit vitals (read-only reference)
       'symptoms': _symptomsController.text,
       'diagnosis': _diagnosisController.text,
       'medications': _medications.map((med) => med.toJson()).toList(),
@@ -303,37 +327,110 @@ class _AddPrescriptionScreenState extends ConsumerState<AddPrescriptionScreen> {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final screenWidth = MediaQuery.of(context).size.width;
+    final isCompact = screenWidth < 400;
+    final padding = isCompact ? 12.0 : 20.0;
 
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('New Prescription'),
-        centerTitle: true,
-        elevation: 0,
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.print),
-            onPressed: _printPrescription,
-            tooltip: 'Print',
-          ),
-          FilledButton.icon(
-            onPressed: _savePrescription,
-            icon: const Icon(Icons.save, size: 18),
-            label: const Text('Save'),
-            style: FilledButton.styleFrom(
-              visualDensity: VisualDensity.compact,
-            ),
-          ),
-          const SizedBox(width: 8),
-        ],
-      ),
+      backgroundColor: isDark ? AppColors.darkBackground : AppColors.background,
       body: Form(
         key: _formKey,
-        child: SingleChildScrollView(
+        child: CustomScrollView(
           controller: _scrollController,
-          padding: const EdgeInsets.all(16),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
+          slivers: [
+            // Gradient Header
+            SliverToBoxAdapter(
+              child: Container(
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                    colors: [AppColors.warning, AppColors.warning.withRed(255)],
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                  ),
+                  borderRadius: const BorderRadius.only(
+                    bottomLeft: Radius.circular(32),
+                    bottomRight: Radius.circular(32),
+                  ),
+                ),
+                child: SafeArea(
+                  bottom: false,
+                  child: Padding(
+                    padding: EdgeInsets.all(padding),
+                    child: Column(
+                      children: [
+                        // Custom App Bar
+                        Row(
+                          children: [
+                            GestureDetector(
+                              onTap: () => Navigator.pop(context),
+                              child: Container(
+                                padding: const EdgeInsets.all(10),
+                                decoration: BoxDecoration(
+                                  color: Colors.white.withOpacity(0.2),
+                                  borderRadius: BorderRadius.circular(12),
+                                ),
+                                child: const Icon(Icons.arrow_back, color: Colors.white, size: 20),
+                              ),
+                            ),
+                            const Expanded(
+                              child: Text(
+                                'New Prescription',
+                                textAlign: TextAlign.center,
+                                style: TextStyle(
+                                  color: Colors.white,
+                                  fontSize: 20,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                            ),
+                            GestureDetector(
+                              onTap: _printPrescription,
+                              child: Container(
+                                padding: const EdgeInsets.all(10),
+                                decoration: BoxDecoration(
+                                  color: Colors.white.withOpacity(0.2),
+                                  borderRadius: BorderRadius.circular(12),
+                                ),
+                                child: const Icon(Icons.print, color: Colors.white, size: 20),
+                              ),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 20),
+                        // Prescription Icon
+                        Container(
+                          padding: const EdgeInsets.all(16),
+                          decoration: BoxDecoration(
+                            color: Colors.white.withOpacity(0.2),
+                            shape: BoxShape.circle,
+                          ),
+                          child: const Icon(
+                            Icons.medication_rounded,
+                            size: 48,
+                            color: Colors.white,
+                          ),
+                        ),
+                        const SizedBox(height: 12),
+                        Text(
+                          DateFormat('EEEE, dd MMMM yyyy').format(DateTime.now()),
+                          style: TextStyle(
+                            color: Colors.white.withOpacity(0.9),
+                            fontSize: 14,
+                          ),
+                        ),
+                        const SizedBox(height: 16),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+            ),
+            // Body Content
+            SliverPadding(
+              padding: EdgeInsets.all(padding),
+              sliver: SliverList(
+                delegate: SliverChildListDelegate([
               // Doctor Header
               _buildDoctorHeader(colorScheme),
               const SizedBox(height: 16),
@@ -347,12 +444,12 @@ class _AddPrescriptionScreenState extends ConsumerState<AddPrescriptionScreen> {
               ),
               const SizedBox(height: 16),
 
-              // Vitals
+              // Last Visit Vitals (read-only)
               _buildSectionCard(
-                title: 'Vitals',
+                title: 'Last Visit Vitals',
                 icon: Icons.favorite,
                 colorScheme: colorScheme,
-                child: _buildVitalsSection(colorScheme),
+                child: _buildLastVisitVitalsSection(colorScheme),
               ),
               const SizedBox(height: 16),
 
@@ -508,8 +605,10 @@ class _AddPrescriptionScreenState extends ConsumerState<AddPrescriptionScreen> {
                 ],
               ),
               const SizedBox(height: 32),
-            ],
-          ),
+                ]),
+              ),
+            ),
+          ],
         ),
       ),
     );
@@ -608,6 +707,8 @@ class _AddPrescriptionScreenState extends ConsumerState<AddPrescriptionScreen> {
               onPressed: () => setState(() {
                 _selectedPatientId = null;
                 _selectedPatient = null;
+                _lastVisitVitals = null;
+                _lastVisitDate = null;
               }),
             ),
           ],
@@ -666,10 +767,13 @@ class _AddPrescriptionScreenState extends ConsumerState<AddPrescriptionScreen> {
                   title: Text(patientName),
                   subtitle: Text(age > 0 ? '$age years' : 'Age unknown'),
                   dense: true,
-                  onTap: () => setState(() {
-                    _selectedPatientId = patient.id;
-                    _selectedPatient = patient;
-                  }),
+                  onTap: () {
+                    setState(() {
+                      _selectedPatientId = patient.id;
+                      _selectedPatient = patient;
+                    });
+                    _loadLastVisitVitals(patient.id);
+                  },
                 );
               },
             ),
@@ -678,21 +782,73 @@ class _AddPrescriptionScreenState extends ConsumerState<AddPrescriptionScreen> {
     );
   }
 
-  // Temperature unit state
-  bool _isCelsius = false;
-  
-  // Focus nodes for vitals
-  final _bpFocus = FocusNode();
-  final _pulseFocus = FocusNode();
-  final _tempFocus = FocusNode();
-  final _weightFocus = FocusNode();
-  bool _bpFocused = false;
-  bool _pulseFocused = false;
-  bool _tempFocused = false;
-  bool _weightFocused = false;
-
-  Widget _buildVitalsSection(ColorScheme colorScheme) {
+  Widget _buildLastVisitVitalsSection(ColorScheme colorScheme) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
+    
+    if (_loadingVitals) {
+      return Container(
+        padding: const EdgeInsets.all(20),
+        decoration: BoxDecoration(
+          color: isDark ? colorScheme.surface : Colors.grey.shade50,
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(color: colorScheme.outline.withOpacity(0.2)),
+        ),
+        child: const Center(
+          child: CircularProgressIndicator(strokeWidth: 2),
+        ),
+      );
+    }
+    
+    if (_selectedPatient == null) {
+      return Container(
+        padding: const EdgeInsets.all(20),
+        decoration: BoxDecoration(
+          color: isDark ? colorScheme.surface : Colors.grey.shade50,
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(color: colorScheme.outline.withOpacity(0.2)),
+        ),
+        child: Center(
+          child: Column(
+            children: [
+              Icon(Icons.person_search, size: 40, color: colorScheme.outline),
+              const SizedBox(height: 8),
+              Text(
+                'Select a patient to see last visit vitals',
+                style: TextStyle(color: colorScheme.outline),
+              ),
+            ],
+          ),
+        ),
+      );
+    }
+    
+    if (_lastVisitVitals == null) {
+      return Container(
+        padding: const EdgeInsets.all(20),
+        decoration: BoxDecoration(
+          color: isDark ? colorScheme.surface : Colors.grey.shade50,
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(color: colorScheme.outline.withOpacity(0.2)),
+        ),
+        child: Center(
+          child: Column(
+            children: [
+              Icon(Icons.info_outline, size: 40, color: colorScheme.outline),
+              const SizedBox(height: 8),
+              Text(
+                'No previous visit data available',
+                style: TextStyle(color: colorScheme.outline),
+              ),
+            ],
+          ),
+        ),
+      );
+    }
+    
+    final bp = _lastVisitVitals!['bp'] ?? '-';
+    final pulse = _lastVisitVitals!['pulse'] ?? '-';
+    final temp = _lastVisitVitals!['temperature'] ?? '-';
+    final weight = _lastVisitVitals!['weight'] ?? '-';
     
     return Container(
       padding: const EdgeInsets.all(12),
@@ -702,69 +858,75 @@ class _AddPrescriptionScreenState extends ConsumerState<AddPrescriptionScreen> {
         border: Border.all(color: colorScheme.outline.withOpacity(0.2)),
       ),
       child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // First row: BP and Pulse
+          // Last visit date header
+          if (_lastVisitDate != null)
+            Padding(
+              padding: const EdgeInsets.only(bottom: 12),
+              child: Row(
+                children: [
+                  Icon(Icons.history, size: 16, color: colorScheme.primary),
+                  const SizedBox(width: 6),
+                  Text(
+                    'Last Visit: ${DateFormat('dd MMM yyyy').format(_lastVisitDate!)}',
+                    style: TextStyle(
+                      color: colorScheme.primary,
+                      fontSize: 12,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          // Vitals grid
           Row(
             children: [
               Expanded(
-                child: _buildVitalCard(
-                  controller: _bpController,
+                child: _buildVitalDisplayCard(
                   label: 'Blood Pressure',
+                  value: bp.toString(),
                   suffix: 'mmHg',
                   icon: Icons.favorite_rounded,
                   iconColor: Colors.red,
-                  suggestions: MedicalSuggestions.bloodPressure,
-                  isBP: true,
+                  colorScheme: colorScheme,
                 ),
               ),
               const SizedBox(width: 10),
               Expanded(
-                child: _buildVitalCard(
-                  controller: _pulseController,
+                child: _buildVitalDisplayCard(
                   label: 'Pulse Rate',
+                  value: pulse.toString(),
                   suffix: 'bpm',
                   icon: Icons.monitor_heart_rounded,
                   iconColor: Colors.pink,
-                  suggestions: MedicalSuggestions.pulseRate,
-                  incrementStep: 2,
-                  minValue: 40,
-                  maxValue: 200,
+                  colorScheme: colorScheme,
                 ),
               ),
             ],
           ),
           const SizedBox(height: 10),
-          // Second row: Temp and Weight
           Row(
             children: [
               Expanded(
-                child: _buildVitalCard(
-                  controller: _temperatureController,
+                child: _buildVitalDisplayCard(
                   label: 'Temperature',
-                  suffix: _isCelsius ? '°C' : '°F',
+                  value: temp.toString(),
+                  suffix: '°C',
                   icon: Icons.thermostat_rounded,
                   iconColor: Colors.orange,
-                  suggestions: _isCelsius 
-                      ? MedicalSuggestions.temperatureCelsius
-                      : MedicalSuggestions.temperatureFahrenheit,
-                  incrementStep: 0.5,
-                  minValue: _isCelsius ? 35.0 : 95.0,
-                  maxValue: _isCelsius ? 42.0 : 108.0,
-                  showTempToggle: true,
+                  colorScheme: colorScheme,
                 ),
               ),
               const SizedBox(width: 10),
               Expanded(
-                child: _buildVitalCard(
-                  controller: _weightController,
+                child: _buildVitalDisplayCard(
                   label: 'Weight',
+                  value: weight.toString(),
                   suffix: 'kg',
                   icon: Icons.monitor_weight_rounded,
                   iconColor: Colors.blue,
-                  suggestions: MedicalSuggestions.weightKg,
-                  incrementStep: 1,
-                  minValue: 1,
-                  maxValue: 200,
+                  colorScheme: colorScheme,
                 ),
               ),
             ],
@@ -773,79 +935,28 @@ class _AddPrescriptionScreenState extends ConsumerState<AddPrescriptionScreen> {
       ),
     );
   }
-
-  Widget _buildVitalCard({
-    required TextEditingController controller,
+  
+  Widget _buildVitalDisplayCard({
     required String label,
+    required String value,
     required String suffix,
     required IconData icon,
     required Color iconColor,
-    required List<String> suggestions,
-    double incrementStep = 1,
-    double? minValue,
-    double? maxValue,
-    bool isBP = false,
-    bool showTempToggle = false,
+    required ColorScheme colorScheme,
   }) {
-    final colorScheme = Theme.of(context).colorScheme;
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    
-    void incrementValue() {
-      if (isBP) {
-        final parts = controller.text.split('/');
-        if (parts.length == 2) {
-          final systolic = int.tryParse(parts[0]) ?? 120;
-          final diastolic = int.tryParse(parts[1]) ?? 80;
-          controller.text = '${(systolic + 5).clamp(80, 200)}/${(diastolic + 3).clamp(50, 120)}';
-        } else {
-          controller.text = '120/80';
-        }
-      } else {
-        final current = double.tryParse(controller.text) ?? 0;
-        double newVal = current + incrementStep;
-        if (maxValue != null) newVal = newVal.clamp(minValue ?? 0, maxValue);
-        controller.text = incrementStep == 1 ? newVal.toInt().toString() : newVal.toStringAsFixed(1);
-      }
-      setState(() {});
-    }
-    
-    void decrementValue() {
-      if (isBP) {
-        final parts = controller.text.split('/');
-        if (parts.length == 2) {
-          final systolic = int.tryParse(parts[0]) ?? 120;
-          final diastolic = int.tryParse(parts[1]) ?? 80;
-          controller.text = '${(systolic - 5).clamp(80, 200)}/${(diastolic - 3).clamp(50, 120)}';
-        } else {
-          controller.text = '120/80';
-        }
-      } else {
-        final current = double.tryParse(controller.text) ?? 0;
-        double newVal = current - incrementStep;
-        if (minValue != null) newVal = newVal.clamp(minValue, maxValue ?? double.infinity);
-        if (newVal < 0) newVal = 0;
-        controller.text = incrementStep == 1 ? newVal.toInt().toString() : newVal.toStringAsFixed(1);
-      }
-      setState(() {});
-    }
+    final hasValue = value.isNotEmpty && value != '-' && value != 'null';
     
     return Container(
-      padding: const EdgeInsets.all(10),
+      padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
-        color: isDark ? colorScheme.surfaceContainerHigh : Colors.white,
+        color: isDark ? colorScheme.surfaceContainerHighest : Colors.white,
         borderRadius: BorderRadius.circular(12),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.04),
-            blurRadius: 8,
-            offset: const Offset(0, 2),
-          ),
-        ],
+        border: Border.all(color: colorScheme.outline.withOpacity(0.1)),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Header with icon and label
           Row(
             children: [
               Container(
@@ -862,194 +973,38 @@ class _AddPrescriptionScreenState extends ConsumerState<AddPrescriptionScreen> {
                   label,
                   style: TextStyle(
                     fontSize: 11,
-                    fontWeight: FontWeight.w600,
-                    color: colorScheme.onSurface.withOpacity(0.7),
+                    color: colorScheme.onSurface.withOpacity(0.6),
                   ),
                 ),
               ),
-              if (showTempToggle) _buildCompactTempToggle(colorScheme),
             ],
           ),
           const SizedBox(height: 8),
-          // Value input with +/- buttons
           Row(
+            crossAxisAlignment: CrossAxisAlignment.baseline,
+            textBaseline: TextBaseline.alphabetic,
             children: [
-              // Decrement
-              _buildCounterButton(
-                icon: Icons.remove,
-                onTap: decrementValue,
-                color: Colors.red.shade400,
-              ),
-              const SizedBox(width: 6),
-              // Value display
-              Expanded(
-                child: Container(
-                  padding: const EdgeInsets.symmetric(vertical: 8),
-                  decoration: BoxDecoration(
-                    color: colorScheme.primary.withOpacity(0.05),
-                    borderRadius: BorderRadius.circular(8),
-                    border: Border.all(color: colorScheme.primary.withOpacity(0.2)),
-                  ),
-                  child: TextField(
-                    controller: controller,
-                    textAlign: TextAlign.center,
-                    keyboardType: isBP ? TextInputType.text : TextInputType.number,
-                    style: TextStyle(
-                      fontSize: 16,
-                      fontWeight: FontWeight.bold,
-                      color: colorScheme.primary,
-                    ),
-                    decoration: InputDecoration(
-                      isDense: true,
-                      contentPadding: EdgeInsets.zero,
-                      border: InputBorder.none,
-                      hintText: isBP ? '120/80' : '0',
-                      hintStyle: TextStyle(
-                        color: colorScheme.onSurface.withOpacity(0.3),
-                        fontWeight: FontWeight.normal,
-                      ),
-                      suffixIcon: Padding(
-                        padding: const EdgeInsets.only(right: 4),
-                        child: Text(
-                          suffix,
-                          style: TextStyle(
-                            fontSize: 10,
-                            color: colorScheme.onSurface.withOpacity(0.5),
-                          ),
-                        ),
-                      ),
-                      suffixIconConstraints: const BoxConstraints(minWidth: 0, minHeight: 0),
-                    ),
-                  ),
+              Text(
+                hasValue ? value : '-',
+                style: TextStyle(
+                  fontSize: 20,
+                  fontWeight: FontWeight.bold,
+                  color: hasValue ? colorScheme.onSurface : colorScheme.outline,
                 ),
               ),
-              const SizedBox(width: 6),
-              // Increment
-              _buildCounterButton(
-                icon: Icons.add,
-                onTap: incrementValue,
-                color: Colors.green.shade400,
-              ),
+              if (hasValue) ...[
+                const SizedBox(width: 4),
+                Text(
+                  suffix,
+                  style: TextStyle(
+                    fontSize: 12,
+                    color: colorScheme.onSurface.withOpacity(0.5),
+                  ),
+                ),
+              ],
             ],
           ),
-          const SizedBox(height: 8),
-          // Quick suggestions
-          SizedBox(
-            height: 26,
-            child: ListView.separated(
-              scrollDirection: Axis.horizontal,
-              itemCount: suggestions.length,
-              separatorBuilder: (_, __) => const SizedBox(width: 4),
-              itemBuilder: (context, index) {
-                return GestureDetector(
-                  onTap: () {
-                    controller.text = suggestions[index];
-                    setState(() {});
-                  },
-                  child: Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                    decoration: BoxDecoration(
-                      color: colorScheme.secondaryContainer.withOpacity(0.5),
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                    child: Text(
-                      suggestions[index],
-                      style: TextStyle(
-                        fontSize: 11,
-                        fontWeight: FontWeight.w500,
-                        color: colorScheme.onSecondaryContainer,
-                      ),
-                    ),
-                  ),
-                );
-              },
-            ),
-          ),
         ],
-      ),
-    );
-  }
-
-  Widget _buildCounterButton({
-    required IconData icon,
-    required VoidCallback onTap,
-    required Color color,
-  }) {
-    return GestureDetector(
-      onTap: onTap,
-      child: Container(
-        padding: const EdgeInsets.all(6),
-        decoration: BoxDecoration(
-          color: color.withOpacity(0.1),
-          borderRadius: BorderRadius.circular(8),
-        ),
-        child: Icon(icon, size: 18, color: color),
-      ),
-    );
-  }
-
-  Widget _buildCompactTempToggle(ColorScheme colorScheme) {
-    return Container(
-      padding: const EdgeInsets.all(2),
-      decoration: BoxDecoration(
-        color: colorScheme.surfaceContainerHighest,
-        borderRadius: BorderRadius.circular(6),
-      ),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          GestureDetector(
-            onTap: () => setState(() => _isCelsius = true),
-            child: Container(
-              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-              decoration: BoxDecoration(
-                color: _isCelsius ? colorScheme.primary : Colors.transparent,
-                borderRadius: BorderRadius.circular(4),
-              ),
-              child: Text(
-                '°C',
-                style: TextStyle(
-                  fontSize: 10,
-                  fontWeight: FontWeight.bold,
-                  color: _isCelsius ? Colors.white : colorScheme.onSurface.withOpacity(0.6),
-                ),
-              ),
-            ),
-          ),
-          GestureDetector(
-            onTap: () => setState(() => _isCelsius = false),
-            child: Container(
-              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-              decoration: BoxDecoration(
-                color: !_isCelsius ? colorScheme.primary : Colors.transparent,
-                borderRadius: BorderRadius.circular(4),
-              ),
-              child: Text(
-                '°F',
-                style: TextStyle(
-                  fontSize: 10,
-                  fontWeight: FontWeight.bold,
-                  color: !_isCelsius ? Colors.white : colorScheme.onSurface.withOpacity(0.6),
-                ),
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildVitalField(TextEditingController controller, String label, String suffix, IconData icon) {
-    return TextFormField(
-      controller: controller,
-      keyboardType: TextInputType.number,
-      decoration: InputDecoration(
-        labelText: label,
-        suffixText: suffix,
-        prefixIcon: Icon(icon, size: 20),
-        border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
-        filled: true,
-        isDense: true,
       ),
     );
   }

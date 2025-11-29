@@ -55,51 +55,99 @@ class _AddAppointmentScreenState extends ConsumerState<AddAppointmentScreen> {
   Widget build(BuildContext context) {
     final dbAsync = ref.watch(doctorDbProvider);
     final isDark = Theme.of(context).brightness == Brightness.dark;
+    final screenWidth = MediaQuery.of(context).size.width;
+    final isCompact = screenWidth < 400;
+    final padding = isCompact ? 12.0 : 20.0;
 
     return Scaffold(
       backgroundColor: isDark ? AppColors.darkBackground : AppColors.background,
-      appBar: AppBar(
-        backgroundColor: Colors.transparent,
-        leading: IconButton(
-          icon: Container(
-            padding: const EdgeInsets.all(8),
-            decoration: BoxDecoration(
-              color: Theme.of(context).colorScheme.surface,
-              borderRadius: BorderRadius.circular(12),
-              border: Border.all(color: isDark ? AppColors.darkDivider : AppColors.divider),
-            ),
-            child: const Icon(Icons.arrow_back, size: 20),
-          ),
-          onPressed: () => Navigator.pop(context),
-        ),
-        title: const Text('New Appointment'),
-        actions: [
-          Padding(
-            padding: const EdgeInsets.only(right: 16),
-            child: IconButton(
-              icon: Container(
-                padding: const EdgeInsets.all(8),
-                decoration: BoxDecoration(
-                  color: Theme.of(context).colorScheme.surface,
-                  borderRadius: BorderRadius.circular(12),
-                  border: Border.all(color: isDark ? AppColors.darkDivider : AppColors.divider),
-                ),
-                child: const Icon(Icons.more_horiz, size: 20),
-              ),
-              onPressed: () {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(
-                    content: Text('More options coming soon'),
-                    behavior: SnackBarBehavior.floating,
-                  ),
-                );
-              },
-            ),
-          ),
-        ],
-      ),
       body: dbAsync.when(
-        data: (db) => _buildForm(context, db),
+        data: (db) => CustomScrollView(
+          slivers: [
+            // Gradient Header
+            SliverToBoxAdapter(
+              child: Container(
+                decoration: BoxDecoration(
+                  gradient: AppColors.primaryGradient,
+                  borderRadius: const BorderRadius.only(
+                    bottomLeft: Radius.circular(32),
+                    bottomRight: Radius.circular(32),
+                  ),
+                ),
+                child: SafeArea(
+                  bottom: false,
+                  child: Padding(
+                    padding: EdgeInsets.all(padding),
+                    child: Column(
+                      children: [
+                        // Custom App Bar
+                        Row(
+                          children: [
+                            GestureDetector(
+                              onTap: () => Navigator.pop(context),
+                              child: Container(
+                                padding: const EdgeInsets.all(10),
+                                decoration: BoxDecoration(
+                                  color: Colors.white.withOpacity(0.2),
+                                  borderRadius: BorderRadius.circular(12),
+                                ),
+                                child: const Icon(Icons.arrow_back, color: Colors.white, size: 20),
+                              ),
+                            ),
+                            const Expanded(
+                              child: Text(
+                                'New Appointment',
+                                textAlign: TextAlign.center,
+                                style: TextStyle(
+                                  color: Colors.white,
+                                  fontSize: 20,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                            ),
+                            const SizedBox(width: 40), // Balance the back button
+                          ],
+                        ),
+                        const SizedBox(height: 20),
+                        // Appointment Icon
+                        Container(
+                          padding: const EdgeInsets.all(16),
+                          decoration: BoxDecoration(
+                            color: Colors.white.withOpacity(0.2),
+                            shape: BoxShape.circle,
+                          ),
+                          child: const Icon(
+                            Icons.event_rounded,
+                            size: 48,
+                            color: Colors.white,
+                          ),
+                        ),
+                        const SizedBox(height: 12),
+                        Text(
+                          DateFormat('EEEE, dd MMMM yyyy').format(_selectedDate),
+                          style: TextStyle(
+                            color: Colors.white.withOpacity(0.9),
+                            fontSize: 14,
+                          ),
+                        ),
+                        const SizedBox(height: 16),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+            ),
+            // Body Content
+            SliverPadding(
+              padding: EdgeInsets.all(padding),
+              sliver: SliverList(
+                delegate: SliverChildListDelegate([
+                  _buildFormContent(context, db),
+                ]),
+              ),
+            ),
+          ],
+        ),
         loading: () => const Center(
           child: CircularProgressIndicator(color: AppColors.primary),
         ),
@@ -108,14 +156,12 @@ class _AddAppointmentScreenState extends ConsumerState<AddAppointmentScreen> {
     );
   }
 
-  Widget _buildForm(BuildContext context, DoctorDatabase? db) {
+  Widget _buildFormContent(BuildContext context, DoctorDatabase? db) {
     if (db == null) {
       return _buildErrorState(context);
     }
 
-    return SingleChildScrollView(
-      padding: const EdgeInsets.all(20),
-      child: Form(
+    return Form(
         key: _formKey,
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -153,7 +199,6 @@ class _AddAppointmentScreenState extends ConsumerState<AddAppointmentScreen> {
             const SizedBox(height: 40),
           ],
         ),
-      ),
     );
   }
 

@@ -45,6 +45,7 @@ class PdfService {
     required String clinicName,
     String? clinicPhone,
     String? clinicAddress,
+    String? signatureData, // Base64 encoded signature
   }) async {
     await _initFonts();
     final pdf = await _generatePrescriptionPdf(
@@ -54,6 +55,7 @@ class PdfService {
       clinicName: clinicName,
       clinicPhone: clinicPhone,
       clinicAddress: clinicAddress,
+      signatureData: signatureData,
     );
     
     await Printing.sharePdf(
@@ -69,6 +71,8 @@ class PdfService {
     required String clinicName,
     String? clinicPhone,
     String? clinicAddress,
+    String? signatureData, // Base64 encoded signature
+    String? doctorName,
   }) async {
     await _initFonts();
     final pdf = await _generateInvoicePdf(
@@ -77,6 +81,8 @@ class PdfService {
       clinicName: clinicName,
       clinicPhone: clinicPhone,
       clinicAddress: clinicAddress,
+      signatureData: signatureData,
+      doctorName: doctorName,
     );
     
     await Printing.sharePdf(
@@ -92,9 +98,21 @@ class PdfService {
     required String clinicName,
     String? clinicPhone,
     String? clinicAddress,
+    String? signatureData,
   }) async {
     final theme = _getTheme();
     final pdf = theme != null ? pw.Document(theme: theme) : pw.Document();
+    
+    // Parse signature image if available
+    pw.MemoryImage? signatureImage;
+    if (signatureData != null && signatureData.isNotEmpty) {
+      try {
+        final bytes = base64Decode(signatureData);
+        signatureImage = pw.MemoryImage(bytes);
+      } catch (e) {
+        print('Error parsing signature: $e');
+      }
+    }
     
     List<dynamic> medications = [];
     try {
@@ -252,10 +270,16 @@ class PdfService {
                   pw.Column(
                     crossAxisAlignment: pw.CrossAxisAlignment.center,
                     children: [
-                      pw.Container(width: 150, child: pw.Divider()),
-                      pw.SizedBox(height: 4),
+                      // Show signature image if available
+                      if (signatureImage != null) ...[
+                        pw.Image(signatureImage, height: 50, width: 120, fit: pw.BoxFit.contain),
+                        pw.SizedBox(height: 4),
+                      ] else ...[
+                        pw.Container(width: 150, child: pw.Divider()),
+                        pw.SizedBox(height: 4),
+                      ],
                       pw.Text('Dr. $doctorName', style: pw.TextStyle(fontWeight: pw.FontWeight.bold)),
-                      pw.Text('Signature & Stamp'),
+                      pw.Text('Signature'),
                     ],
                   ),
                 ],
@@ -275,9 +299,22 @@ class PdfService {
     required String clinicName,
     String? clinicPhone,
     String? clinicAddress,
+    String? signatureData,
+    String? doctorName,
   }) async {
     final theme = _getTheme();
     final pdf = theme != null ? pw.Document(theme: theme) : pw.Document();
+    
+    // Parse signature image if available
+    pw.MemoryImage? signatureImage;
+    if (signatureData != null && signatureData.isNotEmpty) {
+      try {
+        final bytes = base64Decode(signatureData);
+        signatureImage = pw.MemoryImage(bytes);
+      } catch (e) {
+        print('Error parsing signature: $e');
+      }
+    }
     
     List<dynamic> items = [];
     try {
@@ -427,17 +464,37 @@ class PdfService {
               
               pw.Spacer(),
               
-              // Footer
+              // Footer with Signature
               pw.Divider(),
               pw.SizedBox(height: 10),
-              pw.Center(
-                child: pw.Text(
-                  'Thank you for your visit!',
-                  style: pw.TextStyle(
-                    fontStyle: pw.FontStyle.italic,
-                    color: PdfColors.grey600,
+              pw.Row(
+                mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
+                crossAxisAlignment: pw.CrossAxisAlignment.end,
+                children: [
+                  pw.Text(
+                    'Thank you for your visit!',
+                    style: pw.TextStyle(
+                      fontStyle: pw.FontStyle.italic,
+                      color: PdfColors.grey600,
+                    ),
                   ),
-                ),
+                  pw.Column(
+                    crossAxisAlignment: pw.CrossAxisAlignment.center,
+                    children: [
+                      // Show signature image if available
+                      if (signatureImage != null) ...[
+                        pw.Image(signatureImage, height: 50, width: 120, fit: pw.BoxFit.contain),
+                        pw.SizedBox(height: 4),
+                      ] else ...[
+                        pw.Container(width: 150, child: pw.Divider()),
+                        pw.SizedBox(height: 4),
+                      ],
+                      if (doctorName != null)
+                        pw.Text('Dr. $doctorName', style: pw.TextStyle(fontWeight: pw.FontWeight.bold)),
+                      pw.Text('Authorized Signature'),
+                    ],
+                  ),
+                ],
               ),
             ],
           );

@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
+import 'package:drift/drift.dart' show Value;
 import '../../db/doctor_db.dart';
 import '../../providers/db_provider.dart';
 import '../../theme/app_theme.dart';
@@ -12,6 +13,7 @@ import 'add_appointment_screen.dart';
 import 'add_invoice_screen.dart';
 import 'add_prescription_screen.dart';
 import 'add_medical_record_screen.dart';
+import 'psychiatric_assessment_screen.dart';
 
 class PatientViewScreen extends ConsumerStatefulWidget {
   final Patient patient;
@@ -25,16 +27,116 @@ class PatientViewScreen extends ConsumerStatefulWidget {
 class _PatientViewScreenState extends ConsumerState<PatientViewScreen>
     with SingleTickerProviderStateMixin {
   late TabController _tabController;
+  
+  // Editable field controllers
+  late TextEditingController _phoneController;
+  late TextEditingController _emailController;
+  late TextEditingController _addressController;
+  
+  // Track changes
+  bool _hasChanges = false;
+  bool _isSaving = false;
+  
+  // Store initial values for comparison
+  late String _initialPhone;
+  late String _initialEmail;
+  late String _initialAddress;
 
   @override
   void initState() {
     super.initState();
     _tabController = TabController(length: 4, vsync: this);
+    
+    // Initialize controllers with patient data
+    final patient = widget.patient;
+    _phoneController = TextEditingController(text: patient.phone);
+    _emailController = TextEditingController(text: patient.email);
+    _addressController = TextEditingController(text: patient.address);
+    
+    // Store initial values
+    _initialPhone = patient.phone;
+    _initialEmail = patient.email;
+    _initialAddress = patient.address;
+    
+    // Add listeners for change detection
+    _phoneController.addListener(_checkForChanges);
+    _emailController.addListener(_checkForChanges);
+    _addressController.addListener(_checkForChanges);
+  }
+  
+  void _checkForChanges() {
+    final hasChanges = _phoneController.text != _initialPhone ||
+        _emailController.text != _initialEmail ||
+        _addressController.text != _initialAddress;
+    
+    if (hasChanges != _hasChanges) {
+      setState(() => _hasChanges = hasChanges);
+    }
+  }
+  
+  Future<void> _saveChanges() async {
+    setState(() => _isSaving = true);
+    
+    try {
+      final db = await ref.read(doctorDbProvider.future);
+      
+      // Create a companion with updated fields
+      final updatedPatient = PatientsCompanion(
+        id: Value(widget.patient.id),
+        firstName: Value(widget.patient.firstName),
+        lastName: Value(widget.patient.lastName),
+        dateOfBirth: Value(widget.patient.dateOfBirth),
+        phone: Value(_phoneController.text),
+        email: Value(_emailController.text),
+        address: Value(_addressController.text),
+        medicalHistory: Value(widget.patient.medicalHistory),
+        tags: Value(widget.patient.tags), // Keep original tags (not editable)
+        riskLevel: Value(widget.patient.riskLevel),
+        createdAt: Value(widget.patient.createdAt),
+      );
+      
+      // Update patient in database
+      await db.updatePatient(updatedPatient);
+      
+      // Update initial values
+      _initialPhone = _phoneController.text;
+      _initialEmail = _emailController.text;
+      _initialAddress = _addressController.text;
+      
+      setState(() {
+        _hasChanges = false;
+        _isSaving = false;
+      });
+      
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Patient information updated'),
+            behavior: SnackBarBehavior.floating,
+            backgroundColor: AppColors.success,
+          ),
+        );
+      }
+    } catch (e) {
+      setState(() => _isSaving = false);
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Error saving changes: $e'),
+            behavior: SnackBarBehavior.floating,
+            backgroundColor: AppColors.error,
+          ),
+        );
+      }
+    }
   }
 
   @override
   void dispose() {
     _tabController.dispose();
+    _phoneController.dispose();
+    _emailController.dispose();
+    _addressController.dispose();
     super.dispose();
   }
 
@@ -69,10 +171,57 @@ class _PatientViewScreenState extends ConsumerState<PatientViewScreen>
     return colors[index.abs()];
   }
 
+  Color _getTagColor(String tag) {
+    final tagLower = tag.toLowerCase();
+    if (tagLower.contains('urgent') || tagLower.contains('high') || tagLower.contains('critical')) {
+      return AppColors.error;
+    } else if (tagLower.contains('follow') || tagLower.contains('pending')) {
+      return AppColors.warning;
+    } else if (tagLower.contains('new') || tagLower.contains('active')) {
+      return AppColors.success;
+    } else if (tagLower.contains('vip') || tagLower.contains('premium')) {
+      return const Color(0xFF9B59B6);
+    }
+    // Default: use hash-based color
+    final colors = [
+      AppColors.primary,
+      AppColors.accent,
+      AppColors.info,
+      const Color(0xFF9B59B6),
+      const Color(0xFF1ABC9C),
+    ];
+    return colors[tag.hashCode.abs() % colors.length];
+  }
+
+  Widget _buildHeaderAction({
+    required IconData icon,
+    required Color color,
+    Color? bgColor,
+    required VoidCallback onTap,
+    bool isLast = false,
+  }) {
+    return Padding(
+      padding: EdgeInsets.only(right: isLast ? 12 : 6),
+      child: Material(
+        color: bgColor ?? color.withOpacity(0.2),
+        borderRadius: BorderRadius.circular(10),
+        child: InkWell(
+          onTap: onTap,
+          borderRadius: BorderRadius.circular(10),
+          child: Container(
+            padding: const EdgeInsets.all(8),
+            child: Icon(icon, color: color, size: 20),
+          ),
+        ),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final patient = widget.patient;
     final riskColor = _getRiskColor(patient.riskLevel);
+    final isDark = Theme.of(context).brightness == Brightness.dark;
 
     return Scaffold(
       body: NestedScrollView(
@@ -81,16 +230,25 @@ class _PatientViewScreenState extends ConsumerState<PatientViewScreen>
             SliverAppBar(
               expandedHeight: 280,
               pinned: true,
-              backgroundColor: AppColors.primary,
-              leading: IconButton(
-                icon: const Icon(Icons.arrow_back_rounded, color: Colors.white),
-                onPressed: () => Navigator.pop(context),
+              elevation: 0,
+              backgroundColor: isDark ? AppColors.darkSurface : Colors.white,
+              surfaceTintColor: Colors.transparent,
+              leading: Container(
+                margin: const EdgeInsets.all(8),
+                decoration: BoxDecoration(
+                  color: Colors.white.withOpacity(0.2),
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                child: IconButton(
+                  icon: const Icon(Icons.arrow_back_rounded, color: Colors.white, size: 22),
+                  onPressed: () => Navigator.pop(context),
+                ),
               ),
               actions: [
-                IconButton(
-                  icon: const Icon(Icons.chat, color: Color(0xFF25D366)),
-                  tooltip: 'WhatsApp',
-                  onPressed: () {
+                _buildHeaderAction(
+                  icon: Icons.chat_rounded,
+                  color: const Color(0xFF25D366),
+                  onTap: () {
                     if (patient.phone.isNotEmpty) {
                       WhatsAppService.openChat(patient.phone);
                     } else {
@@ -103,128 +261,199 @@ class _PatientViewScreenState extends ConsumerState<PatientViewScreen>
                     }
                   },
                 ),
-                IconButton(
-                  icon: const Icon(Icons.edit_outlined, color: Colors.white),
-                  onPressed: () {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(
-                        content: Text('Edit patient feature coming soon'),
-                        behavior: SnackBarBehavior.floating,
-                      ),
-                    );
-                  },
-                ),
-                IconButton(
-                  icon: const Icon(Icons.more_vert, color: Colors.white),
-                  onPressed: () {
-                    _showOptionsMenu(context);
-                  },
+                _buildHeaderAction(
+                  icon: Icons.more_vert_rounded,
+                  color: Colors.white,
+                  bgColor: Colors.white.withOpacity(0.2),
+                  onTap: () => _showOptionsMenu(context),
+                  isLast: true,
                 ),
               ],
               flexibleSpace: FlexibleSpaceBar(
                 background: Container(
-                  decoration: const BoxDecoration(
-                    gradient: AppColors.primaryGradient,
-                  ),
-                  child: SafeArea(
-                    child: Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        const SizedBox(height: 40),
-                        // Avatar with photo support
-                        Container(
-                          padding: const EdgeInsets.all(5),
-                          decoration: BoxDecoration(
-                            color: Colors.white,
-                            shape: BoxShape.circle,
-                            boxShadow: [
-                              BoxShadow(
-                                color: Colors.black.withOpacity(0.2),
-                                blurRadius: 20,
-                                offset: const Offset(0, 10),
-                              ),
-                            ],
-                          ),
-                          child: PatientAvatarCircle(
-                            patientId: patient.id,
-                            firstName: patient.firstName,
-                            lastName: patient.lastName,
-                            size: 90,
-                            editable: true,
-                            onPhotoChanged: () => setState(() {}),
-                          ),
-                        ),
-                        const SizedBox(height: 16),
-                        // Name
-                        Text(
-                          '${patient.firstName} ${patient.lastName}',
-                          style: const TextStyle(
-                            color: Colors.white,
-                            fontSize: 24,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                        const SizedBox(height: 8),
-                        // Risk Badge
-                        Container(
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 16,
-                            vertical: 6,
-                          ),
-                          decoration: BoxDecoration(
-                            color: Colors.white.withOpacity(0.2),
-                            borderRadius: BorderRadius.circular(20),
-                          ),
-                          child: Row(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              Container(
-                                width: 10,
-                                height: 10,
-                                decoration: BoxDecoration(
-                                  color: riskColor,
-                                  shape: BoxShape.circle,
-                                ),
-                              ),
-                              const SizedBox(width: 8),
-                              Text(
-                                _getRiskLabel(patient.riskLevel),
-                                style: const TextStyle(
-                                  color: Colors.white,
-                                  fontWeight: FontWeight.w600,
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
+                  decoration: BoxDecoration(
+                    gradient: LinearGradient(
+                      begin: Alignment.topLeft,
+                      end: Alignment.bottomRight,
+                      colors: [
+                        AppColors.primary,
+                        AppColors.primary.withOpacity(0.8),
+                        AppColors.accent.withOpacity(0.9),
                       ],
                     ),
+                  ),
+                  child: Stack(
+                    children: [
+                      // Decorative circles
+                      Positioned(
+                        top: -50,
+                        right: -50,
+                        child: Container(
+                          width: 200,
+                          height: 200,
+                          decoration: BoxDecoration(
+                            shape: BoxShape.circle,
+                            color: Colors.white.withOpacity(0.1),
+                          ),
+                        ),
+                      ),
+                      Positioned(
+                        bottom: 60,
+                        left: -30,
+                        child: Container(
+                          width: 100,
+                          height: 100,
+                          decoration: BoxDecoration(
+                            shape: BoxShape.circle,
+                            color: Colors.white.withOpacity(0.08),
+                          ),
+                        ),
+                      ),
+                      // Content
+                      SafeArea(
+                        child: Column(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            const SizedBox(height: 40),
+                            // Avatar with glow effect
+                            Container(
+                              padding: const EdgeInsets.all(3),
+                              decoration: BoxDecoration(
+                                shape: BoxShape.circle,
+                                gradient: LinearGradient(
+                                  begin: Alignment.topLeft,
+                                  end: Alignment.bottomRight,
+                                  colors: [
+                                    Colors.white.withOpacity(0.9),
+                                    Colors.white.withOpacity(0.5),
+                                  ],
+                                ),
+                                boxShadow: [
+                                  BoxShadow(
+                                    color: Colors.black.withOpacity(0.15),
+                                    blurRadius: 20,
+                                    offset: const Offset(0, 10),
+                                  ),
+                                ],
+                              ),
+                              child: PatientAvatarCircle(
+                                patientId: patient.id,
+                                firstName: patient.firstName,
+                                lastName: patient.lastName,
+                                size: 85,
+                                editable: true,
+                                onPhotoChanged: () => setState(() {}),
+                              ),
+                            ),
+                            const SizedBox(height: 14),
+                            // Name with subtle shadow
+                            Text(
+                              '${patient.firstName} ${patient.lastName}',
+                              style: TextStyle(
+                                color: Colors.white,
+                                fontSize: 24,
+                                fontWeight: FontWeight.bold,
+                                letterSpacing: 0.3,
+                                shadows: [
+                                  Shadow(
+                                    color: Colors.black.withOpacity(0.15),
+                                    blurRadius: 8,
+                                    offset: const Offset(0, 3),
+                                  ),
+                                ],
+                              ),
+                            ),
+                            const SizedBox(height: 10),
+                            // Compact Risk Badge
+                            Container(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 14,
+                                vertical: 6,
+                              ),
+                              decoration: BoxDecoration(
+                                color: riskColor.withOpacity(0.2),
+                                borderRadius: BorderRadius.circular(20),
+                                border: Border.all(
+                                  color: riskColor.withOpacity(0.4),
+                                  width: 1,
+                                ),
+                              ),
+                              child: Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  Container(
+                                    width: 8,
+                                    height: 8,
+                                    decoration: BoxDecoration(
+                                      color: riskColor,
+                                      shape: BoxShape.circle,
+                                    ),
+                                  ),
+                                  const SizedBox(width: 8),
+                                  Text(
+                                    _getRiskLabel(patient.riskLevel),
+                                    style: const TextStyle(
+                                      color: Colors.white,
+                                      fontWeight: FontWeight.w600,
+                                      fontSize: 14,
+                                      letterSpacing: 0.5,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
                   ),
                 ),
               ),
               bottom: PreferredSize(
-                preferredSize: const Size.fromHeight(48),
-                child: Builder(
-                  builder: (context) {
-                    final isDark = Theme.of(context).brightness == Brightness.dark;
-                    return Container(
-                      color: isDark ? AppColors.darkSurface : Colors.white,
+                preferredSize: const Size.fromHeight(56),
+                child: Container(
+                  decoration: BoxDecoration(
+                    color: isDark ? AppColors.darkSurface : Colors.white,
+                    borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
+                  ),
+                  child: Padding(
+                    padding: const EdgeInsets.fromLTRB(12, 8, 12, 8),
+                    child: Container(
+                      decoration: BoxDecoration(
+                        color: isDark ? AppColors.darkBackground : AppColors.background,
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      padding: const EdgeInsets.all(4),
                       child: TabBar(
                         controller: _tabController,
-                        labelColor: AppColors.primary,
+                        labelColor: Colors.white,
                         unselectedLabelColor: isDark ? AppColors.darkTextSecondary : AppColors.textSecondary,
-                        indicatorColor: AppColors.primary,
-                        indicatorWeight: 3,
-                        labelStyle: const TextStyle(fontWeight: FontWeight.w600),
+                        indicator: BoxDecoration(
+                          gradient: const LinearGradient(
+                            colors: [AppColors.primary, AppColors.accent],
+                          ),
+                          borderRadius: BorderRadius.circular(10),
+                        ),
+                        dividerColor: Colors.transparent,
+                        indicatorSize: TabBarIndicatorSize.tab,
+                        labelStyle: const TextStyle(
+                          fontWeight: FontWeight.w600,
+                          fontSize: 12,
+                        ),
+                        unselectedLabelStyle: const TextStyle(
+                          fontWeight: FontWeight.w500,
+                          fontSize: 12,
+                        ),
+                        labelPadding: EdgeInsets.zero,
                         tabs: const [
-                          Tab(text: 'Overview'),
-                          Tab(text: 'History'),
-                          Tab(text: 'Appointments'),
-                          Tab(text: 'Prescriptions'),
+                          Tab(text: 'Overview', height: 36),
+                          Tab(text: 'History', height: 36),
+                          Tab(text: 'Visits', height: 36),
+                          Tab(text: 'Rx', height: 36),
                         ],
                       ),
-                    );
-                  },
+                    ),
+                  ),
                 ),
               ),
             ),
@@ -247,87 +476,149 @@ class _PatientViewScreenState extends ConsumerState<PatientViewScreen>
   Widget _buildOverviewTab(BuildContext context) {
     final patient = widget.patient;
     final dateFormat = DateFormat('MMM d, yyyy');
+    final isDark = Theme.of(context).brightness == Brightness.dark;
 
-    return SingleChildScrollView(
-      padding: const EdgeInsets.all(20),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          // Contact Information Card
-          _buildSectionCard(
-            context,
-            title: 'Contact Information',
-            icon: Icons.contact_phone_outlined,
+    return Stack(
+      children: [
+        SingleChildScrollView(
+          padding: const EdgeInsets.all(20),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              _buildInfoRow(Icons.phone_outlined, 'Phone', patient.phone.isNotEmpty ? patient.phone : 'Not provided'),
-              _buildInfoRow(Icons.email_outlined, 'Email', patient.email.isNotEmpty ? patient.email : 'Not provided'),
-              _buildInfoRow(Icons.location_on_outlined, 'Address', patient.address.isNotEmpty ? patient.address : 'Not provided'),
-            ],
-          ),
-          const SizedBox(height: 16),
-
-          // Personal Information Card
-          _buildSectionCard(
-            context,
-            title: 'Personal Information',
-            icon: Icons.person_outline,
-            children: [
-              _buildInfoRow(
-                Icons.cake_outlined,
-                'Date of Birth',
-                patient.dateOfBirth != null ? dateFormat.format(patient.dateOfBirth!) : 'Not provided',
+              // Quick Stats Section at top
+              _buildQuickStats(context),
+              const SizedBox(height: 20),
+              
+              // Contact Information Card (Editable)
+              _buildSectionCard(
+                context,
+                title: 'Contact Information',
+                icon: Icons.contact_phone_rounded,
+                accentColor: AppColors.info,
+                children: [
+                  _buildEditableInfoRow(Icons.phone_rounded, 'Phone', _phoneController, hint: 'Enter phone number', keyboardType: TextInputType.phone),
+                  _buildEditableInfoRow(Icons.email_rounded, 'Email', _emailController, hint: 'Enter email address', keyboardType: TextInputType.emailAddress),
+                  _buildEditableInfoRow(Icons.location_on_rounded, 'Address', _addressController, hint: 'Enter address', maxLines: 2),
+                ],
               ),
-              if (patient.dateOfBirth != null)
-                _buildInfoRow(
-                  Icons.calendar_today_outlined,
-                  'Age',
-                  '${_calculateAge(patient.dateOfBirth!)} years old',
+              const SizedBox(height: 16),
+
+              // Personal Information Card (Read-only)
+              _buildSectionCard(
+                context,
+                title: 'Personal Information',
+                icon: Icons.person_rounded,
+                accentColor: AppColors.accent,
+                children: [
+                  _buildInfoRow(
+                    Icons.cake_rounded,
+                    'Date of Birth',
+                    patient.dateOfBirth != null ? dateFormat.format(patient.dateOfBirth!) : 'Not provided',
+                  ),
+                  if (patient.dateOfBirth != null)
+                    _buildInfoRow(
+                      Icons.calendar_today_rounded,
+                      'Age',
+                      '${_calculateAge(patient.dateOfBirth!)} years old',
+                    ),
+                  _buildInfoRow(
+                    Icons.event_rounded,
+                    'Patient Since',
+                    dateFormat.format(patient.createdAt),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 16),
+
+              // Tags Card (Read-only)
+              if (patient.tags.isNotEmpty)
+                _buildSectionCard(
+                  context,
+                  title: 'Tags',
+                  icon: Icons.label_rounded,
+                  accentColor: const Color(0xFF9B59B6),
+                  children: [
+                    Wrap(
+                      spacing: 8,
+                      runSpacing: 8,
+                      children: patient.tags.split(',').where((tag) => tag.trim().isNotEmpty).map((tag) {
+                        final tagColor = _getTagColor(tag.trim());
+                        return Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                          decoration: BoxDecoration(
+                            color: tagColor.withOpacity(0.1),
+                            borderRadius: BorderRadius.circular(16),
+                            border: Border.all(color: tagColor.withOpacity(0.3)),
+                          ),
+                          child: Text(
+                            tag.trim(),
+                            style: TextStyle(
+                              color: tagColor,
+                              fontWeight: FontWeight.w500,
+                              fontSize: 13,
+                            ),
+                          ),
+                        );
+                      }).toList(),
+                    ),
+                  ],
                 ),
-              _buildInfoRow(
-                Icons.event_outlined,
-                'Patient Since',
-                dateFormat.format(patient.createdAt),
-              ),
+              const SizedBox(height: 100), // Space for save button and FAB
             ],
           ),
-          const SizedBox(height: 16),
-
-          // Tags Card
-          if (patient.tags.isNotEmpty)
-            _buildSectionCard(
-              context,
-              title: 'Tags',
-              icon: Icons.label_outline,
-              children: [
-                Wrap(
-                  spacing: 8,
-                  runSpacing: 8,
-                  children: patient.tags.split(',').map((tag) {
-                    return Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                      decoration: BoxDecoration(
-                        color: AppColors.primary.withOpacity(0.1),
-                        borderRadius: BorderRadius.circular(20),
-                        border: Border.all(color: AppColors.primary.withOpacity(0.3)),
-                      ),
-                      child: Text(
-                        tag.trim(),
+        ),
+        
+        // Save Button (appears when changes are made)
+        if (_hasChanges)
+          Positioned(
+            bottom: 16, // Same as FAB default position
+            left: 20,
+            right: 76, // FAB is ~56px wide + 16px margin + 4px gap
+            child: Material(
+              elevation: 8,
+              shadowColor: AppColors.primary.withOpacity(0.3),
+              borderRadius: BorderRadius.circular(14),
+              child: InkWell(
+                onTap: _isSaving ? null : _saveChanges,
+                borderRadius: BorderRadius.circular(14),
+                child: Container(
+                  height: 56, // Same height as FAB
+                  decoration: BoxDecoration(
+                    gradient: LinearGradient(
+                      colors: [AppColors.primary, AppColors.primary.withOpacity(0.8)],
+                    ),
+                    borderRadius: BorderRadius.circular(14),
+                  ),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      if (_isSaving)
+                        const SizedBox(
+                          width: 20,
+                          height: 20,
+                          child: CircularProgressIndicator(
+                            strokeWidth: 2,
+                            valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                          ),
+                        )
+                      else
+                        const Icon(Icons.save_rounded, color: Colors.white, size: 20),
+                      const SizedBox(width: 8),
+                      Text(
+                        _isSaving ? 'Saving...' : 'Save Changes',
                         style: const TextStyle(
-                          color: AppColors.primary,
-                          fontWeight: FontWeight.w500,
+                          color: Colors.white,
+                          fontWeight: FontWeight.w600,
+                          fontSize: 16,
                         ),
                       ),
-                    );
-                  }).toList(),
+                    ],
+                  ),
                 ),
-              ],
+              ),
             ),
-          const SizedBox(height: 16),
-
-          // Quick Stats
-          _buildQuickStats(context),
-        ],
-      ),
+          ),
+      ],
     );
   }
 
@@ -465,6 +756,10 @@ class _PatientViewScreenState extends ConsumerState<PatientViewScreen>
       case 'psychiatric_assessment':
         recordIcon = Icons.psychology;
         recordColor = AppColors.primary;
+        break;
+      case 'detailed_psychiatric_assessment':
+        recordIcon = Icons.psychology_alt;
+        recordColor = const Color(0xFF8E44AD);
         break;
       case 'lab_result':
         recordIcon = Icons.science_outlined;
@@ -675,7 +970,9 @@ class _PatientViewScreenState extends ConsumerState<PatientViewScreen>
   String _getRecordTypeLabel(String type) {
     switch (type) {
       case 'psychiatric_assessment':
-        return 'Psychiatric';
+        return 'Quick Assessment';
+      case 'detailed_psychiatric_assessment':
+        return 'Comprehensive Assessment';
       case 'lab_result':
         return 'Lab Result';
       case 'imaging':
@@ -784,6 +1081,20 @@ class _PatientViewScreenState extends ConsumerState<PatientViewScreen>
     }
   }
 
+  void _openDetailedPsychiatricAssessment(BuildContext context) async {
+    final result = await Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (_) => PsychiatricAssessmentScreen(
+          preselectedPatient: widget.patient,
+        ),
+      ),
+    );
+    if (result == true) {
+      setState(() {}); // Refresh the list
+    }
+  }
+
   void _showMedicalRecordDetails(BuildContext context, MedicalRecord record, Map<String, dynamic> data) {
     final dateFormat = DateFormat('MMMM d, yyyy');
     final isDark = Theme.of(context).brightness == Brightness.dark;
@@ -795,6 +1106,10 @@ class _PatientViewScreenState extends ConsumerState<PatientViewScreen>
       case 'psychiatric_assessment':
         recordIcon = Icons.psychology;
         recordColor = AppColors.primary;
+        break;
+      case 'detailed_psychiatric_assessment':
+        recordIcon = Icons.psychology_alt;
+        recordColor = const Color(0xFF8E44AD);
         break;
       case 'lab_result':
         recordIcon = Icons.science_outlined;
@@ -982,6 +1297,50 @@ class _PatientViewScreenState extends ConsumerState<PatientViewScreen>
                         _buildDetailSection('Suicidal Ideation', data['suicidalIdeation'].toString(), Icons.warning_amber, isDark),
                     ],
                     
+                    // ===== DETAILED PSYCHIATRIC ASSESSMENT DATA =====
+                    if (record.recordType == 'detailed_psychiatric_assessment') ...[
+                      if (data['presenting_complaints'] != null && data['presenting_complaints'].toString().isNotEmpty)
+                        _buildDetailSection('Presenting Complaints', data['presenting_complaints'].toString(), Icons.report_outlined, isDark),
+                      if (data['history_of_present_illness'] != null && data['history_of_present_illness'].toString().isNotEmpty)
+                        _buildDetailSection('History of Present Illness', data['history_of_present_illness'].toString(), Icons.history, isDark),
+                      // Symptoms section
+                      if (data['symptoms'] != null && data['symptoms'] is Map) ...[
+                        const SizedBox(height: 16),
+                        Text(
+                          'Symptoms',
+                          style: TextStyle(
+                            fontWeight: FontWeight.bold,
+                            fontSize: 16,
+                            color: isDark ? AppColors.darkTextPrimary : AppColors.textPrimary,
+                          ),
+                        ),
+                        const SizedBox(height: 8),
+                        _buildComprehensiveSymptomsCard(data['symptoms'] as Map<String, dynamic>, isDark),
+                      ],
+                      // MSE section
+                      if (data['mental_state_examination'] != null && data['mental_state_examination'] is Map) ...[
+                        const SizedBox(height: 16),
+                        Text(
+                          'Mental State Examination',
+                          style: TextStyle(
+                            fontWeight: FontWeight.bold,
+                            fontSize: 16,
+                            color: isDark ? AppColors.darkTextPrimary : AppColors.textPrimary,
+                          ),
+                        ),
+                        const SizedBox(height: 8),
+                        _buildMseGrid(data['mental_state_examination'] as Map<String, dynamic>, isDark),
+                      ],
+                      // Physical Examination
+                      if (data['physical_examination'] != null && data['physical_examination'] is Map)
+                        _buildPhysicalExamCard(data['physical_examination'] as Map<String, dynamic>, isDark),
+                      // Treatment
+                      if (data['advise_treatment'] != null && data['advise_treatment'] is Map) ...[
+                        if ((data['advise_treatment'] as Map)['treatment_notes'] != null)
+                          _buildDetailSection('Treatment Notes', (data['advise_treatment'] as Map)['treatment_notes'].toString(), Icons.healing, isDark),
+                      ],
+                    ],
+                    
                     // ===== LAB RESULT DATA =====
                     if (record.recordType == 'lab_result') ...[
                       _buildLabResultsCard(data, isDark),
@@ -1156,6 +1515,133 @@ class _PatientViewScreenState extends ConsumerState<PatientViewScreen>
               ),
             ),
           ],
+        ],
+      ),
+    );
+  }
+
+  Widget _buildComprehensiveSymptomsCard(Map<String, dynamic> symptoms, bool isDark) {
+    final entries = symptoms.entries.where((e) => 
+      e.value != null && e.value.toString().isNotEmpty && e.value.toString() != 'null'
+    ).toList();
+    
+    if (entries.isEmpty) return const SizedBox.shrink();
+    
+    return Container(
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: isDark ? AppColors.darkBackground : AppColors.background,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: isDark ? AppColors.darkDivider : AppColors.divider),
+      ),
+      child: Column(
+        children: entries.map((e) {
+          return Padding(
+            padding: const EdgeInsets.only(bottom: 8),
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                SizedBox(
+                  width: 140,
+                  child: Text(
+                    '${_formatSymptomLabel(e.key)}:',
+                    style: TextStyle(
+                      color: isDark ? AppColors.darkTextSecondary : AppColors.textSecondary,
+                      fontSize: 13,
+                    ),
+                  ),
+                ),
+                Expanded(
+                  child: Text(
+                    e.value.toString(),
+                    style: TextStyle(
+                      fontSize: 13,
+                      color: isDark ? AppColors.darkTextPrimary : AppColors.textPrimary,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          );
+        }).toList(),
+      ),
+    );
+  }
+  
+  String _formatSymptomLabel(String key) {
+    return key
+        .replaceAll('_', ' ')
+        .split(' ')
+        .map((w) => w.isNotEmpty ? '${w[0].toUpperCase()}${w.substring(1)}' : '')
+        .join(' ');
+  }
+
+  Widget _buildPhysicalExamCard(Map<String, dynamic> exam, bool isDark) {
+    final entries = exam.entries.where((e) => 
+      e.value != null && e.value.toString().isNotEmpty && e.value.toString() != 'null'
+    ).toList();
+    
+    if (entries.isEmpty) return const SizedBox.shrink();
+    
+    return Container(
+      margin: const EdgeInsets.only(top: 16),
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: AppColors.accent.withOpacity(0.1),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: AppColors.accent.withOpacity(0.3)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Icon(Icons.medical_information, color: AppColors.accent, size: 20),
+              const SizedBox(width: 8),
+              Text(
+                'Physical Examination',
+                style: TextStyle(
+                  fontWeight: FontWeight.w600,
+                  fontSize: 15,
+                  color: isDark ? AppColors.darkTextPrimary : AppColors.textPrimary,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 12),
+          Wrap(
+            spacing: 16,
+            runSpacing: 8,
+            children: entries.map((e) {
+              return Container(
+                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                decoration: BoxDecoration(
+                  color: AppColors.accent.withOpacity(0.15),
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Text(
+                      '${_formatSymptomLabel(e.key)}: ',
+                      style: TextStyle(
+                        color: isDark ? AppColors.darkTextSecondary : AppColors.textSecondary,
+                        fontSize: 13,
+                      ),
+                    ),
+                    Text(
+                      e.value.toString(),
+                      style: TextStyle(
+                        fontWeight: FontWeight.w600,
+                        fontSize: 13,
+                        color: isDark ? AppColors.darkTextPrimary : AppColors.textPrimary,
+                      ),
+                    ),
+                  ],
+                ),
+              );
+            }).toList(),
+          ),
         ],
       ),
     );
@@ -1759,16 +2245,23 @@ class _PatientViewScreenState extends ConsumerState<PatientViewScreen>
     required String title,
     required IconData icon,
     required List<Widget> children,
+    Color? accentColor,
   }) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
+    final color = accentColor ?? AppColors.primary;
+    
     return Container(
       decoration: BoxDecoration(
-        color: Theme.of(context).colorScheme.surface,
+        color: isDark ? AppColors.darkSurface : Colors.white,
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: (isDark ? AppColors.darkDivider : AppColors.divider).withOpacity(0.5)),
+        border: Border.all(
+          color: isDark 
+              ? AppColors.darkDivider.withOpacity(0.5)
+              : AppColors.divider.withOpacity(0.5),
+        ),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.04),
+            color: Colors.black.withOpacity(isDark ? 0.15 : 0.04),
             blurRadius: 10,
             offset: const Offset(0, 4),
           ),
@@ -1777,6 +2270,7 @@ class _PatientViewScreenState extends ConsumerState<PatientViewScreen>
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
+          // Simpler Header
           Padding(
             padding: const EdgeInsets.all(16),
             child: Row(
@@ -1784,22 +2278,27 @@ class _PatientViewScreenState extends ConsumerState<PatientViewScreen>
                 Container(
                   padding: const EdgeInsets.all(8),
                   decoration: BoxDecoration(
-                    color: AppColors.primary.withOpacity(0.1),
-                    borderRadius: BorderRadius.circular(8),
+                    color: color.withOpacity(0.1),
+                    borderRadius: BorderRadius.circular(10),
                   ),
-                  child: Icon(icon, color: AppColors.primary, size: 20),
+                  child: Icon(icon, color: color, size: 20),
                 ),
                 const SizedBox(width: 12),
-                Text(
-                  title,
-                  style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                        fontWeight: FontWeight.w600,
-                      ),
+                Expanded(
+                  child: Text(
+                    title,
+                    style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
                 ),
               ],
             ),
           ),
-          const Divider(height: 1),
+          Divider(
+            height: 1,
+            color: isDark ? AppColors.darkDivider : AppColors.divider,
+          ),
           Padding(
             padding: const EdgeInsets.all(16),
             child: Column(
@@ -1817,10 +2316,14 @@ class _PatientViewScreenState extends ConsumerState<PatientViewScreen>
       builder: (context) {
         final isDark = Theme.of(context).brightness == Brightness.dark;
         return Padding(
-          padding: const EdgeInsets.only(bottom: 12),
+          padding: const EdgeInsets.only(bottom: 14),
           child: Row(
             children: [
-              Icon(icon, size: 20, color: isDark ? AppColors.darkTextSecondary : AppColors.textSecondary),
+              Icon(
+                icon, 
+                size: 20, 
+                color: isDark ? AppColors.darkTextSecondary : AppColors.textSecondary,
+              ),
               const SizedBox(width: 12),
               Expanded(
                 child: Column(
@@ -1840,6 +2343,86 @@ class _PatientViewScreenState extends ConsumerState<PatientViewScreen>
                         fontSize: 15,
                         fontWeight: FontWeight.w500,
                         color: Theme.of(context).colorScheme.onSurface,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
+  Widget _buildEditableInfoRow(IconData icon, String label, TextEditingController controller, {String? hint, TextInputType? keyboardType, int maxLines = 1}) {
+    return Builder(
+      builder: (context) {
+        final isDark = Theme.of(context).brightness == Brightness.dark;
+        return Padding(
+          padding: const EdgeInsets.only(bottom: 14),
+          child: Row(
+            crossAxisAlignment: maxLines > 1 ? CrossAxisAlignment.start : CrossAxisAlignment.center,
+            children: [
+              Padding(
+                padding: EdgeInsets.only(top: maxLines > 1 ? 12 : 0),
+                child: Icon(
+                  icon, 
+                  size: 20, 
+                  color: isDark ? AppColors.darkTextSecondary : AppColors.textSecondary,
+                ),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      label,
+                      style: TextStyle(
+                        fontSize: 12,
+                        color: isDark ? AppColors.darkTextSecondary : AppColors.textSecondary,
+                      ),
+                    ),
+                    const SizedBox(height: 4),
+                    TextField(
+                      controller: controller,
+                      keyboardType: keyboardType,
+                      maxLines: maxLines,
+                      style: TextStyle(
+                        fontSize: 15,
+                        fontWeight: FontWeight.w500,
+                        color: Theme.of(context).colorScheme.onSurface,
+                      ),
+                      decoration: InputDecoration(
+                        hintText: hint ?? 'Enter $label',
+                        hintStyle: TextStyle(
+                          color: isDark ? AppColors.darkTextSecondary.withOpacity(0.5) : AppColors.textSecondary.withOpacity(0.5),
+                          fontWeight: FontWeight.normal,
+                        ),
+                        isDense: true,
+                        contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                        filled: true,
+                        fillColor: isDark ? Colors.white.withOpacity(0.05) : Colors.grey.withOpacity(0.05),
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(8),
+                          borderSide: BorderSide(
+                            color: isDark ? Colors.white.withOpacity(0.1) : Colors.grey.withOpacity(0.2),
+                          ),
+                        ),
+                        enabledBorder: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(8),
+                          borderSide: BorderSide(
+                            color: isDark ? Colors.white.withOpacity(0.1) : Colors.grey.withOpacity(0.2),
+                          ),
+                        ),
+                        focusedBorder: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(8),
+                          borderSide: BorderSide(
+                            color: AppColors.primary,
+                            width: 1.5,
+                          ),
+                        ),
                       ),
                     ),
                   ],
@@ -1984,32 +2567,49 @@ class _PatientViewScreenState extends ConsumerState<PatientViewScreen>
     IconData icon,
     Color color,
   ) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
         color: color.withOpacity(0.1),
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: color.withOpacity(0.3)),
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(
+          color: color.withOpacity(0.2),
+        ),
       ),
-      child: Column(
+      child: Row(
         children: [
-          Icon(icon, color: color, size: 32),
-          const SizedBox(height: 8),
-          Text(
-            value,
-            style: TextStyle(
-              fontSize: 28,
-              fontWeight: FontWeight.bold,
-              color: color,
+          Container(
+            padding: const EdgeInsets.all(10),
+            decoration: BoxDecoration(
+              color: color.withOpacity(0.15),
+              borderRadius: BorderRadius.circular(10),
             ),
+            child: Icon(icon, color: color, size: 22),
           ),
-          const SizedBox(height: 4),
-          Text(
-            label,
-            style: TextStyle(
-              color: color.withOpacity(0.8),
-              fontWeight: FontWeight.w500,
-            ),
+          const SizedBox(width: 12),
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                value,
+                style: TextStyle(
+                  fontSize: 24,
+                  fontWeight: FontWeight.bold,
+                  color: color,
+                  height: 1,
+                ),
+              ),
+              const SizedBox(height: 2),
+              Text(
+                label,
+                style: TextStyle(
+                  color: isDark ? AppColors.darkTextSecondary : AppColors.textSecondary,
+                  fontWeight: FontWeight.w500,
+                  fontSize: 12,
+                ),
+              ),
+            ],
           ),
         ],
       ),
@@ -2319,6 +2919,7 @@ class _PatientViewScreenState extends ConsumerState<PatientViewScreen>
     String? actionLabel,
     VoidCallback? onAction,
   }) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     return Center(
       child: Padding(
         padding: const EdgeInsets.all(32),
@@ -2326,31 +2927,72 @@ class _PatientViewScreenState extends ConsumerState<PatientViewScreen>
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
             Container(
-              padding: const EdgeInsets.all(24),
+              padding: const EdgeInsets.all(28),
               decoration: BoxDecoration(
-                color: AppColors.primary.withOpacity(0.1),
+                gradient: LinearGradient(
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                  colors: [
+                    AppColors.primary.withOpacity(0.15),
+                    AppColors.accent.withOpacity(0.1),
+                  ],
+                ),
                 shape: BoxShape.circle,
+                boxShadow: [
+                  BoxShadow(
+                    color: AppColors.primary.withOpacity(0.1),
+                    blurRadius: 20,
+                    spreadRadius: 5,
+                  ),
+                ],
               ),
-              child: Icon(icon, size: 48, color: AppColors.primary),
+              child: Icon(icon, size: 52, color: AppColors.primary),
             ),
-            const SizedBox(height: 24),
+            const SizedBox(height: 28),
             Text(
               title,
-              style: Theme.of(context).textTheme.titleLarge,
+              style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                fontWeight: FontWeight.bold,
+              ),
               textAlign: TextAlign.center,
             ),
-            const SizedBox(height: 8),
+            const SizedBox(height: 10),
             Text(
               subtitle,
-              style: Theme.of(context).textTheme.bodyMedium,
+              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                color: isDark ? AppColors.darkTextSecondary : AppColors.textSecondary,
+              ),
               textAlign: TextAlign.center,
             ),
             if (actionLabel != null && onAction != null) ...[
-              const SizedBox(height: 24),
-              ElevatedButton.icon(
-                onPressed: onAction,
-                icon: const Icon(Icons.add),
-                label: Text(actionLabel),
+              const SizedBox(height: 28),
+              Container(
+                decoration: BoxDecoration(
+                  gradient: const LinearGradient(
+                    colors: [AppColors.primary, AppColors.accent],
+                  ),
+                  borderRadius: BorderRadius.circular(14),
+                  boxShadow: [
+                    BoxShadow(
+                      color: AppColors.primary.withOpacity(0.3),
+                      blurRadius: 12,
+                      offset: const Offset(0, 6),
+                    ),
+                  ],
+                ),
+                child: ElevatedButton.icon(
+                  onPressed: onAction,
+                  icon: const Icon(Icons.add_rounded),
+                  label: Text(actionLabel),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.transparent,
+                    shadowColor: Colors.transparent,
+                    padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 14),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(14),
+                    ),
+                  ),
+                ),
               ),
             ],
           ],
@@ -2360,119 +3002,195 @@ class _PatientViewScreenState extends ConsumerState<PatientViewScreen>
   }
 
   Widget _buildSpeedDial(BuildContext context) {
-    return FloatingActionButton(
-      heroTag: 'patient_view_fab',
-      onPressed: () {
-        showModalBottomSheet(
-          context: context,
-          shape: const RoundedRectangleBorder(
-            borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+    return Container(
+      decoration: BoxDecoration(
+        gradient: const LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [AppColors.primary, AppColors.accent],
+        ),
+        borderRadius: BorderRadius.circular(14),
+        boxShadow: [
+          BoxShadow(
+            color: AppColors.primary.withOpacity(0.3),
+            blurRadius: 12,
+            offset: const Offset(0, 4),
           ),
-          builder: (context) => Container(
-            padding: const EdgeInsets.all(24),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
+        ],
+      ),
+      child: FloatingActionButton(
+        heroTag: 'patient_view_fab',
+        onPressed: () {
+          _showModernActionSheet(context);
+        },
+        backgroundColor: Colors.transparent,
+        elevation: 0,
+        child: const Icon(Icons.add_rounded, size: 26),
+      ),
+    );
+  }
+
+  void _showModernActionSheet(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: isDark ? AppColors.darkSurface : Colors.white,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (context) => Padding(
+        padding: const EdgeInsets.all(20),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            // Handle bar
+            Container(
+              width: 40,
+              height: 4,
+              decoration: BoxDecoration(
+                color: isDark ? AppColors.darkDivider : AppColors.divider,
+                borderRadius: BorderRadius.circular(2),
+              ),
+            ),
+            const SizedBox(height: 20),
+            // Header
+            Row(
               children: [
                 Container(
-                  width: 40,
-                  height: 4,
+                  padding: const EdgeInsets.all(8),
                   decoration: BoxDecoration(
-                    color: AppColors.divider,
-                    borderRadius: BorderRadius.circular(2),
+                    color: AppColors.primary.withOpacity(0.1),
+                    borderRadius: BorderRadius.circular(10),
                   ),
+                  child: const Icon(Icons.flash_on_rounded, color: AppColors.primary, size: 20),
                 ),
-                const SizedBox(height: 20),
+                const SizedBox(width: 12),
                 Text(
                   'Quick Actions',
-                  style: Theme.of(context).textTheme.titleLarge,
+                  style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                    fontWeight: FontWeight.bold,
+                  ),
                 ),
-                const SizedBox(height: 20),
-                _buildActionTile(
-                  context,
-                  Icons.calendar_today_outlined,
-                  'Schedule Appointment',
-                  AppColors.primary,
-                  () {
-                    Navigator.pop(context);
-                    _scheduleAppointment(context);
-                  },
-                ),
-                _buildActionTile(
-                  context,
-                  Icons.medication_outlined,
-                  'Create Prescription',
-                  AppColors.accent,
-                  () {
-                    Navigator.pop(context);
-                    _createPrescription(context);
-                  },
-                ),
-                _buildActionTile(
-                  context,
-                  Icons.note_add_outlined,
-                  'Add Medical Record',
-                  AppColors.warning,
-                  () {
-                    Navigator.pop(context);
-                    _addMedicalRecord(context, 'general');
-                  },
-                ),
-                _buildActionTile(
-                  context,
-                  Icons.receipt_long_outlined,
-                  'Create Invoice',
-                  const Color(0xFF6366F1),
-                  () {
-                    Navigator.pop(context);
-                    _createInvoice(context);
-                  },
-                ),
-                _buildActionTile(
-                  context,
-                  Icons.psychology_outlined,
-                  'Psychiatric Assessment',
-                  AppColors.primary,
-                  () {
-                    Navigator.pop(context);
-                    _addMedicalRecord(context, 'psychiatric_assessment');
-                  },
-                ),
-                _buildActionTile(
-                  context,
-                  Icons.phone_outlined,
-                  'Call Patient',
-                  AppColors.info,
-                  () {
-                    Navigator.pop(context);
-                    if (widget.patient.phone.isNotEmpty) {
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        SnackBar(
-                          content: Text('Calling ${widget.patient.phone}...'),
-                          behavior: SnackBarBehavior.floating,
-                          action: SnackBarAction(
-                            label: 'OK',
-                            onPressed: () {},
-                          ),
-                        ),
-                      );
-                    } else {
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(
-                          content: Text('No phone number available for this patient'),
-                          behavior: SnackBarBehavior.floating,
-                        ),
-                      );
-                    }
-                  },
-                ),
-                const SizedBox(height: 16),
               ],
             ),
-          ),
-        );
-      },
-      backgroundColor: AppColors.primary,
-      child: const Icon(Icons.add),
+            const SizedBox(height: 20),
+            // Action list
+            _buildActionListTile(
+              context,
+              icon: Icons.calendar_today_rounded,
+              title: 'Schedule Appointment',
+              color: AppColors.primary,
+              onTap: () {
+                Navigator.pop(context);
+                _scheduleAppointment(context);
+              },
+            ),
+            _buildActionListTile(
+              context,
+              icon: Icons.medication_rounded,
+              title: 'Create Prescription',
+              color: AppColors.accent,
+              onTap: () {
+                Navigator.pop(context);
+                _createPrescription(context);
+              },
+            ),
+            _buildActionListTile(
+              context,
+              icon: Icons.note_add_rounded,
+              title: 'Add Medical Record',
+              color: AppColors.warning,
+              onTap: () {
+                Navigator.pop(context);
+                _addMedicalRecord(context, 'general');
+              },
+            ),
+            _buildActionListTile(
+              context,
+              icon: Icons.receipt_long_rounded,
+              title: 'Create Invoice',
+              color: const Color(0xFF6366F1),
+              onTap: () {
+                Navigator.pop(context);
+                _createInvoice(context);
+              },
+            ),
+            _buildActionListTile(
+              context,
+              icon: Icons.psychology_rounded,
+              title: 'Quick Psychiatric Assessment',
+              color: const Color(0xFF9B59B6),
+              onTap: () {
+                Navigator.pop(context);
+                _addMedicalRecord(context, 'psychiatric_assessment');
+              },
+            ),
+            _buildActionListTile(
+              context,
+              icon: Icons.psychology_alt_rounded,
+              title: 'Comprehensive Psychiatric Assessment',
+              color: const Color(0xFF8E44AD),
+              onTap: () {
+                Navigator.pop(context);
+                _openDetailedPsychiatricAssessment(context);
+              },
+            ),
+            _buildActionListTile(
+              context,
+              icon: Icons.phone_rounded,
+              title: 'Call Patient',
+              color: AppColors.info,
+              onTap: () {
+                Navigator.pop(context);
+                if (widget.patient.phone.isNotEmpty) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                      content: Text('Calling ${widget.patient.phone}...'),
+                      behavior: SnackBarBehavior.floating,
+                    ),
+                  );
+                } else {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(
+                      content: Text('No phone number available'),
+                      behavior: SnackBarBehavior.floating,
+                    ),
+                  );
+                }
+              },
+            ),
+            const SizedBox(height: 8),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildActionListTile(
+    BuildContext context, {
+    required IconData icon,
+    required String title,
+    required Color color,
+    required VoidCallback onTap,
+  }) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    return ListTile(
+      onTap: onTap,
+      contentPadding: EdgeInsets.zero,
+      leading: Container(
+        padding: const EdgeInsets.all(8),
+        decoration: BoxDecoration(
+          color: color.withOpacity(0.1),
+          borderRadius: BorderRadius.circular(10),
+        ),
+        child: Icon(icon, color: color, size: 20),
+      ),
+      title: Text(title),
+      trailing: Icon(
+        Icons.chevron_right_rounded,
+        color: isDark ? AppColors.darkTextSecondary : AppColors.textSecondary,
+      ),
     );
   }
 
@@ -2921,6 +3639,7 @@ class _PatientViewScreenState extends ConsumerState<PatientViewScreen>
                                 clinicName: profile.clinicName.isNotEmpty ? profile.clinicName : 'Medical Clinic',
                                 clinicPhone: profile.clinicPhone,
                                 clinicAddress: profile.clinicAddress,
+                                signatureData: (profile.signatureData?.isNotEmpty ?? false) ? profile.signatureData : null,
                               );
                             },
                             icon: const Icon(Icons.picture_as_pdf),

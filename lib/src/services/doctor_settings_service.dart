@@ -19,6 +19,8 @@ class DoctorProfile {
   final double emergencyFee;
   final List<String> languages;
   final Map<String, Map<String, dynamic>> workingHours;
+  final String? signatureData; // Base64 encoded signature image
+  final String? photoData; // Base64 encoded profile photo
 
   DoctorProfile({
     this.name = '',
@@ -37,6 +39,8 @@ class DoctorProfile {
     this.emergencyFee = 0,
     this.languages = const [],
     this.workingHours = const {},
+    this.signatureData,
+    this.photoData,
   });
 
   String get initials {
@@ -69,6 +73,8 @@ class DoctorProfile {
     double? emergencyFee,
     List<String>? languages,
     Map<String, Map<String, dynamic>>? workingHours,
+    String? signatureData,
+    String? photoData,
   }) {
     return DoctorProfile(
       name: name ?? this.name,
@@ -87,6 +93,8 @@ class DoctorProfile {
       emergencyFee: emergencyFee ?? this.emergencyFee,
       languages: languages ?? this.languages,
       workingHours: workingHours ?? this.workingHours,
+      signatureData: signatureData ?? this.signatureData,
+      photoData: photoData ?? this.photoData,
     );
   }
 
@@ -108,6 +116,8 @@ class DoctorProfile {
       'emergencyFee': emergencyFee,
       'languages': languages,
       'workingHours': workingHours,
+      'signatureData': signatureData,
+      'photoData': photoData,
     };
   }
 
@@ -133,6 +143,8 @@ class DoctorProfile {
           (key, value) => MapEntry(key, Map<String, dynamic>.from(value)),
         ),
       ),
+      signatureData: json['signatureData'],
+      photoData: json['photoData'],
     );
   }
 

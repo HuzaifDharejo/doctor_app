@@ -36,22 +36,7 @@ class _BillingScreenState extends ConsumerState<BillingScreen> {
           ),
         ),
       ),
-      floatingActionButton: GradientFAB(
-        icon: Icons.add,
-        onPressed: () async {
-          final result = await Navigator.push(
-            context,
-            MaterialPageRoute(builder: (_) => const AddInvoiceScreen()),
-          );
-          if (result == true) {
-            setState(() {});
-          }
-        },
-        heroTag: 'billing_fab',
-        gradient: const LinearGradient(
-          colors: [Color(0xFF6366F1), Color(0xFF8B5CF6)],
-        ),
-      ),
+
     );
   }
 
@@ -105,14 +90,16 @@ class _BillingScreenState extends ConsumerState<BillingScreen> {
     
     return Padding(
       padding: EdgeInsets.all(padding),
-      child: Row(
-        children: [
-          Expanded(
-            child: _buildSummaryCard(
-              context,
-              'Total Revenue',
-              currencyFormat.format(stats['totalRevenue'] ?? 0),
-              Icons.trending_up_rounded,
+      child: IntrinsicHeight(
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Expanded(
+              child: _buildSummaryCard(
+                context,
+                'Total Revenue',
+                currencyFormat.format(stats['totalRevenue'] ?? 0),
+                Icons.trending_up_rounded,
               AppColors.success,
               'All time',
               useGradient: true,
@@ -131,6 +118,7 @@ class _BillingScreenState extends ConsumerState<BillingScreen> {
             ),
           ),
         ],
+        ),
       ),
     );
   }
@@ -174,6 +162,7 @@ class _BillingScreenState extends ConsumerState<BillingScreen> {
         ],
       ),
       child: Column(
+        mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(
@@ -224,20 +213,18 @@ class _BillingScreenState extends ConsumerState<BillingScreen> {
             ),
           ),
           const SizedBox(height: 4),
-          Flexible(
-            child: FittedBox(
-              fit: BoxFit.scaleDown,
-              alignment: Alignment.centerLeft,
-              child: Text(
-                value,
-                style: TextStyle(
-                  fontSize: isCompact ? 16 : 20,
-                  fontWeight: FontWeight.w800,
-                  color: useGradient 
-                      ? Colors.white 
-                      : Theme.of(context).colorScheme.onSurface,
-                  letterSpacing: -0.5,
-                ),
+          FittedBox(
+            fit: BoxFit.scaleDown,
+            alignment: Alignment.centerLeft,
+            child: Text(
+              value,
+              style: TextStyle(
+                fontSize: isCompact ? 16 : 20,
+                fontWeight: FontWeight.w800,
+                color: useGradient 
+                    ? Colors.white 
+                    : Theme.of(context).colorScheme.onSurface,
+                letterSpacing: -0.5,
               ),
             ),
           ),
@@ -806,6 +793,8 @@ class _BillingScreenState extends ConsumerState<BillingScreen> {
                               clinicName: profile.clinicName.isNotEmpty ? profile.clinicName : 'Medical Clinic',
                               clinicPhone: profile.clinicPhone,
                               clinicAddress: profile.clinicAddress,
+                              signatureData: (profile.signatureData?.isNotEmpty ?? false) ? profile.signatureData : null,
+                              doctorName: profile.displayName.isNotEmpty ? profile.displayName : null,
                             );
                           }
                         },
@@ -943,27 +932,11 @@ class _BillingScreenState extends ConsumerState<BillingScreen> {
             ),
             const SizedBox(height: 8),
             Text(
-              'Create your first invoice',
+              'Invoices will appear here when created from patient details',
               style: Theme.of(context).textTheme.bodyMedium,
               textAlign: TextAlign.center,
             ),
-            const SizedBox(height: 24),
-            ElevatedButton.icon(
-              onPressed: () async {
-                final result = await Navigator.push(
-                  context,
-                  MaterialPageRoute(builder: (_) => const AddInvoiceScreen()),
-                );
-                if (result == true) {
-                  setState(() {});
-                }
-              },
-              style: ElevatedButton.styleFrom(
-                backgroundColor: const Color(0xFF6366F1),
-              ),
-              icon: const Icon(Icons.add),
-              label: const Text('New Invoice'),
-            ),
+
           ],
         ),
       ),

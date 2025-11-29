@@ -35,17 +35,7 @@ class PrescriptionsScreen extends ConsumerWidget {
           ],
         ),
       ),
-      floatingActionButton: GradientFAB(
-        icon: Icons.add,
-        onPressed: () => Navigator.push(
-          context,
-          MaterialPageRoute(builder: (_) => const AddPrescriptionScreen()),
-        ),
-        heroTag: 'prescriptions_fab',
-        gradient: const LinearGradient(
-          colors: [AppColors.warning, Color(0xFFFF9800)],
-        ),
-      ),
+
     );
   }
 
@@ -83,11 +73,10 @@ class PrescriptionsScreen extends ConsumerWidget {
         final prescriptions = snapshot.data!;
         
         if (prescriptions.isEmpty) {
-          return EmptyState.prescriptions(
-            onAction: () => Navigator.push(
-              context,
-              MaterialPageRoute(builder: (_) => const AddPrescriptionScreen()),
-            ),
+          return const EmptyState(
+            icon: Icons.medication_outlined,
+            title: 'No Prescriptions Yet',
+            message: 'Prescriptions will appear here when created from patient details',
           );
         }
         
@@ -864,6 +853,7 @@ class PrescriptionsScreen extends ConsumerWidget {
                                   clinicName: profile.clinicName.isNotEmpty ? profile.clinicName : 'Medical Clinic',
                                   clinicPhone: profile.clinicPhone,
                                   clinicAddress: profile.clinicAddress,
+                                  signatureData: (profile.signatureData?.isNotEmpty ?? false) ? profile.signatureData : null,
                                 );
                               }
                             },

@@ -104,6 +104,13 @@ class DoctorDatabase extends _$DoctorDatabase {
   Future<List<Prescription>> getPrescriptionsForPatient(int patientId) {
     return (select(prescriptions)..where((p) => p.patientId.equals(patientId))).get();
   }
+  Future<Prescription?> getLastPrescriptionForPatient(int patientId) {
+    return (select(prescriptions)
+      ..where((p) => p.patientId.equals(patientId))
+      ..orderBy([(p) => OrderingTerm.desc(p.createdAt)])
+      ..limit(1))
+      .getSingleOrNull();
+  }
   Future<int> deletePrescription(int id) => (delete(prescriptions)..where((t) => t.id.equals(id))).go();
 
   // Medical Record CRUD
