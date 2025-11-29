@@ -37,8 +37,8 @@ class _StaggeredListItemState extends State<StaggeredListItem>
     );
     
     _fadeAnimation = Tween<double>(
-      begin: 0.0,
-      end: 1.0,
+      begin: 0,
+      end: 1,
     ).animate(CurvedAnimation(
       parent: _controller,
       curve: widget.curve,
@@ -54,7 +54,7 @@ class _StaggeredListItemState extends State<StaggeredListItem>
     
     _scaleAnimation = Tween<double>(
       begin: 0.95,
-      end: 1.0,
+      end: 1,
     ).animate(CurvedAnimation(
       parent: _controller,
       curve: widget.curve,
@@ -329,7 +329,7 @@ class _BouncyTapState extends State<BouncyTap>
     );
     
     _scaleAnimation = Tween<double>(
-      begin: 1.0,
+      begin: 1,
       end: widget.scaleFactor,
     ).animate(CurvedAnimation(
       parent: _controller,
@@ -404,11 +404,11 @@ class _AnimatedBadgeState extends State<AnimatedBadge>
     
     _scaleAnimation = TweenSequence<double>([
       TweenSequenceItem(
-        tween: Tween<double>(begin: 1.0, end: 1.3),
+        tween: Tween<double>(begin: 1, end: 1.3),
         weight: 50,
       ),
       TweenSequenceItem(
-        tween: Tween<double>(begin: 1.3, end: 1.0),
+        tween: Tween<double>(begin: 1.3, end: 1),
         weight: 50,
       ),
     ]).animate(CurvedAnimation(

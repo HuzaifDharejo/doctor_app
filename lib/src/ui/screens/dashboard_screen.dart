@@ -777,7 +777,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                     : 'Patient #${appt.patientId}';
                 
                 return TweenAnimationBuilder<double>(
-                  tween: Tween(begin: 0.0, end: 1.0),
+                  tween: Tween(begin: 0, end: 1),
                   duration: Duration(milliseconds: 400 + (index * 100)),
                   curve: Curves.easeOutCubic,
                   builder: (context, value, child) {
@@ -1006,7 +1006,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
     final weekStart = now.subtract(Duration(days: now.weekday - 1));
     final invoices = await db.getAllInvoices();
     
-    final weeklyRevenue = List<double>.filled(7, 0.0);
+    final weeklyRevenue = List<double>.filled(7, 0);
     double totalRevenue = 0;
     
     for (final invoice in invoices) {

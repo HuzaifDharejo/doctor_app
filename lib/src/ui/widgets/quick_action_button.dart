@@ -31,7 +31,7 @@ class _QuickActionButtonState extends State<QuickActionButton>
       duration: const Duration(milliseconds: 150),
       vsync: this,
     );
-    _scaleAnimation = Tween<double>(begin: 1.0, end: 0.92).animate(
+    _scaleAnimation = Tween<double>(begin: 1, end: 0.92).animate(
       CurvedAnimation(parent: _controller, curve: Curves.easeInOut),
     );
   }

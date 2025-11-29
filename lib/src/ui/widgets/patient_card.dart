@@ -43,7 +43,7 @@ class _PatientCardState extends State<PatientCard>
       duration: const Duration(milliseconds: 400),
     );
     
-    _fadeAnimation = Tween<double>(begin: 0.0, end: 1.0).animate(
+    _fadeAnimation = Tween<double>(begin: 0, end: 1).animate(
       CurvedAnimation(parent: _controller, curve: Curves.easeOut),
     );
     

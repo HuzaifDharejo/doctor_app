@@ -81,7 +81,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> with SingleTick
                 child: FadeTransition(
                   opacity: CurvedAnimation(
                     parent: _animationController,
-                    curve: const Interval(0.2, 1.0),
+                    curve: const Interval(0.2, 1),
                   ),
                   child: _buildSettingsSections(context, ref, appSettings),
                 ),
@@ -151,7 +151,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> with SingleTick
           children: [
             // Avatar with ring and pulse effect
             TweenAnimationBuilder<double>(
-              tween: Tween(begin: 0.95, end: 1.0),
+              tween: Tween(begin: 0.95, end: 1),
               duration: const Duration(milliseconds: 1500),
               curve: Curves.easeInOut,
               builder: (context, scale, child) {
@@ -1724,7 +1724,7 @@ class _AnimatedTapCardState extends State<_AnimatedTapCard>
       vsync: this,
       duration: const Duration(milliseconds: 100),
     );
-    _scaleAnimation = Tween<double>(begin: 1.0, end: 0.97).animate(
+    _scaleAnimation = Tween<double>(begin: 1, end: 0.97).animate(
       CurvedAnimation(parent: _controller, curve: Curves.easeInOut),
     );
   }

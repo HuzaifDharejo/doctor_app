@@ -110,7 +110,7 @@ class _EmptyStateState extends State<EmptyState> with TickerProviderStateMixin {
       duration: const Duration(milliseconds: 2000),
     );
     
-    _iconScale = Tween<double>(begin: 1.0, end: 1.08).animate(
+    _iconScale = Tween<double>(begin: 1, end: 1.08).animate(
       CurvedAnimation(parent: _iconController, curve: Curves.easeInOut),
     );
     
@@ -124,10 +124,10 @@ class _EmptyStateState extends State<EmptyState> with TickerProviderStateMixin {
       duration: const Duration(milliseconds: 600),
     );
     
-    _fadeIn = Tween<double>(begin: 0.0, end: 1.0).animate(
+    _fadeIn = Tween<double>(begin: 0, end: 1).animate(
       CurvedAnimation(
         parent: _contentController,
-        curve: const Interval(0.0, 0.8, curve: Curves.easeOut),
+        curve: const Interval(0, 0.8, curve: Curves.easeOut),
       ),
     );
     
@@ -137,7 +137,7 @@ class _EmptyStateState extends State<EmptyState> with TickerProviderStateMixin {
     ).animate(
       CurvedAnimation(
         parent: _contentController,
-        curve: const Interval(0.0, 0.8, curve: Curves.easeOutCubic),
+        curve: const Interval(0, 0.8, curve: Curves.easeOutCubic),
       ),
     );
     
@@ -145,7 +145,7 @@ class _EmptyStateState extends State<EmptyState> with TickerProviderStateMixin {
       _iconController.repeat(reverse: true);
       _contentController.forward();
     } else {
-      _contentController.value = 1.0;
+      _contentController.value = 1;
     }
   }
 
@@ -245,7 +245,7 @@ class _EmptyStateState extends State<EmptyState> with TickerProviderStateMixin {
                   widget.action!
                 else if (widget.onAction != null && widget.actionLabel != null)
                   TweenAnimationBuilder<double>(
-                    tween: Tween(begin: 0.9, end: 1.0),
+                    tween: Tween(begin: 0.9, end: 1),
                     duration: const Duration(milliseconds: 300),
                     curve: Curves.elasticOut,
                     builder: (context, scale, child) {
@@ -324,7 +324,7 @@ class EmptyStateCompact extends StatelessWidget {
 
     if (animate) {
       content = TweenAnimationBuilder<double>(
-        tween: Tween(begin: 0.0, end: 1.0),
+        tween: Tween(begin: 0, end: 1),
         duration: const Duration(milliseconds: 400),
         curve: Curves.easeOut,
         builder: (context, value, child) {

@@ -253,7 +253,7 @@ class _AppointmentsScreenState extends ConsumerState<AppointmentsScreen> {
             itemCount: appointments.length,
             itemBuilder: (context, index) {
               return TweenAnimationBuilder<double>(
-                tween: Tween(begin: 0.0, end: 1.0),
+                tween: Tween(begin: 0, end: 1),
                 duration: Duration(milliseconds: 300 + (index * 50)),
                 curve: Curves.easeOutCubic,
                 builder: (context, value, child) {

@@ -371,7 +371,7 @@ class InvoiceRepository extends BaseRepository {
     return result.map((invoices) {
       return invoices
           .where((i) => i.paymentStatus == 'Paid')
-          .fold(0.0, (sum, i) => sum + i.grandTotal);
+          .fold<double>(0, (sum, i) => sum + i.grandTotal);
     });
   }
 }

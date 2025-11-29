@@ -54,7 +54,7 @@ class _AddInvoiceScreenState extends ConsumerState<AddInvoiceScreen> {
   // Common Services for quick add - using BillingSuggestions
   List<Map<String, dynamic>> get _commonServices => BillingSuggestions.serviceTypes.take(10).map((service) {
     // Assign default prices based on service type
-    double price = 500.0;
+    double price = 500;
     String type = 'Service';
     
     if (service.contains('Consultation')) {
@@ -119,7 +119,7 @@ class _AddInvoiceScreenState extends ConsumerState<AddInvoiceScreen> {
   }
 
   double get _subtotal {
-    return _items.fold(0.0, (sum, item) => sum + item.total);
+    return _items.fold<double>(0, (sum, item) => sum + item.total);
   }
 
   double get _discountAmount {

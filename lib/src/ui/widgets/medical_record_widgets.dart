@@ -8,33 +8,33 @@ import '../../theme/app_theme.dart';
 /// Design constants for medical record UI components
 abstract class MedicalRecordConstants {
   // Spacing
-  static const double paddingSmall = 8.0;
-  static const double paddingMedium = 12.0;
-  static const double paddingLarge = 16.0;
-  static const double paddingXLarge = 20.0;
+  static const double paddingSmall = 8;
+  static const double paddingMedium = 12;
+  static const double paddingLarge = 16;
+  static const double paddingXLarge = 20;
   
   // Border radius
-  static const double radiusSmall = 8.0;
-  static const double radiusMedium = 12.0;
-  static const double radiusLarge = 16.0;
-  static const double radiusXLarge = 20.0;
-  static const double radiusHeader = 32.0;
+  static const double radiusSmall = 8;
+  static const double radiusMedium = 12;
+  static const double radiusLarge = 16;
+  static const double radiusXLarge = 20;
+  static const double radiusHeader = 32;
   
   // Icon sizes
-  static const double iconSmall = 14.0;
-  static const double iconMedium = 18.0;
-  static const double iconLarge = 20.0;
-  static const double iconXLarge = 28.0;
-  static const double iconHeader = 40.0;
+  static const double iconSmall = 14;
+  static const double iconMedium = 18;
+  static const double iconLarge = 20;
+  static const double iconXLarge = 28;
+  static const double iconHeader = 40;
   
   // Font sizes
-  static const double fontSmall = 10.0;
-  static const double fontBody = 12.0;
-  static const double fontMedium = 13.0;
-  static const double fontLarge = 14.0;
-  static const double fontTitle = 16.0;
-  static const double fontHeader = 20.0;
-  static const double fontXLarge = 24.0;
+  static const double fontSmall = 10;
+  static const double fontBody = 12;
+  static const double fontMedium = 13;
+  static const double fontLarge = 14;
+  static const double fontTitle = 16;
+  static const double fontHeader = 20;
+  static const double fontXLarge = 24;
   
   // Animation durations
   static const Duration animationFast = Duration(milliseconds: 200);

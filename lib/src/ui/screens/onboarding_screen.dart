@@ -52,19 +52,19 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen>
     
     _logoScaleAnimation = TweenSequence<double>([
       TweenSequenceItem(
-        tween: Tween<double>(begin: 1.0, end: 1.08)
+        tween: Tween<double>(begin: 1, end: 1.08)
             .chain(CurveTween(curve: Curves.easeOut)),
         weight: 50,
       ),
       TweenSequenceItem(
-        tween: Tween<double>(begin: 1.08, end: 1.0)
+        tween: Tween<double>(begin: 1.08, end: 1)
             .chain(CurveTween(curve: Curves.easeIn)),
         weight: 50,
       ),
     ]).animate(_logoAnimationController);
     
     _logoRotationAnimation = Tween<double>(
-      begin: 0.0,
+      begin: 0,
       end: 0.02,
     ).animate(CurvedAnimation(
       parent: _logoAnimationController,
@@ -408,7 +408,7 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen>
             const SizedBox(height: 32),
             // Animated title
             TweenAnimationBuilder<double>(
-              tween: Tween(begin: 0.0, end: 1.0),
+              tween: Tween(begin: 0, end: 1),
               duration: const Duration(milliseconds: 600),
               curve: Curves.easeOut,
               builder: (context, value, child) {
@@ -432,7 +432,7 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen>
             ),
             const SizedBox(height: 12),
             TweenAnimationBuilder<double>(
-              tween: Tween(begin: 0.0, end: 1.0),
+              tween: Tween(begin: 0, end: 1),
               duration: const Duration(milliseconds: 700),
               curve: Curves.easeOut,
               builder: (context, value, child) {
@@ -697,7 +697,7 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen>
           
           // Key features with staggered animation
           TweenAnimationBuilder<double>(
-            tween: Tween(begin: 0.0, end: 1.0),
+            tween: Tween(begin: 0, end: 1),
             duration: const Duration(milliseconds: 800),
             curve: Curves.easeOut,
             builder: (context, value, child) {
@@ -735,12 +735,12 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen>
 
   Widget _buildMiniFeatureAnimated(IconData icon, String label, Color color, bool isDark, int index) {
     return TweenAnimationBuilder<double>(
-      tween: Tween(begin: 0.0, end: 1.0),
+      tween: Tween(begin: 0, end: 1),
       duration: Duration(milliseconds: 500 + (index * 100)),
       curve: Curves.easeOutBack,
       builder: (context, value, child) {
         return Opacity(
-          opacity: value.clamp(0.0, 1.0),
+          opacity: value.clamp(0, 1),
           child: Transform.scale(
             scale: value,
             child: child,
@@ -951,7 +951,7 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen>
           const SizedBox(height: 40),
           // Animated success icon
           TweenAnimationBuilder<double>(
-            tween: Tween(begin: 0.0, end: 1.0),
+            tween: Tween(begin: 0, end: 1),
             duration: const Duration(milliseconds: 800),
             curve: Curves.elasticOut,
             builder: (context, value, child) {
@@ -968,7 +968,7 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen>
                     children: [
                       // Outer glow ring
                       TweenAnimationBuilder<double>(
-                        tween: Tween(begin: 0.8, end: 1.0),
+                        tween: Tween(begin: 0.8, end: 1),
                         duration: const Duration(milliseconds: 1500),
                         curve: Curves.easeInOut,
                         builder: (context, ringValue, _) {
@@ -1004,7 +1004,7 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen>
           ),
           const SizedBox(height: 32),
           TweenAnimationBuilder<double>(
-            tween: Tween(begin: 0.0, end: 1.0),
+            tween: Tween(begin: 0, end: 1),
             duration: const Duration(milliseconds: 600),
             curve: Curves.easeOut,
             builder: (context, value, child) {
@@ -1028,7 +1028,7 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen>
           ),
           const SizedBox(height: 12),
           TweenAnimationBuilder<double>(
-            tween: Tween(begin: 0.0, end: 1.0),
+            tween: Tween(begin: 0, end: 1),
             duration: const Duration(milliseconds: 700),
             curve: Curves.easeOut,
             builder: (context, value, child) {
