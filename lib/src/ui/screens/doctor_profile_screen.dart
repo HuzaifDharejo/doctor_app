@@ -744,7 +744,7 @@ class _DoctorProfileScreenState extends ConsumerState<DoctorProfileScreen>
         }
         // Handle image format from camera/gallery
         if (jsonData['image'] != null) {
-          final imageBytes = base64Decode(jsonData['image']);
+          final imageBytes = base64Decode(jsonData['image'] as String);
           return Image.memory(imageBytes, fit: BoxFit.contain);
         }
       }

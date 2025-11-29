@@ -6,9 +6,7 @@ import '../../core/core.dart';
 import '../../db/doctor_db.dart';
 import '../../providers/db_provider.dart';
 import '../../theme/app_theme.dart';
-import '../widgets/stat_card.dart';
 import '../widgets/patient_card.dart';
-import '../widgets/quick_action_button.dart';
 import '../widgets/global_search_bar.dart';
 import '../widgets/dashboard_charts.dart';
 import 'patients_screen.dart';
@@ -25,21 +23,17 @@ class DashboardScreen extends ConsumerStatefulWidget {
 }
 
 class _DashboardScreenState extends ConsumerState<DashboardScreen> {
-  bool _isRefreshing = false;
   final _refreshKey = GlobalKey<RefreshIndicatorState>();
 
   Future<void> _onRefresh() async {
     HapticFeedback.mediumImpact();
-    setState(() => _isRefreshing = true);
     ref.invalidate(doctorDbProvider);
     await Future.delayed(const Duration(milliseconds: 500));
-    if (mounted) setState(() => _isRefreshing = false);
   }
 
   @override
   Widget build(BuildContext context) {
     final dbAsync = ref.watch(doctorDbProvider);
-    final doctorSettings = ref.watch(doctorSettingsProvider);
     
     return Scaffold(
       body: SafeArea(
@@ -169,7 +163,10 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                       delegate: SliverChildBuilderDelegate(
                         (context, index) => Padding(
                           padding: EdgeInsets.only(bottom: isCompact ? 10 : 12),
-                          child: PatientCard(patient: patients[index]),
+                          child: PatientCard(
+                            patient: patients[index],
+                            heroTagPrefix: 'dashboard',
+                          ),
                         ),
                         childCount: patients.length > 5 ? 5 : patients.length,
                       ),
@@ -181,7 +178,8 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                   child: SizedBox(height: 100),
                 ),
               ],
-            );
+            ),
+          );
           },
         );
       },
@@ -218,7 +216,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
             children: [
               // Menu Button
               GestureDetector(
-                onTap: onMenuTap,
+                onTap: widget.onMenuTap,
                 child: Container(
                   padding: EdgeInsets.all(isCompact ? 10 : 12),
                   decoration: BoxDecoration(
@@ -984,15 +982,15 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
             ),
             SizedBox(height: isCompact ? 12 : 16),
             RevenueChart(
-              weeklyRevenue: List<double>.from(data['weeklyRevenue']),
-              totalRevenue: data['totalRevenue'],
+              weeklyRevenue: List<double>.from(data['weeklyRevenue'] as Iterable),
+              totalRevenue: (data['totalRevenue'] as num).toDouble(),
             ),
             SizedBox(height: isCompact ? 12 : 16),
             AppointmentsPieChart(
-              completed: data['completed'],
-              scheduled: data['scheduled'],
-              cancelled: data['cancelled'],
-              noShow: data['noShow'],
+              completed: data['completed'] as int,
+              scheduled: data['scheduled'] as int,
+              cancelled: data['cancelled'] as int,
+              noShow: data['noShow'] as int,
             ),
           ],
         );

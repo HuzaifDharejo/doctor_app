@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -6,6 +7,9 @@ import '../../theme/app_theme.dart';
 import '../../providers/db_provider.dart';
 import '../../providers/google_calendar_provider.dart';
 import '../../services/seed_data_service.dart';
+import '../../services/doctor_settings_service.dart';
+import '../../services/logger_service.dart';
+import '../widgets/debug_console.dart';
 import 'doctor_profile_screen.dart';
 
 class SettingsScreen extends ConsumerStatefulWidget {
@@ -17,7 +21,6 @@ class SettingsScreen extends ConsumerStatefulWidget {
 
 class _SettingsScreenState extends ConsumerState<SettingsScreen> with SingleTickerProviderStateMixin {
   late AnimationController _animationController;
-  bool _isRefreshing = false;
 
   @override
   void initState() {
@@ -37,11 +40,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> with SingleTick
 
   Future<void> _onRefresh() async {
     HapticFeedback.mediumImpact();
-    setState(() => _isRefreshing = true);
     await Future.delayed(const Duration(milliseconds: 500));
-    if (mounted) {
-      setState(() => _isRefreshing = false);
-    }
   }
 
   @override
@@ -94,7 +93,6 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> with SingleTick
   }
 
   Widget _buildHeader(BuildContext context) {
-    final isDark = context.isDarkMode;
     final isCompact = AppBreakpoint.isCompact(context.screenWidth);
     
     return AppHeader(
@@ -120,7 +118,6 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> with SingleTick
     final profile = ref.watch(doctorSettingsProvider).profile;
     final isCompact = AppBreakpoint.isCompact(context.screenWidth);
     final padding = isCompact ? AppSpacing.sm : AppSpacing.lg;
-    final isDark = context.isDarkMode;
     
     return _AnimatedTapCard(
       onTap: () {
@@ -261,7 +258,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> with SingleTick
     );
   }
 
-  Widget _buildSettingsSections(BuildContext context, WidgetRef ref, appSettings) {
+  Widget _buildSettingsSections(BuildContext context, WidgetRef ref, AppSettingsService appSettings) {
     final settings = appSettings.settings;
     final lastBackup = settings.lastBackupDate;
     final backupText = lastBackup != null 
@@ -313,6 +310,10 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> with SingleTick
           
           _buildSectionTitle(context, 'Calendar Integration'),
           _buildGoogleCalendarSection(context, ref),
+          const SizedBox(height: AppSpacing.xl),
+          
+          _buildSectionTitle(context, 'Medical Records'),
+          _buildMedicalRecordTypesSection(context, ref, settings),
           const SizedBox(height: AppSpacing.xl),
           
           _buildSectionTitle(context, 'Data & Privacy'),
@@ -367,6 +368,47 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> with SingleTick
           ]),
           const SizedBox(height: AppSpacing.xl),
           
+          // Developer Section (Debug mode only)
+          if (kDebugMode) ...[
+            _buildSectionTitle(context, 'Developer'),
+            _buildSettingsGroup(context, [
+              _SettingItem(
+                icon: Icons.bug_report_rounded,
+                iconColor: Colors.purple,
+                title: 'Debug Console',
+                subtitle: '${log.errorCount} errors, ${log.warningCount} warnings',
+                onTap: () {
+                  log.trackScreen('DebugConsole');
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(builder: (_) => const DebugConsole()),
+                  );
+                },
+              ),
+              _SettingItem(
+                icon: Icons.analytics_outlined,
+                iconColor: Colors.teal,
+                title: 'View Logs Summary',
+                subtitle: '${log.logs.length} total log entries',
+                onTap: () => _showLogsSummary(context),
+              ),
+              _SettingItem(
+                icon: Icons.delete_sweep_rounded,
+                iconColor: AppColors.error,
+                title: 'Clear Logs',
+                subtitle: 'Remove all debug logs',
+                onTap: () {
+                  log.clear();
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(content: Text('Logs cleared')),
+                  );
+                  setState(() {});
+                },
+              ),
+            ]),
+            const SizedBox(height: AppSpacing.xl),
+          ],
+          
           // Reset Profile Button
           Container(
             width: double.infinity,
@@ -385,6 +427,73 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> with SingleTick
               label: const Text('Reset Profile'),
             ),
           ),
+        ],
+      ),
+    );
+  }
+
+  void _showLogsSummary(BuildContext context) {
+    final summary = log.getSummary();
+    final errorsByTag = log.errorsByTag;
+    
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Row(
+          children: [
+            Icon(Icons.analytics, color: Colors.purple),
+            SizedBox(width: 12),
+            Text('Logs Summary'),
+          ],
+        ),
+        content: SingleChildScrollView(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              _buildSummaryRow('Total Logs', '${summary['totalLogs']}'),
+              _buildSummaryRow('Errors', '${summary['errors']}', color: AppColors.error),
+              _buildSummaryRow('Warnings', '${summary['warnings']}', color: AppColors.warning),
+              _buildSummaryRow('Performance Metrics', '${summary['metricsCount']}'),
+              _buildSummaryRow('Analytics Events', '${summary['eventsCount']}'),
+              if (errorsByTag.isNotEmpty) ...[
+                const SizedBox(height: 16),
+                const Text('Errors by Component:', style: TextStyle(fontWeight: FontWeight.bold)),
+                const SizedBox(height: 8),
+                ...errorsByTag.entries.map((e) => _buildSummaryRow(e.key, '${e.value}', color: AppColors.error)),
+              ],
+              if (summary['lastError'] != null) ...[
+                const SizedBox(height: 16),
+                Text('Last Error: ${summary['lastError']}', style: const TextStyle(fontSize: 12, color: Colors.grey)),
+              ],
+            ],
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Close'),
+          ),
+          TextButton(
+            onPressed: () {
+              Navigator.pop(context);
+              Navigator.push(context, MaterialPageRoute(builder: (_) => const DebugConsole()));
+            },
+            child: const Text('View Details'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildSummaryRow(String label, String value, {Color? color}) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 4),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          Text(label),
+          Text(value, style: TextStyle(fontWeight: FontWeight.bold, color: color)),
         ],
       ),
     );
@@ -1136,6 +1245,177 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> with SingleTick
     );
   }
 
+  Widget _buildMedicalRecordTypesSection(BuildContext context, WidgetRef ref, AppSettings settings) {
+    final isDark = context.isDarkMode;
+    final enabledTypes = settings.enabledMedicalRecordTypes;
+    
+    final Map<String, IconData> typeIcons = {
+      'general': Icons.medical_services_outlined,
+      'pulmonary_evaluation': Icons.air,
+      'psychiatric_assessment': Icons.psychology,
+      'lab_result': Icons.science_outlined,
+      'imaging': Icons.image_outlined,
+      'procedure': Icons.healing_outlined,
+      'follow_up': Icons.event_repeat,
+    };
+
+    return Container(
+      decoration: BoxDecoration(
+        color: context.colorScheme.surface,
+        borderRadius: BorderRadius.circular(AppRadius.md),
+        border: Border.all(color: (isDark ? AppColors.darkDivider : AppColors.divider).withOpacity(0.5)),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.04),
+            blurRadius: AppSpacing.xs,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Padding(
+            padding: const EdgeInsets.all(AppSpacing.md),
+            child: Row(
+              children: [
+                Container(
+                  padding: const EdgeInsets.all(AppSpacing.xs),
+                  decoration: BoxDecoration(
+                    color: AppColors.primary.withOpacity(0.1),
+                    borderRadius: BorderRadius.circular(AppRadius.sm),
+                  ),
+                  child: const Icon(
+                    Icons.folder_special_rounded,
+                    color: AppColors.primary,
+                    size: 22,
+                  ),
+                ),
+                const SizedBox(width: AppSpacing.sm),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'Enabled Record Types',
+                        style: context.textTheme.titleMedium?.copyWith(
+                          fontWeight: FontWeight.w600,
+                          fontSize: AppFontSize.sm,
+                        ),
+                      ),
+                      Text(
+                        '${enabledTypes.length} of ${AppSettings.allMedicalRecordTypes.length} types enabled',
+                        style: context.textTheme.bodySmall?.copyWith(
+                          color: isDark ? AppColors.darkTextSecondary : AppColors.textSecondary,
+                          fontSize: 11,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                TextButton(
+                  onPressed: () {
+                    // Toggle all on/off
+                    final allEnabled = enabledTypes.length == AppSettings.allMedicalRecordTypes.length;
+                    if (allEnabled) {
+                      // Keep at least general enabled
+                      ref.read(appSettingsProvider).setEnabledMedicalRecordTypes(['general']);
+                    } else {
+                      ref.read(appSettingsProvider).setEnabledMedicalRecordTypes(
+                        List.from(AppSettings.allMedicalRecordTypes),
+                      );
+                    }
+                  },
+                  child: Text(
+                    enabledTypes.length == AppSettings.allMedicalRecordTypes.length 
+                        ? 'Disable All' 
+                        : 'Enable All',
+                    style: const TextStyle(fontSize: 12),
+                  ),
+                ),
+              ],
+            ),
+          ),
+          const Divider(height: 1),
+          ...AppSettings.allMedicalRecordTypes.map((type) {
+            final isEnabled = enabledTypes.contains(type);
+            final label = AppSettings.medicalRecordTypeLabels[type] ?? type;
+            final description = AppSettings.medicalRecordTypeDescriptions[type] ?? '';
+            final icon = typeIcons[type] ?? Icons.description;
+            
+            return Column(
+              children: [
+                Material(
+                  color: Colors.transparent,
+                  child: CheckboxListTile(
+                    value: isEnabled,
+                    onChanged: (value) {
+                      // Ensure at least one type is always enabled
+                      if (!value! && enabledTypes.length <= 1) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(
+                            content: const Text('At least one record type must be enabled'),
+                            behavior: SnackBarBehavior.floating,
+                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                          ),
+                        );
+                        return;
+                      }
+                      ref.read(appSettingsProvider).toggleMedicalRecordType(type, value);
+                    },
+                    secondary: Container(
+                      padding: const EdgeInsets.all(8),
+                      decoration: BoxDecoration(
+                        color: (isEnabled ? AppColors.primary : AppColors.textHint).withOpacity(0.1),
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      child: Icon(
+                        icon,
+                        color: isEnabled ? AppColors.primary : AppColors.textHint,
+                        size: 20,
+                      ),
+                    ),
+                    title: Text(
+                      label,
+                      style: TextStyle(
+                        fontWeight: FontWeight.w500,
+                        fontSize: 14,
+                        color: isEnabled 
+                            ? (isDark ? Colors.white : Colors.black87) 
+                            : AppColors.textHint,
+                      ),
+                    ),
+                    subtitle: Text(
+                      description,
+                      style: TextStyle(
+                        fontSize: 11,
+                        color: isDark ? AppColors.darkTextSecondary : AppColors.textSecondary,
+                      ),
+                    ),
+                    activeColor: AppColors.primary,
+                    checkboxShape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(4),
+                    ),
+                    contentPadding: const EdgeInsets.symmetric(
+                      horizontal: AppSpacing.md,
+                      vertical: AppSpacing.xxs,
+                    ),
+                  ),
+                ),
+                if (type != AppSettings.allMedicalRecordTypes.last)
+                  Divider(
+                    height: 1,
+                    indent: 60,
+                    color: (isDark ? AppColors.darkDivider : AppColors.divider).withOpacity(0.5),
+                  ),
+              ],
+            );
+          }),
+        ],
+      ),
+    );
+  }
+
   Widget _buildSettingsItem(
     BuildContext context, {
     required IconData icon,
@@ -1303,8 +1583,6 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> with SingleTick
                   itemCount: state.calendars.length,
                   itemBuilder: (context, index) {
                     final calendar = state.calendars[index];
-                    final isSelected = calendar.id == state.selectedCalendarId ||
-                        (state.selectedCalendarId == 'primary' && calendar.primary == true);
                     
                     return RadioListTile<String>(
                       title: Text(calendar.summary ?? 'Unnamed Calendar'),

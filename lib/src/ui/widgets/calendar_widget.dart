@@ -57,7 +57,6 @@ class _CalendarWidgetState extends State<CalendarWidget> {
         final screenWidth = constraints.maxWidth;
         final isSmallScreen = screenWidth < 360;
         final isMediumScreen = screenWidth >= 360 && screenWidth < 600;
-        final isLargeScreen = screenWidth >= 600;
         
         // Calculate cell size based on available width - larger cells for mobile
         final horizontalPadding = isSmallScreen ? 8.0 : 16.0;

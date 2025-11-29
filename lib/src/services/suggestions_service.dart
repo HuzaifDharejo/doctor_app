@@ -727,3 +727,231 @@ abstract class PsychiatricSuggestions {
     'Side effects monitoring', 'Compliance reinforced',
   ];
 }
+
+/// Pulmonary Evaluation suggestions
+abstract class PulmonarySuggestions {
+  // Chief complaints
+  static const List<String> chiefComplaints = [
+    'Chronic cough', 'Acute cough', 'Breathlessness on exertion',
+    'Breathlessness at rest', 'Wheeze', 'Chest tightness',
+    'Hemoptysis', 'Chest pain - pleuritic', 'Sputum production',
+    'Night-time cough', 'Early morning cough', 'Exercise intolerance',
+    'Nocturnal dyspnea', 'Orthopnea', 'Stridor',
+    'Fever with cough', 'Recurrent respiratory infections',
+    'Snoring', 'Daytime sleepiness', 'Sleep apnea symptoms',
+  ];
+
+  // Duration
+  static const List<String> duration = [
+    'Less than 1 week', '1-2 weeks', '2-4 weeks', '1-2 months',
+    '3-6 months', '6-12 months', 'More than 1 year',
+    'Since childhood', 'Intermittent for years', 'Progressive over months',
+    'Acute onset', 'Gradual onset', 'Chronic - diagnosed ___ years ago',
+  ];
+
+  // Alias for compatibility
+  static const List<String> durations = duration;
+
+  // Symptom character
+  static const List<String> symptomCharacter = [
+    'Dry cough', 'Productive cough', 'Paroxysmal cough',
+    'Cough worse at night', 'Cough worse in morning', 
+    'Cough with exertion', 'Barking cough', 'Whooping cough',
+    'White sputum', 'Yellow sputum', 'Green sputum', 'Blood-tinged sputum',
+    'Rusty sputum', 'Frothy sputum', 'Copious sputum', 'Scanty sputum',
+    'Difficulty breathing lying down', 'Using accessory muscles',
+    'Speaking in sentences', 'Speaking in phrases', 'Speaking in words only',
+    'Audible wheeze', 'Silent chest', 'Biphasic wheeze',
+  ];
+
+  // Alias for compatibility
+  static const List<String> symptomCharacters = symptomCharacter;
+
+  // Systemic symptoms
+  static const List<String> systemicSymptoms = [
+    'Fever', 'Night sweats', 'Weight loss', 'Fatigue',
+    'Loss of appetite', 'Malaise', 'Chills', 'Rigors',
+    'Joint pain', 'Muscle aches', 'Headache', 'Sore throat',
+    'Nasal congestion', 'Post-nasal drip', 'Hoarseness',
+  ];
+
+  // Red flags
+  static const List<String> redFlags = [
+    'Hemoptysis', 'Severe dyspnea', 'Cyanosis', 'Altered consciousness',
+    'Stridor', 'Use of accessory muscles', 'Silent chest',
+    'Fever >39°C', 'Hypotension', 'Tachycardia >120',
+    'Respiratory rate >30', 'SpO2 <92% on room air',
+    'Sudden onset chest pain', 'Significant weight loss',
+    'Unilateral leg swelling', 'Recent surgery/immobilization',
+    'History of malignancy', 'Immunocompromised state',
+  ];
+
+  // Past pulmonary history
+  static const List<String> pastPulmonaryHistory = [
+    'No previous lung disease', 'Childhood asthma', 'Adult-onset asthma',
+    'COPD - diagnosed ___ years ago', 'COPD GOLD Stage I', 'COPD GOLD Stage II',
+    'COPD GOLD Stage III', 'COPD GOLD Stage IV',
+    'Previous pneumonia', 'Recurrent pneumonia', 'Tuberculosis - treated',
+    'Tuberculosis - on treatment', 'MDR-TB', 'Bronchiectasis',
+    'Interstitial lung disease', 'Pulmonary fibrosis', 'Sarcoidosis',
+    'Lung cancer', 'Pleural effusion', 'Pneumothorax',
+    'Pulmonary embolism', 'Pulmonary hypertension',
+    'Sleep apnea - CPAP', 'Previous intubation/ventilation',
+    'Chronic hypoxia - on home oxygen', 'Lung transplant',
+  ];
+
+  // Exposure history
+  static const List<String> exposureHistory = [
+    'Non-smoker', 'Current smoker - ___ pack-years', 
+    'Ex-smoker - quit ___ years ago', 'Passive smoke exposure',
+    'Biomass fuel exposure', 'Occupational dust exposure',
+    'Asbestos exposure', 'Silica exposure', 'Coal dust exposure',
+    'Cotton/textile exposure', 'Chemical fumes exposure',
+    'Construction work', 'Mining', 'Farming/agriculture',
+    'Pet birds at home', 'Pigeon exposure', 'Mold exposure',
+    'Recent travel history', 'TB contact', 'COVID-19 contact',
+    'Air pollution exposure', 'E-cigarette/vaping',
+  ];
+
+  // Allergy history
+  static const List<String> allergyHistory = [
+    'No allergies', 'Seasonal allergic rhinitis', 'Perennial rhinitis',
+    'Allergic to house dust mites', 'Allergic to pollen',
+    'Allergic to animal dander', 'Allergic to mold/fungi',
+    'Food allergies', 'Drug allergies', 'Allergic conjunctivitis',
+    'Atopic dermatitis/eczema', 'Family history of atopy',
+    'Allergic bronchopulmonary aspergillosis', 'Aspirin-exacerbated respiratory disease',
+  ];
+
+  // Current medications
+  static const List<String> currentMedications = [
+    'No current medications', 'SABA inhaler PRN',
+    'Salbutamol inhaler', 'Levosalbutamol inhaler',
+    'ICS inhaler', 'Budesonide inhaler', 'Fluticasone inhaler',
+    'ICS/LABA combination', 'Budesonide/Formoterol', 'Fluticasone/Salmeterol',
+    'Fluticasone/Vilanterol', 'LAMA inhaler', 'Tiotropium',
+    'Triple therapy inhaler', 'Montelukast', 'Theophylline',
+    'Oral corticosteroids', 'Nebulization at home',
+    'Home oxygen therapy', 'BiPAP/CPAP', 'ACE inhibitor',
+    'Antifibrotic therapy', 'Biologics for asthma',
+  ];
+
+  // Comorbidities
+  static const List<String> comorbidities = [
+    'None', 'Hypertension', 'Diabetes mellitus', 'DM + HTN',
+    'Coronary artery disease', 'Heart failure', 'Atrial fibrillation',
+    'Chronic kidney disease', 'Liver disease', 'Obesity',
+    'GERD', 'OSA', 'Depression/anxiety', 'Osteoporosis',
+    'Rheumatoid arthritis', 'Other connective tissue disease',
+    'Immunocompromised state', 'HIV', 'Malignancy',
+    'Allergic rhinitis', 'Chronic sinusitis',
+  ];
+
+  // Chest auscultation findings
+  static const List<String> auscultationFindings = [
+    'Clear', 'Normal vesicular breath sounds', 'Reduced breath sounds',
+    'Absent breath sounds', 'Bronchial breathing', 
+    'Wheeze', 'Monophonic wheeze', 'Polyphonic wheeze',
+    'Inspiratory wheeze', 'Expiratory wheeze', 'Biphasic wheeze',
+    'Crackles', 'Fine crackles', 'Coarse crackles',
+    'Early inspiratory crackles', 'Late inspiratory crackles',
+    'Velcro crackles', 'Rhonchi', 'Stridor',
+    'Pleural rub', 'Prolonged expiration', 'Aegophony',
+    'Increased vocal resonance', 'Decreased vocal resonance',
+    'Whispering pectoriloquy',
+  ];
+
+  // Adventitious sounds
+  static const List<String> adventitiousSounds = [
+    'None', 'Bilateral wheeze', 'Unilateral wheeze',
+    'Bilateral basal crackles', 'Unilateral crackles',
+    'Diffuse crackles', 'Scattered rhonchi',
+    'Bilateral polyphonic wheeze', 'Right-sided crepitations',
+    'Left-sided crepitations', 'Bilateral Velcro crackles',
+    'Pleural rub right', 'Pleural rub left', 'Stridor present',
+    'Silent chest - no air entry',
+  ];
+
+  // Alias for addedSounds
+  static const List<String> addedSounds = adventitiousSounds;
+
+  // Breath sounds for zones
+  static const List<String> breathSounds = [
+    'Normal vesicular', 'Reduced', 'Absent', 'Bronchial breathing',
+    'Diminished', 'Harsh vesicular', 'Amphoric',
+  ];
+
+  // Zone findings for chest examination
+  static const List<String> zoneFindings = [
+    'Clear', 'Normal vesicular', 'Reduced breath sounds', 'Absent breath sounds',
+    'Bronchial breathing', 'Wheeze', 'Monophonic wheeze', 'Polyphonic wheeze',
+    'Fine crackles', 'Coarse crackles', 'Velcro crackles',
+    'Early inspiratory crackles', 'Late inspiratory crackles',
+    'Rhonchi', 'Pleural rub', 'Prolonged expiration',
+    'Increased vocal resonance', 'Decreased vocal resonance',
+    'Aegophony', 'Whispering pectoriloquy',
+  ];
+
+  // Impression/Diagnosis
+  static const List<String> impressionDiagnosis = [
+    'Acute bronchitis', 'Acute exacerbation of asthma',
+    'Chronic stable asthma', 'Uncontrolled asthma',
+    'COPD stable', 'COPD exacerbation',
+    'Community acquired pneumonia', 'Hospital acquired pneumonia',
+    'Aspiration pneumonia', 'Viral pneumonia', 'COVID-19 pneumonia',
+    'Pulmonary tuberculosis', 'Extrapulmonary tuberculosis',
+    'Bronchiectasis', 'Interstitial lung disease',
+    'Idiopathic pulmonary fibrosis', 'Hypersensitivity pneumonitis',
+    'Occupational lung disease', 'Pneumoconiosis',
+    'Pleural effusion', 'Empyema', 'Pneumothorax',
+    'Pulmonary embolism', 'Pulmonary hypertension',
+    'Lung malignancy - suspected', 'Lung abscess',
+    'Upper respiratory tract infection', 'Acute laryngitis',
+    'Allergic rhinitis with asthma', 'GERD-related cough',
+    'ACE inhibitor-induced cough', 'Post-viral cough',
+    'Chronic cough - under evaluation', 'Obstructive sleep apnea',
+  ];
+
+  // Investigations
+  static const List<String> investigations = [
+    'Chest X-Ray PA view', 'Chest X-Ray lateral view',
+    'HRCT Chest', 'CT Chest with contrast', 'CT Pulmonary Angiography',
+    'Spirometry', 'Spirometry with bronchodilator response',
+    'Full PFT with DLCO', 'Body plethysmography',
+    'Peak Flow Monitoring', '6 Minute Walk Test',
+    'Arterial Blood Gas', 'Pulse Oximetry',
+    'CBC', 'CRP', 'ESR', 'Procalcitonin',
+    'Sputum routine', 'Sputum culture', 'Sputum AFB smear',
+    'Sputum GeneXpert', 'Sputum for malignant cells',
+    'IgE levels', 'Specific IgE panel', 'Eosinophil count',
+    'D-Dimer', 'NT-proBNP', 'Cardiac enzymes',
+    'Mantoux test', 'IGRA/QuantiFERON',
+    'Bronchoscopy', 'BAL analysis', 'Pleural fluid analysis',
+    'Pleural biopsy', 'CT-guided lung biopsy',
+    'Sleep study/Polysomnography', 'Overnight oximetry',
+    'Echocardiography', 'ECG',
+  ];
+
+  // Treatment plan
+  static const List<String> treatmentPlan = [
+    'SABA inhaler PRN', 'Add ICS inhaler', 'Step up ICS dose',
+    'Add LABA to ICS', 'Switch to ICS/LABA combination',
+    'Add LAMA inhaler', 'Triple therapy inhaler',
+    'Nebulization - Salbutamol + Ipratropium',
+    'Short course oral steroids', 'Antibiotics - Azithromycin',
+    'Antibiotics - Amoxicillin-Clavulanate', 'Antibiotics - Levofloxacin',
+    'Antibiotics - Cefuroxime', 'Antitussive', 'Mucolytic',
+    'Antihistamine', 'Nasal corticosteroid spray',
+    'PPI/H2 blocker for GERD', 'Smoking cessation counseling',
+    'Pulmonary rehabilitation referral', 'Chest physiotherapy',
+    'Home oxygen therapy', 'CPAP/BiPAP therapy',
+    'ATT initiation', 'ATT continuation',
+    'Refer to pulmonologist', 'Refer to thoracic surgery',
+    'Admission advised', 'ICU care required',
+    'Vaccinations - Influenza, Pneumococcal',
+    'Follow-up in 1 week', 'Follow-up in 2 weeks', 'Follow-up in 1 month',
+    'Continue current treatment', 'Asthma action plan provided',
+    'Peak flow diary advised', 'Allergen avoidance advice',
+    'Occupational exposure prevention',
+  ];
+}

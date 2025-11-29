@@ -116,7 +116,7 @@ class PdfService {
     
     List<dynamic> medications = [];
     try {
-      medications = jsonDecode(prescription.itemsJson);
+      medications = jsonDecode(prescription.itemsJson) as List<dynamic>;
     } catch (_) {}
 
     pdf.addPage(
@@ -224,14 +224,14 @@ class PdfService {
                   // Medication rows
                   ...medications.asMap().entries.map((entry) {
                     final index = entry.key;
-                    final med = entry.value;
+                    final med = entry.value as Map<String, dynamic>;
                     return pw.TableRow(
                       children: [
                         _tableCell('${index + 1}'),
-                        _tableCell(med['name'] ?? 'Unknown'),
-                        _tableCell(med['dosage'] ?? '-'),
-                        _tableCell(med['frequency'] ?? '-'),
-                        _tableCell(med['duration'] ?? '-'),
+                        _tableCell((med['name'] as String?) ?? 'Unknown'),
+                        _tableCell((med['dosage'] as String?) ?? '-'),
+                        _tableCell((med['frequency'] as String?) ?? '-'),
+                        _tableCell((med['duration'] as String?) ?? '-'),
                       ],
                     );
                   }),
@@ -318,7 +318,7 @@ class PdfService {
     
     List<dynamic> items = [];
     try {
-      items = jsonDecode(invoice.itemsJson);
+      items = jsonDecode(invoice.itemsJson) as List<dynamic>;
     } catch (_) {}
 
     pdf.addPage(
@@ -409,11 +409,11 @@ class PdfService {
                   // Item rows
                   ...items.asMap().entries.map((entry) {
                     final index = entry.key;
-                    final item = entry.value;
+                    final item = entry.value as Map<String, dynamic>;
                     return pw.TableRow(
                       children: [
                         _tableCell('${index + 1}'),
-                        _tableCell(item['description'] ?? 'Item'),
+                        _tableCell((item['description'] as String?) ?? 'Item'),
                         _tableCell('${item['quantity'] ?? 1}'),
                         _tableCell('Rs. ${item['rate'] ?? 0}'),
                         _tableCell('Rs. ${item['total'] ?? 0}'),

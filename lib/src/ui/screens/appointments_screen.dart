@@ -20,16 +20,11 @@ class AppointmentsScreen extends ConsumerStatefulWidget {
 class _AppointmentsScreenState extends ConsumerState<AppointmentsScreen> {
   DateTime _selectedDate = DateTime.now();
   bool _showCalendar = false;
-  bool _isRefreshing = false;
   final _refreshKey = GlobalKey<RefreshIndicatorState>();
   
   Future<void> _onRefresh() async {
     HapticFeedback.mediumImpact();
-    setState(() => _isRefreshing = true);
     await Future.delayed(const Duration(milliseconds: 500));
-    if (mounted) {
-      setState(() => _isRefreshing = false);
-    }
   }
   
   @override
@@ -97,7 +92,6 @@ class _AppointmentsScreenState extends ConsumerState<AppointmentsScreen> {
   }
 
   Widget _buildHeader(BuildContext context) {
-    final isDark = context.isDarkMode;
     final isCompact = context.isCompact;
     
     return AppHeader(

@@ -1,7 +1,6 @@
 ﻿import 'dart:convert';
 import 'dart:typed_data';
 import 'package:flutter/material.dart';
-import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/services.dart';
 import 'package:image_picker/image_picker.dart';
 import '../../theme/app_theme.dart';
@@ -89,7 +88,7 @@ class _SignaturePadState extends State<SignaturePad> {
         }
         // Check if it's image data
         if (data is Map && data['image'] != null) {
-          _capturedImageBytes = base64Decode(data['image']);
+          _capturedImageBytes = base64Decode(data['image'] as String);
           setState(() {});
           return;
         }
@@ -489,7 +488,7 @@ class SignaturePreview extends StatelessWidget {
         }
         // Handle image format
         if (jsonData['image'] != null) {
-          final imageBytes = base64Decode(jsonData['image']);
+          final imageBytes = base64Decode(jsonData['image'] as String);
           return Image.memory(imageBytes, fit: BoxFit.contain);
         }
       }

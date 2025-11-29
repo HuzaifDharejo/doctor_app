@@ -12,6 +12,7 @@ class PatientCard extends StatefulWidget {
   final DateTime? lastVisit;
   final DateTime? nextAppointment;
   final int index;
+  final String? heroTagPrefix;
   
   const PatientCard({
     super.key, 
@@ -19,6 +20,7 @@ class PatientCard extends StatefulWidget {
     this.lastVisit,
     this.nextAppointment,
     this.index = 0,
+    this.heroTagPrefix,
   });
 
   @override
@@ -186,7 +188,7 @@ class _PatientCardState extends State<PatientCard>
                       children: [
                         // Avatar with gradient border - Hero animation
                         Hero(
-                          tag: 'patient-avatar-${patient.id}',
+                          tag: '${widget.heroTagPrefix ?? "card"}-patient-avatar-${patient.id}',
                           child: Container(
                             padding: const EdgeInsets.all(2),
                             decoration: BoxDecoration(
@@ -227,7 +229,7 @@ class _PatientCardState extends State<PatientCard>
                                 children: [
                                   Expanded(
                                     child: Hero(
-                                      tag: 'patient-name-${patient.id}',
+                                      tag: '${widget.heroTagPrefix ?? "card"}-patient-name-${patient.id}',
                                       child: Material(
                                         color: Colors.transparent,
                                         child: Text(

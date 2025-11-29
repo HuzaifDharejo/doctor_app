@@ -26,8 +26,9 @@ Future<void> _insertSampleData(DoctorDatabase db) async {
   print('Seeding database with comprehensive sample data...');
   final random = Random();
 
-  // Pakistani patient data - 30 patients with diverse conditions
+  // Pakistani patient data - 75 patients with diverse conditions
   final patientData = [
+    // Original 30 patients
     {'firstName': 'Muhammad', 'lastName': 'Ahmed Khan', 'dob': DateTime(1985, 3, 15), 'phone': '0300-1234567', 'email': 'ahmed.khan@gmail.com', 'address': 'House 45, Street 7, F-10/2, Islamabad', 'history': 'Hypertension, Type 2 Diabetes', 'tags': 'chronic,follow-up', 'risk': 3},
     {'firstName': 'Fatima', 'lastName': 'Bibi', 'dob': DateTime(1990, 7, 22), 'phone': '0321-2345678', 'email': 'fatima.bibi@yahoo.com', 'address': '123 Gulberg III, Lahore', 'history': 'Anxiety, Insomnia', 'tags': 'psychiatric', 'risk': 2},
     {'firstName': 'Ali', 'lastName': 'Raza', 'dob': DateTime(1978, 11, 5), 'phone': '0333-3456789', 'email': 'ali.raza@hotmail.com', 'address': 'Flat 12, Block B, Clifton, Karachi', 'history': 'Cardiovascular disease, High cholesterol', 'tags': 'cardiac,urgent', 'risk': 5},
@@ -58,6 +59,53 @@ Future<void> _insertSampleData(DoctorDatabase db) async {
     {'firstName': 'Nimra', 'lastName': 'Ali', 'dob': DateTime(1990, 10, 2), 'phone': '0339-8901234', 'email': 'nimra.ali@hotmail.com', 'address': '67 DHA Phase 6, Karachi', 'history': 'Hypothyroidism', 'tags': 'endocrine,follow-up', 'risk': 2},
     {'firstName': 'Babar', 'lastName': 'Azam', 'dob': DateTime(1994, 10, 15), 'phone': '0307-9012345', 'email': 'babar.azam@gmail.com', 'address': '12 Gulberg IV, Lahore', 'history': 'Mild hypertension', 'tags': 'cardiac', 'risk': 2},
     {'firstName': 'Sajal', 'lastName': 'Aly', 'dob': DateTime(1993, 1, 17), 'phone': '0317-0123456', 'email': 'sajal.aly@yahoo.com', 'address': '45 PECHS, Karachi', 'history': 'PTSD, Adjustment disorder', 'tags': 'psychiatric,follow-up', 'risk': 4},
+    
+    // Additional 45 patients for more comprehensive data
+    {'firstName': 'Tariq', 'lastName': 'Jameel', 'dob': DateTime(1960, 2, 10), 'phone': '0300-1111111', 'email': 'tariq.jameel@gmail.com', 'address': 'House 12, Street 5, Gulshan, Karachi', 'history': 'Chronic Heart Failure, Atrial Fibrillation', 'tags': 'cardiac,chronic,elderly', 'risk': 5},
+    {'firstName': 'Aisha', 'lastName': 'Farooq', 'dob': DateTime(1988, 4, 5), 'phone': '0321-1111112', 'email': 'aisha.farooq@yahoo.com', 'address': '45 F-8/1, Islamabad', 'history': 'Lupus, Chronic Fatigue', 'tags': 'rheumatology,autoimmune', 'risk': 4},
+    {'firstName': 'Rizwan', 'lastName': 'Ahmed', 'dob': DateTime(1975, 8, 20), 'phone': '0333-1111113', 'email': 'rizwan.ahmed@hotmail.com', 'address': 'Plot 34, DHA Phase 2, Lahore', 'history': 'Chronic Pancreatitis', 'tags': 'gastro,chronic', 'risk': 4},
+    {'firstName': 'Kiran', 'lastName': 'Baloch', 'dob': DateTime(1992, 6, 15), 'phone': '0345-1111114', 'email': 'kiran.baloch@gmail.com', 'address': '78 University Road, Quetta', 'history': 'Polycystic Kidney Disease', 'tags': 'nephrology,genetic', 'risk': 3},
+    {'firstName': 'Farhan', 'lastName': 'Saeed', 'dob': DateTime(1985, 11, 30), 'phone': '0302-1111115', 'email': 'farhan.saeed@outlook.com', 'address': '23 Canal Road, Multan', 'history': 'Multiple Sclerosis', 'tags': 'neurology,chronic', 'risk': 5},
+    {'firstName': 'Saba', 'lastName': 'Qamar', 'dob': DateTime(1990, 3, 8), 'phone': '0311-1111116', 'email': 'saba.qamar@yahoo.com', 'address': '56 Johar Town Block B, Lahore', 'history': 'Endometriosis, Infertility', 'tags': 'gynecology', 'risk': 2},
+    {'firstName': 'Omar', 'lastName': 'Sharif', 'dob': DateTime(1958, 12, 25), 'phone': '0322-1111117', 'email': 'omar.sharif@gmail.com', 'address': 'House 89, G-11/2, Islamabad', 'history': 'Parkinson\'s Disease, Dementia', 'tags': 'neurology,elderly,chronic', 'risk': 5},
+    {'firstName': 'Mahira', 'lastName': 'Khan', 'dob': DateTime(1984, 12, 21), 'phone': '0334-1111118', 'email': 'mahira.khan@hotmail.com', 'address': '12 Defence Phase 7, Karachi', 'history': 'Chronic Migraine, Vertigo', 'tags': 'neurology', 'risk': 2},
+    {'firstName': 'Hamza', 'lastName': 'Ali', 'dob': DateTime(2010, 5, 18), 'phone': '0301-1111119', 'email': 'hamza.parent@gmail.com', 'address': '34 Bahria Town Phase 4, Rawalpindi', 'history': 'Childhood Asthma, Allergies', 'tags': 'pediatric,respiratory', 'risk': 2},
+    {'firstName': 'Zara', 'lastName': 'Noor', 'dob': DateTime(2015, 9, 10), 'phone': '0312-1111120', 'email': 'zara.parent@yahoo.com', 'address': '67 Model Town, Gujranwala', 'history': 'ADHD, Learning Disability', 'tags': 'pediatric,psychiatric', 'risk': 2},
+    {'firstName': 'Atif', 'lastName': 'Aslam', 'dob': DateTime(1983, 3, 12), 'phone': '0323-1111121', 'email': 'atif.aslam@outlook.com', 'address': '90 Gulberg V, Lahore', 'history': 'Vocal Cord Nodules, GERD', 'tags': 'ent,gastro', 'risk': 1},
+    {'firstName': 'Humaima', 'lastName': 'Malik', 'dob': DateTime(1987, 11, 18), 'phone': '0335-1111122', 'email': 'humaima.malik@gmail.com', 'address': '23 Clifton Block 2, Karachi', 'history': 'Psoriasis, Psoriatic Arthritis', 'tags': 'dermatology,rheumatology', 'risk': 3},
+    {'firstName': 'Shaan', 'lastName': 'Shahid', 'dob': DateTime(1971, 4, 27), 'phone': '0303-1111123', 'email': 'shaan.shahid@yahoo.com', 'address': '56 F-6/1, Islamabad', 'history': 'Type 1 Diabetes, Diabetic Retinopathy', 'tags': 'endocrine,ophthalmology,chronic', 'risk': 4},
+    {'firstName': 'Urwa', 'lastName': 'Hocane', 'dob': DateTime(1991, 7, 2), 'phone': '0313-1111124', 'email': 'urwa.hocane@hotmail.com', 'address': '78 DHA Phase 5, Lahore', 'history': 'Celiac Disease, IBS', 'tags': 'gastro,autoimmune', 'risk': 2},
+    {'firstName': 'Fawad', 'lastName': 'Khan', 'dob': DateTime(1981, 11, 29), 'phone': '0324-1111125', 'email': 'fawad.khan@gmail.com', 'address': '12 E-7, Islamabad', 'history': 'Ankylosing Spondylitis', 'tags': 'rheumatology,chronic', 'risk': 3},
+    {'firstName': 'Sanam', 'lastName': 'Saeed', 'dob': DateTime(1985, 2, 2), 'phone': '0336-1111126', 'email': 'sanam.saeed@outlook.com', 'address': '34 Gulshan Block 13, Karachi', 'history': 'Graves\' Disease, Osteoporosis', 'tags': 'endocrine,rheumatology', 'risk': 3},
+    {'firstName': 'Ahad', 'lastName': 'Raza', 'dob': DateTime(1993, 9, 24), 'phone': '0304-1111127', 'email': 'ahad.raza@yahoo.com', 'address': '67 Bahria Orchard, Lahore', 'history': 'Crohn\'s Disease', 'tags': 'gastro,autoimmune,chronic', 'risk': 4},
+    {'firstName': 'Mawra', 'lastName': 'Hocane', 'dob': DateTime(1992, 9, 28), 'phone': '0314-1111128', 'email': 'mawra.hocane@gmail.com', 'address': '89 Garden Town, Lahore', 'history': 'Generalized Anxiety, Panic Disorder', 'tags': 'psychiatric', 'risk': 3},
+    {'firstName': 'Danish', 'lastName': 'Taimoor', 'dob': DateTime(1983, 2, 16), 'phone': '0325-1111129', 'email': 'danish.taimoor@hotmail.com', 'address': '23 Askari 14, Rawalpindi', 'history': 'Chronic Back Pain, Sciatica', 'tags': 'orthopedic,chronic', 'risk': 2},
+    {'firstName': 'Ayeza', 'lastName': 'Khan', 'dob': DateTime(1991, 1, 15), 'phone': '0337-1111130', 'email': 'ayeza.khan@outlook.com', 'address': '56 DHA Phase 8, Karachi', 'history': 'Post-partum Depression, Thyroid', 'tags': 'psychiatric,endocrine', 'risk': 3},
+    {'firstName': 'Humayun', 'lastName': 'Saeed', 'dob': DateTime(1971, 7, 27), 'phone': '0305-1111131', 'email': 'humayun.saeed@gmail.com', 'address': '78 F-10/3, Islamabad', 'history': 'Coronary Artery Disease, Stent', 'tags': 'cardiac,chronic', 'risk': 4},
+    {'firstName': 'Syra', 'lastName': 'Yousuf', 'dob': DateTime(1988, 4, 20), 'phone': '0315-1111132', 'email': 'syra.yousuf@yahoo.com', 'address': '12 Clifton Block 8, Karachi', 'history': 'Hashimoto\'s Thyroiditis', 'tags': 'endocrine,autoimmune', 'risk': 2},
+    {'firstName': 'Osman', 'lastName': 'Khalid', 'dob': DateTime(1978, 10, 5), 'phone': '0326-1111133', 'email': 'osman.khalid@hotmail.com', 'address': '34 Model Town, Sialkot', 'history': 'Gout, Metabolic Syndrome', 'tags': 'rheumatology,metabolic', 'risk': 3},
+    {'firstName': 'Sadia', 'lastName': 'Imam', 'dob': DateTime(1979, 2, 18), 'phone': '0338-1111134', 'email': 'sadia.imam@gmail.com', 'address': '67 Gulberg III, Lahore', 'history': 'Breast Cancer Survivor, Lymphedema', 'tags': 'oncology,follow-up', 'risk': 3},
+    {'firstName': 'Shan', 'lastName': 'Masood', 'dob': DateTime(1989, 10, 14), 'phone': '0306-1111135', 'email': 'shan.masood@outlook.com', 'address': '89 DHA City, Karachi', 'history': 'Sports Injury, ACL Reconstruction', 'tags': 'orthopedic,sports', 'risk': 2},
+    {'firstName': 'Hareem', 'lastName': 'Farooq', 'dob': DateTime(1993, 9, 26), 'phone': '0316-1111136', 'email': 'hareem.farooq@yahoo.com', 'address': '23 E-11/4, Islamabad', 'history': 'Anemia, Vitamin B12 Deficiency', 'tags': 'hematology,general', 'risk': 1},
+    {'firstName': 'Wahab', 'lastName': 'Riaz', 'dob': DateTime(1985, 6, 28), 'phone': '0327-1111137', 'email': 'wahab.riaz@gmail.com', 'address': '56 Bahria Town Phase 7, Rawalpindi', 'history': 'Shoulder Injury, Rotator Cuff Tear', 'tags': 'orthopedic,sports', 'risk': 2},
+    {'firstName': 'Kinza', 'lastName': 'Hashmi', 'dob': DateTime(1996, 1, 7), 'phone': '0339-1111138', 'email': 'kinza.hashmi@hotmail.com', 'address': '78 Johar Town Block E, Lahore', 'history': 'Eating Disorder, Body Dysmorphia', 'tags': 'psychiatric', 'risk': 4},
+    {'firstName': 'Shoaib', 'lastName': 'Akhtar', 'dob': DateTime(1975, 8, 13), 'phone': '0307-1111139', 'email': 'shoaib.akhtar@outlook.com', 'address': '12 Model Town, Rawalpindi', 'history': 'Chronic Tendinitis, Lower Back Pain', 'tags': 'orthopedic,chronic', 'risk': 3},
+    {'firstName': 'Yumna', 'lastName': 'Zaidi', 'dob': DateTime(1989, 7, 30), 'phone': '0317-1111140', 'email': 'yumna.zaidi@gmail.com', 'address': '34 Cantt Area, Lahore', 'history': 'Chronic Sinusitis, Nasal Polyps', 'tags': 'ent', 'risk': 1},
+    {'firstName': 'Wasim', 'lastName': 'Akram', 'dob': DateTime(1966, 6, 3), 'phone': '0328-1111141', 'email': 'wasim.akram@yahoo.com', 'address': '67 Defence Phase 4, Karachi', 'history': 'Diabetes Type 2, Neuropathy, Kidney Disease Stage 2', 'tags': 'endocrine,nephrology,chronic,elderly', 'risk': 5},
+    {'firstName': 'Zarnish', 'lastName': 'Khan', 'dob': DateTime(1994, 5, 10), 'phone': '0300-1111142', 'email': 'zarnish.khan@hotmail.com', 'address': '89 G-9/1, Islamabad', 'history': 'Chronic Urticaria, Allergies', 'tags': 'dermatology,immunology', 'risk': 2},
+    {'firstName': 'Azhar', 'lastName': 'Ali', 'dob': DateTime(1985, 2, 19), 'phone': '0310-1111143', 'email': 'azhar.ali@gmail.com', 'address': '23 Gulberg II, Lahore', 'history': 'Tension Headaches, Neck Pain', 'tags': 'neurology', 'risk': 1},
+    {'firstName': 'Naimal', 'lastName': 'Khawar', 'dob': DateTime(1993, 11, 18), 'phone': '0329-1111144', 'email': 'naimal.khawar@outlook.com', 'address': '56 F-7/3, Islamabad', 'history': 'Anxiety, Chronic Stress', 'tags': 'psychiatric', 'risk': 2},
+    {'firstName': 'Shadab', 'lastName': 'Khan', 'dob': DateTime(1998, 10, 4), 'phone': '0301-1111145', 'email': 'shadab.khan@yahoo.com', 'address': '78 Bahria Town Phase 8, Rawalpindi', 'history': 'Sports Asthma, Exercise-Induced Bronchospasm', 'tags': 'respiratory,sports', 'risk': 2},
+    {'firstName': 'Hania', 'lastName': 'Amir', 'dob': DateTime(1997, 2, 12), 'phone': '0320-1111146', 'email': 'hania.amir@gmail.com', 'address': '12 DHA Phase 6, Lahore', 'history': 'Acne, Hirsutism, PCOS', 'tags': 'dermatology,endocrine', 'risk': 2},
+    {'firstName': 'Hasan', 'lastName': 'Ali', 'dob': DateTime(1994, 2, 2), 'phone': '0311-1111147', 'email': 'hasan.ali@hotmail.com', 'address': '34 Askari 11, Lahore', 'history': 'Shoulder Impingement', 'tags': 'orthopedic,sports', 'risk': 1},
+    {'firstName': 'Anoushay', 'lastName': 'Abbasi', 'dob': DateTime(1991, 10, 11), 'phone': '0330-1111148', 'email': 'anoushay.abbasi@outlook.com', 'address': '67 Clifton Block 5, Karachi', 'history': 'Irritable Bowel Syndrome, Food Intolerances', 'tags': 'gastro', 'risk': 2},
+    {'firstName': 'Mohammad', 'lastName': 'Rizwan', 'dob': DateTime(1992, 6, 1), 'phone': '0302-1111149', 'email': 'mohammad.rizwan@gmail.com', 'address': '89 Peshawar Road, Rawalpindi', 'history': 'Eye Strain, Dry Eyes', 'tags': 'ophthalmology', 'risk': 1},
+    {'firstName': 'Sumbul', 'lastName': 'Iqbal', 'dob': DateTime(1990, 8, 27), 'phone': '0321-1111150', 'email': 'sumbul.iqbal@yahoo.com', 'address': '23 Johar Town Block J, Lahore', 'history': 'Hypothyroidism, Weight Gain', 'tags': 'endocrine,metabolic', 'risk': 2},
+    {'firstName': 'Fakhar', 'lastName': 'Zaman', 'dob': DateTime(1990, 4, 10), 'phone': '0312-1111151', 'email': 'fakhar.zaman@hotmail.com', 'address': '56 Mardan Road, Peshawar', 'history': 'Hand Fracture (healed), Carpal Tunnel', 'tags': 'orthopedic', 'risk': 1},
+    {'firstName': 'Aiman', 'lastName': 'Khan', 'dob': DateTime(1998, 11, 20), 'phone': '0331-1111152', 'email': 'aiman.khan@gmail.com', 'address': '78 G-10/4, Islamabad', 'history': 'Allergic Rhinitis, Sinusitis', 'tags': 'ent,respiratory', 'risk': 1},
+    {'firstName': 'Inzamam', 'lastName': 'ul-Haq', 'dob': DateTime(1970, 3, 3), 'phone': '0303-1111153', 'email': 'inzamam.ulhaq@outlook.com', 'address': '12 Gulberg Main, Lahore', 'history': 'Type 2 Diabetes, Obesity, Sleep Apnea', 'tags': 'endocrine,metabolic,respiratory,elderly', 'risk': 4},
+    {'firstName': 'Ramsha', 'lastName': 'Khan', 'dob': DateTime(1996, 11, 25), 'phone': '0322-1111154', 'email': 'ramsha.khan@yahoo.com', 'address': '34 E-11/2, Islamabad', 'history': 'Migraine with Aura', 'tags': 'neurology', 'risk': 2},
+    {'firstName': 'Younis', 'lastName': 'Khan', 'dob': DateTime(1977, 11, 29), 'phone': '0313-1111155', 'email': 'younis.khan@gmail.com', 'address': '67 Hayatabad Phase 3, Peshawar', 'history': 'Knee Osteoarthritis, Previous Meniscus Surgery', 'tags': 'orthopedic,elderly', 'risk': 3},
   ];
 
   // Insert all patients
@@ -100,19 +148,28 @@ Future<void> _insertSampleData(DoctorDatabase db) async {
     'Mental health session',
     'Cardiac assessment',
     'Respiratory therapy',
+    'Pulmonary function test',
+    'Neurological assessment',
+    'Pre-operative consultation',
+    'Post-operative follow-up',
+    'Chronic disease management',
+    'Weight management consultation',
+    'Nutritional counseling',
+    'Vaccination visit',
+    'Travel medicine consultation',
+    'Second opinion consultation',
   ];
 
-  final appointmentStatuses = ['scheduled', 'confirmed', 'completed', 'cancelled', 'no-show'];
   int appointmentCount = 0;
 
-  // Past appointments (last 30 days)
-  for (int dayOffset = 30; dayOffset > 0; dayOffset--) {
+  // Past appointments (last 90 days - increased from 30)
+  for (int dayOffset = 90; dayOffset > 0; dayOffset--) {
     final appointmentDay = today.subtract(Duration(days: dayOffset));
-    final appointmentsPerDay = 3 + random.nextInt(4); // 3-6 per day
+    final appointmentsPerDay = 8 + random.nextInt(8); // 8-15 per day (increased)
     
     for (int i = 0; i < appointmentsPerDay; i++) {
       final patientIndex = random.nextInt(patientIds.length);
-      final hour = 9 + random.nextInt(8); // 9am to 5pm
+      final hour = 9 + random.nextInt(9); // 9am to 6pm
       final minute = [0, 15, 30, 45][random.nextInt(4)];
       
       await db.insertAppointment(
@@ -129,32 +186,32 @@ Future<void> _insertSampleData(DoctorDatabase db) async {
     }
   }
 
-  // Today's appointments
-  for (int i = 0; i < 6; i++) {
+  // Today's appointments (increased from 6 to 12)
+  for (int i = 0; i < 12; i++) {
     final patientIndex = i % patientIds.length;
-    final hour = 9 + (i * 1.5).floor();
+    final hour = 9 + (i * 0.75).floor();
     
     await db.insertAppointment(
       AppointmentsCompanion(
         patientId: Value(patientIds[patientIndex]),
-        appointmentDateTime: Value(today.add(Duration(hours: hour))),
-        durationMinutes: Value([15, 30, 30, 45, 30, 20][i]),
-        reason: Value(appointmentReasons[i]),
-        status: Value(i < 3 ? 'completed' : 'confirmed'),
+        appointmentDateTime: Value(today.add(Duration(hours: hour, minutes: (i % 4) * 15))),
+        durationMinutes: Value([15, 30, 30, 45, 30, 20, 45, 30, 15, 20, 30, 45][i]),
+        reason: Value(appointmentReasons[i % appointmentReasons.length]),
+        status: Value(i < 5 ? 'completed' : (i < 8 ? 'in-progress' : 'confirmed')),
         notes: Value('Today\'s appointment for ${patientData[patientIndex]['firstName']}'),
       ),
     );
     appointmentCount++;
   }
 
-  // Future appointments (next 14 days)
-  for (int dayOffset = 1; dayOffset <= 14; dayOffset++) {
+  // Future appointments (next 30 days - increased from 14)
+  for (int dayOffset = 1; dayOffset <= 30; dayOffset++) {
     final appointmentDay = today.add(Duration(days: dayOffset));
-    final appointmentsPerDay = 2 + random.nextInt(5); // 2-6 per day
+    final appointmentsPerDay = 5 + random.nextInt(10); // 5-14 per day (increased)
     
     for (int i = 0; i < appointmentsPerDay; i++) {
       final patientIndex = random.nextInt(patientIds.length);
-      final hour = 9 + random.nextInt(8);
+      final hour = 9 + random.nextInt(9);
       final minute = [0, 15, 30, 45][random.nextInt(4)];
       
       await db.insertAppointment(
@@ -340,15 +397,19 @@ Future<void> _insertSampleData(DoctorDatabase db) async {
   ];
 
   int prescriptionCount = 0;
-  for (int i = 0; i < 30; i++) {
-    // Multiple prescriptions per patient over time
-    final numPrescriptions = 1 + random.nextInt(3); // 1-3 prescriptions per patient
+  for (int i = 0; i < patientIds.length; i++) {
+    // Multiple prescriptions per patient over time - more for chronic patients
+    final isChronic = (patientData[i]['tags'] as String).contains('chronic');
+    final numPrescriptions = isChronic ? (3 + random.nextInt(4)) : (1 + random.nextInt(3)); // 1-3 or 3-6 for chronic
+    
     for (int j = 0; j < numPrescriptions; j++) {
+      // Use modulo to cycle through medication templates
+      final medIndex = (i + j) % medications.length;
       await db.insertPrescription(
         PrescriptionsCompanion(
           patientId: Value(patientIds[i]),
-          itemsJson: Value(jsonEncode(medications[i])),
-          instructions: Value(instructions[i]),
+          itemsJson: Value(jsonEncode(medications[medIndex])),
+          instructions: Value(instructions[medIndex]),
           isRefillable: Value(random.nextInt(3) != 0), // 66% refillable
           createdAt: Value(today.subtract(Duration(days: j * 30 + random.nextInt(15)))),
         ),
@@ -359,7 +420,7 @@ Future<void> _insertSampleData(DoctorDatabase db) async {
   print('✓ Inserted $prescriptionCount prescriptions');
 
   // ========== MEDICAL RECORDS ==========
-  final recordTypes = ['general', 'psychiatric_assessment', 'lab_result', 'imaging', 'procedure'];
+  final recordTypes = ['general', 'psychiatric_assessment', 'lab_result', 'imaging', 'procedure', 'pulmonary_evaluation'];
   
   // General consultation records
   final generalRecords = [
@@ -514,15 +575,161 @@ Future<void> _insertSampleData(DoctorDatabase db) async {
     },
   ];
 
+  // Pulmonary evaluation records
+  final pulmonaryRecords = [
+    {
+      'title': 'Chronic Cough Evaluation',
+      'data': {
+        'chiefComplaint': 'Persistent dry cough for 3 months',
+        'duration': '3 months',
+        'symptomCharacter': 'Dry, non-productive, worse at night and early morning',
+        'systemicSymptoms': ['Fatigue', 'Mild weight loss'],
+        'redFlags': [],
+        'pastPulmonaryHistory': 'No previous lung disease',
+        'exposureHistory': 'Non-smoker, no occupational exposure',
+        'allergyHistory': 'Seasonal allergic rhinitis',
+        'currentMedications': 'ACE inhibitor for hypertension',
+        'comorbidities': 'Hypertension, GERD',
+        'chestAuscultation': {
+          'leftUpper': 'Clear',
+          'rightUpper': 'Clear',
+          'leftMiddle': 'Clear',
+          'rightMiddle': 'Clear',
+          'leftLower': 'Clear',
+          'rightLower': 'Clear',
+          'adventitiousSounds': 'None',
+        },
+        'impressionDiagnosis': 'ACE inhibitor-induced cough vs GERD-related cough',
+        'investigationsRequired': ['Chest X-Ray', 'Spirometry'],
+        'treatmentPlan': 'Switch ACE inhibitor to ARB. PPI therapy. Follow-up in 4 weeks.',
+      },
+      'notes': 'Consider drug-induced cough. Trial of ACE inhibitor withdrawal recommended.'
+    },
+    {
+      'title': 'Acute Asthma Exacerbation',
+      'data': {
+        'chiefComplaint': 'Severe breathlessness and wheeze for 2 days',
+        'duration': '2 days',
+        'symptomCharacter': 'Progressive dyspnea, audible wheeze, difficulty speaking in sentences',
+        'systemicSymptoms': ['Fever', 'Cough'],
+        'redFlags': ['Severe dyspnea', 'Cyanosis'],
+        'pastPulmonaryHistory': 'Known asthmatic since childhood',
+        'exposureHistory': 'Recent viral URTI, dust exposure at workplace',
+        'allergyHistory': 'Allergic to house dust mites, pollen',
+        'currentMedications': 'Inhaled budesonide/formoterol 200/6, Salbutamol PRN',
+        'comorbidities': 'Allergic rhinitis',
+        'chestAuscultation': {
+          'leftUpper': 'Wheeze',
+          'rightUpper': 'Wheeze',
+          'leftMiddle': 'Wheeze',
+          'rightMiddle': 'Wheeze',
+          'leftLower': 'Wheeze, prolonged expiration',
+          'rightLower': 'Wheeze, prolonged expiration',
+          'adventitiousSounds': 'Bilateral polyphonic wheeze',
+        },
+        'impressionDiagnosis': 'Acute severe asthma exacerbation, likely infective trigger',
+        'investigationsRequired': ['Peak Flow', 'Chest X-Ray', 'ABG'],
+        'treatmentPlan': 'Nebulized bronchodilators, IV corticosteroids, oxygen therapy. Monitor closely.',
+      },
+      'notes': 'Severe exacerbation requiring close monitoring. Consider ICU if not responding.'
+    },
+    {
+      'title': 'COPD Follow-up',
+      'data': {
+        'chiefComplaint': 'Routine follow-up for COPD management',
+        'duration': 'Chronic - diagnosed 5 years ago',
+        'symptomCharacter': 'Baseline dyspnea on exertion, productive cough with white sputum',
+        'systemicSymptoms': [],
+        'redFlags': [],
+        'pastPulmonaryHistory': 'COPD GOLD Stage 2, 2 exacerbations last year',
+        'exposureHistory': '30 pack-year smoking history, quit 2 years ago',
+        'allergyHistory': 'None',
+        'currentMedications': 'Tiotropium 18mcg OD, Budesonide/Formoterol 400/12 BD',
+        'comorbidities': 'Osteoporosis, Depression',
+        'chestAuscultation': {
+          'leftUpper': 'Reduced breath sounds',
+          'rightUpper': 'Reduced breath sounds',
+          'leftMiddle': 'Reduced breath sounds, occasional rhonchi',
+          'rightMiddle': 'Reduced breath sounds, occasional rhonchi',
+          'leftLower': 'Prolonged expiration',
+          'rightLower': 'Prolonged expiration',
+          'adventitiousSounds': 'Scattered rhonchi, no crackles',
+        },
+        'impressionDiagnosis': 'COPD GOLD Stage 2, stable on current therapy',
+        'investigationsRequired': ['Spirometry', 'Chest X-Ray Annual'],
+        'treatmentPlan': 'Continue current inhalers. Pulmonary rehabilitation referral. Vaccination due.',
+      },
+      'notes': 'Stable COPD. Good inhaler technique. Encourage continued smoking abstinence.'
+    },
+    {
+      'title': 'Pneumonia Evaluation',
+      'data': {
+        'chiefComplaint': 'High fever, productive cough with yellow sputum, chest pain',
+        'duration': '5 days',
+        'symptomCharacter': 'Fever 102°F, productive cough, right-sided pleuritic chest pain',
+        'systemicSymptoms': ['Fever', 'Fatigue', 'Night sweats', 'Loss of appetite'],
+        'redFlags': ['Fever', 'Hemoptysis'],
+        'pastPulmonaryHistory': 'Previous pneumonia 3 years ago',
+        'exposureHistory': 'No TB contact, no travel history',
+        'allergyHistory': 'Penicillin allergy',
+        'currentMedications': 'None',
+        'comorbidities': 'Type 2 Diabetes Mellitus',
+        'chestAuscultation': {
+          'leftUpper': 'Clear',
+          'rightUpper': 'Clear',
+          'leftMiddle': 'Clear',
+          'rightMiddle': 'Bronchial breathing',
+          'leftLower': 'Clear',
+          'rightLower': 'Crackles, bronchial breathing, increased vocal resonance',
+          'adventitiousSounds': 'Right lower zone crackles with bronchial breathing',
+        },
+        'impressionDiagnosis': 'Right lower lobe Community Acquired Pneumonia',
+        'investigationsRequired': ['Chest X-Ray', 'CBC', 'CRP', 'Blood culture', 'Sputum culture'],
+        'treatmentPlan': 'Azithromycin 500mg OD + Cefuroxime 500mg BD for 7 days. Adequate hydration.',
+      },
+      'notes': 'CAP with diabetic comorbidity. Close monitoring for response. Avoid penicillins.'
+    },
+    {
+      'title': 'Interstitial Lung Disease Workup',
+      'data': {
+        'chiefComplaint': 'Progressive breathlessness over 6 months with dry cough',
+        'duration': '6 months',
+        'symptomCharacter': 'Gradual onset dyspnea, now at rest, dry non-productive cough',
+        'systemicSymptoms': ['Fatigue', 'Weight loss'],
+        'redFlags': ['Severe dyspnea'],
+        'pastPulmonaryHistory': 'No previous lung disease',
+        'exposureHistory': 'Worked in textile factory for 20 years, asbestos exposure possible',
+        'allergyHistory': 'None',
+        'currentMedications': 'Methotrexate for rheumatoid arthritis',
+        'comorbidities': 'Rheumatoid arthritis for 10 years',
+        'chestAuscultation': {
+          'leftUpper': 'Fine end-inspiratory crackles',
+          'rightUpper': 'Fine end-inspiratory crackles',
+          'leftMiddle': 'Velcro crackles',
+          'rightMiddle': 'Velcro crackles',
+          'leftLower': 'Velcro crackles, clubbing noted',
+          'rightLower': 'Velcro crackles, clubbing noted',
+          'adventitiousSounds': 'Bilateral basal Velcro crackles, finger clubbing present',
+        },
+        'impressionDiagnosis': 'Suspected Interstitial Lung Disease - RA-ILD vs Occupational lung disease',
+        'investigationsRequired': ['HRCT Chest', 'Spirometry with DLCO', 'ANA', 'RF', 'Anti-CCP', 'Bronchoscopy if needed'],
+        'treatmentPlan': 'HRCT chest urgently. Rheumatology consultation. Consider methotrexate-induced pneumonitis.',
+      },
+      'notes': 'High suspicion for ILD. Multiple risk factors. Expedite workup.'
+    },
+  ];
+
   int medicalRecordCount = 0;
 
-  // Add medical records for each patient
+  // Add medical records for each patient - more comprehensive
   for (int i = 0; i < patientIds.length; i++) {
-    final numRecords = 2 + random.nextInt(5); // 2-6 records per patient
+    // More records for chronic patients
+    final isChronic = (patientData[i]['tags'] as String).contains('chronic');
+    final numRecords = isChronic ? (5 + random.nextInt(6)) : (3 + random.nextInt(5)); // 3-7 or 5-10 for chronic
     
     for (int j = 0; j < numRecords; j++) {
       final recordType = recordTypes[random.nextInt(recordTypes.length)];
-      final recordDate = today.subtract(Duration(days: random.nextInt(365)));
+      final recordDate = today.subtract(Duration(days: random.nextInt(730))); // Last 2 years
       
       String title, description, diagnosis, treatment, doctorNotes;
       Map<String, dynamic> dataJson = {};
@@ -571,6 +778,16 @@ Future<void> _insertSampleData(DoctorDatabase db) async {
           treatment = 'As documented';
           doctorNotes = record['notes'] as String;
           dataJson = record['data'] as Map<String, dynamic>;
+          break;
+        case 'pulmonary_evaluation':
+          final record = pulmonaryRecords[random.nextInt(pulmonaryRecords.length)];
+          title = record['title'] as String;
+          description = 'Pulmonary clinical evaluation';
+          final data = record['data'] as Map<String, dynamic>;
+          diagnosis = data['impressionDiagnosis'] as String? ?? 'Under evaluation';
+          treatment = data['treatmentPlan'] as String? ?? 'Pending';
+          doctorNotes = record['notes'] as String;
+          dataJson = data;
           break;
         default:
           title = 'General Visit';
@@ -632,14 +849,15 @@ Future<void> _insertSampleData(DoctorDatabase db) async {
     {'name': 'Joint Injection', 'price': 2000},
   ];
   final paymentMethods = ['Cash', 'Card', 'JazzCash', 'EasyPaisa', 'Bank Transfer', 'Insurance'];
-  final paymentStatuses = ['Paid', 'Pending', 'Partial', 'Overdue'];
 
   int invoiceCount = 0;
   int invoiceNumber = 1000;
 
-  // Generate invoices for all patients
+  // Generate invoices for all patients - more comprehensive
   for (int i = 0; i < patientIds.length; i++) {
-    final numInvoices = 1 + random.nextInt(4); // 1-4 invoices per patient
+    // More invoices for chronic patients
+    final isChronic = (patientData[i]['tags'] as String).contains('chronic');
+    final numInvoices = isChronic ? (4 + random.nextInt(5)) : (2 + random.nextInt(4)); // 2-5 or 4-8 for chronic
     
     for (int j = 0; j < numInvoices; j++) {
       final invoiceDate = today.subtract(Duration(days: j * 15 + random.nextInt(30)));

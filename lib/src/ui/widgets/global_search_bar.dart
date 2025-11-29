@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
+import '../../db/doctor_db.dart';
 import '../../providers/db_provider.dart';
 import '../../services/search_service.dart';
 import '../../theme/app_theme.dart';
@@ -74,7 +75,7 @@ class _GlobalSearchBarState extends ConsumerState<GlobalSearchBar> {
         Navigator.push(
           context,
           MaterialPageRoute(
-            builder: (_) => PatientViewScreen(patient: result.data),
+            builder: (_) => PatientViewScreen(patient: result.data as Patient),
           ),
         );
         break;
@@ -84,14 +85,7 @@ class _GlobalSearchBarState extends ConsumerState<GlobalSearchBar> {
         // Navigate to patient view for now
         final dbAsync = ref.read(doctorDbProvider);
         dbAsync.whenData((db) async {
-          int patientId;
-          if (result.type == 'appointment') {
-            patientId = result.data.patientId;
-          } else if (result.type == 'prescription') {
-            patientId = result.data.patientId;
-          } else {
-            patientId = result.data.patientId;
-          }
+          final int patientId = (result.data as dynamic).patientId as int;
           final patient = await db.getPatientById(patientId);
           if (patient != null && mounted) {
             Navigator.push(

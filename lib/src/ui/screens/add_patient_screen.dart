@@ -102,7 +102,6 @@ class _AddPatientScreenState extends ConsumerState<AddPatientScreen> {
     final screenWidth = MediaQuery.of(context).size.width;
     final isCompact = screenWidth < 400;
     final padding = isCompact ? 12.0 : 20.0;
-    final isDark = Theme.of(context).brightness == Brightness.dark;
     
     return CustomScrollView(
       slivers: [
@@ -613,19 +612,14 @@ class _AddPatientScreenState extends ConsumerState<AddPatientScreen> {
               final level = index + 1;
               final isSelected = _riskLevel == level;
               Color color;
-              String label;
               if (level <= 2) {
                 color = AppColors.riskLow;
-                label = level == 1 ? 'Very Low' : 'Low';
               } else if (level == 3) {
                 color = AppColors.riskMedium;
-                label = 'Medium';
               } else if (level == 4) {
                 color = AppColors.riskMedium;
-                label = 'High';
               } else {
                 color = AppColors.riskHigh;
-                label = 'Critical';
               }
               
               return Expanded(

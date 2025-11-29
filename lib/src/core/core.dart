@@ -7,5 +7,7 @@
 library;
 
 export 'constants/constants.dart';
+export 'data/data.dart';
 export 'extensions/extensions.dart';
+export 'utils/utils.dart';
 export 'widgets/widgets.dart';

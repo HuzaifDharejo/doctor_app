@@ -2,7 +2,6 @@ import 'dart:async';
 import 'package:flutter/foundation.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 import 'package:googleapis/calendar/v3.dart' as gcal;
-import 'package:googleapis_auth/googleapis_auth.dart' as auth;
 import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -241,7 +240,6 @@ class GoogleCalendarService {
     final api = await _ensureApi();
     if (api == null) return [];
 
-    final selectedCalendarId = await getSelectedCalendarId();
     final dayStart = DateTime(date.year, date.month, date.day, startTime.hour, startTime.minute);
     final dayEnd = DateTime(date.year, date.month, date.day, endTime.hour, endTime.minute);
 

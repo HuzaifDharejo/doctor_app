@@ -18,22 +18,16 @@ class PatientsScreen extends ConsumerStatefulWidget {
 class _PatientsScreenState extends ConsumerState<PatientsScreen> {
   String _searchQuery = '';
   String _filterRisk = 'All';
-  bool _isRefreshing = false;
   final _refreshKey = GlobalKey<RefreshIndicatorState>();
 
   Future<void> _onRefresh() async {
     HapticFeedback.mediumImpact();
-    setState(() => _isRefreshing = true);
     
     // Invalidate the provider to force a refresh
     ref.invalidate(doctorDbProvider);
     
     // Wait for a short delay to show the refresh animation
     await Future.delayed(const Duration(milliseconds: 500));
-    
-    if (mounted) {
-      setState(() => _isRefreshing = false);
-    }
   }
 
   @override
@@ -76,7 +70,6 @@ class _PatientsScreenState extends ConsumerState<PatientsScreen> {
   }
 
   Widget _buildHeader(BuildContext context) {
-    final isDark = context.isDarkMode;
     final isCompact = AppBreakpoint.isCompact(context.screenWidth);
     
     return AppHeader(
@@ -224,6 +217,7 @@ class _PatientsScreenState extends ConsumerState<PatientsScreen> {
               child: PatientCard(
                 patient: patients[index],
                 index: index,
+                heroTagPrefix: 'patients',
               ),
             ),
           ),

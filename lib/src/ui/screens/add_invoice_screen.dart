@@ -144,9 +144,9 @@ class _AddInvoiceScreenState extends ConsumerState<AddInvoiceScreen> {
   void _addQuickService(Map<String, dynamic> service) {
     setState(() {
       final item = InvoiceItem();
-      item.descriptionController.text = service['name'];
-      item.amountController.text = service['amount'].toString();
-      item.type = service['type'];
+      item.descriptionController.text = service['name'] as String;
+      item.amountController.text = (service['amount'] as num).toString();
+      item.type = service['type'] as String;
       _items.add(item);
     });
   }
@@ -156,38 +156,6 @@ class _AddInvoiceScreenState extends ConsumerState<AddInvoiceScreen> {
       _items[index].dispose();
       _items.removeAt(index);
     });
-  }
-
-  Future<void> _selectDueDate() async {
-    final DateTime? picked = await showDatePicker(
-      context: context,
-      initialDate: _dueDate ?? DateTime.now().add(const Duration(days: 7)),
-      firstDate: DateTime.now(),
-      lastDate: DateTime.now().add(const Duration(days: 365)),
-    );
-    if (picked != null) {
-      setState(() => _dueDate = picked);
-    }
-  }
-
-  Map<String, dynamic> _buildInvoiceJson() {
-    return {
-      'invoice_number': _invoiceNumber,
-      'invoice_date': _invoiceDate.toIso8601String(),
-      'due_date': _dueDate?.toIso8601String(),
-      'patient_id': _selectedPatientId,
-      'patient_name': _selectedPatient != null ? _getPatientName(_selectedPatient!) : '',
-      'items': _items.map((item) => item.toJson()).toList(),
-      'subtotal': _subtotal,
-      'discount_percent': _discountPercent,
-      'discount_amount': _discountAmount,
-      'tax_percent': double.tryParse(_taxController.text) ?? 0,
-      'tax_amount': _taxAmount,
-      'grand_total': _grandTotal,
-      'payment_method': _paymentMethod,
-      'payment_status': _paymentStatus,
-      'notes': _notesController.text,
-    };
   }
 
   Future<void> _saveInvoice() async {
@@ -686,9 +654,9 @@ class _AddInvoiceScreenState extends ConsumerState<AddInvoiceScreen> {
       runSpacing: 8,
       children: _commonServices.map((service) {
         return ActionChip(
-          avatar: Icon(_getServiceIcon(service['type']), size: 16),
+          avatar: Icon(_getServiceIcon(service['type'] as String?), size: 16),
           label: Text(
-            '${service['name']} - Rs.${service['amount'].toInt()}',
+            '${service['name']} - Rs.${(service['amount'] as num).toInt()}',
             style: const TextStyle(fontSize: 12),
           ),
           onPressed: () => _addQuickService(service),
@@ -1066,7 +1034,7 @@ class _AddInvoiceScreenState extends ConsumerState<AddInvoiceScreen> {
     );
   }
 
-  IconData _getServiceIcon(String type) {
+  IconData _getServiceIcon(String? type) {
     switch (type) {
       case 'Service':
         return Icons.medical_services_outlined;

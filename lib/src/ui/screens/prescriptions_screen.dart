@@ -8,7 +8,6 @@ import '../../providers/db_provider.dart';
 import '../../services/whatsapp_service.dart';
 import '../../services/pdf_service.dart';
 import '../../theme/app_theme.dart';
-import 'add_prescription_screen.dart';
 
 class PrescriptionsScreen extends ConsumerWidget {
   const PrescriptionsScreen({super.key});
@@ -94,7 +93,7 @@ class PrescriptionsScreen extends ConsumerWidget {
   Widget _buildPrescriptionCard(BuildContext context, WidgetRef ref, DoctorDatabase db, Prescription prescription) {
     List<dynamic> medications = [];
     try {
-      medications = jsonDecode(prescription.itemsJson);
+      medications = jsonDecode(prescription.itemsJson) as List<dynamic>;
     } catch (_) {}
     
     return FutureBuilder<Patient?>(
@@ -304,8 +303,9 @@ class PrescriptionsScreen extends ConsumerWidget {
                           ),
                           const SizedBox(height: 12),
                           ...medications.take(3).map((med) {
-                            final name = med['name'] ?? 'Unknown';
-                            final dosage = med['dosage'] ?? '';
+                            final medMap = med as Map<String, dynamic>;
+                            final name = medMap['name'] as String? ?? 'Unknown';
+                            final dosage = medMap['dosage'] as String? ?? '';
                             return Padding(
                               padding: const EdgeInsets.only(bottom: 8),
                               child: Row(
@@ -680,7 +680,7 @@ class PrescriptionsScreen extends ConsumerWidget {
                     children: [
                     ...medications.asMap().entries.map((entry) {
                       final index = entry.key;
-                      final med = entry.value;
+                      final med = entry.value as Map<String, dynamic>;
                       return Container(
                         margin: const EdgeInsets.only(bottom: 12),
                         padding: const EdgeInsets.all(16),
@@ -711,7 +711,7 @@ class PrescriptionsScreen extends ConsumerWidget {
                                 const SizedBox(width: 12),
                                 Expanded(
                                   child: Text(
-                                    med['name'] ?? 'Unknown',
+                                    med['name'] as String? ?? 'Unknown',
                                     style: TextStyle(
                                       fontWeight: FontWeight.w600,
                                       fontSize: 16,

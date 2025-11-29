@@ -8,7 +8,6 @@ import '../../providers/db_provider.dart';
 import '../../services/whatsapp_service.dart';
 import '../../services/pdf_service.dart';
 import '../../theme/app_theme.dart';
-import 'add_invoice_screen.dart';
 import 'patient_view_screen.dart';
 
 class BillingScreen extends ConsumerStatefulWidget {
@@ -537,7 +536,7 @@ class _BillingScreenState extends ConsumerState<BillingScreen> {
     
     List<dynamic> items = [];
     try {
-      items = jsonDecode(invoice.itemsJson);
+      items = jsonDecode(invoice.itemsJson) as List<dynamic>;
     } catch (_) {}
 
     Color statusColor;
@@ -721,11 +720,11 @@ class _BillingScreenState extends ConsumerState<BillingScreen> {
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
                               Text(
-                                item['description'] ?? 'Item',
+                                (item as Map<String, dynamic>)['description'] as String? ?? 'Item',
                                 style: const TextStyle(fontWeight: FontWeight.w500),
                               ),
                               Text(
-                                'Qty: ${item['quantity']} × ${currencyFormat.format(item['rate'] ?? 0)}',
+                                'Qty: ${item['quantity']} × ${currencyFormat.format((item['rate'] as num?) ?? 0)}',
                                 style: TextStyle(
                                   color: isDark ? AppColors.darkTextSecondary : AppColors.textSecondary,
                                   fontSize: 12,

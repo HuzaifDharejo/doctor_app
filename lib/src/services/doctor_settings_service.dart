@@ -123,28 +123,28 @@ class DoctorProfile {
 
   factory DoctorProfile.fromJson(Map<String, dynamic> json) {
     return DoctorProfile(
-      name: json['name'] ?? '',
-      specialization: json['specialization'] ?? '',
-      qualifications: json['qualifications'] ?? '',
-      licenseNumber: json['licenseNumber'] ?? '',
-      experienceYears: json['experienceYears'] ?? 0,
-      bio: json['bio'] ?? '',
-      phone: json['phone'] ?? '',
-      email: json['email'] ?? '',
-      clinicName: json['clinicName'] ?? '',
-      clinicAddress: json['clinicAddress'] ?? '',
-      clinicPhone: json['clinicPhone'] ?? '',
-      consultationFee: (json['consultationFee'] ?? 0).toDouble(),
-      followUpFee: (json['followUpFee'] ?? 0).toDouble(),
-      emergencyFee: (json['emergencyFee'] ?? 0).toDouble(),
-      languages: List<String>.from(json['languages'] ?? []),
+      name: (json['name'] as String?) ?? '',
+      specialization: (json['specialization'] as String?) ?? '',
+      qualifications: (json['qualifications'] as String?) ?? '',
+      licenseNumber: (json['licenseNumber'] as String?) ?? '',
+      experienceYears: (json['experienceYears'] as int?) ?? 0,
+      bio: (json['bio'] as String?) ?? '',
+      phone: (json['phone'] as String?) ?? '',
+      email: (json['email'] as String?) ?? '',
+      clinicName: (json['clinicName'] as String?) ?? '',
+      clinicAddress: (json['clinicAddress'] as String?) ?? '',
+      clinicPhone: (json['clinicPhone'] as String?) ?? '',
+      consultationFee: ((json['consultationFee'] as num?) ?? 0).toDouble(),
+      followUpFee: ((json['followUpFee'] as num?) ?? 0).toDouble(),
+      emergencyFee: ((json['emergencyFee'] as num?) ?? 0).toDouble(),
+      languages: List<String>.from((json['languages'] as List<dynamic>?) ?? []),
       workingHours: Map<String, Map<String, dynamic>>.from(
-        (json['workingHours'] ?? {}).map(
-          (key, value) => MapEntry(key, Map<String, dynamic>.from(value)),
+        ((json['workingHours'] as Map<String, dynamic>?) ?? {}).map(
+          (key, value) => MapEntry(key, Map<String, dynamic>.from(value as Map)),
         ),
       ),
-      signatureData: json['signatureData'],
-      photoData: json['photoData'],
+      signatureData: json['signatureData'] as String?,
+      photoData: json['photoData'] as String?,
     );
   }
 
@@ -192,7 +192,7 @@ class DoctorSettingsService extends ChangeNotifier {
       final prefs = await SharedPreferences.getInstance();
       final jsonString = prefs.getString(_storageKey);
       if (jsonString != null) {
-        final json = jsonDecode(jsonString);
+        final json = jsonDecode(jsonString) as Map<String, dynamic>;
         _profile = DoctorProfile.fromJson(json);
       }
       _isLoaded = true;
@@ -274,6 +274,38 @@ class AppSettings {
   final String language;
   final DateTime? lastBackupDate;
   final bool onboardingComplete;
+  final List<String> enabledMedicalRecordTypes;
+
+  // Default medical record types
+  static const List<String> allMedicalRecordTypes = [
+    'general',
+    'pulmonary_evaluation',
+    'psychiatric_assessment',
+    'lab_result',
+    'imaging',
+    'procedure',
+    'follow_up',
+  ];
+
+  static const Map<String, String> medicalRecordTypeLabels = {
+    'general': 'General Consultation',
+    'pulmonary_evaluation': 'Pulmonary Evaluation',
+    'psychiatric_assessment': 'Quick Psychiatric Assessment',
+    'lab_result': 'Lab Result',
+    'imaging': 'Imaging/Radiology',
+    'procedure': 'Procedure',
+    'follow_up': 'Follow-up Visit',
+  };
+
+  static const Map<String, String> medicalRecordTypeDescriptions = {
+    'general': 'Standard consultation notes and diagnosis',
+    'pulmonary_evaluation': 'Respiratory assessment with chest examination',
+    'psychiatric_assessment': 'Mental status examination and risk assessment',
+    'lab_result': 'Laboratory test results and interpretations',
+    'imaging': 'X-ray, CT, MRI and other imaging reports',
+    'procedure': 'Surgical or clinical procedures performed',
+    'follow_up': 'Follow-up visit notes and progress tracking',
+  };
 
   AppSettings({
     this.notificationsEnabled = true,
@@ -281,7 +313,8 @@ class AppSettings {
     this.language = 'English',
     this.lastBackupDate,
     this.onboardingComplete = false,
-  });
+    List<String>? enabledMedicalRecordTypes,
+  }) : enabledMedicalRecordTypes = enabledMedicalRecordTypes ?? List.from(allMedicalRecordTypes);
 
   AppSettings copyWith({
     bool? notificationsEnabled,
@@ -289,6 +322,7 @@ class AppSettings {
     String? language,
     DateTime? lastBackupDate,
     bool? onboardingComplete,
+    List<String>? enabledMedicalRecordTypes,
   }) {
     return AppSettings(
       notificationsEnabled: notificationsEnabled ?? this.notificationsEnabled,
@@ -296,6 +330,7 @@ class AppSettings {
       language: language ?? this.language,
       lastBackupDate: lastBackupDate ?? this.lastBackupDate,
       onboardingComplete: onboardingComplete ?? this.onboardingComplete,
+      enabledMedicalRecordTypes: enabledMedicalRecordTypes ?? this.enabledMedicalRecordTypes,
     );
   }
 
@@ -305,16 +340,20 @@ class AppSettings {
     'language': language,
     'lastBackupDate': lastBackupDate?.toIso8601String(),
     'onboardingComplete': onboardingComplete,
+    'enabledMedicalRecordTypes': enabledMedicalRecordTypes,
   };
 
   factory AppSettings.fromJson(Map<String, dynamic> json) => AppSettings(
-    notificationsEnabled: json['notificationsEnabled'] ?? true,
-    darkModeEnabled: json['darkModeEnabled'] ?? false,
-    language: json['language'] ?? 'English',
+    notificationsEnabled: (json['notificationsEnabled'] as bool?) ?? true,
+    darkModeEnabled: (json['darkModeEnabled'] as bool?) ?? false,
+    language: (json['language'] as String?) ?? 'English',
     lastBackupDate: json['lastBackupDate'] != null 
-        ? DateTime.parse(json['lastBackupDate']) 
+        ? DateTime.parse(json['lastBackupDate'] as String) 
         : null,
-    onboardingComplete: json['onboardingComplete'] ?? false,
+    onboardingComplete: (json['onboardingComplete'] as bool?) ?? false,
+    enabledMedicalRecordTypes: json['enabledMedicalRecordTypes'] != null
+        ? List<String>.from(json['enabledMedicalRecordTypes'] as Iterable)
+        : null,
   );
 }
 
@@ -331,7 +370,7 @@ class AppSettingsService extends ChangeNotifier {
       final prefs = await SharedPreferences.getInstance();
       final jsonString = prefs.getString(_storageKey);
       if (jsonString != null) {
-        final json = jsonDecode(jsonString);
+        final json = jsonDecode(jsonString) as Map<String, dynamic>;
         _settings = AppSettings.fromJson(json);
       }
       _isLoaded = true;
@@ -392,5 +431,25 @@ class AppSettingsService extends ChangeNotifier {
     _settings = _settings.copyWith(onboardingComplete: complete);
     await _saveSettings();
     notifyListeners();
+  }
+
+  Future<void> setEnabledMedicalRecordTypes(List<String> types) async {
+    _settings = _settings.copyWith(enabledMedicalRecordTypes: types);
+    await _saveSettings();
+    notifyListeners();
+  }
+
+  Future<void> toggleMedicalRecordType(String type, bool enabled) async {
+    final currentTypes = List<String>.from(_settings.enabledMedicalRecordTypes);
+    if (enabled && !currentTypes.contains(type)) {
+      currentTypes.add(type);
+    } else if (!enabled && currentTypes.contains(type)) {
+      currentTypes.remove(type);
+    }
+    await setEnabledMedicalRecordTypes(currentTypes);
+  }
+
+  bool isMedicalRecordTypeEnabled(String type) {
+    return _settings.enabledMedicalRecordTypes.contains(type);
   }
 }

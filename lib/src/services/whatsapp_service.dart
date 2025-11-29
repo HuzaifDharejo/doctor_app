@@ -13,7 +13,7 @@ class WhatsAppService {
   }) async {
     List<dynamic> medications = [];
     try {
-      medications = jsonDecode(prescription.itemsJson);
+      medications = jsonDecode(prescription.itemsJson) as List<dynamic>;
     } catch (_) {}
 
     final buffer = StringBuffer();
@@ -90,7 +90,7 @@ class WhatsAppService {
   }) async {
     List<dynamic> items = [];
     try {
-      items = jsonDecode(invoice.itemsJson);
+      items = jsonDecode(invoice.itemsJson) as List<dynamic>;
     } catch (_) {}
 
     final buffer = StringBuffer();

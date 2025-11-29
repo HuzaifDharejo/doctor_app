@@ -6,12 +6,14 @@ import 'core/core.dart';
 import 'core/routing/app_router.dart';
 import 'theme/app_theme.dart';
 import 'providers/db_provider.dart';
+import 'services/logger_service.dart';
 import 'ui/screens/dashboard_screen.dart';
 import 'ui/screens/patients_screen.dart';
 import 'ui/screens/appointments_screen.dart';
 import 'ui/screens/prescriptions_screen.dart';
 import 'ui/screens/billing_screen.dart';
 import 'ui/screens/onboarding_screen.dart';
+import 'ui/screens/medical_records_list_screen.dart';
 
 class DoctorApp extends ConsumerWidget {
   const DoctorApp({super.key});
@@ -23,6 +25,8 @@ class DoctorApp extends ConsumerWidget {
     final isOnboardingComplete = appSettings.settings.onboardingComplete;
     final isLoaded = appSettings.isLoaded;
     
+    log.d('APP', 'Building app - loaded: $isLoaded, onboarding: $isOnboardingComplete, dark: $isDarkMode');
+    
     return MaterialApp(
       title: AppStrings.appName,
       debugShowCheckedModeBanner: false,
@@ -30,12 +34,32 @@ class DoctorApp extends ConsumerWidget {
       darkTheme: AppTheme.darkTheme,
       themeMode: isDarkMode ? ThemeMode.dark : ThemeMode.light,
       onGenerateRoute: AppRouter.generateRoute,
+      navigatorObservers: [_LoggingNavigatorObserver()],
       home: !isLoaded 
           ? const _SplashScreen()
           : isOnboardingComplete 
               ? const HomeShell() 
               : const OnboardingScreen(),
     );
+  }
+}
+
+/// Navigator observer for logging screen transitions
+class _LoggingNavigatorObserver extends NavigatorObserver {
+  @override
+  void didPush(Route<dynamic> route, Route<dynamic>? previousRoute) {
+    super.didPush(route, previousRoute);
+    final name = route.settings.name ?? route.runtimeType.toString();
+    final prevName = previousRoute?.settings.name ?? 'none';
+    log.logNavigation(prevName, name);
+    log.trackScreen(name);
+  }
+
+  @override
+  void didPop(Route<dynamic> route, Route<dynamic>? previousRoute) {
+    super.didPop(route, previousRoute);
+    final name = previousRoute?.settings.name ?? 'back';
+    log.d('NAV', 'Popped to: $name');
   }
 }
 
@@ -255,8 +279,11 @@ class _HomeShellState extends ConsumerState<HomeShell> {
 
   Widget _buildDrawer(BuildContext context) {
     final doctorSettings = ref.watch(doctorSettingsProvider);
+    final appSettings = ref.watch(appSettingsProvider);
     final profile = doctorSettings.profile;
     final isDarkMode = context.isDarkMode;
+    final enabledRecordTypes = appSettings.settings.enabledMedicalRecordTypes;
+    final isPsychiatricEnabled = enabledRecordTypes.contains('psychiatric_assessment');
     
     return Drawer(
       backgroundColor: Colors.transparent,
@@ -429,16 +456,32 @@ class _HomeShellState extends ConsumerState<HomeShell> {
                   const SizedBox(height: 8),
                   
                   _buildModernDrawerItem(
-                    icon: Icons.psychology_rounded,
-                    title: AppStrings.psychiatricAssessment,
-                    subtitle: 'Patient assessment',
+                    icon: Icons.folder_special_rounded,
+                    title: 'Medical Records',
+                    subtitle: 'View all records',
                     onTap: () {
                       context.pop();
-                      context.pushNamed(AppRoutes.psychiatricAssessment);
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(builder: (_) => const MedicalRecordsListScreen()),
+                      );
                     },
-                    color: const Color(0xFF0EA5E9),
+                    color: const Color(0xFF10B981),
                     isDark: isDarkMode,
                   ),
+                  
+                  if (isPsychiatricEnabled)
+                    _buildModernDrawerItem(
+                      icon: Icons.psychology_rounded,
+                      title: AppStrings.psychiatricAssessment,
+                      subtitle: 'Patient assessment',
+                      onTap: () {
+                        context.pop();
+                        context.pushNamed(AppRoutes.psychiatricAssessment);
+                      },
+                      color: const Color(0xFF0EA5E9),
+                      isDark: isDarkMode,
+                    ),
 
                   
                   const SizedBox(height: 16),

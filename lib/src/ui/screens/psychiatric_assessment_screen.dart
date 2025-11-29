@@ -637,9 +637,18 @@ class _PsychiatricAssessmentScreenState
 
               // Save Button
               FilledButton.icon(
-                onPressed: _saveForm,
-                icon: const Icon(Icons.save),
-                label: const Text('Save Assessment'),
+                onPressed: _isSaving ? null : _saveForm,
+                icon: _isSaving 
+                    ? const SizedBox(
+                        width: 20,
+                        height: 20,
+                        child: CircularProgressIndicator(
+                          strokeWidth: 2,
+                          color: Colors.white,
+                        ),
+                      )
+                    : const Icon(Icons.save),
+                label: Text(_isSaving ? 'Saving...' : 'Save Assessment'),
                 style: FilledButton.styleFrom(
                   padding: const EdgeInsets.symmetric(vertical: 16),
                   textStyle: const TextStyle(

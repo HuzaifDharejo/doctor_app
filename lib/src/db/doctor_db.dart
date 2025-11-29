@@ -74,6 +74,14 @@ class Invoices extends Table {
   DateTimeColumn get createdAt => dateTime().withDefault(currentDateAndTime)();
 }
 
+/// Model to hold a medical record with its associated patient
+class MedicalRecordWithPatient {
+  final MedicalRecord record;
+  final Patient patient;
+
+  MedicalRecordWithPatient({required this.record, required this.patient});
+}
+
 @DriftDatabase(tables: [Patients, Appointments, Prescriptions, MedicalRecords, Invoices])
 class DoctorDatabase extends _$DoctorDatabase {
   DoctorDatabase() : super(impl.openConnection());
@@ -126,6 +134,21 @@ class DoctorDatabase extends _$DoctorDatabase {
     (select(medicalRecords)..where((r) => r.id.equals(id))).getSingleOrNull();
   Future<bool> updateMedicalRecord(Insertable<MedicalRecord> r) => update(medicalRecords).replace(r);
   Future<int> deleteMedicalRecord(int id) => (delete(medicalRecords)..where((t) => t.id.equals(id))).go();
+  
+  /// Get all medical records with associated patient info
+  Future<List<MedicalRecordWithPatient>> getAllMedicalRecordsWithPatients() async {
+    final allRecords = await getAllMedicalRecords();
+    final List<MedicalRecordWithPatient> result = [];
+    
+    for (final record in allRecords) {
+      final patient = await getPatientById(record.patientId);
+      if (patient != null) {
+        result.add(MedicalRecordWithPatient(record: record, patient: patient));
+      }
+    }
+    
+    return result;
+  }
 
   // Invoice CRUD
   Future<int> insertInvoice(Insertable<Invoice> i) => into(invoices).insert(i);

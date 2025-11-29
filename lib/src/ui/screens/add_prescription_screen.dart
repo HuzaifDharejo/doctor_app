@@ -12,7 +12,7 @@ import '../widgets/suggestion_text_field.dart';
 class AddPrescriptionScreen extends ConsumerStatefulWidget {
   final int? patientId;
   final String? patientName;
-  final dynamic preselectedPatient;
+  final Patient? preselectedPatient;
 
   const AddPrescriptionScreen({
     super.key,
@@ -80,7 +80,7 @@ class _AddPrescriptionScreenState extends ConsumerState<AddPrescriptionScreen> {
     if (widget.patientId != null) {
       _selectedPatientId = widget.patientId;
     } else if (widget.preselectedPatient != null) {
-      _selectedPatientId = widget.preselectedPatient.id;
+      _selectedPatientId = widget.preselectedPatient?.id;
       _selectedPatient = widget.preselectedPatient;
     }
     // Add one empty medication entry by default

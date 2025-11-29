@@ -94,8 +94,38 @@ class _AddMedicalRecordScreenState extends ConsumerState<AddMedicalRecordScreen>
   // Follow-up Fields
   final _followUpNotesController = TextEditingController();
 
+  // Pulmonary Evaluation Fields
+  final _pulmonaryChiefComplaintController = TextEditingController();
+  final _pulmonaryDurationController = TextEditingController();
+  final _pulmonarySymptomCharacterController = TextEditingController();
+  List<String> _selectedSystemicSymptoms = [];
+  List<String> _selectedRedFlags = [];
+  final _pastPulmonaryHistoryController = TextEditingController();
+  final _exposureHistoryController = TextEditingController();
+  final _allergyHistoryController = TextEditingController();
+  final _currentMedicationsController = TextEditingController();
+  List<String> _selectedComorbidities = [];
+  // Chest Auscultation
+  final _breathSoundsController = TextEditingController();
+  List<String> _selectedAddedSounds = [];
+  final _rightUpperZoneController = TextEditingController();
+  final _rightMiddleZoneController = TextEditingController();
+  final _rightLowerZoneController = TextEditingController();
+  final _leftUpperZoneController = TextEditingController();
+  final _leftMiddleZoneController = TextEditingController();
+  final _leftLowerZoneController = TextEditingController();
+  final _additionalFindingsController = TextEditingController();
+  // Pulmonary-specific vitals
+  final _respiratoryRateController = TextEditingController();
+  final _spo2Controller = TextEditingController();
+  final _peakFlowController = TextEditingController();
+  // Investigations & Plan
+  List<String> _selectedInvestigations = [];
+  final _followUpPlanController = TextEditingController();
+
   final List<String> _recordTypes = [
     'general',
+    'pulmonary_evaluation',
     'psychiatric_assessment',
     'lab_result',
     'imaging',
@@ -105,6 +135,7 @@ class _AddMedicalRecordScreenState extends ConsumerState<AddMedicalRecordScreen>
 
   final Map<String, String> _recordTypeLabels = {
     'general': 'General Consultation',
+    'pulmonary_evaluation': 'Pulmonary Evaluation',
     'psychiatric_assessment': 'Quick Psychiatric Assessment',
     'lab_result': 'Lab Result',
     'imaging': 'Imaging/Radiology',
@@ -114,6 +145,7 @@ class _AddMedicalRecordScreenState extends ConsumerState<AddMedicalRecordScreen>
 
   final Map<String, IconData> _recordTypeIcons = {
     'general': Icons.medical_services_outlined,
+    'pulmonary_evaluation': Icons.air,
     'psychiatric_assessment': Icons.psychology,
     'lab_result': Icons.science_outlined,
     'imaging': Icons.image_outlined,
@@ -223,11 +255,66 @@ class _AddMedicalRecordScreenState extends ConsumerState<AddMedicalRecordScreen>
     _procedureNameController.dispose();
     _procedureNotesController.dispose();
     _followUpNotesController.dispose();
+    // Pulmonary evaluation controllers
+    _pulmonaryChiefComplaintController.dispose();
+    _pulmonaryDurationController.dispose();
+    _pulmonarySymptomCharacterController.dispose();
+    _pastPulmonaryHistoryController.dispose();
+    _exposureHistoryController.dispose();
+    _allergyHistoryController.dispose();
+    _currentMedicationsController.dispose();
+    _breathSoundsController.dispose();
+    _rightUpperZoneController.dispose();
+    _rightMiddleZoneController.dispose();
+    _rightLowerZoneController.dispose();
+    _leftUpperZoneController.dispose();
+    _leftMiddleZoneController.dispose();
+    _leftLowerZoneController.dispose();
+    _additionalFindingsController.dispose();
+    _respiratoryRateController.dispose();
+    _spo2Controller.dispose();
+    _peakFlowController.dispose();
+    _followUpPlanController.dispose();
     super.dispose();
   }
 
   Map<String, dynamic> _buildDataJson() {
     switch (_recordType) {
+      case 'pulmonary_evaluation':
+        return {
+          'chief_complaint': _pulmonaryChiefComplaintController.text,
+          'duration': _pulmonaryDurationController.text,
+          'symptom_character': _pulmonarySymptomCharacterController.text,
+          'systemic_symptoms': _selectedSystemicSymptoms,
+          'red_flags': _selectedRedFlags,
+          'past_pulmonary_history': _pastPulmonaryHistoryController.text,
+          'exposure_history': _exposureHistoryController.text,
+          'allergy_atopy_history': _allergyHistoryController.text,
+          'current_medications': _currentMedicationsController.text.split(',').map((e) => e.trim()).where((e) => e.isNotEmpty).toList(),
+          'comorbidities': _selectedComorbidities,
+          'chest_auscultation': {
+            'breath_sounds': _breathSoundsController.text,
+            'added_sounds': _selectedAddedSounds,
+            'right_upper_zone': _rightUpperZoneController.text,
+            'right_middle_zone': _rightMiddleZoneController.text,
+            'right_lower_zone': _rightLowerZoneController.text,
+            'left_upper_zone': _leftUpperZoneController.text,
+            'left_middle_zone': _leftMiddleZoneController.text,
+            'left_lower_zone': _leftLowerZoneController.text,
+            'additional_findings': _additionalFindingsController.text,
+          },
+          'investigations_required': _selectedInvestigations,
+          'follow_up_plan': _followUpPlanController.text,
+          'vitals': {
+            'bp': _bpController.text,
+            'pulse': _pulseController.text,
+            'temperature': _tempController.text,
+            'respiratory_rate': _respiratoryRateController.text,
+            'spo2': _spo2Controller.text,
+            'peak_flow_rate': _peakFlowController.text,
+            'weight': _weightController.text,
+          },
+        };
       case 'psychiatric_assessment':
         return {
           'symptoms': _symptomsController.text,
@@ -561,6 +648,17 @@ class _AddMedicalRecordScreenState extends ConsumerState<AddMedicalRecordScreen>
   }
 
   Widget _buildRecordTypeSelector() {
+    final appSettingsService = ref.watch(appSettingsProvider);
+    final enabledTypes = appSettingsService.settings.enabledMedicalRecordTypes;
+    final filteredTypes = _recordTypes.where((type) => enabledTypes.contains(type)).toList();
+    
+    // If current record type is not in enabled types, switch to first enabled type
+    if (!enabledTypes.contains(_recordType) && filteredTypes.isNotEmpty) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        setState(() => _recordType = filteredTypes.first);
+      });
+    }
+    
     return Builder(
       builder: (context) {
         final isDark = Theme.of(context).brightness == Brightness.dark;
@@ -574,18 +672,31 @@ class _AddMedicalRecordScreenState extends ConsumerState<AddMedicalRecordScreen>
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              const Text(
-                'Record Type',
-                style: TextStyle(
-                  fontWeight: FontWeight.w600,
-                  fontSize: 16,
-                ),
+              Row(
+                children: [
+                  const Text(
+                    'Record Type',
+                    style: TextStyle(
+                      fontWeight: FontWeight.w600,
+                      fontSize: 16,
+                    ),
+                  ),
+                  const Spacer(),
+                  if (filteredTypes.length < _recordTypes.length)
+                    Text(
+                      '${filteredTypes.length}/${_recordTypes.length} enabled',
+                      style: TextStyle(
+                        fontSize: 11,
+                        color: isDark ? AppColors.darkTextSecondary : AppColors.textSecondary,
+                      ),
+                    ),
+                ],
               ),
               const SizedBox(height: 12),
               Wrap(
                 spacing: 8,
                 runSpacing: 8,
-                children: _recordTypes.map((type) {
+                children: filteredTypes.map((type) {
                   final isSelected = _recordType == type;
                   return ChoiceChip(
                     label: Row(
@@ -804,6 +915,8 @@ class _AddMedicalRecordScreenState extends ConsumerState<AddMedicalRecordScreen>
 
   Widget _buildTypeSpecificFields() {
     switch (_recordType) {
+      case 'pulmonary_evaluation':
+        return _buildPulmonaryEvaluationFields();
       case 'psychiatric_assessment':
         return _buildPsychiatricAssessmentFields();
       case 'lab_result':
@@ -916,6 +1029,494 @@ class _AddMedicalRecordScreenState extends ConsumerState<AddMedicalRecordScreen>
         _buildVitalsSection(),
         const SizedBox(height: 20),
       ],
+    );
+  }
+
+  Widget _buildPulmonaryEvaluationFields() {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        // Chief Complaint & Duration
+        _buildSectionHeader('Presenting Complaint', Icons.air),
+        const SizedBox(height: 12),
+        SuggestionTextField(
+          controller: _pulmonaryChiefComplaintController,
+          label: 'Chief Complaint',
+          hint: 'Describe the main respiratory complaint...',
+          prefixIcon: Icons.air,
+          maxLines: 2,
+          suggestions: PulmonarySuggestions.chiefComplaints,
+        ),
+        const SizedBox(height: 12),
+        Row(
+          children: [
+            Expanded(
+              child: SuggestionTextField(
+                controller: _pulmonaryDurationController,
+                label: 'Duration',
+                hint: 'How long?',
+                prefixIcon: Icons.schedule,
+                suggestions: PulmonarySuggestions.durations,
+              ),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: SuggestionTextField(
+                controller: _pulmonarySymptomCharacterController,
+                label: 'Symptom Character',
+                hint: 'Type of cough/symptom',
+                prefixIcon: Icons.description_outlined,
+                suggestions: PulmonarySuggestions.symptomCharacters,
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: 20),
+
+        // Systemic Symptoms (Chips)
+        _buildSectionHeader('Systemic Symptoms', Icons.thermostat_outlined),
+        const SizedBox(height: 12),
+        _buildChipSelector(
+          label: 'Select systemic symptoms',
+          options: PulmonarySuggestions.systemicSymptoms,
+          selectedOptions: _selectedSystemicSymptoms,
+          onChanged: (selected) => setState(() => _selectedSystemicSymptoms = selected),
+          color: AppColors.warning,
+        ),
+        const SizedBox(height: 20),
+
+        // Red Flags (Chips with red color)
+        _buildSectionHeader('Red Flags', Icons.warning_amber_rounded),
+        const SizedBox(height: 12),
+        _buildChipSelector(
+          label: 'Select any red flags present',
+          options: PulmonarySuggestions.redFlags,
+          selectedOptions: _selectedRedFlags,
+          onChanged: (selected) => setState(() => _selectedRedFlags = selected),
+          color: AppColors.error,
+        ),
+        const SizedBox(height: 20),
+
+        // History Section
+        _buildSectionCard(
+          title: 'Clinical History',
+          icon: Icons.history,
+          children: [
+            SuggestionTextField(
+              controller: _pastPulmonaryHistoryController,
+              label: 'Past Pulmonary History',
+              hint: 'Previous respiratory conditions...',
+              prefixIcon: Icons.history,
+              maxLines: 2,
+              suggestions: PulmonarySuggestions.pastPulmonaryHistory,
+              appendMode: true,
+              separator: ', ',
+            ),
+            const SizedBox(height: 12),
+            SuggestionTextField(
+              controller: _exposureHistoryController,
+              label: 'Exposure History',
+              hint: 'Smoking, occupational, environmental...',
+              prefixIcon: Icons.smoke_free,
+              maxLines: 2,
+              suggestions: PulmonarySuggestions.exposureHistory,
+              appendMode: true,
+              separator: ', ',
+            ),
+            const SizedBox(height: 12),
+            SuggestionTextField(
+              controller: _allergyHistoryController,
+              label: 'Allergy/Atopy History',
+              hint: 'Allergies, eczema, rhinitis...',
+              prefixIcon: Icons.spa_outlined,
+              maxLines: 2,
+              suggestions: PulmonarySuggestions.allergyHistory,
+              appendMode: true,
+              separator: ', ',
+            ),
+            const SizedBox(height: 12),
+            _buildTextField(
+              controller: _currentMedicationsController,
+              hint: 'Current medications (comma-separated)...',
+              maxLines: 2,
+            ),
+          ],
+        ),
+        const SizedBox(height: 20),
+
+        // Comorbidities (Chips)
+        _buildSectionHeader('Comorbidities', Icons.medical_services_outlined),
+        const SizedBox(height: 12),
+        _buildChipSelector(
+          label: 'Select comorbidities',
+          options: PulmonarySuggestions.comorbidities,
+          selectedOptions: _selectedComorbidities,
+          onChanged: (selected) => setState(() => _selectedComorbidities = selected),
+          color: AppColors.info,
+        ),
+        const SizedBox(height: 20),
+
+        // Pulmonary Vitals
+        _buildSectionCard(
+          title: 'Vital Signs',
+          icon: Icons.favorite_border,
+          children: [
+            Row(
+              children: [
+                Expanded(child: _buildVitalField(_bpController, 'BP', 'mmHg', _bpFocus, _bpFocused, (v) => setState(() => _bpFocused = v))),
+                const SizedBox(width: 12),
+                Expanded(child: _buildVitalField(_pulseController, 'Pulse', 'bpm', _pulseFocus, _pulseFocused, (v) => setState(() => _pulseFocused = v))),
+              ],
+            ),
+            const SizedBox(height: 12),
+            Row(
+              children: [
+                Expanded(child: _buildVitalField(_tempController, 'Temp', '°F', _tempFocus, _tempFocused, (v) => setState(() => _tempFocused = v))),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: _buildSimpleVitalField(_respiratoryRateController, 'RR', '/min'),
+                ),
+              ],
+            ),
+            const SizedBox(height: 12),
+            Row(
+              children: [
+                Expanded(
+                  child: _buildSimpleVitalField(_spo2Controller, 'SpO₂', '%'),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: _buildSimpleVitalField(_peakFlowController, 'PEFR', 'L/min'),
+                ),
+              ],
+            ),
+            const SizedBox(height: 12),
+            _buildVitalField(_weightController, 'Weight', 'kg', _weightFocus, _weightFocused, (v) => setState(() => _weightFocused = v)),
+          ],
+        ),
+        const SizedBox(height: 20),
+
+        // Chest Auscultation
+        _buildSectionCard(
+          title: 'Chest Auscultation',
+          icon: Icons.hearing,
+          children: [
+            SuggestionTextField(
+              controller: _breathSoundsController,
+              label: 'Breath Sounds',
+              hint: 'Type of breath sounds...',
+              prefixIcon: Icons.hearing,
+              suggestions: PulmonarySuggestions.breathSounds,
+            ),
+            const SizedBox(height: 12),
+            Text(
+              'Added Sounds',
+              style: TextStyle(
+                fontSize: 14,
+                fontWeight: FontWeight.w600,
+                color: isDark ? AppColors.darkTextPrimary : AppColors.textPrimary,
+              ),
+            ),
+            const SizedBox(height: 8),
+            _buildChipSelector(
+              label: 'Select added sounds',
+              options: PulmonarySuggestions.addedSounds,
+              selectedOptions: _selectedAddedSounds,
+              onChanged: (selected) => setState(() => _selectedAddedSounds = selected),
+              color: AppColors.accent,
+            ),
+            const SizedBox(height: 16),
+            Text(
+              'Zone-wise Findings',
+              style: TextStyle(
+                fontSize: 14,
+                fontWeight: FontWeight.w600,
+                color: isDark ? AppColors.darkTextPrimary : AppColors.textPrimary,
+              ),
+            ),
+            const SizedBox(height: 8),
+            // Right lung zones
+            Row(
+              children: [
+                Expanded(
+                  child: SuggestionTextField(
+                    controller: _rightUpperZoneController,
+                    label: 'R. Upper',
+                    hint: 'Findings...',
+                    suggestions: PulmonarySuggestions.zoneFindings,
+                  ),
+                ),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: SuggestionTextField(
+                    controller: _leftUpperZoneController,
+                    label: 'L. Upper',
+                    hint: 'Findings...',
+                    suggestions: PulmonarySuggestions.zoneFindings,
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 8),
+            Row(
+              children: [
+                Expanded(
+                  child: SuggestionTextField(
+                    controller: _rightMiddleZoneController,
+                    label: 'R. Middle',
+                    hint: 'Findings...',
+                    suggestions: PulmonarySuggestions.zoneFindings,
+                  ),
+                ),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: SuggestionTextField(
+                    controller: _leftMiddleZoneController,
+                    label: 'L. Middle',
+                    hint: 'Findings...',
+                    suggestions: PulmonarySuggestions.zoneFindings,
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 8),
+            Row(
+              children: [
+                Expanded(
+                  child: SuggestionTextField(
+                    controller: _rightLowerZoneController,
+                    label: 'R. Lower',
+                    hint: 'Findings...',
+                    suggestions: PulmonarySuggestions.zoneFindings,
+                  ),
+                ),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: SuggestionTextField(
+                    controller: _leftLowerZoneController,
+                    label: 'L. Lower',
+                    hint: 'Findings...',
+                    suggestions: PulmonarySuggestions.zoneFindings,
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 12),
+            _buildTextField(
+              controller: _additionalFindingsController,
+              hint: 'Additional auscultation findings...',
+              maxLines: 2,
+            ),
+          ],
+        ),
+        const SizedBox(height: 20),
+
+        // Investigations Required (Chips)
+        _buildSectionHeader('Investigations Required', Icons.biotech),
+        const SizedBox(height: 12),
+        _buildChipSelector(
+          label: 'Select investigations to order',
+          options: PulmonarySuggestions.investigations,
+          selectedOptions: _selectedInvestigations,
+          onChanged: (selected) => setState(() => _selectedInvestigations = selected),
+          color: AppColors.primary,
+        ),
+        const SizedBox(height: 20),
+
+        // Follow-up Plan
+        _buildSectionHeader('Follow-up Plan', Icons.event_note),
+        const SizedBox(height: 12),
+        _buildTextField(
+          controller: _followUpPlanController,
+          hint: 'Follow-up instructions and plan...',
+          maxLines: 3,
+        ),
+        const SizedBox(height: 20),
+      ],
+    );
+  }
+
+  Widget _buildChipSelector({
+    required String label,
+    required List<String> options,
+    required List<String> selectedOptions,
+    required Function(List<String>) onChanged,
+    Color color = AppColors.primary,
+  }) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: isDark ? Colors.white.withOpacity(0.05) : Colors.grey.withOpacity(0.05),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(
+          color: isDark ? Colors.white.withOpacity(0.1) : Colors.grey.withOpacity(0.2),
+        ),
+      ),
+      child: Wrap(
+        spacing: 8,
+        runSpacing: 8,
+        children: options.map((option) {
+          final isSelected = selectedOptions.contains(option);
+          return FilterChip(
+            label: Text(
+              option,
+              style: TextStyle(
+                fontSize: 12,
+                color: isSelected ? Colors.white : (isDark ? AppColors.darkTextPrimary : AppColors.textPrimary),
+              ),
+            ),
+            selected: isSelected,
+            onSelected: (selected) {
+              final newList = List<String>.from(selectedOptions);
+              if (selected) {
+                newList.add(option);
+              } else {
+                newList.remove(option);
+              }
+              onChanged(newList);
+            },
+            selectedColor: color,
+            checkmarkColor: Colors.white,
+            backgroundColor: isDark ? Colors.white.withOpacity(0.08) : Colors.grey.withOpacity(0.1),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(20),
+              side: BorderSide(
+                color: isSelected ? color : Colors.transparent,
+              ),
+            ),
+          );
+        }).toList(),
+      ),
+    );
+  }
+
+  Widget _buildSimpleVitalField(TextEditingController controller, String label, String unit) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+      decoration: BoxDecoration(
+        color: isDark ? Colors.white.withOpacity(0.05) : Colors.grey.withOpacity(0.05),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(
+          color: isDark ? Colors.white.withOpacity(0.1) : Colors.grey.withOpacity(0.2),
+        ),
+      ),
+      child: Row(
+        children: [
+          Text(
+            label,
+            style: TextStyle(
+              fontSize: 13,
+              fontWeight: FontWeight.w600,
+              color: isDark ? AppColors.darkTextSecondary : AppColors.textSecondary,
+            ),
+          ),
+          const SizedBox(width: 8),
+          Expanded(
+            child: TextField(
+              controller: controller,
+              keyboardType: TextInputType.number,
+              style: TextStyle(
+                fontSize: 16,
+                fontWeight: FontWeight.w600,
+                color: isDark ? Colors.white : AppColors.textPrimary,
+              ),
+              decoration: InputDecoration(
+                hintText: '---',
+                hintStyle: TextStyle(
+                  color: isDark ? AppColors.darkTextHint : AppColors.textHint,
+                ),
+                border: InputBorder.none,
+                isDense: true,
+                contentPadding: EdgeInsets.zero,
+              ),
+            ),
+          ),
+          Text(
+            unit,
+            style: TextStyle(
+              fontSize: 12,
+              color: isDark ? AppColors.darkTextSecondary : AppColors.textSecondary,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  /// Vital field with focus tracking for animated suggestions
+  Widget _buildVitalField(
+    TextEditingController controller,
+    String label,
+    String unit,
+    FocusNode focusNode,
+    bool isFocused,
+    ValueChanged<bool> onFocusChange,
+  ) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+      decoration: BoxDecoration(
+        color: isDark ? Colors.white.withOpacity(0.05) : Colors.grey.withOpacity(0.05),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(
+          color: isFocused 
+            ? AppColors.primary.withOpacity(0.5) 
+            : (isDark ? Colors.white.withOpacity(0.1) : Colors.grey.withOpacity(0.2)),
+          width: isFocused ? 1.5 : 1,
+        ),
+      ),
+      child: Focus(
+        onFocusChange: onFocusChange,
+        child: Row(
+          children: [
+            Text(
+              label,
+              style: TextStyle(
+                fontSize: 13,
+                fontWeight: FontWeight.w600,
+                color: isDark ? AppColors.darkTextSecondary : AppColors.textSecondary,
+              ),
+            ),
+            const SizedBox(width: 8),
+            Expanded(
+              child: TextField(
+                controller: controller,
+                focusNode: focusNode,
+                keyboardType: TextInputType.text,
+                style: TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.w600,
+                  color: isDark ? Colors.white : AppColors.textPrimary,
+                ),
+                decoration: InputDecoration(
+                  hintText: '---',
+                  hintStyle: TextStyle(
+                    color: isDark ? AppColors.darkTextHint : AppColors.textHint,
+                  ),
+                  border: InputBorder.none,
+                  isDense: true,
+                  contentPadding: EdgeInsets.zero,
+                ),
+              ),
+            ),
+            Text(
+              unit,
+              style: TextStyle(
+                fontSize: 12,
+                color: isDark ? AppColors.darkTextSecondary : AppColors.textSecondary,
+              ),
+            ),
+          ],
+        ),
+      ),
     );
   }
 
