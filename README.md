@@ -45,7 +45,7 @@ A comprehensive **offline-first** Flutter application designed for psychiatry cl
 
 ```bash
 # Clone the repository
-git clone https://github.com/yourusername/doctor_app.git
+git clone https://github.com/HuzaifDharejo/doctor_app.git
 
 # Navigate to project directory
 cd doctor_app
@@ -110,14 +110,16 @@ lib/
     ├── services/
     │   ├── backup_service.dart  # Database backup/restore functionality
     │   ├── suggestions_service.dart # Auto-suggestion data
-    │   └── notification_service.dart # Push notifications
+    │   ├── doctor_settings_service.dart # Doctor profile settings
+    │   ├── pdf_service.dart     # PDF generation for prescriptions
+    │   └── search_service.dart  # Global search functionality
     ├── theme/
     │   └── app_theme.dart       # Light & dark theme definitions
     └── ui/
         ├── screens/             # All app screens
         │   ├── dashboard_screen.dart
         │   ├── patients_screen.dart
-        │   ├── patient_details_screen.dart
+        │   ├── patient_view_screen.dart
         │   ├── appointments_screen.dart
         │   ├── prescriptions_screen.dart
         │   ├── billing_screen.dart
