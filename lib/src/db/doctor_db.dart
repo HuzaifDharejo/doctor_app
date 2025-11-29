@@ -1,6 +1,5 @@
 // Minimal Drift DB. Run `flutter pub run build_runner build` to generate code.
 import 'package:drift/drift.dart';
-import 'package:flutter/foundation.dart';
 
 // Conditional imports for platform-specific code
 import 'doctor_db_native.dart' if (dart.library.html) 'doctor_db_web.dart' as impl;

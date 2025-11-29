@@ -5,7 +5,6 @@ import 'package:intl/intl.dart';
 import '../../core/core.dart';
 import '../../db/doctor_db.dart';
 import '../../providers/db_provider.dart';
-import '../../services/doctor_settings_service.dart';
 import '../../services/whatsapp_service.dart';
 import '../../services/pdf_service.dart';
 import '../../theme/app_theme.dart';
@@ -225,18 +224,20 @@ class _BillingScreenState extends ConsumerState<BillingScreen> {
             ),
           ),
           const SizedBox(height: 4),
-          FittedBox(
-            fit: BoxFit.scaleDown,
-            alignment: Alignment.centerLeft,
-            child: Text(
-              value,
-              style: TextStyle(
-                fontSize: isCompact ? 16 : 20,
-                fontWeight: FontWeight.w800,
-                color: useGradient 
-                    ? Colors.white 
-                    : Theme.of(context).colorScheme.onSurface,
-                letterSpacing: -0.5,
+          Flexible(
+            child: FittedBox(
+              fit: BoxFit.scaleDown,
+              alignment: Alignment.centerLeft,
+              child: Text(
+                value,
+                style: TextStyle(
+                  fontSize: isCompact ? 16 : 20,
+                  fontWeight: FontWeight.w800,
+                  color: useGradient 
+                      ? Colors.white 
+                      : Theme.of(context).colorScheme.onSurface,
+                  letterSpacing: -0.5,
+                ),
               ),
             ),
           ),

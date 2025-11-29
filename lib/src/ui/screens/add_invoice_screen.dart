@@ -7,7 +7,6 @@ import 'package:intl/intl.dart';
 
 import '../../db/doctor_db.dart';
 import '../../providers/db_provider.dart';
-import '../../services/doctor_settings_service.dart';
 import '../../services/suggestions_service.dart';
 import '../widgets/suggestion_text_field.dart';
 

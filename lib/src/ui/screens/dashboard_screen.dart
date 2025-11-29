@@ -4,14 +4,12 @@ import '../../core/core.dart';
 import '../../db/doctor_db.dart';
 import '../../providers/db_provider.dart';
 import '../../theme/app_theme.dart';
-import '../../utils/pkr_currency.dart';
 import '../widgets/stat_card.dart';
 import '../widgets/patient_card.dart';
 import '../widgets/quick_action_button.dart';
 import '../widgets/global_search_bar.dart';
 import '../widgets/dashboard_charts.dart';
 import 'patients_screen.dart';
-import 'appointments_screen.dart';
 import 'add_patient_screen.dart';
 import 'add_appointment_screen.dart';
 import 'add_prescription_screen.dart';
@@ -223,7 +221,7 @@ class DashboardScreen extends ConsumerWidget {
                         children: [
                           Icon(
                             greetingIcon,
-                            size: isCompact ? AppIconSize.xs : AppFontSize.sm,
+                            size: isCompact ? 14.0 : 16.0,
                             color: AppColors.warning,
                           ),
                           const SizedBox(width: AppSpacing.xxs),
@@ -241,11 +239,13 @@ class DashboardScreen extends ConsumerWidget {
                       Text(
                         profile.displayName,
                         style: TextStyle(
-                          fontSize: isCompact ? AppSpacing.md : AppSpacing.lg,
+                          fontSize: isCompact ? 18.0 : 20.0,
                           fontWeight: FontWeight.w800,
                           color: context.colorScheme.onSurface,
                           letterSpacing: -0.5,
                         ),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
                       ),
                     ],
                   ),

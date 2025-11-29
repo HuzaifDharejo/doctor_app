@@ -215,7 +215,7 @@ class AppTheme {
       
       // Chip Theme
       chipTheme: ChipThemeData(
-        backgroundColor: AppColors.primaryLight.withOpacity(0.1),
+        backgroundColor: AppColors.primaryLight.withValues(alpha: 0.1),
         labelStyle: const TextStyle(color: AppColors.primary),
         padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
         shape: RoundedRectangleBorder(
@@ -417,7 +417,7 @@ class AppTheme {
       
       // Chip Theme
       chipTheme: ChipThemeData(
-        backgroundColor: AppColors.primaryLight.withOpacity(0.1),
+        backgroundColor: AppColors.primaryLight.withValues(alpha: 0.1),
         labelStyle: const TextStyle(color: AppColors.primaryLight),
         padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
         shape: RoundedRectangleBorder(

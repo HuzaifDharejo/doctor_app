@@ -233,6 +233,7 @@ class _VitalTextFieldState extends State<VitalTextField> {
   final FocusNode _focusNode = FocusNode();
   final LayerLink _layerLink = LayerLink();
   OverlayEntry? _overlayEntry;
+  // ignore: unused_field
   bool _isFocused = false;
 
   @override

@@ -1,5 +1,4 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:flutter/foundation.dart';
 import '../db/doctor_db.dart';
 import '../services/seed_data_service.dart';
 import '../services/doctor_settings_service.dart';

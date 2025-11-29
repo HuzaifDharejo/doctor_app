@@ -3,7 +3,6 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../core/core.dart';
 import '../../theme/app_theme.dart';
 import '../../providers/db_provider.dart';
-import '../../services/backup_service.dart';
 import '../../services/seed_data_service.dart';
 import 'doctor_profile_screen.dart';
 
@@ -110,7 +109,7 @@ class SettingsScreen extends ConsumerWidget {
                 ),
               ),
             ),
-            SizedBox(width: isCompact ? AppSpacing.sm : AppFontSize.lg),
+            SizedBox(width: isCompact ? AppSpacing.sm : AppSpacing.lg),
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -175,7 +174,7 @@ class SettingsScreen extends ConsumerWidget {
               child: Icon(
                 Icons.arrow_forward_ios_rounded,
                 color: Colors.white,
-                size: isCompact ? AppSpacing.md : AppFontSize.lg,
+                size: isCompact ? 16.0 : 18.0,
               ),
             ),
           ],

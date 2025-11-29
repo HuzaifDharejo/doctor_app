@@ -5,7 +5,6 @@ import 'package:intl/intl.dart';
 import '../../core/core.dart';
 import '../../db/doctor_db.dart';
 import '../../providers/db_provider.dart';
-import '../../services/doctor_settings_service.dart';
 import '../../services/whatsapp_service.dart';
 import '../../services/pdf_service.dart';
 import '../../theme/app_theme.dart';

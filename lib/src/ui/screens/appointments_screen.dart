@@ -134,7 +134,7 @@ class _AppointmentsScreenState extends ConsumerState<AppointmentsScreen> {
             onTap: () => setState(() => _selectedDate = date),
             child: AnimatedContainer(
               duration: AppDuration.fast,
-              width: isCompact ? 60 : 72,
+              width: isCompact ? 56 : 68,
               margin: EdgeInsets.symmetric(horizontal: isCompact ? AppSpacing.xxs : AppSpacing.xs),
               decoration: BoxDecoration(
                 gradient: isSelected 
