@@ -1,4 +1,7 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
+    <!-- Internet permission for Google APIs -->
+    <uses-permission android:name="android.permission.INTERNET"/>
+    
     <application
         android:label="doctor_app"
         android:name="${applicationName}"

@@ -31,6 +31,10 @@ dependencies:
   image_picker: ^1.0.7
   google_mlkit_text_recognition: ^0.14.0
   syncfusion_flutter_pdf: ^27.1.48
+  google_sign_in: ^6.2.1
+  googleapis: ^13.2.0
+  googleapis_auth: ^1.6.0
+  http: ^1.2.0
 
 dev_dependencies:
   flutter_test:

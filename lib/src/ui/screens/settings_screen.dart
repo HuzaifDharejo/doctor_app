@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../core/core.dart';
 import '../../theme/app_theme.dart';
 import '../../providers/db_provider.dart';
+import '../../providers/google_calendar_provider.dart';
 import '../../services/seed_data_service.dart';
 import 'doctor_profile_screen.dart';
 
@@ -231,6 +232,10 @@ class SettingsScreen extends ConsumerWidget {
               onTap: () => _showLanguageDialog(context, ref, settings.language),
             ),
           ]),
+          const SizedBox(height: AppSpacing.xl),
+          
+          _buildSectionTitle(context, 'Calendar Integration'),
+          _buildGoogleCalendarSection(context, ref),
           const SizedBox(height: AppSpacing.xl),
           
           _buildSectionTitle(context, 'Data & Privacy'),
@@ -867,6 +872,343 @@ class SettingsScreen extends ConsumerWidget {
             ],
           );
         }).toList(),
+      ),
+    );
+  }
+
+  Widget _buildGoogleCalendarSection(BuildContext context, WidgetRef ref) {
+    final calendarState = ref.watch(googleCalendarProvider);
+    final isDark = context.isDarkMode;
+
+    if (calendarState.isLoading) {
+      return Container(
+        padding: const EdgeInsets.all(AppSpacing.lg),
+        decoration: BoxDecoration(
+          color: context.colorScheme.surface,
+          borderRadius: BorderRadius.circular(AppRadius.md),
+          border: Border.all(color: (isDark ? AppColors.darkDivider : AppColors.divider).withOpacity(0.5)),
+        ),
+        child: const Center(
+          child: CircularProgressIndicator(),
+        ),
+      );
+    }
+
+    if (calendarState.isConnected) {
+      return _buildSettingsGroup(context, [
+        _SettingItem(
+          icon: Icons.check_circle,
+          iconColor: AppColors.success,
+          title: 'Google Calendar Connected',
+          subtitle: calendarState.userEmail ?? 'Connected',
+          trailing: TextButton(
+            onPressed: () => _showDisconnectCalendarDialog(context, ref),
+            child: const Text('Disconnect', style: TextStyle(color: AppColors.error)),
+          ),
+        ),
+        _SettingItem(
+          icon: Icons.calendar_month,
+          iconColor: AppColors.info,
+          title: 'Select Calendar',
+          subtitle: _getCalendarName(calendarState),
+          onTap: () => _showSelectCalendarDialog(context, ref, calendarState),
+        ),
+        _SettingItem(
+          icon: Icons.sync,
+          iconColor: AppColors.accent,
+          title: 'Sync Settings',
+          subtitle: 'Configure appointment sync',
+          onTap: () => _showSyncSettingsDialog(context, ref),
+        ),
+      ]);
+    }
+
+    return Container(
+      decoration: BoxDecoration(
+        color: context.colorScheme.surface,
+        borderRadius: BorderRadius.circular(AppRadius.md),
+        border: Border.all(color: (isDark ? AppColors.darkDivider : AppColors.divider).withOpacity(0.5)),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.04),
+            blurRadius: AppSpacing.xs,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          onTap: () => _connectGoogleCalendar(context, ref),
+          borderRadius: BorderRadius.circular(AppRadius.md),
+          child: Padding(
+            padding: const EdgeInsets.all(AppSpacing.lg),
+            child: Row(
+              children: [
+                Container(
+                  padding: const EdgeInsets.all(12),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFF4285F4).withOpacity(0.1),
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: Image.network(
+                    'https://www.gstatic.com/images/branding/product/1x/calendar_2020q4_48dp.png',
+                    width: 28,
+                    height: 28,
+                    errorBuilder: (_, __, ___) => const Icon(
+                      Icons.calendar_month,
+                      color: Color(0xFF4285F4),
+                      size: 28,
+                    ),
+                  ),
+                ),
+                const SizedBox(width: AppSpacing.md),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'Connect Google Calendar',
+                        style: context.textTheme.titleMedium?.copyWith(
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                      const SizedBox(height: 4),
+                      Text(
+                        'Sync appointments & show availability to patients',
+                        style: context.textTheme.bodySmall?.copyWith(
+                          color: isDark ? AppColors.darkTextSecondary : AppColors.textSecondary,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFF4285F4),
+                    borderRadius: BorderRadius.circular(20),
+                  ),
+                  child: const Text(
+                    'Connect',
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontWeight: FontWeight.w600,
+                      fontSize: 13,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  String _getCalendarName(GoogleCalendarState state) {
+    if (state.selectedCalendarId == 'primary') {
+      return 'Primary Calendar';
+    }
+    final calendar = state.calendars.firstWhere(
+      (c) => c.id == state.selectedCalendarId,
+      orElse: () => state.calendars.isNotEmpty ? state.calendars.first : throw Exception('No calendar'),
+    );
+    return calendar.summary ?? 'Selected Calendar';
+  }
+
+  Future<void> _connectGoogleCalendar(BuildContext context, WidgetRef ref) async {
+    final success = await ref.read(googleCalendarProvider.notifier).signIn();
+    
+    if (context.mounted) {
+      if (success) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: const Row(
+              children: [
+                Icon(Icons.check_circle, color: Colors.white),
+                SizedBox(width: 12),
+                Text('Google Calendar connected successfully!'),
+              ],
+            ),
+            backgroundColor: AppColors.success,
+            behavior: SnackBarBehavior.floating,
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+          ),
+        );
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: const Row(
+              children: [
+                Icon(Icons.error, color: Colors.white),
+                SizedBox(width: 12),
+                Text('Failed to connect Google Calendar'),
+              ],
+            ),
+            backgroundColor: AppColors.error,
+            behavior: SnackBarBehavior.floating,
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+          ),
+        );
+      }
+    }
+  }
+
+  void _showDisconnectCalendarDialog(BuildContext context, WidgetRef ref) {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Row(
+          children: [
+            Icon(Icons.link_off, color: AppColors.warning),
+            SizedBox(width: 12),
+            Text('Disconnect Calendar'),
+          ],
+        ),
+        content: const Text(
+          'Are you sure you want to disconnect your Google Calendar? '
+          'Appointments will no longer sync automatically.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Cancel'),
+          ),
+          ElevatedButton(
+            onPressed: () async {
+              Navigator.pop(context);
+              await ref.read(googleCalendarProvider.notifier).signOut();
+              if (context.mounted) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(
+                    content: const Text('Google Calendar disconnected'),
+                    behavior: SnackBarBehavior.floating,
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                  ),
+                );
+              }
+            },
+            style: ElevatedButton.styleFrom(backgroundColor: AppColors.error),
+            child: const Text('Disconnect', style: TextStyle(color: Colors.white)),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _showSelectCalendarDialog(BuildContext context, WidgetRef ref, GoogleCalendarState state) {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Row(
+          children: [
+            Icon(Icons.calendar_month, color: AppColors.primary),
+            SizedBox(width: 12),
+            Text('Select Calendar'),
+          ],
+        ),
+        content: SizedBox(
+          width: double.maxFinite,
+          child: state.calendars.isEmpty
+              ? const Text('No calendars found')
+              : ListView.builder(
+                  shrinkWrap: true,
+                  itemCount: state.calendars.length,
+                  itemBuilder: (context, index) {
+                    final calendar = state.calendars[index];
+                    final isSelected = calendar.id == state.selectedCalendarId ||
+                        (state.selectedCalendarId == 'primary' && calendar.primary == true);
+                    
+                    return RadioListTile<String>(
+                      title: Text(calendar.summary ?? 'Unnamed Calendar'),
+                      subtitle: calendar.primary == true ? const Text('Primary') : null,
+                      value: calendar.id ?? 'primary',
+                      groupValue: state.selectedCalendarId,
+                      onChanged: (value) {
+                        if (value != null) {
+                          ref.read(googleCalendarProvider.notifier).setSelectedCalendar(value);
+                          Navigator.pop(context);
+                        }
+                      },
+                    );
+                  },
+                ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Close'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _showSyncSettingsDialog(BuildContext context, WidgetRef ref) {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Row(
+          children: [
+            Icon(Icons.sync, color: AppColors.accent),
+            SizedBox(width: 12),
+            Text('Sync Settings'),
+          ],
+        ),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            ListTile(
+              leading: const Icon(Icons.event_available, color: AppColors.success),
+              title: const Text('Auto-sync new appointments'),
+              subtitle: const Text('Create calendar events automatically'),
+              trailing: Switch(
+                value: true,
+                onChanged: (v) {
+                  // TODO: Implement sync settings persistence
+                },
+                activeColor: AppColors.primary,
+              ),
+            ),
+            ListTile(
+              leading: const Icon(Icons.notifications_active, color: AppColors.warning),
+              title: const Text('Calendar reminders'),
+              subtitle: const Text('30 min and 10 min before'),
+              trailing: Switch(
+                value: true,
+                onChanged: (v) {
+                  // TODO: Implement reminder settings
+                },
+                activeColor: AppColors.primary,
+              ),
+            ),
+            const Divider(),
+            ListTile(
+              leading: const Icon(Icons.refresh, color: AppColors.info),
+              title: const Text('Refresh Calendars'),
+              onTap: () async {
+                Navigator.pop(context);
+                await ref.read(googleCalendarProvider.notifier).refreshCalendars();
+                if (context.mounted) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                      content: const Text('Calendars refreshed'),
+                      behavior: SnackBarBehavior.floating,
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                    ),
+                  );
+                }
+              },
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Close'),
+          ),
+        ],
       ),
     );
   }

@@ -4,6 +4,7 @@ import 'package:intl/intl.dart';
 import 'package:drift/drift.dart' hide Column;
 import '../../db/doctor_db.dart';
 import '../../providers/db_provider.dart';
+import '../../providers/google_calendar_provider.dart';
 import '../../theme/app_theme.dart';
 import '../../services/suggestions_service.dart';
 import '../widgets/suggestion_text_field.dart';
@@ -776,6 +777,12 @@ class _AddAppointmentScreenState extends ConsumerState<AddAppointmentScreen> {
           ? appointmentDateTime.subtract(const Duration(minutes: 30))
           : null;
 
+      // Get patient details for calendar event
+      final patient = await db.getPatientById(_selectedPatientId!);
+      final patientName = patient != null 
+          ? '${patient.firstName} ${patient.lastName}'
+          : 'Patient';
+
       await db.insertAppointment(AppointmentsCompanion.insert(
         patientId: _selectedPatientId!,
         appointmentDateTime: appointmentDateTime,
@@ -786,14 +793,36 @@ class _AddAppointmentScreenState extends ConsumerState<AddAppointmentScreen> {
         notes: Value(_notesController.text),
       ));
 
+      // Sync with Google Calendar if connected
+      final calendarState = ref.read(googleCalendarProvider);
+      if (calendarState.isConnected) {
+        try {
+          await ref.read(googleCalendarProvider.notifier).createAppointmentEvent(
+            patientName: patientName,
+            startTime: appointmentDateTime,
+            durationMinutes: _duration,
+            reason: _reason,
+            notes: _notesController.text,
+            patientPhone: patient?.phone,
+            patientEmail: patient?.email,
+          );
+        } catch (e) {
+          // Don't fail the entire operation if calendar sync fails
+          debugPrint('Calendar sync failed: $e');
+        }
+      }
+
       if (context.mounted) {
+        final syncMessage = calendarState.isConnected 
+            ? 'Appointment scheduled & synced to calendar!'
+            : 'Appointment scheduled successfully!';
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Row(
               children: [
                 const Icon(Icons.check_circle, color: Colors.white),
                 const SizedBox(width: 12),
-                const Text('Appointment scheduled successfully!'),
+                Expanded(child: Text(syncMessage)),
               ],
             ),
             backgroundColor: AppColors.success,
