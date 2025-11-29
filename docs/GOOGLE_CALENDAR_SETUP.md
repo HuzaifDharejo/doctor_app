@@ -5,10 +5,29 @@ This document provides instructions for setting up Google Calendar integration i
 ## Overview
 
 The Google Calendar integration allows doctors to:
+- **Sign in with Google (SSO)** - Quick setup with Google account
+- **Auto-fill profile** - Name and email from Google account
 - Connect their Google Calendar to the app
 - Automatically create calendar events when appointments are scheduled
 - View availability based on existing calendar events
 - Sync appointment reminders to Google Calendar
+
+## Google SSO (Single Sign-On)
+
+The app now supports Google SSO for a streamlined onboarding experience:
+
+1. **First Launch**: Users see the onboarding screen with "Sign in with Google" button
+2. **One-Click Setup**: Clicking the button authenticates with Google
+3. **Auto-Fill**: Doctor's name and email are automatically filled from Google account
+4. **Calendar Connected**: Google Calendar is automatically connected
+5. **Profile Photo**: Google profile photo is displayed throughout the app
+
+### SSO Benefits
+- No separate registration required
+- Profile information auto-populated
+- Calendar integration automatic
+- Secure OAuth 2.0 authentication
+- Can also continue without Google for offline-first usage
 
 ## Setup Steps
 
@@ -67,14 +86,27 @@ The Google Calendar integration allows doctors to:
 5. Download the `GoogleService-Info.plist` file
 6. Add it to `ios/Runner/`
 
-#### For Web (if applicable):
+#### For Web (Chrome/Browser):
 
 1. Create another OAuth client ID
 2. Select **Web application**
-3. Add authorized origins:
+3. Add authorized JavaScript origins:
    - `http://localhost:5000` (for development)
+   - `http://localhost:8080` (alternate dev port)
    - Your production URL
-4. Add authorized redirect URIs as needed
+4. Add authorized redirect URIs:
+   - `http://localhost:5000`
+   - `http://localhost:8080`
+   - Your production URL
+5. Click **Create** and copy the **Client ID**
+6. Add the client ID to `web/index.html`:
+
+```html
+<head>
+  <!-- Add this meta tag in the <head> section -->
+  <meta name="google-signin-client_id" content="YOUR_CLIENT_ID.apps.googleusercontent.com">
+</head>
+```
 
 ### 4. Configure the App
 
@@ -159,9 +191,11 @@ For a typical doctor's office, these limits are more than sufficient.
 
 ## Files Modified/Created
 
-- `lib/src/services/google_calendar_service.dart` - Main calendar service
+- `lib/src/services/google_calendar_service.dart` - Main calendar service with SSO
 - `lib/src/providers/google_calendar_provider.dart` - State management
+- `lib/src/ui/screens/onboarding_screen.dart` - SSO login + profile setup
 - `lib/src/ui/screens/settings_screen.dart` - Calendar connection UI
 - `lib/src/ui/screens/add_appointment_screen.dart` - Calendar sync on save
 - `android/app/src/main/AndroidManifest.xml` - Internet permission
+- `web/index.html` - Google client ID meta tag (for web)
 - `pubspec.yaml` - Google dependencies

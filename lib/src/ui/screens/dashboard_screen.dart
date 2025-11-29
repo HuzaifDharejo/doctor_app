@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 import '../../core/core.dart';
@@ -14,20 +15,36 @@ import 'patients_screen.dart';
 import 'add_patient_screen.dart';
 import 'add_appointment_screen.dart';
 
-class DashboardScreen extends ConsumerWidget {
+class DashboardScreen extends ConsumerStatefulWidget {
   final VoidCallback? onMenuTap;
   
   const DashboardScreen({super.key, this.onMenuTap});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<DashboardScreen> createState() => _DashboardScreenState();
+}
+
+class _DashboardScreenState extends ConsumerState<DashboardScreen> {
+  bool _isRefreshing = false;
+  final _refreshKey = GlobalKey<RefreshIndicatorState>();
+
+  Future<void> _onRefresh() async {
+    HapticFeedback.mediumImpact();
+    setState(() => _isRefreshing = true);
+    ref.invalidate(doctorDbProvider);
+    await Future.delayed(const Duration(milliseconds: 500));
+    if (mounted) setState(() => _isRefreshing = false);
+  }
+
+  @override
+  Widget build(BuildContext context) {
     final dbAsync = ref.watch(doctorDbProvider);
     final doctorSettings = ref.watch(doctorSettingsProvider);
     
     return Scaffold(
       body: SafeArea(
         child: dbAsync.when(
-          data: (db) => _buildDashboard(context, db, ref),
+          data: (db) => _buildDashboard(context, db),
           loading: () => const LoadingState(),
           error: (err, stack) => ErrorState.generic(
             message: err.toString(),
@@ -38,49 +55,60 @@ class DashboardScreen extends ConsumerWidget {
     );
   }
 
-  Widget _buildDashboard(BuildContext context, DoctorDatabase db, WidgetRef ref) {
+  Widget _buildDashboard(BuildContext context, DoctorDatabase db) {
     return FutureBuilder<List<Patient>>(
       future: db.getAllPatients(),
       builder: (context, snapshot) {
         final patients = snapshot.data ?? [];
-        return _buildContent(context, db, patients, ref);
+        return _buildContent(context, db, patients);
       },
     );
   }
 
-  Widget _buildContent(BuildContext context, DoctorDatabase db, List<Patient> patients, WidgetRef ref) {
+  Widget _buildContent(BuildContext context, DoctorDatabase db, List<Patient> patients) {
     return FutureBuilder<List<Appointment>>(
       future: db.getAppointmentsForDay(DateTime.now()),
       builder: (context, apptSnapshot) {
         final todayAppointments = apptSnapshot.data ?? [];
         final pendingCount = todayAppointments.where((a) => a.status == 'pending' || a.status == 'scheduled').length;
+        final isDark = context.isDarkMode;
         
         return LayoutBuilder(
           builder: (context, constraints) {
             final isCompact = AppBreakpoint.isCompact(constraints.maxWidth);
             final padding = isCompact ? 16.0 : 24.0;
             
-            return CustomScrollView(
-              slivers: [
-                // Modern Header
-                SliverToBoxAdapter(
-                  child: _buildModernHeader(context, ref, isCompact),
+            return RefreshIndicator(
+              key: _refreshKey,
+              onRefresh: _onRefresh,
+              color: AppColors.primary,
+              backgroundColor: isDark ? AppColors.darkSurface : Colors.white,
+              strokeWidth: 2.5,
+              displacement: 20,
+              child: CustomScrollView(
+                physics: const AlwaysScrollableScrollPhysics(
+                  parent: BouncingScrollPhysics(),
                 ),
-                
-                // Search Bar
-                SliverToBoxAdapter(
-                  child: Padding(
-                    padding: EdgeInsets.symmetric(horizontal: padding),
-                    child: const GlobalSearchBar(),
+                slivers: [
+                  // Modern Header
+                  SliverToBoxAdapter(
+                    child: _buildModernHeader(context, isCompact),
                   ),
-                ),
-                
-                SliverToBoxAdapter(child: SizedBox(height: isCompact ? 16 : 24)),
-                
-                // Stats Cards - Horizontal scroll
-                SliverToBoxAdapter(
-                  child: _buildStatsSection(patients.length, todayAppointments.length, pendingCount, isCompact, context),
-                ),
+                  
+                  // Search Bar
+                  SliverToBoxAdapter(
+                    child: Padding(
+                      padding: EdgeInsets.symmetric(horizontal: padding),
+                      child: const GlobalSearchBar(),
+                    ),
+                  ),
+                  
+                  SliverToBoxAdapter(child: SizedBox(height: isCompact ? 16 : 24)),
+                  
+                  // Stats Cards - Horizontal scroll
+                  SliverToBoxAdapter(
+                    child: _buildStatsSection(patients.length, todayAppointments.length, pendingCount, isCompact, context),
+                  ),
                 
                 SliverToBoxAdapter(child: SizedBox(height: isCompact ? 20 : 28)),
             
@@ -98,7 +126,7 @@ class DashboardScreen extends ConsumerWidget {
                 SliverToBoxAdapter(
                   child: Padding(
                     padding: EdgeInsets.symmetric(horizontal: padding),
-                    child: _buildTodaySchedule(context, todayAppointments, isCompact),
+                    child: _buildTodaySchedule(context, todayAppointments, isCompact, db),
                   ),
                 ),
                 
@@ -160,7 +188,7 @@ class DashboardScreen extends ConsumerWidget {
     );
   }
 
-  Widget _buildModernHeader(BuildContext context, WidgetRef ref, [bool isCompact = false]) {
+  Widget _buildModernHeader(BuildContext context, [bool isCompact = false]) {
     final profile = ref.watch(doctorSettingsProvider).profile;
     final hour = DateTime.now().hour;
     String greeting = 'Good Morning';
@@ -670,7 +698,7 @@ class DashboardScreen extends ConsumerWidget {
     );
   }
 
-  Widget _buildTodaySchedule(BuildContext context, List<Appointment> appointments, bool isCompact) {
+  Widget _buildTodaySchedule(BuildContext context, List<Appointment> appointments, bool isCompact, DoctorDatabase db) {
     final isDark = context.isDarkMode;
     final upcomingAppts = appointments.where((a) => a.status == 'scheduled' || a.status == 'pending').take(3).toList();
     
@@ -736,97 +764,122 @@ class DashboardScreen extends ConsumerWidget {
         else
           ...upcomingAppts.asMap().entries.map((entry) {
             final appt = entry.value;
+            final index = entry.key;
             final timeFormat = DateFormat('h:mm a');
-            final isLast = entry.key == upcomingAppts.length - 1;
+            final isLast = index == upcomingAppts.length - 1;
             
-            return Container(
-              margin: EdgeInsets.only(bottom: isLast ? 0 : 10),
-              padding: EdgeInsets.all(isCompact ? 14 : 16),
-              decoration: BoxDecoration(
-                color: isDark 
-                    ? Colors.white.withValues(alpha: 0.06)
-                    : Colors.white,
-                borderRadius: BorderRadius.circular(16),
-                border: Border.all(
-                  color: isDark 
-                      ? Colors.white.withValues(alpha: 0.1)
-                      : AppColors.primary.withValues(alpha: 0.15),
-                ),
-                boxShadow: isDark ? null : [
-                  BoxShadow(
-                    color: Colors.black.withValues(alpha: 0.04),
-                    blurRadius: 10,
-                    offset: const Offset(0, 2),
-                  ),
-                ],
-              ),
-              child: Row(
-                children: [
-                  Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+            return FutureBuilder<Patient?>(
+              future: db.getPatientById(appt.patientId),
+              builder: (context, patientSnapshot) {
+                final patient = patientSnapshot.data;
+                final patientName = patient != null 
+                    ? '${patient.firstName} ${patient.lastName}'
+                    : 'Patient #${appt.patientId}';
+                
+                return TweenAnimationBuilder<double>(
+                  tween: Tween(begin: 0.0, end: 1.0),
+                  duration: Duration(milliseconds: 400 + (index * 100)),
+                  curve: Curves.easeOutCubic,
+                  builder: (context, value, child) {
+                    return Opacity(
+                      opacity: value,
+                      child: Transform.translate(
+                        offset: Offset(0, 20 * (1 - value)),
+                        child: child,
+                      ),
+                    );
+                  },
+                  child: Container(
+                    margin: EdgeInsets.only(bottom: isLast ? 0 : 10),
+                    padding: EdgeInsets.all(isCompact ? 14 : 16),
                     decoration: BoxDecoration(
-                      gradient: LinearGradient(
-                        colors: [
-                          AppColors.primary.withValues(alpha: 0.15),
-                          AppColors.primary.withValues(alpha: 0.08),
-                        ],
+                      color: isDark 
+                          ? Colors.white.withValues(alpha: 0.06)
+                          : Colors.white,
+                      borderRadius: BorderRadius.circular(16),
+                      border: Border.all(
+                        color: isDark 
+                            ? Colors.white.withValues(alpha: 0.1)
+                            : AppColors.primary.withValues(alpha: 0.15),
                       ),
-                      borderRadius: BorderRadius.circular(12),
+                      boxShadow: isDark ? null : [
+                        BoxShadow(
+                          color: Colors.black.withValues(alpha: 0.04),
+                          blurRadius: 10,
+                          offset: const Offset(0, 2),
+                        ),
+                      ],
                     ),
-                    child: Text(
-                      timeFormat.format(appt.appointmentDateTime),
-                      style: TextStyle(
-                        fontSize: isCompact ? 12 : 13,
-                        fontWeight: FontWeight.w700,
-                        color: AppColors.primary,
-                      ),
-                    ),
-                  ),
-                  SizedBox(width: isCompact ? 12 : 16),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
+                    child: Row(
                       children: [
-                        Text(
-                          'Patient #${appt.patientId}',
-                          style: TextStyle(
-                            fontSize: isCompact ? 14 : 15,
-                            fontWeight: FontWeight.w600,
-                            color: isDark ? Colors.white : AppColors.textPrimary,
+                        Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                          decoration: BoxDecoration(
+                            gradient: LinearGradient(
+                              colors: [
+                                AppColors.primary.withValues(alpha: 0.15),
+                                AppColors.primary.withValues(alpha: 0.08),
+                              ],
+                            ),
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          child: Text(
+                            timeFormat.format(appt.appointmentDateTime),
+                            style: TextStyle(
+                              fontSize: isCompact ? 12 : 13,
+                              fontWeight: FontWeight.w700,
+                              color: AppColors.primary,
+                            ),
                           ),
                         ),
-                        const SizedBox(height: 2),
-                        Text(
-                          appt.reason.isNotEmpty ? appt.reason : 'Consultation',
-                          style: TextStyle(
-                            fontSize: isCompact ? 12 : 13,
-                            color: isDark ? AppColors.darkTextSecondary : AppColors.textSecondary,
+                        SizedBox(width: isCompact ? 12 : 16),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                patientName,
+                                style: TextStyle(
+                                  fontSize: isCompact ? 14 : 15,
+                                  fontWeight: FontWeight.w600,
+                                  color: isDark ? Colors.white : AppColors.textPrimary,
+                                ),
+                              ),
+                              const SizedBox(height: 2),
+                              Text(
+                                appt.reason.isNotEmpty ? appt.reason : 'Consultation',
+                                style: TextStyle(
+                                  fontSize: isCompact ? 12 : 13,
+                                  color: isDark ? AppColors.darkTextSecondary : AppColors.textSecondary,
+                                ),
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                            ],
                           ),
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
+                        ),
+                        Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                          decoration: BoxDecoration(
+                            color: appt.status == 'pending' 
+                                ? AppColors.warning.withValues(alpha: 0.15)
+                                : AppColors.success.withValues(alpha: 0.15),
+                            borderRadius: BorderRadius.circular(20),
+                          ),
+                          child: Text(
+                            appt.status.toUpperCase(),
+                            style: TextStyle(
+                              fontSize: 10,
+                              fontWeight: FontWeight.w700,
+                              color: appt.status == 'pending' ? AppColors.warning : AppColors.success,
+                            ),
+                          ),
                         ),
                       ],
                     ),
                   ),
-                  Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
-                    decoration: BoxDecoration(
-                      color: appt.status == 'pending' 
-                          ? AppColors.warning.withValues(alpha: 0.15)
-                          : AppColors.success.withValues(alpha: 0.15),
-                      borderRadius: BorderRadius.circular(20),
-                    ),
-                    child: Text(
-                      appt.status.toUpperCase(),
-                      style: TextStyle(
-                        fontSize: 10,
-                        fontWeight: FontWeight.w700,
-                        color: appt.status == 'pending' ? AppColors.warning : AppColors.success,
-                      ),
-                    ),
-                  ),
-                ],
-              ),
+                );
+              },
             );
           }),
       ],

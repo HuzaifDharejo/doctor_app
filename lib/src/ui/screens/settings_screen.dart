@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../core/core.dart';
 import '../../theme/app_theme.dart';
@@ -7,22 +8,86 @@ import '../../providers/google_calendar_provider.dart';
 import '../../services/seed_data_service.dart';
 import 'doctor_profile_screen.dart';
 
-class SettingsScreen extends ConsumerWidget {
+class SettingsScreen extends ConsumerStatefulWidget {
   const SettingsScreen({super.key});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<SettingsScreen> createState() => _SettingsScreenState();
+}
+
+class _SettingsScreenState extends ConsumerState<SettingsScreen> with SingleTickerProviderStateMixin {
+  late AnimationController _animationController;
+  bool _isRefreshing = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _animationController = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 600),
+    );
+    _animationController.forward();
+  }
+
+  @override
+  void dispose() {
+    _animationController.dispose();
+    super.dispose();
+  }
+
+  Future<void> _onRefresh() async {
+    HapticFeedback.mediumImpact();
+    setState(() => _isRefreshing = true);
+    await Future.delayed(const Duration(milliseconds: 500));
+    if (mounted) {
+      setState(() => _isRefreshing = false);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
     final appSettings = ref.watch(appSettingsProvider);
+    final isDark = context.isDarkMode;
     
     return Scaffold(
       body: SafeArea(
-        child: CustomScrollView(
-          slivers: [
-            SliverToBoxAdapter(child: _buildHeader(context)),
-            SliverToBoxAdapter(child: _buildProfileCard(context, ref)),
-            SliverToBoxAdapter(child: _buildSettingsSections(context, ref, appSettings)),
-            const SliverToBoxAdapter(child: SizedBox(height: 100)),
-          ],
+        child: RefreshIndicator(
+          onRefresh: _onRefresh,
+          color: AppColors.primary,
+          backgroundColor: isDark ? AppColors.darkSurface : Colors.white,
+          child: CustomScrollView(
+            physics: const AlwaysScrollableScrollPhysics(
+              parent: BouncingScrollPhysics(),
+            ),
+            slivers: [
+              SliverToBoxAdapter(child: _buildHeader(context)),
+              SliverToBoxAdapter(
+                child: FadeTransition(
+                  opacity: _animationController,
+                  child: SlideTransition(
+                    position: Tween<Offset>(
+                      begin: const Offset(0, 0.1),
+                      end: Offset.zero,
+                    ).animate(CurvedAnimation(
+                      parent: _animationController,
+                      curve: Curves.easeOutCubic,
+                    )),
+                    child: _buildProfileCard(context, ref),
+                  ),
+                ),
+              ),
+              SliverToBoxAdapter(
+                child: FadeTransition(
+                  opacity: CurvedAnimation(
+                    parent: _animationController,
+                    curve: const Interval(0.2, 1.0),
+                  ),
+                  child: _buildSettingsSections(context, ref, appSettings),
+                ),
+              ),
+              const SliverToBoxAdapter(child: SizedBox(height: 100)),
+            ],
+          ),
         ),
       ),
     );
@@ -57,8 +122,9 @@ class SettingsScreen extends ConsumerWidget {
     final padding = isCompact ? AppSpacing.sm : AppSpacing.lg;
     final isDark = context.isDarkMode;
     
-    return GestureDetector(
+    return _AnimatedTapCard(
       onTap: () {
+        HapticFeedback.lightImpact();
         Navigator.push(
           context,
           MaterialPageRoute(builder: (_) => const DoctorProfileScreen()),
@@ -84,27 +150,38 @@ class SettingsScreen extends ConsumerWidget {
         ),
         child: Row(
           children: [
-            // Avatar with ring
-            Container(
-              padding: const EdgeInsets.all(3),
-              decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                border: Border.all(color: Colors.white.withOpacity(0.5), width: 2),
-              ),
+            // Avatar with ring and pulse effect
+            TweenAnimationBuilder<double>(
+              tween: Tween(begin: 0.95, end: 1.0),
+              duration: const Duration(milliseconds: 1500),
+              curve: Curves.easeInOut,
+              builder: (context, scale, child) {
+                return Transform.scale(
+                  scale: scale,
+                  child: child,
+                );
+              },
               child: Container(
-                width: isCompact ? 52 : 64,
-                height: isCompact ? 52 : 64,
+                padding: const EdgeInsets.all(3),
                 decoration: BoxDecoration(
-                  color: Colors.white.withOpacity(0.2),
                   shape: BoxShape.circle,
+                  border: Border.all(color: Colors.white.withOpacity(0.5), width: 2),
                 ),
-                child: Center(
-                  child: Text(
-                    profile.initials,
-                    style: TextStyle(
-                      color: Colors.white,
-                      fontSize: isCompact ? AppFontSize.lg : AppFontSize.xl,
-                      fontWeight: FontWeight.w800,
+                child: Container(
+                  width: isCompact ? 52 : 64,
+                  height: isCompact ? 52 : 64,
+                  decoration: BoxDecoration(
+                    color: Colors.white.withOpacity(0.2),
+                    shape: BoxShape.circle,
+                  ),
+                  child: Center(
+                    child: Text(
+                      profile.initials,
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontSize: isCompact ? AppFontSize.lg : AppFontSize.xl,
+                        fontWeight: FontWeight.w800,
+                      ),
                     ),
                   ),
                 ),
@@ -895,32 +972,85 @@ class SettingsScreen extends ConsumerWidget {
     }
 
     if (calendarState.isConnected) {
-      return _buildSettingsGroup(context, [
-        _SettingItem(
-          icon: Icons.check_circle,
-          iconColor: AppColors.success,
-          title: 'Google Calendar Connected',
-          subtitle: calendarState.userEmail ?? 'Connected',
-          trailing: TextButton(
-            onPressed: () => _showDisconnectCalendarDialog(context, ref),
-            child: const Text('Disconnect', style: TextStyle(color: AppColors.error)),
-          ),
+      return Container(
+        decoration: BoxDecoration(
+          color: context.colorScheme.surface,
+          borderRadius: BorderRadius.circular(AppRadius.md),
+          border: Border.all(color: AppColors.success.withOpacity(0.3)),
         ),
-        _SettingItem(
-          icon: Icons.calendar_month,
-          iconColor: AppColors.info,
-          title: 'Select Calendar',
-          subtitle: _getCalendarName(calendarState),
-          onTap: () => _showSelectCalendarDialog(context, ref, calendarState),
+        child: Column(
+          children: [
+            // Google Account Info
+            Padding(
+              padding: const EdgeInsets.all(AppSpacing.md),
+              child: Row(
+                children: [
+                  CircleAvatar(
+                    radius: 24,
+                    backgroundColor: AppColors.primary.withOpacity(0.1),
+                    backgroundImage: calendarState.userPhotoUrl != null
+                        ? NetworkImage(calendarState.userPhotoUrl!)
+                        : null,
+                    child: calendarState.userPhotoUrl == null
+                        ? Icon(Icons.person, color: AppColors.primary)
+                        : null,
+                  ),
+                  const SizedBox(width: AppSpacing.md),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(
+                          children: [
+                            const Icon(Icons.check_circle, color: AppColors.success, size: 16),
+                            const SizedBox(width: 6),
+                            Text(
+                              'Connected with Google',
+                              style: context.textTheme.titleSmall?.copyWith(
+                                fontWeight: FontWeight.w600,
+                                color: AppColors.success,
+                              ),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 4),
+                        Text(
+                          calendarState.userEmail ?? '',
+                          style: context.textTheme.bodySmall?.copyWith(
+                            color: isDark ? AppColors.darkTextSecondary : AppColors.textSecondary,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  TextButton(
+                    onPressed: () => _showDisconnectCalendarDialog(context, ref),
+                    child: const Text('Sign Out', style: TextStyle(color: AppColors.error)),
+                  ),
+                ],
+              ),
+            ),
+            const Divider(height: 1),
+            // Calendar settings
+            _buildSettingsItem(
+              context,
+              icon: Icons.calendar_month,
+              iconColor: AppColors.info,
+              title: 'Select Calendar',
+              subtitle: _getCalendarName(calendarState),
+              onTap: () => _showSelectCalendarDialog(context, ref, calendarState),
+            ),
+            _buildSettingsItem(
+              context,
+              icon: Icons.sync,
+              iconColor: AppColors.accent,
+              title: 'Sync Settings',
+              subtitle: 'Configure appointment sync',
+              onTap: () => _showSyncSettingsDialog(context, ref),
+            ),
+          ],
         ),
-        _SettingItem(
-          icon: Icons.sync,
-          iconColor: AppColors.accent,
-          title: 'Sync Settings',
-          subtitle: 'Configure appointment sync',
-          onTap: () => _showSyncSettingsDialog(context, ref),
-        ),
-      ]);
+      );
     }
 
     return Container(
@@ -1000,6 +1130,62 @@ class SettingsScreen extends ConsumerWidget {
                 ),
               ],
             ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildSettingsItem(
+    BuildContext context, {
+    required IconData icon,
+    required Color iconColor,
+    required String title,
+    required String subtitle,
+    VoidCallback? onTap,
+  }) {
+    final isDark = context.isDarkMode;
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        onTap: onTap,
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: AppSpacing.md, vertical: AppSpacing.sm),
+          child: Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.all(8),
+                decoration: BoxDecoration(
+                  color: iconColor.withOpacity(0.1),
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: Icon(icon, color: iconColor, size: 20),
+              ),
+              const SizedBox(width: AppSpacing.md),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      title,
+                      style: context.textTheme.bodyMedium?.copyWith(
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                    Text(
+                      subtitle,
+                      style: context.textTheme.bodySmall?.copyWith(
+                        color: isDark ? AppColors.darkTextSecondary : AppColors.textSecondary,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              Icon(
+                Icons.chevron_right,
+                color: isDark ? AppColors.darkTextHint : AppColors.textHint,
+              ),
+            ],
           ),
         ),
       ),
@@ -1230,4 +1416,64 @@ class _SettingItem {
     this.trailing,
     this.onTap,
   });
+}
+
+/// Animated tap card with scale effect
+class _AnimatedTapCard extends StatefulWidget {
+  final Widget child;
+  final VoidCallback onTap;
+
+  const _AnimatedTapCard({
+    required this.child,
+    required this.onTap,
+  });
+
+  @override
+  State<_AnimatedTapCard> createState() => _AnimatedTapCardState();
+}
+
+class _AnimatedTapCardState extends State<_AnimatedTapCard>
+    with SingleTickerProviderStateMixin {
+  late AnimationController _controller;
+  late Animation<double> _scaleAnimation;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 100),
+    );
+    _scaleAnimation = Tween<double>(begin: 1.0, end: 0.97).animate(
+      CurvedAnimation(parent: _controller, curve: Curves.easeInOut),
+    );
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTapDown: (_) => _controller.forward(),
+      onTapUp: (_) {
+        _controller.reverse();
+        widget.onTap();
+      },
+      onTapCancel: () => _controller.reverse(),
+      child: AnimatedBuilder(
+        animation: _scaleAnimation,
+        builder: (context, child) {
+          return Transform.scale(
+            scale: _scaleAnimation.value,
+            child: child,
+          );
+        },
+        child: widget.child,
+      ),
+    );
+  }
 }

@@ -273,12 +273,14 @@ class AppSettings {
   final bool darkModeEnabled;
   final String language;
   final DateTime? lastBackupDate;
+  final bool onboardingComplete;
 
   AppSettings({
     this.notificationsEnabled = true,
     this.darkModeEnabled = false,
     this.language = 'English',
     this.lastBackupDate,
+    this.onboardingComplete = false,
   });
 
   AppSettings copyWith({
@@ -286,12 +288,14 @@ class AppSettings {
     bool? darkModeEnabled,
     String? language,
     DateTime? lastBackupDate,
+    bool? onboardingComplete,
   }) {
     return AppSettings(
       notificationsEnabled: notificationsEnabled ?? this.notificationsEnabled,
       darkModeEnabled: darkModeEnabled ?? this.darkModeEnabled,
       language: language ?? this.language,
       lastBackupDate: lastBackupDate ?? this.lastBackupDate,
+      onboardingComplete: onboardingComplete ?? this.onboardingComplete,
     );
   }
 
@@ -300,6 +304,7 @@ class AppSettings {
     'darkModeEnabled': darkModeEnabled,
     'language': language,
     'lastBackupDate': lastBackupDate?.toIso8601String(),
+    'onboardingComplete': onboardingComplete,
   };
 
   factory AppSettings.fromJson(Map<String, dynamic> json) => AppSettings(
@@ -309,6 +314,7 @@ class AppSettings {
     lastBackupDate: json['lastBackupDate'] != null 
         ? DateTime.parse(json['lastBackupDate']) 
         : null,
+    onboardingComplete: json['onboardingComplete'] ?? false,
   );
 }
 
@@ -380,5 +386,11 @@ class AppSettingsService extends ChangeNotifier {
     } catch (e) {
       debugPrint('Error clearing app settings: $e');
     }
+  }
+
+  Future<void> setOnboardingComplete(bool complete) async {
+    _settings = _settings.copyWith(onboardingComplete: complete);
+    await _saveSettings();
+    notifyListeners();
   }
 }

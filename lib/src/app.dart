@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import 'core/core.dart';
@@ -10,6 +11,7 @@ import 'ui/screens/patients_screen.dart';
 import 'ui/screens/appointments_screen.dart';
 import 'ui/screens/prescriptions_screen.dart';
 import 'ui/screens/billing_screen.dart';
+import 'ui/screens/onboarding_screen.dart';
 
 class DoctorApp extends ConsumerWidget {
   const DoctorApp({super.key});
@@ -18,6 +20,8 @@ class DoctorApp extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final appSettings = ref.watch(appSettingsProvider);
     final isDarkMode = appSettings.settings.darkModeEnabled;
+    final isOnboardingComplete = appSettings.settings.onboardingComplete;
+    final isLoaded = appSettings.isLoaded;
     
     return MaterialApp(
       title: AppStrings.appName,
@@ -26,7 +30,42 @@ class DoctorApp extends ConsumerWidget {
       darkTheme: AppTheme.darkTheme,
       themeMode: isDarkMode ? ThemeMode.dark : ThemeMode.light,
       onGenerateRoute: AppRouter.generateRoute,
-      home: const HomeShell(),
+      home: !isLoaded 
+          ? const _SplashScreen()
+          : isOnboardingComplete 
+              ? const HomeShell() 
+              : const OnboardingScreen(),
+    );
+  }
+}
+
+class _SplashScreen extends StatelessWidget {
+  const _SplashScreen();
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      body: Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Container(
+              padding: const EdgeInsets.all(24),
+              decoration: BoxDecoration(
+                gradient: AppColors.primaryGradient,
+                shape: BoxShape.circle,
+              ),
+              child: const Icon(
+                Icons.medical_services_rounded,
+                size: 64,
+                color: Colors.white,
+              ),
+            ),
+            const SizedBox(height: 24),
+            const CircularProgressIndicator(color: AppColors.primary),
+          ],
+        ),
+      ),
     );
   }
 }
@@ -41,6 +80,8 @@ class HomeShell extends ConsumerStatefulWidget {
 class _HomeShellState extends ConsumerState<HomeShell> {
   int _index = 0;
   final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
+  int _pendingAppointments = 0;
+  int _unpaidInvoices = 0;
   
   late final List<Widget> _pages;
 
@@ -54,6 +95,29 @@ class _HomeShellState extends ConsumerState<HomeShell> {
       const PrescriptionsScreen(),
       const BillingScreen(),
     ];
+    _loadBadgeCounts();
+  }
+
+  Future<void> _loadBadgeCounts() async {
+    final dbAsync = ref.read(doctorDbProvider);
+    dbAsync.whenData((db) async {
+      final todayAppts = await db.getAppointmentsForDay(DateTime.now());
+      final pendingCount = todayAppts.where((a) => 
+        a.status == 'pending' || a.status == 'scheduled'
+      ).length;
+      
+      final invoices = await db.getAllInvoices();
+      final unpaidCount = invoices.where((i) => 
+        i.paymentStatus != 'Paid'
+      ).length;
+      
+      if (mounted) {
+        setState(() {
+          _pendingAppointments = pendingCount;
+          _unpaidInvoices = unpaidCount;
+        });
+      }
+    });
   }
 
   void _openDrawer() {
@@ -90,11 +154,11 @@ class _HomeShellState extends ConsumerState<HomeShell> {
             child: Row(
               mainAxisAlignment: MainAxisAlignment.spaceAround,
               children: [
-                _buildNavItem(0, Icons.space_dashboard_rounded, Icons.space_dashboard_outlined, AppStrings.navHome, AppColors.primary),
-                _buildNavItem(1, Icons.people_rounded, Icons.people_outlined, AppStrings.navPatients, AppColors.patients),
-                _buildNavItem(2, Icons.calendar_month_rounded, Icons.calendar_month_outlined, AppStrings.navAppointments, AppColors.appointments),
-                _buildNavItem(3, Icons.medication_rounded, Icons.medication_outlined, AppStrings.navPrescriptions, AppColors.prescriptions),
-                _buildNavItem(4, Icons.account_balance_wallet_rounded, Icons.account_balance_wallet_outlined, AppStrings.navBilling, AppColors.billing),
+                _buildNavItem(0, Icons.space_dashboard_rounded, Icons.space_dashboard_outlined, AppStrings.navHome, AppColors.primary, 0),
+                _buildNavItem(1, Icons.people_rounded, Icons.people_outlined, AppStrings.navPatients, AppColors.patients, 0),
+                _buildNavItem(2, Icons.calendar_month_rounded, Icons.calendar_month_outlined, AppStrings.navAppointments, AppColors.appointments, _pendingAppointments),
+                _buildNavItem(3, Icons.medication_rounded, Icons.medication_outlined, AppStrings.navPrescriptions, AppColors.prescriptions, 0),
+                _buildNavItem(4, Icons.account_balance_wallet_rounded, Icons.account_balance_wallet_outlined, AppStrings.navBilling, AppColors.billing, _unpaidInvoices),
               ],
             ),
           ),
@@ -104,13 +168,18 @@ class _HomeShellState extends ConsumerState<HomeShell> {
     );
   }
 
-  Widget _buildNavItem(int index, IconData activeIcon, IconData icon, String label, Color activeColor) {
+  Widget _buildNavItem(int index, IconData activeIcon, IconData icon, String label, Color activeColor, int badgeCount) {
     final isSelected = _index == index;
     final isDarkMode = context.isDarkMode;
     final unselectedColor = isDarkMode ? const Color(0xFF94A3B8) : const Color(0xFF94A3B8);
     
     return GestureDetector(
-      onTap: () => setState(() => _index = index),
+      onTap: () {
+        HapticFeedback.selectionClick();
+        setState(() => _index = index);
+        // Refresh badge counts when switching tabs
+        _loadBadgeCounts();
+      },
       child: AnimatedContainer(
         duration: AppDuration.short,
         curve: Curves.easeOutCubic,
@@ -132,13 +201,29 @@ class _HomeShellState extends ConsumerState<HomeShell> {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            AnimatedContainer(
-              duration: AppDuration.fast,
-              child: Icon(
-                isSelected ? activeIcon : icon,
-                color: isSelected ? activeColor : unselectedColor,
-                size: isSelected ? 26 : AppIconSize.md,
-              ),
+            Stack(
+              clipBehavior: Clip.none,
+              children: [
+                AnimatedContainer(
+                  duration: AppDuration.fast,
+                  child: Icon(
+                    isSelected ? activeIcon : icon,
+                    color: isSelected ? activeColor : unselectedColor,
+                    size: isSelected ? 26 : AppIconSize.md,
+                  ),
+                ),
+                // Badge
+                if (badgeCount > 0)
+                  Positioned(
+                    right: -8,
+                    top: -4,
+                    child: AnimatedBadge(
+                      count: badgeCount,
+                      color: activeColor,
+                      size: 16,
+                    ),
+                  ),
+              ],
             ),
             const SizedBox(height: AppSpacing.xxs),
             AnimatedDefaultTextStyle(

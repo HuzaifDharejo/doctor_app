@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../core/core.dart';
 import '../../db/doctor_db.dart';
@@ -17,6 +18,23 @@ class PatientsScreen extends ConsumerStatefulWidget {
 class _PatientsScreenState extends ConsumerState<PatientsScreen> {
   String _searchQuery = '';
   String _filterRisk = 'All';
+  bool _isRefreshing = false;
+  final _refreshKey = GlobalKey<RefreshIndicatorState>();
+
+  Future<void> _onRefresh() async {
+    HapticFeedback.mediumImpact();
+    setState(() => _isRefreshing = true);
+    
+    // Invalidate the provider to force a refresh
+    ref.invalidate(doctorDbProvider);
+    
+    // Wait for a short delay to show the refresh animation
+    await Future.delayed(const Duration(milliseconds: 500));
+    
+    if (mounted) {
+      setState(() => _isRefreshing = false);
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -136,12 +154,21 @@ class _PatientsScreenState extends ConsumerState<PatientsScreen> {
 
   Widget _buildPatientList(BuildContext context, DoctorDatabase db) {
     final isCompact = AppBreakpoint.isCompact(context.screenWidth);
+    final isDark = context.isDarkMode;
     
     return FutureBuilder<List<Patient>>(
       future: db.getAllPatients(),
       builder: (context, snapshot) {
         if (!snapshot.hasData) {
-          return const LoadingState();
+          // Show shimmer loading
+          return ListView.builder(
+            padding: EdgeInsets.symmetric(horizontal: isCompact ? AppSpacing.sm : AppSpacing.lg),
+            itemCount: 5,
+            itemBuilder: (context, index) => Padding(
+              padding: EdgeInsets.only(bottom: isCompact ? AppSpacing.xs : AppSpacing.sm),
+              child: PatientCardShimmer(isCompact: isCompact),
+            ),
+          );
         }
         
         var patients = snapshot.data!;
@@ -179,12 +206,26 @@ class _PatientsScreenState extends ConsumerState<PatientsScreen> {
           );
         }
         
-        return ListView.builder(
-          padding: EdgeInsets.symmetric(horizontal: isCompact ? AppSpacing.sm : AppSpacing.lg),
-          itemCount: patients.length,
-          itemBuilder: (context, index) => Padding(
-            padding: EdgeInsets.only(bottom: isCompact ? AppSpacing.xs : AppSpacing.sm),
-            child: PatientCard(patient: patients[index]),
+        return RefreshIndicator(
+          key: _refreshKey,
+          onRefresh: _onRefresh,
+          color: AppColors.primary,
+          backgroundColor: isDark ? AppColors.darkSurface : Colors.white,
+          strokeWidth: 2.5,
+          displacement: 20,
+          child: ListView.builder(
+            physics: const AlwaysScrollableScrollPhysics(
+              parent: BouncingScrollPhysics(),
+            ),
+            padding: EdgeInsets.symmetric(horizontal: isCompact ? AppSpacing.sm : AppSpacing.lg),
+            itemCount: patients.length,
+            itemBuilder: (context, index) => Padding(
+              padding: EdgeInsets.only(bottom: isCompact ? AppSpacing.xs : AppSpacing.sm),
+              child: PatientCard(
+                patient: patients[index],
+                index: index,
+              ),
+            ),
           ),
         );
       },

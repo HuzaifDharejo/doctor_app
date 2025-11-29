@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
+import 'package:url_launcher/url_launcher.dart';
 import '../../core/core.dart';
 import '../../db/doctor_db.dart';
 import '../../providers/db_provider.dart';
@@ -18,6 +20,17 @@ class AppointmentsScreen extends ConsumerStatefulWidget {
 class _AppointmentsScreenState extends ConsumerState<AppointmentsScreen> {
   DateTime _selectedDate = DateTime.now();
   bool _showCalendar = false;
+  bool _isRefreshing = false;
+  final _refreshKey = GlobalKey<RefreshIndicatorState>();
+  
+  Future<void> _onRefresh() async {
+    HapticFeedback.mediumImpact();
+    setState(() => _isRefreshing = true);
+    await Future.delayed(const Duration(milliseconds: 500));
+    if (mounted) {
+      setState(() => _isRefreshing = false);
+    }
+  }
   
   @override
   Widget build(BuildContext context) {
@@ -212,6 +225,8 @@ class _AppointmentsScreenState extends ConsumerState<AppointmentsScreen> {
   }
 
   Widget _buildAppointmentsList(BuildContext context, DoctorDatabase db) {
+    final isDark = context.isDarkMode;
+    
     return FutureBuilder<List<Appointment>>(
       future: db.getAppointmentsForDay(_selectedDate),
       builder: (context, snapshot) {
@@ -228,12 +243,36 @@ class _AppointmentsScreenState extends ConsumerState<AppointmentsScreen> {
         }
         
         final isCompact = context.isCompact;
-        return ListView.builder(
-          padding: EdgeInsets.symmetric(horizontal: isCompact ? AppSpacing.md : AppSpacing.xl),
-          itemCount: appointments.length,
-          itemBuilder: (context, index) {
-            return _buildAppointmentCard(context, db, appointments[index]);
-          },
+        return RefreshIndicator(
+          key: _refreshKey,
+          onRefresh: _onRefresh,
+          color: AppColors.appointments,
+          backgroundColor: isDark ? AppColors.darkSurface : Colors.white,
+          strokeWidth: 2.5,
+          child: ListView.builder(
+            physics: const AlwaysScrollableScrollPhysics(
+              parent: BouncingScrollPhysics(),
+            ),
+            padding: EdgeInsets.symmetric(horizontal: isCompact ? AppSpacing.md : AppSpacing.xl),
+            itemCount: appointments.length,
+            itemBuilder: (context, index) {
+              return TweenAnimationBuilder<double>(
+                tween: Tween(begin: 0.0, end: 1.0),
+                duration: Duration(milliseconds: 300 + (index * 50)),
+                curve: Curves.easeOutCubic,
+                builder: (context, value, child) {
+                  return Opacity(
+                    opacity: value,
+                    child: Transform.translate(
+                      offset: Offset(0, 20 * (1 - value)),
+                      child: child,
+                    ),
+                  );
+                },
+                child: _buildAppointmentCard(context, db, appointments[index]),
+              );
+            },
+          ),
         );
       },
     );
@@ -244,6 +283,7 @@ class _AppointmentsScreenState extends ConsumerState<AppointmentsScreen> {
     final statusColor = _getStatusColor(appt.status);
     final isDark = context.isDarkMode;
     final isCompact = context.isCompact;
+    final isUpcoming = appt.appointmentDateTime.isAfter(DateTime.now());
     
     return FutureBuilder<Patient?>(
       future: db.getPatientById(appt.patientId),
@@ -253,172 +293,354 @@ class _AppointmentsScreenState extends ConsumerState<AppointmentsScreen> {
             ? '${patient.firstName} ${patient.lastName}'
             : 'Patient #${appt.patientId}';
     
-        return Container(
-          margin: EdgeInsets.only(bottom: isCompact ? AppSpacing.sm : AppSpacing.lg),
-          decoration: BoxDecoration(
-            color: context.colorScheme.surface,
-            borderRadius: BorderRadius.circular(AppRadius.xl),
-            border: Border.all(color: (isDark ? AppColors.darkDivider : AppColors.divider).withOpacity(0.5)),
-            boxShadow: [
-              BoxShadow(
-                color: AppColors.appointments.withOpacity(0.08),
-                blurRadius: 20,
-                offset: const Offset(0, 8),
-              ),
-            ],
-          ),
-          child: Material(
-            color: Colors.transparent,
-            child: InkWell(
+        return Dismissible(
+          key: Key('appt_${appt.id}'),
+          direction: isUpcoming ? DismissDirection.horizontal : DismissDirection.none,
+          background: Container(
+            margin: EdgeInsets.only(bottom: isCompact ? AppSpacing.sm : AppSpacing.lg),
+            decoration: BoxDecoration(
+              color: AppColors.success.withOpacity(0.2),
               borderRadius: BorderRadius.circular(AppRadius.xl),
-              onTap: () => _showAppointmentDetails(context, appt, patient),
-              child: Row(
-                children: [
-                  // Time indicator with gradient
-                  Container(
-                    width: isCompact ? 75 : 90,
-                    padding: EdgeInsets.symmetric(vertical: isCompact ? AppSpacing.xl : AppSpacing.xxl),
-                    decoration: BoxDecoration(
-                      gradient: LinearGradient(
-                        colors: [
-                          AppColors.appointments,
-                          AppColors.appointments.withOpacity(0.8),
-                        ],
-                        begin: Alignment.topCenter,
-                        end: Alignment.bottomCenter,
-                      ),
-                      borderRadius: const BorderRadius.only(
-                        topLeft: Radius.circular(AppRadius.xl),
-                        bottomLeft: Radius.circular(AppRadius.xl),
-                      ),
-                    ),
-                    child: Column(
+            ),
+            alignment: Alignment.centerLeft,
+            padding: const EdgeInsets.only(left: 20),
+            child: Row(
+              children: [
+                Icon(Icons.check_circle, color: AppColors.success, size: 28),
+                const SizedBox(width: 8),
+                Text(
+                  'Confirm',
+                  style: TextStyle(
+                    color: AppColors.success,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          secondaryBackground: Container(
+            margin: EdgeInsets.only(bottom: isCompact ? AppSpacing.sm : AppSpacing.lg),
+            decoration: BoxDecoration(
+              color: AppColors.error.withOpacity(0.2),
+              borderRadius: BorderRadius.circular(AppRadius.xl),
+            ),
+            alignment: Alignment.centerRight,
+            padding: const EdgeInsets.only(right: 20),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.end,
+              children: [
+                Text(
+                  'Cancel',
+                  style: TextStyle(
+                    color: AppColors.error,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+                const SizedBox(width: 8),
+                Icon(Icons.cancel, color: AppColors.error, size: 28),
+              ],
+            ),
+          ),
+          confirmDismiss: (direction) async {
+            HapticFeedback.mediumImpact();
+            if (direction == DismissDirection.startToEnd) {
+              // Confirm appointment
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(
+                  content: const Text('Appointment confirmed'),
+                  backgroundColor: AppColors.success,
+                  behavior: SnackBarBehavior.floating,
+                ),
+              );
+            } else {
+              // Cancel appointment
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(
+                  content: const Text('Appointment cancelled'),
+                  backgroundColor: AppColors.error,
+                  behavior: SnackBarBehavior.floating,
+                ),
+              );
+            }
+            return false; // Don't actually dismiss
+          },
+          child: Container(
+            margin: EdgeInsets.only(bottom: isCompact ? AppSpacing.sm : AppSpacing.lg),
+            decoration: BoxDecoration(
+              color: context.colorScheme.surface,
+              borderRadius: BorderRadius.circular(AppRadius.xl),
+              border: Border.all(color: (isDark ? AppColors.darkDivider : AppColors.divider).withOpacity(0.5)),
+              boxShadow: [
+                BoxShadow(
+                  color: AppColors.appointments.withOpacity(0.08),
+                  blurRadius: 20,
+                  offset: const Offset(0, 8),
+                ),
+              ],
+            ),
+            child: Material(
+              color: Colors.transparent,
+              child: InkWell(
+                borderRadius: BorderRadius.circular(AppRadius.xl),
+                onTap: () => _showAppointmentDetails(context, appt, patient),
+                child: Column(
+                  children: [
+                    Row(
                       children: [
-                        Text(
-                          time.split(' ')[0],
-                          style: TextStyle(
-                            fontSize: isCompact ? AppFontSize.lg : AppFontSize.xl,
-                            fontWeight: FontWeight.w800,
-                            color: Colors.white,
-                          ),
-                        ),
-                        Text(
-                          time.split(' ')[1],
-                          style: TextStyle(
-                            fontSize: isCompact ? AppFontSize.xxs : AppFontSize.xs,
-                            fontWeight: FontWeight.w600,
-                            color: Colors.white.withOpacity(0.85),
-                          ),
-                        ),
-                        SizedBox(height: AppSpacing.xs),
+                        // Time indicator with gradient
                         Container(
-                          padding: EdgeInsets.symmetric(horizontal: AppSpacing.xs, vertical: AppSpacing.xxs),
+                          width: isCompact ? 75 : 90,
+                          padding: EdgeInsets.symmetric(vertical: isCompact ? AppSpacing.xl : AppSpacing.xxl),
                           decoration: BoxDecoration(
-                            color: Colors.white.withOpacity(0.2),
-                            borderRadius: BorderRadius.circular(AppRadius.xs),
+                            gradient: LinearGradient(
+                              colors: [
+                                AppColors.appointments,
+                                AppColors.appointments.withOpacity(0.8),
+                              ],
+                              begin: Alignment.topCenter,
+                              end: Alignment.bottomCenter,
+                            ),
+                            borderRadius: const BorderRadius.only(
+                              topLeft: Radius.circular(AppRadius.xl),
+                              bottomLeft: Radius.circular(AppRadius.xl),
+                            ),
                           ),
-                          child: Text(
-                            '${appt.durationMinutes}m',
-                            style: TextStyle(
-                              fontSize: AppFontSize.xxs,
-                              fontWeight: FontWeight.w600,
-                              color: Colors.white.withOpacity(0.95),
+                          child: Column(
+                            children: [
+                              Text(
+                                time.split(' ')[0],
+                                style: TextStyle(
+                                  fontSize: isCompact ? AppFontSize.lg : AppFontSize.xl,
+                                  fontWeight: FontWeight.w800,
+                                  color: Colors.white,
+                                ),
+                              ),
+                              Text(
+                                time.split(' ')[1],
+                                style: TextStyle(
+                                  fontSize: isCompact ? AppFontSize.xxs : AppFontSize.xs,
+                                  fontWeight: FontWeight.w600,
+                                  color: Colors.white.withOpacity(0.85),
+                                ),
+                              ),
+                              SizedBox(height: AppSpacing.xs),
+                              Container(
+                                padding: EdgeInsets.symmetric(horizontal: AppSpacing.xs, vertical: AppSpacing.xxs),
+                                decoration: BoxDecoration(
+                                  color: Colors.white.withOpacity(0.2),
+                                  borderRadius: BorderRadius.circular(AppRadius.xs),
+                                ),
+                                child: Text(
+                                  '${appt.durationMinutes}m',
+                                  style: TextStyle(
+                                    fontSize: AppFontSize.xxs,
+                                    fontWeight: FontWeight.w600,
+                                    color: Colors.white.withOpacity(0.95),
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                
+                        // Appointment details
+                        Expanded(
+                          child: Padding(
+                            padding: EdgeInsets.all(isCompact ? AppSpacing.sm : AppSpacing.lg),
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Row(
+                                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                  children: [
+                                    Expanded(
+                                      child: Text(
+                                        patientName,
+                                        style: TextStyle(
+                                          fontSize: isCompact ? AppFontSize.sm : AppFontSize.md,
+                                          fontWeight: FontWeight.w700,
+                                          color: context.colorScheme.onSurface,
+                                          letterSpacing: -0.3,
+                                        ),
+                                        maxLines: 1,
+                                        overflow: TextOverflow.ellipsis,
+                                      ),
+                                    ),
+                                    SizedBox(width: AppSpacing.xs),
+                                    Container(
+                                      padding: EdgeInsets.symmetric(horizontal: AppSpacing.sm, vertical: AppSpacing.xxs),
+                                      decoration: BoxDecoration(
+                                        gradient: LinearGradient(
+                                          colors: [
+                                            statusColor.withOpacity(0.2),
+                                            statusColor.withOpacity(0.1),
+                                          ],
+                                        ),
+                                        borderRadius: BorderRadius.circular(AppRadius.sm),
+                                      ),
+                                      child: Text(
+                                        appt.status.toUpperCase(),
+                                        style: TextStyle(
+                                          fontSize: AppFontSize.xxs,
+                                          fontWeight: FontWeight.w700,
+                                          color: statusColor,
+                                          letterSpacing: 0.5,
+                                        ),
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                                SizedBox(height: AppSpacing.sm),
+                                Row(
+                                  children: [
+                                    Container(
+                                      padding: EdgeInsets.all(AppSpacing.xs),
+                                      decoration: BoxDecoration(
+                                        color: AppColors.prescriptions.withOpacity(0.1),
+                                        borderRadius: BorderRadius.circular(AppRadius.xs),
+                                      ),
+                                      child: Icon(Icons.medical_services_rounded, size: 14, color: AppColors.prescriptions),
+                                    ),
+                                    SizedBox(width: AppSpacing.xs),
+                                    Expanded(
+                                      child: Text(
+                                        appt.reason.isNotEmpty ? appt.reason : 'General Checkup',
+                                        style: TextStyle(
+                                          fontSize: isCompact ? AppFontSize.xxs : AppFontSize.xs,
+                                          fontWeight: FontWeight.w500,
+                                          color: isDark ? AppColors.darkTextSecondary : AppColors.textSecondary,
+                                        ),
+                                        maxLines: 1,
+                                        overflow: TextOverflow.ellipsis,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ],
                             ),
                           ),
                         ),
                       ],
                     ),
-                  ),
-          
-                  // Appointment details
-                  Expanded(
-                    child: Padding(
-                      padding: EdgeInsets.all(isCompact ? AppSpacing.sm : AppSpacing.lg),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Row(
-                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                            children: [
-                              Expanded(
-                                child: Text(
-                                  patientName,
-                                  style: TextStyle(
-                                    fontSize: isCompact ? AppFontSize.sm : AppFontSize.md,
-                                    fontWeight: FontWeight.w700,
-                                    color: context.colorScheme.onSurface,
-                                    letterSpacing: -0.3,
-                                  ),
-                                  maxLines: 1,
-                                  overflow: TextOverflow.ellipsis,
-                                ),
-                              ),
-                              SizedBox(width: AppSpacing.xs),
-                              Container(
-                                padding: EdgeInsets.symmetric(horizontal: AppSpacing.sm, vertical: AppSpacing.xxs),
-                                decoration: BoxDecoration(
-                                  gradient: LinearGradient(
-                                    colors: [
-                                      statusColor.withOpacity(0.2),
-                                      statusColor.withOpacity(0.1),
-                                    ],
-                                  ),
-                                  borderRadius: BorderRadius.circular(AppRadius.sm),
-                                ),
-                                child: Text(
-                                  appt.status.toUpperCase(),
-                                  style: TextStyle(
-                                    fontSize: AppFontSize.xxs,
-                                    fontWeight: FontWeight.w700,
-                                    color: statusColor,
-                                    letterSpacing: 0.5,
-                                  ),
-                                ),
-                              ),
-                            ],
+                    // Quick action buttons
+                    if (patient != null && isUpcoming)
+                      Container(
+                        decoration: BoxDecoration(
+                          color: isDark 
+                              ? Colors.white.withOpacity(0.03)
+                              : Colors.grey.withOpacity(0.05),
+                          borderRadius: const BorderRadius.only(
+                            bottomLeft: Radius.circular(AppRadius.xl),
+                            bottomRight: Radius.circular(AppRadius.xl),
                           ),
-                          SizedBox(height: AppSpacing.sm),
-                          Row(
-                            children: [
-                              Container(
-                                padding: EdgeInsets.all(AppSpacing.xs),
-                                decoration: BoxDecoration(
-                                  color: AppColors.prescriptions.withOpacity(0.1),
-                                  borderRadius: BorderRadius.circular(AppRadius.xs),
-                                ),
-                                child: Icon(Icons.medical_services_rounded, size: 14, color: AppColors.prescriptions),
+                        ),
+                        padding: EdgeInsets.symmetric(
+                          horizontal: isCompact ? AppSpacing.sm : AppSpacing.md,
+                          vertical: AppSpacing.sm,
+                        ),
+                        child: Row(
+                          children: [
+                            if (patient.phone.isNotEmpty) ...[
+                              _buildQuickAction(
+                                context,
+                                icon: Icons.phone_rounded,
+                                label: 'Call',
+                                color: AppColors.success,
+                                onTap: () => _callPatient(patient.phone),
                               ),
-                              SizedBox(width: AppSpacing.xs),
-                              Expanded(
-                                child: Text(
-                                  appt.reason.isNotEmpty ? appt.reason : 'General Checkup',
-                                  style: TextStyle(
-                                    fontSize: isCompact ? AppFontSize.xxs : AppFontSize.xs,
-                                    fontWeight: FontWeight.w500,
-                                    color: isDark ? AppColors.darkTextSecondary : AppColors.textSecondary,
-                                  ),
-                                  maxLines: 1,
-                                  overflow: TextOverflow.ellipsis,
-                                ),
+                              SizedBox(width: AppSpacing.sm),
+                              _buildQuickAction(
+                                context,
+                                icon: Icons.message_rounded,
+                                label: 'SMS',
+                                color: AppColors.info,
+                                onTap: () => _messagePatient(patient.phone),
                               ),
-                              Icon(
-                                Icons.arrow_forward_ios_rounded,
-                                size: 14,
-                                color: isDark ? AppColors.darkTextHint : AppColors.textHint,
-                              ),
+                              SizedBox(width: AppSpacing.sm),
                             ],
-                          ),
-                        ],
+                            _buildQuickAction(
+                              context,
+                              icon: Icons.edit_calendar_rounded,
+                              label: 'Reschedule',
+                              color: AppColors.warning,
+                              onTap: () {
+                                HapticFeedback.lightImpact();
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  const SnackBar(
+                                    content: Text('Reschedule feature coming soon'),
+                                    behavior: SnackBarBehavior.floating,
+                                  ),
+                                );
+                              },
+                            ),
+                            const Spacer(),
+                            Icon(
+                              Icons.arrow_forward_ios_rounded,
+                              size: 14,
+                              color: isDark ? AppColors.darkTextHint : AppColors.textHint,
+                            ),
+                          ],
+                        ),
                       ),
-                    ),
-                  ),
-                ],
+                  ],
+                ),
               ),
             ),
           ),
         );
       },
     );
+  }
+  
+  Widget _buildQuickAction(
+    BuildContext context, {
+    required IconData icon,
+    required String label,
+    required Color color,
+    required VoidCallback onTap,
+  }) {
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(8),
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+        decoration: BoxDecoration(
+          color: color.withOpacity(0.1),
+          borderRadius: BorderRadius.circular(8),
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(icon, size: 14, color: color),
+            const SizedBox(width: 4),
+            Text(
+              label,
+              style: TextStyle(
+                fontSize: 11,
+                fontWeight: FontWeight.w600,
+                color: color,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+  
+  Future<void> _callPatient(String phone) async {
+    HapticFeedback.lightImpact();
+    final url = Uri.parse('tel:$phone');
+    if (await canLaunchUrl(url)) {
+      await launchUrl(url);
+    }
+  }
+  
+  Future<void> _messagePatient(String phone) async {
+    HapticFeedback.lightImpact();
+    final url = Uri.parse('sms:$phone');
+    if (await canLaunchUrl(url)) {
+      await launchUrl(url);
+    }
   }
 
   void _showAppointmentDetails(BuildContext context, Appointment appointment, Patient? patient) {

@@ -6,16 +6,45 @@ import 'package:googleapis_auth/googleapis_auth.dart' as auth;
 import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
 
+/// User info from Google Sign-In
+class GoogleUserInfo {
+  final String email;
+  final String? displayName;
+  final String? photoUrl;
+  final String? id;
+
+  GoogleUserInfo({
+    required this.email,
+    this.displayName,
+    this.photoUrl,
+    this.id,
+  });
+
+  String get firstName {
+    if (displayName == null || displayName!.isEmpty) return '';
+    final parts = displayName!.split(' ');
+    return parts.isNotEmpty ? parts.first : '';
+  }
+
+  String get lastName {
+    if (displayName == null || displayName!.isEmpty) return '';
+    final parts = displayName!.split(' ');
+    return parts.length > 1 ? parts.sublist(1).join(' ') : '';
+  }
+}
+
 /// Service for managing Google Calendar integration
 class GoogleCalendarService {
   static const String _connectedKey = 'google_calendar_connected';
   static const String _calendarIdKey = 'google_calendar_id';
   static const String _userEmailKey = 'google_user_email';
   static const String _userNameKey = 'google_user_name';
+  static const String _userPhotoKey = 'google_user_photo';
 
   final GoogleSignIn _googleSignIn = GoogleSignIn(
     scopes: [
       'email',
+      'profile',
       gcal.CalendarApi.calendarScope,
       gcal.CalendarApi.calendarEventsScope,
     ],
@@ -27,6 +56,17 @@ class GoogleCalendarService {
   // Stream controller for connection state changes
   final _connectionStateController = StreamController<bool>.broadcast();
   Stream<bool> get connectionStateStream => _connectionStateController.stream;
+
+  /// Get current user info
+  GoogleUserInfo? get currentUserInfo {
+    if (_currentUser == null) return null;
+    return GoogleUserInfo(
+      email: _currentUser!.email,
+      displayName: _currentUser!.displayName,
+      photoUrl: _currentUser!.photoUrl,
+      id: _currentUser!.id,
+    );
+  }
 
   /// Check if already signed in
   Future<bool> isConnected() async {
@@ -46,8 +86,15 @@ class GoogleCalendarService {
     return prefs.getString(_userNameKey);
   }
 
+  /// Get connected user photo URL
+  Future<String?> getConnectedPhotoUrl() async {
+    final prefs = await SharedPreferences.getInstance();
+    return prefs.getString(_userPhotoKey);
+  }
+
   /// Sign in to Google and authorize Calendar access
-  Future<bool> signIn() async {
+  /// Returns GoogleUserInfo on success, null on failure
+  Future<GoogleUserInfo?> signInAndGetUserInfo() async {
     try {
       // Try silent sign in first
       _currentUser = await _googleSignIn.signInSilently();
@@ -56,7 +103,7 @@ class GoogleCalendarService {
       _currentUser ??= await _googleSignIn.signIn();
       
       if (_currentUser == null) {
-        return false;
+        return null;
       }
 
       // Get auth headers for API calls
@@ -69,13 +116,28 @@ class GoogleCalendarService {
       await prefs.setBool(_connectedKey, true);
       await prefs.setString(_userEmailKey, _currentUser!.email);
       await prefs.setString(_userNameKey, _currentUser!.displayName ?? '');
+      if (_currentUser!.photoUrl != null) {
+        await prefs.setString(_userPhotoKey, _currentUser!.photoUrl!);
+      }
 
       _connectionStateController.add(true);
-      return true;
+      
+      return GoogleUserInfo(
+        email: _currentUser!.email,
+        displayName: _currentUser!.displayName,
+        photoUrl: _currentUser!.photoUrl,
+        id: _currentUser!.id,
+      );
     } catch (e) {
       debugPrint('Google Sign-In error: $e');
-      return false;
+      return null;
     }
+  }
+
+  /// Sign in to Google and authorize Calendar access (legacy method)
+  Future<bool> signIn() async {
+    final userInfo = await signInAndGetUserInfo();
+    return userInfo != null;
   }
 
   /// Sign out and disconnect Google Calendar
@@ -89,6 +151,7 @@ class GoogleCalendarService {
       await prefs.setBool(_connectedKey, false);
       await prefs.remove(_userEmailKey);
       await prefs.remove(_userNameKey);
+      await prefs.remove(_userPhotoKey);
       await prefs.remove(_calendarIdKey);
 
       _connectionStateController.add(false);
@@ -172,8 +235,8 @@ class GoogleCalendarService {
   Future<List<TimeSlot>> getAvailableSlots({
     required DateTime date,
     required Duration slotDuration,
-    TimeOfDay startTime = const TimeOfDay(hour: 9, minute: 0),
-    TimeOfDay endTime = const TimeOfDay(hour: 17, minute: 0),
+    CalendarTimeOfDay startTime = const CalendarTimeOfDay(hour: 9, minute: 0),
+    CalendarTimeOfDay endTime = const CalendarTimeOfDay(hour: 17, minute: 0),
   }) async {
     final api = await _ensureApi();
     if (api == null) return [];
@@ -388,12 +451,12 @@ class TimeSlot {
   Duration get duration => endTime.difference(startTime);
 }
 
-/// Helper class for TimeOfDay (for slot generation)
-class TimeOfDay {
+/// Helper class for time of day (for slot generation)
+class CalendarTimeOfDay {
   final int hour;
   final int minute;
 
-  const TimeOfDay({required this.hour, required this.minute});
+  const CalendarTimeOfDay({required this.hour, required this.minute});
 }
 
 /// Date range helper

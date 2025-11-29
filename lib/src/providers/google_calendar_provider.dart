@@ -9,6 +9,7 @@ class GoogleCalendarState {
   final bool isLoading;
   final String? userEmail;
   final String? userName;
+  final String? userPhotoUrl;
   final String? error;
   final List<gcal.CalendarListEntry> calendars;
   final String selectedCalendarId;
@@ -18,6 +19,7 @@ class GoogleCalendarState {
     this.isLoading = false,
     this.userEmail,
     this.userName,
+    this.userPhotoUrl,
     this.error,
     this.calendars = const [],
     this.selectedCalendarId = 'primary',
@@ -28,6 +30,7 @@ class GoogleCalendarState {
     bool? isLoading,
     String? userEmail,
     String? userName,
+    String? userPhotoUrl,
     String? error,
     List<gcal.CalendarListEntry>? calendars,
     String? selectedCalendarId,
@@ -37,6 +40,7 @@ class GoogleCalendarState {
       isLoading: isLoading ?? this.isLoading,
       userEmail: userEmail ?? this.userEmail,
       userName: userName ?? this.userName,
+      userPhotoUrl: userPhotoUrl ?? this.userPhotoUrl,
       error: error,
       calendars: calendars ?? this.calendars,
       selectedCalendarId: selectedCalendarId ?? this.selectedCalendarId,
@@ -59,6 +63,7 @@ class GoogleCalendarNotifier extends StateNotifier<GoogleCalendarState> {
     if (isConnected) {
       final email = await _service.getConnectedEmail();
       final name = await _service.getConnectedName();
+      final photoUrl = await _service.getConnectedPhotoUrl();
       final calendarId = await _service.getSelectedCalendarId();
       
       // Try to get calendars
@@ -69,6 +74,7 @@ class GoogleCalendarNotifier extends StateNotifier<GoogleCalendarState> {
         isLoading: false,
         userEmail: email,
         userName: name,
+        userPhotoUrl: photoUrl,
         calendars: calendars,
         selectedCalendarId: calendarId,
       );
@@ -77,33 +83,38 @@ class GoogleCalendarNotifier extends StateNotifier<GoogleCalendarState> {
     }
   }
 
-  Future<bool> signIn() async {
+  /// Sign in with Google and return user info for SSO
+  Future<GoogleUserInfo?> signInAndGetUserInfo() async {
     state = state.copyWith(isLoading: true, error: null);
     
-    final success = await _service.signIn();
+    final userInfo = await _service.signInAndGetUserInfo();
     
-    if (success) {
-      final email = await _service.getConnectedEmail();
-      final name = await _service.getConnectedName();
+    if (userInfo != null) {
       final calendars = await _service.getCalendars();
       final calendarId = await _service.getSelectedCalendarId();
       
       state = state.copyWith(
         isConnected: true,
         isLoading: false,
-        userEmail: email,
-        userName: name,
+        userEmail: userInfo.email,
+        userName: userInfo.displayName,
+        userPhotoUrl: userInfo.photoUrl,
         calendars: calendars,
         selectedCalendarId: calendarId,
       );
-      return true;
+      return userInfo;
     } else {
       state = state.copyWith(
         isLoading: false,
         error: 'Failed to sign in with Google',
       );
-      return false;
+      return null;
     }
+  }
+
+  Future<bool> signIn() async {
+    final userInfo = await signInAndGetUserInfo();
+    return userInfo != null;
   }
 
   Future<void> signOut() async {
@@ -132,8 +143,8 @@ class GoogleCalendarNotifier extends StateNotifier<GoogleCalendarState> {
   Future<List<TimeSlot>> getAvailableSlots({
     required DateTime date,
     Duration slotDuration = const Duration(minutes: 30),
-    TimeOfDay startTime = const TimeOfDay(hour: 9, minute: 0),
-    TimeOfDay endTime = const TimeOfDay(hour: 17, minute: 0),
+    CalendarTimeOfDay startTime = const CalendarTimeOfDay(hour: 9, minute: 0),
+    CalendarTimeOfDay endTime = const CalendarTimeOfDay(hour: 17, minute: 0),
   }) async {
     if (!state.isConnected) return [];
     return _service.getAvailableSlots(
