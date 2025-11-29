@@ -734,7 +734,11 @@ Future<void> _insertSampleData(DoctorDatabase db) async {
       final recordType = recordTypes[random.nextInt(recordTypes.length)];
       final recordDate = today.subtract(Duration(days: random.nextInt(730))); // Last 2 years
       
-      String title, description, diagnosis, treatment, doctorNotes;
+      String title;
+      String description;
+      String diagnosis;
+      String treatment;
+      String doctorNotes;
       Map<String, dynamic> dataJson = {};
       
       switch (recordType) {

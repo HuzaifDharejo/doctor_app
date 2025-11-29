@@ -210,7 +210,7 @@ final class Failure<T, E> extends Result<T, E> {
   String toString() => 'Failure($error)';
 }
 
-/// Extension to convert Future<T> to Future<Result<T, E>>
+/// Extension to convert `Future<T>` to `Future<Result<T, E>>`
 extension FutureResultExtension<T> on Future<T> {
   /// Wraps the future in a Result, catching exceptions
   Future<Result<T, Exception>> toResult() async {
@@ -251,5 +251,5 @@ class Unit {
   String toString() => '()';
 }
 
-/// Type alias for Result<Unit, E> - operations that can fail but don't return a value
+/// Type alias for `Result<Unit, E>` - operations that can fail but don't return a value
 typedef VoidResult<E> = Result<Unit, E>;

@@ -167,10 +167,12 @@ class _GlobalSearchBarState extends ConsumerState<GlobalSearchBar> {
           final int patientId = (result.data as dynamic).patientId as int;
           final patient = await db.getPatientById(patientId);
           if (patient != null && mounted) {
-            Navigator.push<void>(
-              context,
-              MaterialPageRoute<void>(
-                builder: (_) => PatientViewScreen(patient: patient),
+            unawaited(
+              Navigator.push<void>(
+                context,
+                MaterialPageRoute<void>(
+                  builder: (_) => PatientViewScreen(patient: patient),
+                ),
               ),
             );
           }

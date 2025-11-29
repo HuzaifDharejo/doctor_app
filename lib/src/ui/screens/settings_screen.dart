@@ -1634,7 +1634,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> with SingleTick
               trailing: Switch(
                 value: true,
                 onChanged: (v) {
-                  // TODO: Implement sync settings persistence
+                  // TODO(developer): Implement sync settings persistence
                 },
                 activeTrackColor: AppColors.primary.withValues(alpha: 0.5),
                 activeThumbColor: AppColors.primary,
@@ -1647,7 +1647,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> with SingleTick
               trailing: Switch(
                 value: true,
                 onChanged: (v) {
-                  // TODO: Implement reminder settings
+                  // TODO(developer): Implement reminder settings
                 },
                 activeTrackColor: AppColors.primary.withValues(alpha: 0.5),
                 activeThumbColor: AppColors.primary,

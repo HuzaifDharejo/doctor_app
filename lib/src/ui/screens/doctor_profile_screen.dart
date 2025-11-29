@@ -925,7 +925,8 @@ class _SignaturePreviewPainter extends CustomPainter {
     if (strokes.isEmpty) return;
     
     // Calculate bounds of the signature
-    double minX = double.infinity, minY = double.infinity;
+    double minX = double.infinity;
+    double minY = double.infinity;
     double maxX = double.negativeInfinity;
     double maxY = double.negativeInfinity;
     

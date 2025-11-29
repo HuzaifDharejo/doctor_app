@@ -248,14 +248,14 @@ class _Header extends StatelessWidget {
   }
 
   void _handleShare(BuildContext context) {
-    // TODO: Implement share functionality
+    // TODO(developer): Implement share functionality
     ScaffoldMessenger.of(context).showSnackBar(
       const SnackBar(content: Text('Share feature coming soon')),
     );
   }
 
   void _handlePrint(BuildContext context) {
-    // TODO: Implement print functionality
+    // TODO(developer): Implement print functionality
     ScaffoldMessenger.of(context).showSnackBar(
       const SnackBar(content: Text('Print feature coming soon')),
     );
@@ -1382,7 +1382,7 @@ class _ActionButtons extends StatelessWidget {
   }
 
   void _handleEdit(BuildContext context) {
-    // TODO: Navigate to edit screen
+    // TODO(developer): Navigate to edit screen
     ScaffoldMessenger.of(context).showSnackBar(
       const SnackBar(content: Text('Edit feature coming soon')),
     );
@@ -1402,7 +1402,7 @@ class _ActionButtons extends StatelessWidget {
           TextButton(
             onPressed: () {
               Navigator.pop(context);
-              // TODO: Implement actual deletion
+              // TODO(developer): Implement actual deletion
               ScaffoldMessenger.of(context).showSnackBar(
                 const SnackBar(content: Text('Delete feature coming soon')),
               );

@@ -16,10 +16,8 @@ class WhatsAppService {
       medications = jsonDecode(prescription.itemsJson) as List<dynamic>;
     } catch (_) {}
 
-    final buffer = StringBuffer();
-    
-    // Header
-    buffer
+    final buffer = StringBuffer()
+      // Header
       ..writeln('═══════════════════════')
       ..writeln('*$clinicName*');
     if (clinicPhone != null && clinicPhone.isNotEmpty) {
@@ -30,10 +28,8 @@ class WhatsAppService {
       ..writeln()
       ..writeln('*PRESCRIPTION*')
       ..writeln('📅 ${_formatDate(prescription.createdAt)}')
-      ..writeln();
-    
-    // Patient info
-    buffer
+      ..writeln()
+      // Patient info
       ..writeln('*Patient:* ${patient.firstName} ${patient.lastName}');
     if (patient.phone.isNotEmpty) {
       buffer.writeln('📱 ${patient.phone}');
@@ -101,10 +97,8 @@ class WhatsAppService {
       items = jsonDecode(invoice.itemsJson) as List<dynamic>;
     } catch (_) {}
 
-    final buffer = StringBuffer();
-    
-    // Header
-    buffer
+    final buffer = StringBuffer()
+      // Header
       ..writeln('═══════════════════════')
       ..writeln('*$clinicName*');
     if (clinicPhone != null && clinicPhone.isNotEmpty) {

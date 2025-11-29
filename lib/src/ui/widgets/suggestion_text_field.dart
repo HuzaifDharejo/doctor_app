@@ -379,9 +379,7 @@ class _VitalTextFieldState extends State<VitalTextField> {
   Widget _buildUnitButton(String unit, bool isSelected) {
     return GestureDetector(
       onTap: () {
-        if (widget.onUnitChanged != null) {
-          widget.onUnitChanged!(unit == widget.alternateUnit);
-        }
+        widget.onUnitChanged?.call(unit == widget.alternateUnit);
       },
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
