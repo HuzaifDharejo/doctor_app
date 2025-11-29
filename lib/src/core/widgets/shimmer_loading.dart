@@ -205,9 +205,9 @@ class PatientCardShimmer extends StatelessWidget {
                   const SizedBox(height: 10),
                   Row(
                     children: [
-                      ShimmerBox(width: 60, height: 24, borderRadius: 8),
+                      ShimmerBox(width: 60, height: 24),
                       const SizedBox(width: 6),
-                      ShimmerBox(width: 80, height: 24, borderRadius: 8),
+                      ShimmerBox(width: 80, height: 24),
                     ],
                   ),
                 ],

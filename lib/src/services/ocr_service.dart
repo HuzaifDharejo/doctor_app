@@ -14,7 +14,7 @@ class OcrService {
 
   /// Initialize the text recognizer
   TextRecognizer get textRecognizer {
-    _textRecognizer ??= TextRecognizer(script: TextRecognitionScript.latin);
+    _textRecognizer ??= TextRecognizer();
     return _textRecognizer!;
   }
 
@@ -117,9 +117,10 @@ class OcrService {
         final PdfTextExtractor extractor = PdfTextExtractor(document);
         final String pageText = extractor.extractText(startPageIndex: i, endPageIndex: i);
         if (pageText.isNotEmpty) {
-          extractedText.writeln('--- Page ${i + 1} ---');
-          extractedText.writeln(pageText);
-          extractedText.writeln();
+          extractedText
+            ..writeln('--- Page ${i + 1} ---')
+            ..writeln(pageText)
+            ..writeln();
         }
       }
 

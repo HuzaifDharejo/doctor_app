@@ -365,10 +365,11 @@ class GoogleCalendarService {
     try {
       final existingEvent = await api.events.get(selectedCalendarId, eventId);
       
-      existingEvent.summary = 'Appointment: $patientName';
-      existingEvent.description = _buildEventDescription(reason, notes, patientPhone, patientEmail);
-      existingEvent.start = (gcal.EventDateTime()..dateTime = startTime.toUtc()..timeZone = 'UTC');
-      existingEvent.end = (gcal.EventDateTime()..dateTime = endTime.toUtc()..timeZone = 'UTC');
+      existingEvent
+        ..summary = 'Appointment: $patientName'
+        ..description = _buildEventDescription(reason, notes, patientPhone, patientEmail)
+        ..start = (gcal.EventDateTime()..dateTime = startTime.toUtc()..timeZone = 'UTC')
+        ..end = (gcal.EventDateTime()..dateTime = endTime.toUtc()..timeZone = 'UTC');
 
       final updatedEvent = await api.events.update(existingEvent, selectedCalendarId, eventId);
       return updatedEvent;

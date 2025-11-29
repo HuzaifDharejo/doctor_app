@@ -84,7 +84,7 @@ class GoogleCalendarNotifier extends StateNotifier<GoogleCalendarState> {
 
   /// Sign in with Google and return user info for SSO
   Future<GoogleUserInfo?> signInAndGetUserInfo() async {
-    state = state.copyWith(isLoading: true, error: null);
+    state = state.copyWith(isLoading: true);
     
     final userInfo = await _service.signInAndGetUserInfo();
     

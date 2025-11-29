@@ -221,8 +221,9 @@ class _PulseAnimationState extends State<PulseAnimation>
       if (widget.enabled) {
         _controller.repeat(reverse: true);
       } else {
-        _controller.stop();
-        _controller.value = 0;
+        _controller
+          ..stop()
+          ..value = 0;
       }
     }
   }

@@ -150,21 +150,6 @@ class DoctorProfile {
 
   static DoctorProfile empty() {
     return DoctorProfile(
-      name: '',
-      specialization: '',
-      qualifications: '',
-      licenseNumber: '',
-      experienceYears: 0,
-      bio: '',
-      phone: '',
-      email: '',
-      clinicName: '',
-      clinicAddress: '',
-      clinicPhone: '',
-      consultationFee: 0,
-      followUpFee: 0,
-      emergencyFee: 0,
-      languages: [],
       workingHours: {
         'Monday': {'enabled': true, 'start': '09:00', 'end': '17:00'},
         'Tuesday': {'enabled': true, 'start': '09:00', 'end': '17:00'},

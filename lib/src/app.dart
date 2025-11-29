@@ -434,8 +434,9 @@ class _HomeShellState extends ConsumerState<HomeShell> {
                     title: AppStrings.doctorProfile,
                     subtitle: 'Manage your profile',
                     onTap: () {
-                      context.pop<void>();
-                      context.pushNamed<void>(AppRoutes.doctorProfile);
+                      context
+                        ..pop<void>()
+                        ..pushNamed<void>(AppRoutes.doctorProfile);
                     },
                     color: const Color(0xFF6366F1),
                     isDark: isDarkMode,
@@ -445,8 +446,9 @@ class _HomeShellState extends ConsumerState<HomeShell> {
                     title: AppStrings.settings,
                     subtitle: 'App preferences',
                     onTap: () {
-                      context.pop<void>();
-                      context.pushNamed<void>(AppRoutes.settings);
+                      context
+                        ..pop<void>()
+                        ..pushNamed<void>(AppRoutes.settings);
                     },
                     color: const Color(0xFF64748B),
                     isDark: isDarkMode,
@@ -477,8 +479,9 @@ class _HomeShellState extends ConsumerState<HomeShell> {
                       title: AppStrings.psychiatricAssessment,
                       subtitle: 'Patient assessment',
                       onTap: () {
-                        context.pop<void>();
-                        context.pushNamed<void>(AppRoutes.psychiatricAssessment);
+                        context
+                          ..pop<void>()
+                          ..pushNamed<void>(AppRoutes.psychiatricAssessment);
                       },
                       color: const Color(0xFF0EA5E9),
                       isDark: isDarkMode,
