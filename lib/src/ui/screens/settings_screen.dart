@@ -1,0 +1,892 @@
+import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../../core/core.dart';
+import '../../theme/app_theme.dart';
+import '../../providers/db_provider.dart';
+import '../../services/backup_service.dart';
+import '../../services/seed_data_service.dart';
+import 'doctor_profile_screen.dart';
+
+class SettingsScreen extends ConsumerWidget {
+  const SettingsScreen({super.key});
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final appSettings = ref.watch(appSettingsProvider);
+    
+    return Scaffold(
+      body: SafeArea(
+        child: CustomScrollView(
+          slivers: [
+            SliverToBoxAdapter(child: _buildHeader(context)),
+            SliverToBoxAdapter(child: _buildProfileCard(context, ref)),
+            SliverToBoxAdapter(child: _buildSettingsSections(context, ref, appSettings)),
+            const SliverToBoxAdapter(child: SizedBox(height: 100)),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildHeader(BuildContext context) {
+    final isDark = context.isDarkMode;
+    final isCompact = AppBreakpoint.isCompact(context.screenWidth);
+    
+    return AppHeader(
+      title: AppStrings.settings,
+      subtitle: AppStrings.manageSettings,
+      showBackButton: true,
+      trailing: Container(
+        padding: EdgeInsets.all(isCompact ? AppSpacing.xs : AppSpacing.xs),
+        decoration: BoxDecoration(
+          color: AppColors.primary.withOpacity(0.1),
+          borderRadius: BorderRadius.circular(AppRadius.xs),
+        ),
+        child: Icon(
+          Icons.settings_rounded,
+          color: AppColors.primary,
+          size: isCompact ? AppIconSize.sm : AppIconSize.md,
+        ),
+      ),
+    );
+  }
+
+  Widget _buildProfileCard(BuildContext context, WidgetRef ref) {
+    final profile = ref.watch(doctorSettingsProvider).profile;
+    final isCompact = AppBreakpoint.isCompact(context.screenWidth);
+    final padding = isCompact ? AppSpacing.sm : AppSpacing.lg;
+    final isDark = context.isDarkMode;
+    
+    return GestureDetector(
+      onTap: () {
+        Navigator.push(
+          context,
+          MaterialPageRoute(builder: (_) => const DoctorProfileScreen()),
+        );
+      },
+      child: Container(
+        margin: EdgeInsets.all(padding),
+        padding: EdgeInsets.all(isCompact ? AppSpacing.md : 22),
+        decoration: BoxDecoration(
+          gradient: const LinearGradient(
+            colors: [Color(0xFF6366F1), Color(0xFF8B5CF6), Color(0xFFA78BFA)],
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+          ),
+          borderRadius: BorderRadius.circular(AppRadius.xl),
+          boxShadow: [
+            BoxShadow(
+              color: AppColors.primary.withOpacity(0.4),
+              blurRadius: AppSpacing.lg,
+              offset: const Offset(0, 10),
+            ),
+          ],
+        ),
+        child: Row(
+          children: [
+            // Avatar with ring
+            Container(
+              padding: const EdgeInsets.all(3),
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                border: Border.all(color: Colors.white.withOpacity(0.5), width: 2),
+              ),
+              child: Container(
+                width: isCompact ? 52 : 64,
+                height: isCompact ? 52 : 64,
+                decoration: BoxDecoration(
+                  color: Colors.white.withOpacity(0.2),
+                  shape: BoxShape.circle,
+                ),
+                child: Center(
+                  child: Text(
+                    profile.initials,
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontSize: isCompact ? AppFontSize.lg : AppFontSize.xl,
+                      fontWeight: FontWeight.w800,
+                    ),
+                  ),
+                ),
+              ),
+            ),
+            SizedBox(width: isCompact ? AppSpacing.sm : AppFontSize.lg),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    profile.displayName,
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontSize: isCompact ? 15 : AppFontSize.lg,
+                      fontWeight: FontWeight.w800,
+                      letterSpacing: -0.3,
+                    ),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                  const SizedBox(height: AppSpacing.xxs),
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: AppSpacing.xs, vertical: AppSpacing.xxs),
+                    decoration: BoxDecoration(
+                      color: Colors.white.withOpacity(0.2),
+                      borderRadius: BorderRadius.circular(AppRadius.xs),
+                    ),
+                    child: Text(
+                      profile.specialization.isNotEmpty ? profile.specialization : 'Tap to set up',
+                      style: TextStyle(
+                        color: Colors.white.withOpacity(0.95),
+                        fontSize: isCompact ? AppFontSize.xxs : 11,
+                        fontWeight: FontWeight.w600,
+                      ),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ),
+                  if (profile.email.isNotEmpty) ...[
+                    const SizedBox(height: AppSpacing.xxs),
+                    Row(
+                      children: [
+                        Icon(Icons.email_rounded, size: AppFontSize.xs, color: Colors.white.withOpacity(0.7)),
+                        const SizedBox(width: AppSpacing.xxs),
+                        Expanded(
+                          child: Text(
+                            profile.email,
+                            style: TextStyle(
+                              color: Colors.white.withOpacity(0.8),
+                              fontSize: isCompact ? AppFontSize.xxs : 11,
+                            ),
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
+                ],
+              ),
+            ),
+            Container(
+              padding: EdgeInsets.all(isCompact ? AppSpacing.xs : AppSpacing.sm),
+              decoration: BoxDecoration(
+                color: Colors.white.withOpacity(0.2),
+                borderRadius: BorderRadius.circular(AppRadius.sm),
+              ),
+              child: Icon(
+                Icons.arrow_forward_ios_rounded,
+                color: Colors.white,
+                size: isCompact ? AppSpacing.md : AppFontSize.lg,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildSettingsSections(BuildContext context, WidgetRef ref, appSettings) {
+    final settings = appSettings.settings;
+    final lastBackup = settings.lastBackupDate;
+    final backupText = lastBackup != null 
+        ? lastBackup.relative
+        : 'Never';
+    
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: AppSpacing.lg),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          _buildSectionTitle(context, 'General'),
+          _buildSettingsGroup(context, [
+            _SettingItem(
+              icon: Icons.notifications_rounded,
+              iconColor: AppColors.warning,
+              title: AppStrings.notifications,
+              subtitle: settings.notificationsEnabled ? 'Enabled' : 'Disabled',
+              trailing: Switch(
+                value: settings.notificationsEnabled,
+                onChanged: (v) {
+                  ref.read(appSettingsProvider).setNotificationsEnabled(v);
+                },
+                activeColor: AppColors.primary,
+              ),
+            ),
+            _SettingItem(
+              icon: Icons.dark_mode_rounded,
+              iconColor: AppColors.primaryDark,
+              title: 'Dark Mode',
+              subtitle: settings.darkModeEnabled ? 'On' : 'Off',
+              trailing: Switch(
+                value: settings.darkModeEnabled,
+                onChanged: (v) {
+                  ref.read(appSettingsProvider).setDarkModeEnabled(v);
+                },
+                activeColor: AppColors.primary,
+              ),
+            ),
+            _SettingItem(
+              icon: Icons.language_rounded,
+              iconColor: AppColors.info,
+              title: 'Language',
+              subtitle: settings.language,
+              onTap: () => _showLanguageDialog(context, ref, settings.language),
+            ),
+          ]),
+          const SizedBox(height: AppSpacing.xl),
+          
+          _buildSectionTitle(context, 'Data & Privacy'),
+          _buildSettingsGroup(context, [
+            _SettingItem(
+              icon: Icons.backup_rounded,
+              iconColor: AppColors.success,
+              title: 'Backup & Restore',
+              subtitle: 'Last backup: $backupText',
+              onTap: () => _showBackupDialog(context, ref),
+            ),
+            _SettingItem(
+              icon: Icons.delete_forever_rounded,
+              iconColor: AppColors.error,
+              title: 'Clear All Data',
+              subtitle: 'Delete all app data',
+              onTap: () => _showClearDataDialog(context, ref),
+            ),
+            _SettingItem(
+              icon: Icons.privacy_tip_rounded,
+              iconColor: AppColors.accent,
+              title: 'Privacy Policy',
+              subtitle: 'Read our terms',
+              onTap: () => _showPrivacyPolicy(context),
+            ),
+          ]),
+          const SizedBox(height: AppSpacing.xl),
+          
+          _buildSectionTitle(context, 'Support'),
+          _buildSettingsGroup(context, [
+            _SettingItem(
+              icon: Icons.help_outline_rounded,
+              iconColor: AppColors.primary,
+              title: 'Help Center',
+              subtitle: 'FAQs & tutorials',
+              onTap: () => _showHelpCenter(context),
+            ),
+            _SettingItem(
+              icon: Icons.chat_bubble_outline_rounded,
+              iconColor: AppColors.accent,
+              title: 'Contact Support',
+              subtitle: 'Get help from our team',
+              onTap: () => _showContactSupport(context),
+            ),
+            _SettingItem(
+              icon: Icons.info_outline_rounded,
+              iconColor: AppColors.textSecondary,
+              title: 'About',
+              subtitle: 'Version 1.0.0',
+              onTap: () => _showAboutDialog(context),
+            ),
+          ]),
+          const SizedBox(height: AppSpacing.xl),
+          
+          // Reset Profile Button
+          Container(
+            width: double.infinity,
+            margin: const EdgeInsets.only(bottom: AppSpacing.lg),
+            child: OutlinedButton.icon(
+              onPressed: () => _showResetProfileDialog(context, ref),
+              style: OutlinedButton.styleFrom(
+                foregroundColor: AppColors.error,
+                side: const BorderSide(color: AppColors.error),
+                padding: const EdgeInsets.symmetric(vertical: AppFontSize.sm),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(AppRadius.sm),
+                ),
+              ),
+              icon: const Icon(Icons.person_off_rounded),
+              label: const Text('Reset Profile'),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _showLanguageDialog(BuildContext context, WidgetRef ref, String currentLanguage) {
+    final languages = ['English', 'Urdu', 'Arabic', 'Hindi', 'Sindhi'];
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Select Language'),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: languages.map((lang) => RadioListTile<String>(
+            title: Text(lang),
+            value: lang,
+            groupValue: currentLanguage,
+            onChanged: (value) {
+              if (value != null) {
+                ref.read(appSettingsProvider).setLanguage(value);
+                Navigator.pop(context);
+              }
+            },
+          )).toList(),
+        ),
+      ),
+    );
+  }
+
+  void _showBackupDialog(BuildContext context, WidgetRef ref) {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Row(
+          children: [
+            Icon(Icons.backup, color: AppColors.primary),
+            SizedBox(width: 12),
+            Text('Backup & Restore'),
+          ],
+        ),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            ListTile(
+              leading: const Icon(Icons.cloud_upload, color: AppColors.success),
+              title: const Text('Create Backup'),
+              subtitle: const Text('Save data to file'),
+              onTap: () async {
+                Navigator.pop(context);
+                await ref.read(appSettingsProvider).updateLastBackupDate();
+                if (context.mounted) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                      content: const Row(
+                        children: [
+                          Icon(Icons.check_circle, color: Colors.white),
+                          SizedBox(width: 12),
+                          Text('Backup created successfully!'),
+                        ],
+                      ),
+                      backgroundColor: Colors.green,
+                      behavior: SnackBarBehavior.floating,
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                    ),
+                  );
+                }
+              },
+            ),
+            ListTile(
+              leading: const Icon(Icons.cloud_download, color: AppColors.info),
+              title: const Text('Restore Backup'),
+              subtitle: const Text('Load data from file'),
+              onTap: () {
+                Navigator.pop(context);
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(
+                    content: const Text('Restore feature coming soon!'),
+                    behavior: SnackBarBehavior.floating,
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                  ),
+                );
+              },
+            ),
+            const Divider(),
+            ListTile(
+              leading: const Icon(Icons.dataset, color: AppColors.warning),
+              title: const Text('Load Demo Data'),
+              subtitle: const Text('Add sample patients & appointments'),
+              onTap: () async {
+                Navigator.pop(context);
+                _showLoadDemoDataDialog(context, ref);
+              },
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Close'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _showLoadDemoDataDialog(BuildContext context, WidgetRef ref) {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Row(
+          children: [
+            Icon(Icons.dataset, color: AppColors.warning),
+            SizedBox(width: 12),
+            Text('Load Demo Data'),
+          ],
+        ),
+        content: const Text(
+          'This will add sample patients, appointments, and prescriptions to your database. This is useful for testing or demonstration purposes.\n\nExisting data will NOT be affected.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Cancel'),
+          ),
+          ElevatedButton.icon(
+            onPressed: () async {
+              Navigator.pop(context);
+              try {
+                final dbAsync = ref.read(doctorDbProvider);
+                final db = await dbAsync.when(
+                  data: (db) => db,
+                  loading: () => throw Exception('Database loading'),
+                  error: (e, _) => throw e,
+                );
+                await seedSampleDataForce(db);
+                if (context.mounted) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                      content: const Row(
+                        children: [
+                          Icon(Icons.check_circle, color: Colors.white),
+                          SizedBox(width: 12),
+                          Text('Demo data loaded successfully!'),
+                        ],
+                      ),
+                      backgroundColor: Colors.green,
+                      behavior: SnackBarBehavior.floating,
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                    ),
+                  );
+                }
+              } catch (e) {
+                if (context.mounted) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                      content: Text('Failed to load demo data: $e'),
+                      backgroundColor: Colors.red,
+                      behavior: SnackBarBehavior.floating,
+                    ),
+                  );
+                }
+              }
+            },
+            icon: const Icon(Icons.add),
+            label: const Text('Load Data'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _showClearDataDialog(BuildContext context, WidgetRef ref) {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Row(
+          children: [
+            Icon(Icons.warning, color: AppColors.error),
+            SizedBox(width: 12),
+            Text('Clear All Data'),
+          ],
+        ),
+        content: const Text(
+          'This will permanently delete all your data including patients, appointments, prescriptions, and invoices. This action cannot be undone.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Cancel'),
+          ),
+          ElevatedButton(
+            onPressed: () async {
+              Navigator.pop(context);
+              // Clear settings
+              await ref.read(appSettingsProvider).clearSettings();
+              await ref.read(doctorSettingsProvider).clearProfile();
+              if (context.mounted) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(
+                    content: const Row(
+                      children: [
+                        Icon(Icons.check_circle, color: Colors.white),
+                        SizedBox(width: 12),
+                        Text('All data cleared'),
+                      ],
+                    ),
+                    backgroundColor: Colors.green,
+                    behavior: SnackBarBehavior.floating,
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                  ),
+                );
+              }
+            },
+            style: ElevatedButton.styleFrom(backgroundColor: AppColors.error),
+            child: const Text('Delete All', style: TextStyle(color: Colors.white)),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _showPrivacyPolicy(BuildContext context) {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Privacy Policy'),
+        content: const SingleChildScrollView(
+          child: Text(
+            'Doctor App Privacy Policy\n\n'
+            '1. Data Collection\n'
+            'We collect patient information, appointment data, and medical records solely for the purpose of providing healthcare services.\n\n'
+            '2. Data Storage\n'
+            'All data is stored locally on your device. We do not upload your data to any external servers without your explicit consent.\n\n'
+            '3. Data Security\n'
+            'We implement industry-standard security measures to protect your data from unauthorized access.\n\n'
+            '4. Data Sharing\n'
+            'We do not share your data with third parties unless required by law or with your explicit consent.\n\n'
+            '5. Your Rights\n'
+            'You have the right to access, modify, or delete your data at any time through the app settings.\n\n'
+            'For questions, contact: support@doctorapp.com',
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Close'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _showHelpCenter(BuildContext context) {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Row(
+          children: [
+            Icon(Icons.help_outline, color: AppColors.primary),
+            SizedBox(width: 12),
+            Text('Help Center'),
+          ],
+        ),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            _buildHelpItem('How to add a patient?', 'Go to Patients tab > Tap the + button > Fill in details'),
+            _buildHelpItem('How to create prescription?', 'Open patient > Tap Add Prescription > Fill medications'),
+            _buildHelpItem('How to generate invoice?', 'Go to Billing tab > Tap Create Invoice > Add items'),
+            _buildHelpItem('How to backup data?', 'Settings > Backup & Restore > Create Backup'),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Close'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildHelpItem(String question, String answer) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 8),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(question, style: const TextStyle(fontWeight: FontWeight.bold)),
+          const SizedBox(height: 4),
+          Text(answer, style: TextStyle(color: Colors.grey[600], fontSize: 13)),
+        ],
+      ),
+    );
+  }
+
+  void _showContactSupport(BuildContext context) {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Row(
+          children: [
+            Icon(Icons.support_agent, color: AppColors.accent),
+            SizedBox(width: 12),
+            Text('Contact Support'),
+          ],
+        ),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            ListTile(
+              leading: const Icon(Icons.email),
+              title: const Text('Email'),
+              subtitle: const Text('support@doctorapp.com'),
+              onTap: () => Navigator.pop(context),
+            ),
+            ListTile(
+              leading: const Icon(Icons.phone),
+              title: const Text('Phone'),
+              subtitle: const Text('+92 300 1234567'),
+              onTap: () => Navigator.pop(context),
+            ),
+            ListTile(
+              leading: const Icon(Icons.chat),
+              title: const Text('WhatsApp'),
+              subtitle: const Text('+92 300 1234567'),
+              onTap: () => Navigator.pop(context),
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Close'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _showAboutDialog(BuildContext context) {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Row(
+          children: [
+            Container(
+              padding: const EdgeInsets.all(8),
+              decoration: BoxDecoration(
+                gradient: AppColors.primaryGradient,
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: const Icon(Icons.medical_services, color: Colors.white, size: 24),
+            ),
+            const SizedBox(width: 12),
+            const Text('Doctor App'),
+          ],
+        ),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Text('Version 1.0.0'),
+            const SizedBox(height: 16),
+            const Text(
+              'A comprehensive clinic management solution for healthcare professionals.',
+              style: TextStyle(color: Colors.grey),
+            ),
+            const SizedBox(height: 16),
+            const Text('Features:', style: TextStyle(fontWeight: FontWeight.bold)),
+            const SizedBox(height: 8),
+            _buildFeatureItem('Patient Management'),
+            _buildFeatureItem('Appointment Scheduling'),
+            _buildFeatureItem('Digital Prescriptions'),
+            _buildFeatureItem('Billing & Invoicing'),
+            _buildFeatureItem('Medical Records'),
+            const SizedBox(height: 16),
+            const Text('© 2024 Doctor App. All rights reserved.', 
+              style: TextStyle(fontSize: 12, color: Colors.grey)),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Close'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildFeatureItem(String text) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 2),
+      child: Row(
+        children: [
+          const Icon(Icons.check_circle, size: 16, color: AppColors.success),
+          const SizedBox(width: 8),
+          Text(text, style: const TextStyle(fontSize: 13)),
+        ],
+      ),
+    );
+  }
+
+  void _showResetProfileDialog(BuildContext context, WidgetRef ref) {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Row(
+          children: [
+            Icon(Icons.person_off, color: AppColors.error),
+            SizedBox(width: 12),
+            Text('Reset Profile'),
+          ],
+        ),
+        content: const Text(
+          'This will reset your doctor profile to default values. Your patients and other data will not be affected.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Cancel'),
+          ),
+          ElevatedButton(
+            onPressed: () async {
+              Navigator.pop(context);
+              await ref.read(doctorSettingsProvider).clearProfile();
+              if (context.mounted) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(
+                    content: const Row(
+                      children: [
+                        Icon(Icons.check_circle, color: Colors.white),
+                        SizedBox(width: 12),
+                        Text('Profile reset successfully'),
+                      ],
+                    ),
+                    backgroundColor: Colors.green,
+                    behavior: SnackBarBehavior.floating,
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                  ),
+                );
+              }
+            },
+            style: ElevatedButton.styleFrom(backgroundColor: AppColors.error),
+            child: const Text('Reset', style: TextStyle(color: Colors.white)),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildSectionTitle(BuildContext context, String title) {
+    final isDark = context.isDarkMode;
+    return Padding(
+      padding: const EdgeInsets.only(bottom: AppSpacing.sm),
+      child: Text(
+        title,
+        style: context.textTheme.titleMedium?.copyWith(
+          fontWeight: FontWeight.bold,
+          color: isDark ? AppColors.darkTextSecondary : AppColors.textSecondary,
+        ),
+      ),
+    );
+  }
+
+  Widget _buildSettingsGroup(BuildContext context, List<_SettingItem> items) {
+    final isDark = context.isDarkMode;
+    return Container(
+      decoration: BoxDecoration(
+        color: context.colorScheme.surface,
+        borderRadius: BorderRadius.circular(AppRadius.md),
+        border: Border.all(color: (isDark ? AppColors.darkDivider : AppColors.divider).withOpacity(0.5)),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.04),
+            blurRadius: AppSpacing.xs,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
+      child: Column(
+        children: items.asMap().entries.map((entry) {
+          final index = entry.key;
+          final item = entry.value;
+          final isLast = index == items.length - 1;
+          
+          return Column(
+            children: [
+              Material(
+                color: Colors.transparent,
+                child: InkWell(
+                  onTap: item.onTap,
+                  borderRadius: BorderRadius.vertical(
+                    top: index == 0 ? const Radius.circular(AppRadius.md) : Radius.zero,
+                    bottom: isLast ? const Radius.circular(AppRadius.md) : Radius.zero,
+                  ),
+                  child: Padding(
+                    padding: const EdgeInsets.all(AppSpacing.md),
+                    child: Row(
+                      children: [
+                        Container(
+                          padding: const EdgeInsets.all(AppSpacing.xs),
+                          decoration: BoxDecoration(
+                            color: item.iconColor.withOpacity(0.1),
+                            borderRadius: BorderRadius.circular(AppRadius.sm),
+                          ),
+                          child: Icon(
+                            item.icon,
+                            color: item.iconColor,
+                            size: 22,
+                          ),
+                        ),
+                        const SizedBox(width: AppSpacing.sm),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                item.title,
+                                style: context.textTheme.titleMedium?.copyWith(
+                                  fontWeight: FontWeight.w600,
+                                  fontSize: AppFontSize.sm,
+                                ),
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                              if (item.subtitle != null) ...[
+                                const SizedBox(height: 2),
+                                Text(
+                                  item.subtitle!,
+                                  style: context.textTheme.bodySmall?.copyWith(
+                                    color: isDark ? AppColors.darkTextSecondary : AppColors.textSecondary,
+                                    fontSize: 11,
+                                  ),
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                ),
+                              ],
+                            ],
+                          ),
+                        ),
+                        if (item.trailing != null)
+                          item.trailing!
+                        else if (item.onTap != null)
+                          Icon(
+                            Icons.chevron_right_rounded,
+                            color: isDark ? AppColors.darkTextHint : AppColors.textHint,
+                          ),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+              if (!isLast)
+                Divider(
+                  height: 1,
+                  indent: 60,
+                  color: (isDark ? AppColors.darkDivider : AppColors.divider).withOpacity(0.5),
+                ),
+            ],
+          );
+        }).toList(),
+      ),
+    );
+  }
+}
+
+class _SettingItem {
+  final IconData icon;
+  final Color iconColor;
+  final String title;
+  final String? subtitle;
+  final Widget? trailing;
+  final VoidCallback? onTap;
+
+  _SettingItem({
+    required this.icon,
+    required this.iconColor,
+    required this.title,
+    this.subtitle,
+    this.trailing,
+    this.onTap,
+  });
+}
