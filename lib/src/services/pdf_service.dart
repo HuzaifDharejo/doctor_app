@@ -1,9 +1,12 @@
+import 'dart:convert';
 import 'dart:typed_data';
+
 import 'package:pdf/pdf.dart';
 import 'package:pdf/widgets.dart' as pw;
 import 'package:printing/printing.dart';
-import 'dart:convert';
+
 import '../db/doctor_db.dart';
+import 'logger_service.dart';
 
 class PdfService {
   static pw.Font? _regularFont;
@@ -22,7 +25,7 @@ class PdfService {
       _fontsInitialized = true;
     } catch (e) {
       // Fallback to default Helvetica if Google Fonts fail
-      print('Failed to load Google Fonts, using defaults: $e');
+      log.w('PDF', 'Failed to load Google Fonts, using defaults: $e');
       _fontsInitialized = true;
     }
   }
@@ -110,7 +113,7 @@ class PdfService {
         final bytes = base64Decode(signatureData);
         signatureImage = pw.MemoryImage(bytes);
       } catch (e) {
-        print('Error parsing signature: $e');
+        log.w('PDF', 'Error parsing signature: $e');
       }
     }
     
@@ -312,7 +315,7 @@ class PdfService {
         final bytes = base64Decode(signatureData);
         signatureImage = pw.MemoryImage(bytes);
       } catch (e) {
-        print('Error parsing signature: $e');
+        log.w('PDF', 'Error parsing signature: $e');
       }
     }
     

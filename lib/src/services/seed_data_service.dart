@@ -1,7 +1,10 @@
 import 'dart:convert';
 import 'dart:math';
+
 import 'package:drift/drift.dart' hide Column;
+
 import '../db/doctor_db.dart';
+import 'logger_service.dart';
 
 /// Seed sample data into the database for testing and demo purposes.
 /// This version checks if data exists first and skips if not empty.
@@ -23,7 +26,7 @@ Future<void> seedSampleDataForce(DoctorDatabase db) async {
 
 /// Internal function to insert sample data - Pakistani patients with comprehensive data
 Future<void> _insertSampleData(DoctorDatabase db) async {
-  print('Seeding database with comprehensive sample data...');
+  log.i('SEED', 'Seeding database with comprehensive sample data...');
   final random = Random();
 
   // Pakistani patient data - 75 patients with diverse conditions
@@ -126,7 +129,7 @@ Future<void> _insertSampleData(DoctorDatabase db) async {
     );
     patientIds.add(id);
   }
-  print('✓ Inserted ${patientIds.length} patients');
+  log.i('SEED', '✓ Inserted ${patientIds.length} patients');
 
   // ========== APPOINTMENTS ==========
   final now = DateTime.now();
@@ -228,7 +231,7 @@ Future<void> _insertSampleData(DoctorDatabase db) async {
       appointmentCount++;
     }
   }
-  print('✓ Inserted $appointmentCount appointments');
+  log.i('SEED', '✓ Inserted $appointmentCount appointments');
 
   // ========== PRESCRIPTIONS ==========
   final medications = [
@@ -417,7 +420,7 @@ Future<void> _insertSampleData(DoctorDatabase db) async {
       prescriptionCount++;
     }
   }
-  print('✓ Inserted $prescriptionCount prescriptions');
+  log.i('SEED', '✓ Inserted $prescriptionCount prescriptions');
 
   // ========== MEDICAL RECORDS ==========
   final recordTypes = ['general', 'psychiatric_assessment', 'lab_result', 'imaging', 'procedure', 'pulmonary_evaluation'];
@@ -813,7 +816,7 @@ Future<void> _insertSampleData(DoctorDatabase db) async {
       medicalRecordCount++;
     }
   }
-  print('✓ Inserted $medicalRecordCount medical records');
+  log.i('SEED', '✓ Inserted $medicalRecordCount medical records');
 
   // ========== INVOICES ==========
   final consultationFees = [500, 800, 1000, 1500, 2000, 2500, 3000];
@@ -929,16 +932,17 @@ Future<void> _insertSampleData(DoctorDatabase db) async {
       invoiceCount++;
     }
   }
-  print('✓ Inserted $invoiceCount invoices');
+  log.i('SEED', '✓ Inserted $invoiceCount invoices');
 
-  print('');
-  print('═══════════════════════════════════════════════════════════');
-  print('  DATABASE SEEDING COMPLETE');
-  print('═══════════════════════════════════════════════════════════');
-  print('  ✓ ${patientIds.length} Pakistani patients');
-  print('  ✓ $appointmentCount appointments (past, today, future)');
-  print('  ✓ $prescriptionCount prescriptions with medications');
-  print('  ✓ $medicalRecordCount medical records (5 types)');
-  print('  ✓ $invoiceCount invoices with varied items');
-  print('═══════════════════════════════════════════════════════════');
+  log
+    ..i('SEED', '')
+    ..i('SEED', '═══════════════════════════════════════════════════════════')
+    ..i('SEED', '  DATABASE SEEDING COMPLETE')
+    ..i('SEED', '═══════════════════════════════════════════════════════════')
+    ..i('SEED', '  ✓ ${patientIds.length} Pakistani patients')
+    ..i('SEED', '  ✓ $appointmentCount appointments (past, today, future)')
+    ..i('SEED', '  ✓ $prescriptionCount prescriptions with medications')
+    ..i('SEED', '  ✓ $medicalRecordCount medical records (5 types)')
+    ..i('SEED', '  ✓ $invoiceCount invoices with varied items')
+    ..i('SEED', '═══════════════════════════════════════════════════════════');
 }
