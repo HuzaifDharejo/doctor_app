@@ -2537,13 +2537,13 @@ class _PatientViewScreenState extends ConsumerState<PatientViewScreen>
             
             // Get last visit date
             if (appointments.isNotEmpty) {
-              final pastAppointments = appointments
-                  .where((a) => (a as Appointment).appointmentDateTime.isBefore(DateTime.now()))
-                  .toList();
+              final typedAppointments = appointments.cast<Appointment>();
+              final pastAppointments = typedAppointments
+                  .where((a) => a.appointmentDateTime.isBefore(DateTime.now()))
+                  .toList()
+                ..sort((a, b) => b.appointmentDateTime.compareTo(a.appointmentDateTime));
               if (pastAppointments.isNotEmpty) {
-                pastAppointments.sort((a, b) => 
-                    (b as Appointment).appointmentDateTime.compareTo((a as Appointment).appointmentDateTime));
-                lastVisit = (pastAppointments.first as Appointment).appointmentDateTime;
+                lastVisit = pastAppointments.first.appointmentDateTime;
               }
             }
           }
@@ -3180,11 +3180,7 @@ class _PatientViewScreenState extends ConsumerState<PatientViewScreen>
   Widget _buildSpeedDial(BuildContext context) {
     return Container(
       decoration: BoxDecoration(
-        gradient: const LinearGradient(
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-          colors: [AppColors.primary, AppColors.primaryDark],
-        ),
+        gradient: AppColors.primaryGradient,
         borderRadius: BorderRadius.circular(16),
         boxShadow: [
           BoxShadow(
