@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../../core/widgets/app_card.dart';
 import '../../services/clinical_analytics_service.dart';
 import '../widgets/analytics_widgets.dart';
 
@@ -395,8 +396,7 @@ class _ClinicalAnalyticsScreenState extends ConsumerState<ClinicalAnalyticsScree
           ],
         ),
         const SizedBox(height: 24),
-        Card(
-          elevation: 2,
+        AppCard(
           child: Padding(
             padding: const EdgeInsets.all(16),
             child: Column(
@@ -461,8 +461,7 @@ class _ClinicalAnalyticsScreenState extends ConsumerState<ClinicalAnalyticsScree
               style: Theme.of(context).textTheme.titleLarge,
             ),
             const SizedBox(height: 16),
-            Card(
-              elevation: 2,
+            AppCard(
               child: Padding(
                 padding: const EdgeInsets.all(16),
                 child: Column(

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../../core/widgets/app_card.dart';
 
 import '../../services/data_export_service.dart';
 import '../widgets/report_widgets.dart';
@@ -130,8 +131,7 @@ class _DataExportScreenState extends ConsumerState<DataExportScreen> {
               const SizedBox(height: 24),
 
               // Information Section
-              Card(
-                elevation: 2,
+              AppCard(
                 child: Padding(
                   padding: const EdgeInsets.all(16),
                   child: Column(

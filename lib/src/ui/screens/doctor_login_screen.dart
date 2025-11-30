@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../../core/widgets/app_card.dart';
 import '../../services/doctor_auth_service.dart';
 
 class DoctorLoginScreen extends ConsumerStatefulWidget {
@@ -114,11 +115,7 @@ class _DoctorLoginScreenState extends ConsumerState<DoctorLoginScreen> {
                 const SizedBox(height: 48),
 
                 // Login Card
-                Card(
-                  elevation: 8,
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(12),
-                  ),
+                AppCard.elevated(
                   child: Padding(
                     padding: const EdgeInsets.all(24.0),
                     child: Column(

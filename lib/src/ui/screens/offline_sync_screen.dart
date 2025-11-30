@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../../core/widgets/app_card.dart';
 import '../../services/offline_sync_service.dart';
 import '../widgets/offline_sync_widgets.dart';
 
@@ -102,8 +103,7 @@ class _OfflineSyncScreenState extends ConsumerState<OfflineSyncScreen>
             const SizedBox(height: 16),
 
             // Last sync time
-            Card(
-              elevation: 2,
+            AppCard(
               child: Padding(
                 padding: const EdgeInsets.all(16),
                 child: Column(
