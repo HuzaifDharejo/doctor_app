@@ -558,10 +558,13 @@ class _HomeShellState extends ConsumerState<HomeShell> {
                     icon: Icons.notifications_outlined,
                     title: AppStrings.notifications,
                     subtitle: 'Alerts & reminders',
-                    onTap: () {},
+                    onTap: () {
+                      context
+                        ..pop<void>()
+                        ..goToNotifications();
+                    },
                     color: const Color(0xFFF59E0B),
                     isDark: isDarkMode,
-                    badge: '3',
                   ),
                   _buildModernDrawerItem(
                     icon: Icons.cloud_sync_outlined,

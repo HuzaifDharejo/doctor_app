@@ -3,6 +3,7 @@ import '../db/doctor_db.dart';
 import '../services/allergy_management_service.dart';
 import '../services/doctor_settings_service.dart';
 import '../services/logger_service.dart';
+import '../services/notification_service.dart';
 import '../services/seed_data_service.dart';
 import '../services/treatment_efficacy_service.dart';
 
@@ -54,5 +55,11 @@ final allergyManagementProvider = Provider<AllergyManagementService>((ref) {
 final treatmentEfficacyProvider = Provider<TreatmentEfficacyService>((ref) {
   log.d('EFFICACY', 'Initializing treatment efficacy service...');
   return const TreatmentEfficacyService();
+});
+
+// Notification service provider
+final notificationProvider = Provider<NotificationService>((ref) {
+  log.d('NOTIFICATION', 'Initializing notification service...');
+  return const NotificationService();
 });
 
