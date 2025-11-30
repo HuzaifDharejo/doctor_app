@@ -3,6 +3,7 @@ import '../db/doctor_db.dart';
 import '../services/allergy_management_service.dart';
 import '../services/clinical_analytics_service.dart';
 import '../services/communication_service.dart';
+import '../services/data_export_service.dart';
 import '../services/doctor_settings_service.dart';
 import '../services/drug_reference_service.dart';
 import '../services/localization_service.dart';
@@ -96,4 +97,10 @@ final offlineSyncProvider = ChangeNotifierProvider<OfflineSyncService>((ref) {
 final localizationProvider = ChangeNotifierProvider<LocalizationService>((ref) {
   log.d('LOCALIZATION', 'Initializing localization service...');
   return LocalizationService();
+});
+
+// Data export service provider
+final dataExportProvider = Provider<DataExportService>((ref) {
+  log.d('DATA_EXPORT', 'Initializing data export service...');
+  return DataExportService();
 });
