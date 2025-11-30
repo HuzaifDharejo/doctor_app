@@ -263,6 +263,7 @@ class AppSettings {
     this.onboardingComplete = false,
     this.autoSyncAppointments = true,
     this.calendarReminders = true,
+    this.examModeEnabled = false,
     List<String>? enabledMedicalRecordTypes,
   }) : enabledMedicalRecordTypes = enabledMedicalRecordTypes ?? List.from(allMedicalRecordTypes);
 
@@ -276,6 +277,7 @@ class AppSettings {
     onboardingComplete: (json['onboardingComplete'] as bool?) ?? false,
     autoSyncAppointments: (json['autoSyncAppointments'] as bool?) ?? true,
     calendarReminders: (json['calendarReminders'] as bool?) ?? true,
+    examModeEnabled: (json['examModeEnabled'] as bool?) ?? false,
     enabledMedicalRecordTypes: json['enabledMedicalRecordTypes'] != null
         ? List<String>.from(json['enabledMedicalRecordTypes'] as Iterable)
         : null,
@@ -287,6 +289,7 @@ class AppSettings {
   final bool onboardingComplete;
   final bool autoSyncAppointments;
   final bool calendarReminders;
+  final bool examModeEnabled;
   final List<String> enabledMedicalRecordTypes;
 
   // Default medical record types
@@ -334,6 +337,7 @@ class AppSettings {
     bool? onboardingComplete,
     bool? autoSyncAppointments,
     bool? calendarReminders,
+    bool? examModeEnabled,
     List<String>? enabledMedicalRecordTypes,
   }) {
     return AppSettings(
@@ -344,6 +348,7 @@ class AppSettings {
       onboardingComplete: onboardingComplete ?? this.onboardingComplete,
       autoSyncAppointments: autoSyncAppointments ?? this.autoSyncAppointments,
       calendarReminders: calendarReminders ?? this.calendarReminders,
+      examModeEnabled: examModeEnabled ?? this.examModeEnabled,
       enabledMedicalRecordTypes: enabledMedicalRecordTypes ?? this.enabledMedicalRecordTypes,
     );
   }
@@ -356,6 +361,7 @@ class AppSettings {
     'onboardingComplete': onboardingComplete,
     'autoSyncAppointments': autoSyncAppointments,
     'calendarReminders': calendarReminders,
+    'examModeEnabled': examModeEnabled,
     'enabledMedicalRecordTypes': enabledMedicalRecordTypes,
   };
 }
@@ -470,6 +476,13 @@ class AppSettingsService extends ChangeNotifier {
   // ignore: avoid_positional_boolean_parameters
   Future<void> setCalendarReminders(bool enabled) async {
     _settings = _settings.copyWith(calendarReminders: enabled);
+    await _saveSettings();
+    notifyListeners();
+  }
+
+  // ignore: avoid_positional_boolean_parameters
+  Future<void> setExamModeEnabled(bool enabled) async {
+    _settings = _settings.copyWith(examModeEnabled: enabled);
     await _saveSettings();
     notifyListeners();
   }

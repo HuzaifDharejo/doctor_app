@@ -306,6 +306,20 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> with SingleTick
               ),
             ),
             _SettingItem(
+              icon: Icons.touch_app_rounded,
+              iconColor: const Color(0xFF10B981),
+              title: 'Exam Mode',
+              subtitle: settings.examModeEnabled ? 'Large touch targets' : 'Standard layout',
+              trailing: Switch(
+                value: settings.examModeEnabled,
+                onChanged: (v) {
+                  ref.read(appSettingsProvider).setExamModeEnabled(v);
+                },
+                activeTrackColor: AppColors.primary.withValues(alpha: 0.5),
+                activeThumbColor: AppColors.primary,
+              ),
+            ),
+            _SettingItem(
               icon: Icons.language_rounded,
               iconColor: AppColors.info,
               title: 'Language',
