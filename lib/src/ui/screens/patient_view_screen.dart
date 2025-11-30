@@ -223,9 +223,9 @@ class _PatientViewScreenState extends ConsumerState<PatientViewScreen>
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
     final colorScheme = Theme.of(context).colorScheme;
-    final surfaceColor = isDark ? AppColors.darkSurface : colorScheme.surface;
+    final surfaceColor = isDark ? AppColors.darkBackground : AppColors.background;
+    final cardColor = isDark ? AppColors.darkSurface : Colors.white;
     final onSurfaceColor = isDark ? Colors.white : colorScheme.onSurface;
-    final primaryContainer = isDark ? AppColors.primary.withValues(alpha: 0.2) : colorScheme.primaryContainer;
 
     return Scaffold(
       backgroundColor: surfaceColor,
@@ -233,134 +233,219 @@ class _PatientViewScreenState extends ConsumerState<PatientViewScreen>
         headerSliverBuilder: (context, innerBoxIsScrolled) {
           return [
             SliverAppBar(
-              expandedHeight: 340,
+              expandedHeight: 320,
               pinned: true,
               elevation: 0,
-              scrolledUnderElevation: 1,
-              backgroundColor: surfaceColor,
+              scrolledUnderElevation: 2,
+              backgroundColor: isDark ? AppColors.darkSurface : Colors.white,
               surfaceTintColor: Colors.transparent,
-              leading: IconButton(
-                icon: Icon(
-                  Icons.arrow_back_rounded,
-                  color: innerBoxIsScrolled ? onSurfaceColor : onSurfaceColor,
+              leading: Container(
+                margin: const EdgeInsets.all(8),
+                decoration: BoxDecoration(
+                  color: (isDark ? Colors.white : Colors.black).withValues(alpha: 0.1),
+                  borderRadius: BorderRadius.circular(12),
                 ),
-                onPressed: () => Navigator.pop(context),
+                child: IconButton(
+                  icon: Icon(
+                    Icons.arrow_back_rounded,
+                    color: innerBoxIsScrolled ? onSurfaceColor : Colors.white,
+                  ),
+                  onPressed: () => Navigator.pop(context),
+                ),
               ),
               actions: [
-                IconButton(
-                  icon: const Icon(Icons.chat_outlined),
-                  color: const Color(0xFF25D366),
-                  onPressed: () {
-                    if (patient.phone.isNotEmpty) {
-                      WhatsAppService.openChat(patient.phone);
-                    } else {
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(
-                          content: Text('No phone number available'),
-                          behavior: SnackBarBehavior.floating,
-                        ),
-                      );
-                    }
-                  },
+                Container(
+                  margin: const EdgeInsets.symmetric(vertical: 8),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFF25D366).withValues(alpha: 0.15),
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: IconButton(
+                    icon: const Icon(Icons.chat_outlined),
+                    color: const Color(0xFF25D366),
+                    onPressed: () {
+                      if (patient.phone.isNotEmpty) {
+                        WhatsAppService.openChat(patient.phone);
+                      } else {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(
+                            content: Text('No phone number available'),
+                            behavior: SnackBarBehavior.floating,
+                          ),
+                        );
+                      }
+                    },
+                  ),
                 ),
-                IconButton(
-                  icon: Icon(Icons.more_vert_rounded, color: onSurfaceColor),
-                  onPressed: () => _showOptionsMenu(context),
+                const SizedBox(width: 8),
+                Container(
+                  margin: const EdgeInsets.only(right: 8, top: 8, bottom: 8),
+                  decoration: BoxDecoration(
+                    color: (isDark ? Colors.white : Colors.black).withValues(alpha: 0.1),
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: IconButton(
+                    icon: Icon(
+                      Icons.more_vert_rounded,
+                      color: innerBoxIsScrolled ? onSurfaceColor : Colors.white,
+                    ),
+                    onPressed: () => _showOptionsMenu(context),
+                  ),
                 ),
-                const SizedBox(width: 4),
               ],
               flexibleSpace: FlexibleSpaceBar(
-                background: SafeArea(
-                  child: Padding(
-                    padding: const EdgeInsets.fromLTRB(20, 56, 20, 8),
-                    child: Column(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        // Avatar with M3 style container
-                        Container(
-                          padding: const EdgeInsets.all(3),
-                          decoration: BoxDecoration(
-                            shape: BoxShape.circle,
-                            color: primaryContainer,
-                          ),
-                          child: PatientAvatarCircle(
-                            patientId: patient.id,
-                            firstName: patient.firstName,
-                            lastName: patient.lastName,
-                            size: 72,
-                            editable: true,
-                            onPhotoChanged: () => setState(() {}),
-                          ),
-                        ),
-                        const SizedBox(height: 10),
-                        // Name - Large Title style
-                        Text(
-                          '${patient.firstName} ${patient.lastName}',
-                          style: TextStyle(
-                            color: onSurfaceColor,
-                            fontSize: 22,
-                            fontWeight: FontWeight.w500,
-                            letterSpacing: 0,
-                          ),
-                        ),
-                        const SizedBox(height: 2),
-                        // Subtitle with age and ID
-                        Text(
-                          _getPatientSubtitle(patient),
-                          style: TextStyle(
-                            color: onSurfaceColor.withValues(alpha: 0.6),
-                            fontSize: 14,
-                            fontWeight: FontWeight.w400,
-                          ),
-                        ),
-                        const SizedBox(height: 10),
-                        // Risk chip row
-                        Wrap(
-                          alignment: WrapAlignment.center,
-                          spacing: 8,
-                          runSpacing: 8,
-                          children: [
-                            // Risk Level Chip
-                            _buildInfoChip(
-                              color: riskColor,
-                              label: _getRiskLabel(patient.riskLevel),
-                              showDot: true,
-                            ),
-                            if (patient.phone.isNotEmpty)
-                              _buildInfoChip(
-                                color: onSurfaceColor,
-                                label: patient.phone,
-                                icon: Icons.phone_outlined,
-                              ),
+                background: Stack(
+                  fit: StackFit.expand,
+                  children: [
+                    // Gradient Background
+                    Container(
+                      decoration: BoxDecoration(
+                        gradient: LinearGradient(
+                          begin: Alignment.topLeft,
+                          end: Alignment.bottomRight,
+                          colors: [
+                            AppColors.primary,
+                            AppColors.primary.withValues(alpha: 0.8),
+                            AppColors.primaryDark,
                           ],
                         ),
-                      ],
+                      ),
                     ),
-                  ),
+                    // Decorative Pattern
+                    CustomPaint(
+                      painter: _HeaderPatternPainter(),
+                    ),
+                    // Fade overlay at bottom
+                    Positioned(
+                      bottom: 0,
+                      left: 0,
+                      right: 0,
+                      height: 100,
+                      child: Container(
+                        decoration: BoxDecoration(
+                          gradient: LinearGradient(
+                            begin: Alignment.topCenter,
+                            end: Alignment.bottomCenter,
+                            colors: [
+                              Colors.transparent,
+                              cardColor.withValues(alpha: 0.3),
+                            ],
+                          ),
+                        ),
+                      ),
+                    ),
+                    // Content
+                    SafeArea(
+                      child: Padding(
+                        padding: const EdgeInsets.fromLTRB(20, 50, 20, 8),
+                        child: Column(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            // Avatar with animated border
+                            Container(
+                              padding: const EdgeInsets.all(4),
+                              decoration: BoxDecoration(
+                                shape: BoxShape.circle,
+                                gradient: LinearGradient(
+                                  begin: Alignment.topLeft,
+                                  end: Alignment.bottomRight,
+                                  colors: [
+                                    Colors.white.withValues(alpha: 0.8),
+                                    Colors.white.withValues(alpha: 0.4),
+                                  ],
+                                ),
+                                boxShadow: [
+                                  BoxShadow(
+                                    color: Colors.black.withValues(alpha: 0.2),
+                                    blurRadius: 20,
+                                    offset: const Offset(0, 8),
+                                  ),
+                                ],
+                              ),
+                              child: PatientAvatarCircle(
+                                patientId: patient.id,
+                                firstName: patient.firstName,
+                                lastName: patient.lastName,
+                                size: 80,
+                                editable: true,
+                                onPhotoChanged: () => setState(() {}),
+                              ),
+                            ),
+                            const SizedBox(height: 16),
+                            // Name
+                            Text(
+                              '${patient.firstName} ${patient.lastName}',
+                              style: const TextStyle(
+                                color: Colors.white,
+                                fontSize: 24,
+                                fontWeight: FontWeight.bold,
+                                letterSpacing: -0.5,
+                              ),
+                            ),
+                            const SizedBox(height: 6),
+                            // Subtitle
+                            Text(
+                              _getPatientSubtitle(patient),
+                              style: TextStyle(
+                                color: Colors.white.withValues(alpha: 0.85),
+                                fontSize: 14,
+                                fontWeight: FontWeight.w500,
+                              ),
+                            ),
+                            const SizedBox(height: 16),
+                            // Chips Row
+                            Row(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                _buildHeaderChip(
+                                  color: riskColor,
+                                  label: _getRiskLabel(patient.riskLevel),
+                                  showDot: true,
+                                ),
+                                if (patient.phone.isNotEmpty) ...[
+                                  const SizedBox(width: 10),
+                                  _buildHeaderChip(
+                                    color: Colors.white,
+                                    label: patient.phone,
+                                    icon: Icons.phone_rounded,
+                                  ),
+                                ],
+                              ],
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ],
                 ),
               ),
               bottom: PreferredSize(
-                preferredSize: const Size.fromHeight(48),
-                child: DecoratedBox(
+                preferredSize: const Size.fromHeight(52),
+                child: Container(
                   decoration: BoxDecoration(
-                    color: surfaceColor,
-                    border: Border(
-                      bottom: BorderSide(
-                        color: onSurfaceColor.withValues(alpha: 0.08),
+                    color: cardColor,
+                    borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black.withValues(alpha: 0.05),
+                        blurRadius: 10,
+                        offset: const Offset(0, -5),
                       ),
-                    ),
+                    ],
                   ),
                   child: TabBar(
                     controller: _tabController,
                     labelColor: AppColors.primary,
-                    unselectedLabelColor: onSurfaceColor.withValues(alpha: 0.6),
+                    unselectedLabelColor: onSurfaceColor.withValues(alpha: 0.5),
                     indicatorColor: AppColors.primary,
                     indicatorWeight: 3,
                     dividerColor: Colors.transparent,
                     indicatorSize: TabBarIndicatorSize.label,
+                    indicatorPadding: const EdgeInsets.only(bottom: 4),
                     labelStyle: const TextStyle(
-                      fontWeight: FontWeight.w600,
+                      fontWeight: FontWeight.w700,
                       fontSize: 14,
+                      letterSpacing: 0.2,
                     ),
                     unselectedLabelStyle: const TextStyle(
                       fontWeight: FontWeight.w500,
@@ -392,6 +477,63 @@ class _PatientViewScreenState extends ConsumerState<PatientViewScreen>
     );
   }
 
+  Widget _buildHeaderChip({
+    required Color color,
+    required String label,
+    IconData? icon,
+    bool showDot = false,
+  }) {
+    final isWhite = color == Colors.white;
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+      decoration: BoxDecoration(
+        color: isWhite 
+            ? Colors.white.withValues(alpha: 0.2) 
+            : color.withValues(alpha: 0.2),
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(
+          color: isWhite 
+              ? Colors.white.withValues(alpha: 0.3)
+              : color.withValues(alpha: 0.4),
+          width: 1.5,
+        ),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          if (showDot)
+            Container(
+              width: 8,
+              height: 8,
+              decoration: BoxDecoration(
+                color: color,
+                shape: BoxShape.circle,
+                boxShadow: [
+                  BoxShadow(
+                    color: color.withValues(alpha: 0.6),
+                    blurRadius: 4,
+                    spreadRadius: 1,
+                  ),
+                ],
+              ),
+            )
+          else if (icon != null)
+            Icon(icon, size: 14, color: isWhite ? Colors.white : color),
+          SizedBox(width: showDot || icon != null ? 8 : 0),
+          Text(
+            label,
+            style: TextStyle(
+              color: isWhite ? Colors.white : color,
+              fontWeight: FontWeight.w600,
+              fontSize: 12,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  // Keep for backwards compatibility with medical history tab
   Widget _buildInfoChip({
     required Color color,
     required String label,
@@ -435,6 +577,8 @@ class _PatientViewScreenState extends ConsumerState<PatientViewScreen>
   Widget _buildOverviewTab(BuildContext context) {
     final patient = widget.patient;
     final dateFormat = DateFormat('MMM d, yyyy');
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final cardColor = isDark ? AppColors.darkSurface : Colors.white;
 
     return Stack(
       children: [
@@ -443,140 +587,333 @@ class _PatientViewScreenState extends ConsumerState<PatientViewScreen>
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // Quick Stats Section at top
+              // Quick Stats Section - Enhanced
               _buildQuickStats(context),
-              const SizedBox(height: 20),
+              const SizedBox(height: 24),
               
-              // Contact Information Card (Editable)
-              _buildSectionCard(
+              // Contact Information Card (Editable) - Modern design
+              _buildModernSectionCard(
                 context,
                 title: 'Contact Information',
                 icon: Icons.contact_phone_rounded,
                 accentColor: AppColors.info,
-                children: [
-                  _buildEditableInfoRow(Icons.phone_rounded, 'Phone', _phoneController, hint: 'Enter phone number', keyboardType: TextInputType.phone),
-                  _buildEditableInfoRow(Icons.email_rounded, 'Email', _emailController, hint: 'Enter email address', keyboardType: TextInputType.emailAddress),
-                  _buildEditableInfoRow(Icons.location_on_rounded, 'Address', _addressController, hint: 'Enter address', maxLines: 2),
-                ],
+                child: Column(
+                  children: [
+                    _buildEditableInfoRow(Icons.phone_rounded, 'Phone', _phoneController, hint: 'Enter phone number', keyboardType: TextInputType.phone),
+                    _buildEditableInfoRow(Icons.email_rounded, 'Email', _emailController, hint: 'Enter email address', keyboardType: TextInputType.emailAddress),
+                    _buildEditableInfoRow(Icons.location_on_rounded, 'Address', _addressController, hint: 'Enter address', maxLines: 2),
+                  ],
+                ),
               ),
               const SizedBox(height: 16),
 
-              // Personal Information Card (Read-only)
-              _buildSectionCard(
+              // Personal Information Card (Read-only) - Modern design
+              _buildModernSectionCard(
                 context,
-                title: 'Personal Information',
+                title: 'Personal Details',
                 icon: Icons.person_rounded,
                 accentColor: AppColors.accent,
-                children: [
-                  _buildInfoRow(
-                    Icons.cake_rounded,
-                    'Date of Birth',
-                    patient.dateOfBirth != null ? dateFormat.format(patient.dateOfBirth!) : 'Not provided',
-                  ),
-                  if (patient.dateOfBirth != null)
-                    _buildInfoRow(
-                      Icons.calendar_today_rounded,
-                      'Age',
-                      '${_calculateAge(patient.dateOfBirth!)} years old',
+                child: Column(
+                  children: [
+                    _buildModernInfoRow(
+                      context,
+                      icon: Icons.cake_rounded,
+                      label: 'Date of Birth',
+                      value: patient.dateOfBirth != null ? dateFormat.format(patient.dateOfBirth!) : 'Not provided',
+                      color: AppColors.warning,
                     ),
-                  _buildInfoRow(
-                    Icons.event_rounded,
-                    'Patient Since',
-                    dateFormat.format(patient.createdAt),
-                  ),
-                ],
+                    if (patient.dateOfBirth != null) ...[
+                      const SizedBox(height: 12),
+                      _buildModernInfoRow(
+                        context,
+                        icon: Icons.calendar_today_rounded,
+                        label: 'Age',
+                        value: '${_calculateAge(patient.dateOfBirth!)} years old',
+                        color: AppColors.primary,
+                      ),
+                    ],
+                    const SizedBox(height: 12),
+                    _buildModernInfoRow(
+                      context,
+                      icon: Icons.event_rounded,
+                      label: 'Patient Since',
+                      value: dateFormat.format(patient.createdAt),
+                      color: AppColors.success,
+                    ),
+                  ],
+                ),
               ),
               const SizedBox(height: 16),
 
-              // Tags Card (Read-only)
+              // Tags Card (Read-only) - Modern design
               if (patient.tags.isNotEmpty)
-                _buildSectionCard(
+                _buildModernSectionCard(
                   context,
-                  title: 'Tags',
+                  title: 'Labels & Tags',
                   icon: Icons.label_rounded,
                   accentColor: const Color(0xFF9B59B6),
-                  children: [
-                    Wrap(
-                      spacing: 8,
-                      runSpacing: 8,
-                      children: patient.tags.split(',').where((tag) => tag.trim().isNotEmpty).map((tag) {
-                        final tagColor = _getTagColor(tag.trim());
-                        return Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                          decoration: BoxDecoration(
-                            color: tagColor.withValues(alpha: 0.1),
-                            borderRadius: BorderRadius.circular(16),
-                            border: Border.all(color: tagColor.withValues(alpha: 0.3)),
+                  child: Wrap(
+                    spacing: 10,
+                    runSpacing: 10,
+                    children: patient.tags.split(',').where((tag) => tag.trim().isNotEmpty).map((tag) {
+                      final tagColor = _getTagColor(tag.trim());
+                      return Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+                        decoration: BoxDecoration(
+                          gradient: LinearGradient(
+                            colors: [
+                              tagColor.withValues(alpha: 0.15),
+                              tagColor.withValues(alpha: 0.08),
+                            ],
                           ),
-                          child: Text(
-                            tag.trim(),
-                            style: TextStyle(
-                              color: tagColor,
-                              fontWeight: FontWeight.w500,
-                              fontSize: 13,
+                          borderRadius: BorderRadius.circular(20),
+                          border: Border.all(color: tagColor.withValues(alpha: 0.3)),
+                        ),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Container(
+                              width: 6,
+                              height: 6,
+                              decoration: BoxDecoration(
+                                color: tagColor,
+                                shape: BoxShape.circle,
+                              ),
                             ),
-                          ),
-                        );
-                      }).toList(),
-                    ),
-                  ],
+                            const SizedBox(width: 8),
+                            Text(
+                              tag.trim(),
+                              style: TextStyle(
+                                color: tagColor,
+                                fontWeight: FontWeight.w600,
+                                fontSize: 13,
+                              ),
+                            ),
+                          ],
+                        ),
+                      );
+                    }).toList(),
+                  ),
                 ),
               const SizedBox(height: 100), // Space for save button and FAB
             ],
           ),
         ),
         
-        // Save Button (appears when changes are made)
+        // Save Button (appears when changes are made) - Enhanced animation
         if (_hasChanges)
           Positioned(
-            bottom: 16, // Same as FAB default position
+            bottom: 16,
             left: 20,
-            right: 76, // FAB is ~56px wide + 16px margin + 4px gap
-            child: Material(
-              elevation: 8,
-              shadowColor: AppColors.primary.withValues(alpha: 0.3),
-              borderRadius: BorderRadius.circular(14),
-              child: InkWell(
-                onTap: _isSaving ? null : _saveChanges,
-                borderRadius: BorderRadius.circular(14),
-                child: Container(
-                  height: 56, // Same height as FAB
-                  decoration: BoxDecoration(
-                    gradient: LinearGradient(
-                      colors: [AppColors.primary, AppColors.primary.withValues(alpha: 0.8)],
-                    ),
-                    borderRadius: BorderRadius.circular(14),
+            right: 76,
+            child: TweenAnimationBuilder<double>(
+              tween: Tween(begin: 0.0, end: 1.0),
+              duration: const Duration(milliseconds: 300),
+              curve: Curves.easeOutCubic,
+              builder: (context, value, child) => Transform.translate(
+                offset: Offset(0, 20 * (1 - value)),
+                child: Opacity(opacity: value, child: child),
+              ),
+              child: Container(
+                decoration: BoxDecoration(
+                  gradient: const LinearGradient(
+                    colors: [AppColors.primary, AppColors.primaryDark],
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
                   ),
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      if (_isSaving)
-                        const SizedBox(
-                          width: 20,
-                          height: 20,
-                          child: CircularProgressIndicator(
-                            strokeWidth: 2,
-                            valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                  borderRadius: BorderRadius.circular(16),
+                  boxShadow: [
+                    BoxShadow(
+                      color: AppColors.primary.withValues(alpha: 0.4),
+                      blurRadius: 20,
+                      offset: const Offset(0, 8),
+                    ),
+                  ],
+                ),
+                child: Material(
+                  color: Colors.transparent,
+                  child: InkWell(
+                    onTap: _isSaving ? null : _saveChanges,
+                    borderRadius: BorderRadius.circular(16),
+                    child: Container(
+                      height: 56,
+                      padding: const EdgeInsets.symmetric(horizontal: 24),
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          if (_isSaving)
+                            const SizedBox(
+                              width: 22,
+                              height: 22,
+                              child: CircularProgressIndicator(
+                                strokeWidth: 2.5,
+                                valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                              ),
+                            )
+                          else
+                            const Icon(Icons.save_rounded, color: Colors.white, size: 22),
+                          const SizedBox(width: 10),
+                          Text(
+                            _isSaving ? 'Saving...' : 'Save Changes',
+                            style: const TextStyle(
+                              color: Colors.white,
+                              fontWeight: FontWeight.w700,
+                              fontSize: 16,
+                              letterSpacing: 0.3,
+                            ),
                           ),
-                        )
-                      else
-                        const Icon(Icons.save_rounded, color: Colors.white, size: 20),
-                      const SizedBox(width: 8),
-                      Text(
-                        _isSaving ? 'Saving...' : 'Save Changes',
-                        style: const TextStyle(
-                          color: Colors.white,
-                          fontWeight: FontWeight.w600,
-                          fontSize: 16,
-                        ),
+                        ],
                       ),
-                    ],
+                    ),
                   ),
                 ),
               ),
             ),
           ),
       ],
+    );
+  }
+
+  Widget _buildModernSectionCard(
+    BuildContext context, {
+    required String title,
+    required IconData icon,
+    required Widget child,
+    Color? accentColor,
+  }) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final color = accentColor ?? AppColors.primary;
+    
+    return Container(
+      decoration: BoxDecoration(
+        color: isDark ? AppColors.darkSurface : Colors.white,
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(
+          color: isDark 
+              ? AppColors.darkDivider.withValues(alpha: 0.3)
+              : AppColors.divider.withValues(alpha: 0.5),
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: isDark ? 0.2 : 0.06),
+            blurRadius: 16,
+            offset: const Offset(0, 6),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // Header with gradient accent
+          Container(
+            padding: const EdgeInsets.all(18),
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                colors: [
+                  color.withValues(alpha: 0.08),
+                  color.withValues(alpha: 0.02),
+                ],
+                begin: Alignment.centerLeft,
+                end: Alignment.centerRight,
+              ),
+              borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
+            ),
+            child: Row(
+              children: [
+                Container(
+                  padding: const EdgeInsets.all(10),
+                  decoration: BoxDecoration(
+                    gradient: LinearGradient(
+                      colors: [color, color.withValues(alpha: 0.8)],
+                      begin: Alignment.topLeft,
+                      end: Alignment.bottomRight,
+                    ),
+                    borderRadius: BorderRadius.circular(12),
+                    boxShadow: [
+                      BoxShadow(
+                        color: color.withValues(alpha: 0.3),
+                        blurRadius: 8,
+                        offset: const Offset(0, 3),
+                      ),
+                    ],
+                  ),
+                  child: Icon(icon, color: Colors.white, size: 20),
+                ),
+                const SizedBox(width: 14),
+                Expanded(
+                  child: Text(
+                    title,
+                    style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                      fontWeight: FontWeight.w700,
+                      letterSpacing: -0.3,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+          // Content
+          Padding(
+            padding: const EdgeInsets.fromLTRB(18, 8, 18, 18),
+            child: child,
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildModernInfoRow(
+    BuildContext context, {
+    required IconData icon,
+    required String label,
+    required String value,
+    required Color color,
+  }) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    return Container(
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+        color: color.withValues(alpha: 0.08),
+        borderRadius: BorderRadius.circular(14),
+      ),
+      child: Row(
+        children: [
+          Container(
+            padding: const EdgeInsets.all(8),
+            decoration: BoxDecoration(
+              color: color.withValues(alpha: 0.15),
+              borderRadius: BorderRadius.circular(10),
+            ),
+            child: Icon(icon, size: 18, color: color),
+          ),
+          const SizedBox(width: 14),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  label,
+                  style: TextStyle(
+                    fontSize: 11,
+                    fontWeight: FontWeight.w500,
+                    color: isDark ? AppColors.darkTextSecondary : AppColors.textSecondary,
+                    letterSpacing: 0.5,
+                  ),
+                ),
+                const SizedBox(height: 3),
+                Text(
+                  value,
+                  style: TextStyle(
+                    fontSize: 15,
+                    fontWeight: FontWeight.w600,
+                    color: isDark ? AppColors.darkTextPrimary : AppColors.textPrimary,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
     );
   }
 
@@ -2183,44 +2520,221 @@ class _PatientViewScreenState extends ConsumerState<PatientViewScreen>
         future: Future.wait([
           _getPatientAppointments(db),
           db.getPrescriptionsForPatient(widget.patient.id),
+          db.getMedicalRecordsForPatient(widget.patient.id),
         ]),
         builder: (context, snapshot) {
           int appointmentCount = 0;
           int prescriptionCount = 0;
+          int recordsCount = 0;
+          DateTime? lastVisit;
 
           if (snapshot.hasData) {
             final data = snapshot.data!;
-            appointmentCount = (data[0] as List).length;
+            final appointments = data[0] as List;
+            appointmentCount = appointments.length;
             prescriptionCount = (data[1] as List).length;
+            recordsCount = (data[2] as List).length;
+            
+            // Get last visit date
+            if (appointments.isNotEmpty) {
+              final pastAppointments = appointments
+                  .where((a) => (a as Appointment).appointmentDateTime.isBefore(DateTime.now()))
+                  .toList();
+              if (pastAppointments.isNotEmpty) {
+                pastAppointments.sort((a, b) => 
+                    (b as Appointment).appointmentDateTime.compareTo((a as Appointment).appointmentDateTime));
+                lastVisit = (pastAppointments.first as Appointment).appointmentDateTime;
+              }
+            }
           }
 
-          return Row(
+          return Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Expanded(
-                child: _buildStatCard(
-                  context,
-                  'Appointments',
-                  appointmentCount.toString(),
-                  Icons.calendar_today_outlined,
-                  AppColors.primary,
-                ),
+              // Stats Row with modern cards
+              Row(
+                children: [
+                  Expanded(
+                    child: _buildModernStatCard(
+                      context,
+                      label: 'Visits',
+                      value: appointmentCount.toString(),
+                      icon: Icons.calendar_month_rounded,
+                      gradient: AppColors.primaryGradient,
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: _buildModernStatCard(
+                      context,
+                      label: 'Prescriptions',
+                      value: prescriptionCount.toString(),
+                      icon: Icons.medication_rounded,
+                      gradient: AppColors.accentGradient,
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: _buildModernStatCard(
+                      context,
+                      label: 'Records',
+                      value: recordsCount.toString(),
+                      icon: Icons.folder_rounded,
+                      gradient: AppColors.warmGradient,
+                    ),
+                  ),
+                ],
               ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: _buildStatCard(
-                  context,
-                  'Prescriptions',
-                  prescriptionCount.toString(),
-                  Icons.medication_outlined,
-                  AppColors.accent,
-                ),
-              ),
+              // Last visit indicator
+              if (lastVisit != null) ...[
+                const SizedBox(height: 16),
+                _buildLastVisitBanner(context, lastVisit),
+              ],
             ],
           );
         },
       ),
-      loading: () => const SizedBox.shrink(),
+      loading: () => _buildStatsLoadingPlaceholder(context),
       error: (_, __) => const SizedBox.shrink(),
+    );
+  }
+
+  Widget _buildModernStatCard(
+    BuildContext context, {
+    required String label,
+    required String value,
+    required IconData icon,
+    required LinearGradient gradient,
+  }) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 18),
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          colors: [
+            gradient.colors.first.withValues(alpha: isDark ? 0.25 : 0.12),
+            gradient.colors.last.withValues(alpha: isDark ? 0.15 : 0.06),
+          ],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+        ),
+        borderRadius: BorderRadius.circular(18),
+        border: Border.all(
+          color: gradient.colors.first.withValues(alpha: 0.2),
+        ),
+      ),
+      child: Column(
+        children: [
+          Container(
+            padding: const EdgeInsets.all(10),
+            decoration: BoxDecoration(
+              gradient: gradient,
+              borderRadius: BorderRadius.circular(12),
+              boxShadow: [
+                BoxShadow(
+                  color: gradient.colors.first.withValues(alpha: 0.3),
+                  blurRadius: 8,
+                  offset: const Offset(0, 3),
+                ),
+              ],
+            ),
+            child: Icon(icon, color: Colors.white, size: 20),
+          ),
+          const SizedBox(height: 12),
+          Text(
+            value,
+            style: TextStyle(
+              fontSize: 26,
+              fontWeight: FontWeight.w800,
+              color: gradient.colors.first,
+              height: 1,
+            ),
+          ),
+          const SizedBox(height: 4),
+          Text(
+            label,
+            style: TextStyle(
+              color: isDark ? AppColors.darkTextSecondary : AppColors.textSecondary,
+              fontWeight: FontWeight.w500,
+              fontSize: 11,
+              letterSpacing: 0.3,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildLastVisitBanner(BuildContext context, DateTime lastVisit) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final daysSince = DateTime.now().difference(lastVisit).inDays;
+    final dateFormat = DateFormat('MMM d, yyyy');
+    
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+      decoration: BoxDecoration(
+        color: AppColors.success.withValues(alpha: isDark ? 0.15 : 0.1),
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(
+          color: AppColors.success.withValues(alpha: 0.2),
+        ),
+      ),
+      child: Row(
+        children: [
+          Container(
+            padding: const EdgeInsets.all(8),
+            decoration: BoxDecoration(
+              color: AppColors.success.withValues(alpha: 0.15),
+              borderRadius: BorderRadius.circular(10),
+            ),
+            child: const Icon(Icons.history_rounded, color: AppColors.success, size: 18),
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'Last Visit',
+                  style: TextStyle(
+                    fontSize: 11,
+                    color: isDark ? AppColors.darkTextSecondary : AppColors.textSecondary,
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+                Text(
+                  '${dateFormat.format(lastVisit)} • $daysSince days ago',
+                  style: const TextStyle(
+                    fontSize: 14,
+                    fontWeight: FontWeight.w600,
+                    color: AppColors.success,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          Icon(
+            Icons.chevron_right_rounded,
+            color: AppColors.success.withValues(alpha: 0.5),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildStatsLoadingPlaceholder(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    return Row(
+      children: List.generate(3, (index) => Expanded(
+        child: Container(
+          margin: EdgeInsets.only(right: index < 2 ? 12 : 0),
+          height: 120,
+          decoration: BoxDecoration(
+            color: (isDark ? Colors.white : Colors.grey).withValues(alpha: 0.1),
+            borderRadius: BorderRadius.circular(18),
+          ),
+        ),
+      )),
     );
   }
 
@@ -2664,19 +3178,19 @@ class _PatientViewScreenState extends ConsumerState<PatientViewScreen>
   }
 
   Widget _buildSpeedDial(BuildContext context) {
-    return DecoratedBox(
+    return Container(
       decoration: BoxDecoration(
         gradient: const LinearGradient(
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
-          colors: [AppColors.primary, AppColors.accent],
+          colors: [AppColors.primary, AppColors.primaryDark],
         ),
-        borderRadius: BorderRadius.circular(14),
+        borderRadius: BorderRadius.circular(16),
         boxShadow: [
           BoxShadow(
-            color: AppColors.primary.withValues(alpha: 0.3),
-            blurRadius: 12,
-            offset: const Offset(0, 4),
+            color: AppColors.primary.withValues(alpha: 0.4),
+            blurRadius: 16,
+            offset: const Offset(0, 6),
           ),
         ],
       ),
@@ -2687,7 +3201,8 @@ class _PatientViewScreenState extends ConsumerState<PatientViewScreen>
         },
         backgroundColor: Colors.transparent,
         elevation: 0,
-        child: const Icon(Icons.add_rounded, size: 26),
+        highlightElevation: 0,
+        child: const Icon(Icons.add_rounded, size: 28, color: Colors.white),
       ),
     );
   }
@@ -2697,12 +3212,13 @@ class _PatientViewScreenState extends ConsumerState<PatientViewScreen>
     
     showModalBottomSheet<void>(
       context: context,
-      backgroundColor: isDark ? AppColors.darkSurface : Colors.white,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
-      ),
-      builder: (context) => Padding(
-        padding: const EdgeInsets.all(20),
+      backgroundColor: Colors.transparent,
+      isScrollControlled: true,
+      builder: (context) => Container(
+        decoration: BoxDecoration(
+          color: isDark ? AppColors.darkSurface : Colors.white,
+          borderRadius: const BorderRadius.vertical(top: Radius.circular(28)),
+        ),
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
@@ -2710,120 +3226,213 @@ class _PatientViewScreenState extends ConsumerState<PatientViewScreen>
             Container(
               width: 40,
               height: 4,
+              margin: const EdgeInsets.only(top: 12, bottom: 8),
               decoration: BoxDecoration(
                 color: isDark ? AppColors.darkDivider : AppColors.divider,
                 borderRadius: BorderRadius.circular(2),
               ),
             ),
-            const SizedBox(height: 20),
             // Header
-            Row(
+            Padding(
+              padding: const EdgeInsets.fromLTRB(24, 12, 24, 20),
+              child: Row(
+                children: [
+                  Container(
+                    padding: const EdgeInsets.all(10),
+                    decoration: BoxDecoration(
+                      gradient: AppColors.primaryGradient,
+                      borderRadius: BorderRadius.circular(12),
+                      boxShadow: [
+                        BoxShadow(
+                          color: AppColors.primary.withValues(alpha: 0.3),
+                          blurRadius: 8,
+                          offset: const Offset(0, 3),
+                        ),
+                      ],
+                    ),
+                    child: const Icon(Icons.flash_on_rounded, color: Colors.white, size: 20),
+                  ),
+                  const SizedBox(width: 14),
+                  Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'Quick Actions',
+                        style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                          fontWeight: FontWeight.w700,
+                        ),
+                      ),
+                      Text(
+                        'What would you like to do?',
+                        style: TextStyle(
+                          fontSize: 13,
+                          color: isDark ? AppColors.darkTextSecondary : AppColors.textSecondary,
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+            ),
+            // Divider
+            Divider(height: 1, color: isDark ? AppColors.darkDivider : AppColors.divider),
+            // Action list
+            Padding(
+              padding: const EdgeInsets.fromLTRB(16, 8, 16, 8),
+              child: Column(
+                children: [
+                  _buildModernActionTile(
+                    context,
+                    icon: Icons.calendar_today_rounded,
+                    title: 'Schedule Appointment',
+                    subtitle: 'Book a new visit',
+                    color: AppColors.primary,
+                    onTap: () {
+                      Navigator.pop(context);
+                      _scheduleAppointment(context);
+                    },
+                  ),
+                  _buildModernActionTile(
+                    context,
+                    icon: Icons.medication_rounded,
+                    title: 'Create Prescription',
+                    subtitle: 'Issue new medications',
+                    color: AppColors.accent,
+                    onTap: () {
+                      Navigator.pop(context);
+                      _createPrescription(context);
+                    },
+                  ),
+                  _buildModernActionTile(
+                    context,
+                    icon: Icons.note_add_rounded,
+                    title: 'Add Medical Record',
+                    subtitle: 'Document consultation',
+                    color: AppColors.warning,
+                    onTap: () {
+                      Navigator.pop(context);
+                      _addMedicalRecord(context, 'general');
+                    },
+                  ),
+                  _buildModernActionTile(
+                    context,
+                    icon: Icons.receipt_long_rounded,
+                    title: 'Create Invoice',
+                    subtitle: 'Bill for services',
+                    color: AppColors.billing,
+                    onTap: () {
+                      Navigator.pop(context);
+                      _createInvoice(context);
+                    },
+                  ),
+                  _buildModernActionTile(
+                    context,
+                    icon: Icons.psychology_rounded,
+                    title: 'Psychiatric Assessment',
+                    subtitle: 'Quick or comprehensive',
+                    color: const Color(0xFF9B59B6),
+                    onTap: () {
+                      Navigator.pop(context);
+                      _addMedicalRecord(context, 'psychiatric_assessment');
+                    },
+                  ),
+                  if (widget.patient.phone.isNotEmpty)
+                    _buildModernActionTile(
+                      context,
+                      icon: Icons.phone_rounded,
+                      title: 'Contact Patient',
+                      subtitle: widget.patient.phone,
+                      color: AppColors.success,
+                      onTap: () {
+                        Navigator.pop(context);
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(
+                            content: Text('Calling ${widget.patient.phone}...'),
+                            behavior: SnackBarBehavior.floating,
+                          ),
+                        );
+                      },
+                    ),
+                ],
+              ),
+            ),
+            const SizedBox(height: 16),
+            SafeArea(
+              top: false,
+              child: Container(),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildModernActionTile(
+    BuildContext context, {
+    required IconData icon,
+    required String title,
+    required String subtitle,
+    required Color color,
+    required VoidCallback onTap,
+  }) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 4),
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          onTap: onTap,
+          borderRadius: BorderRadius.circular(14),
+          child: Container(
+            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+            decoration: BoxDecoration(
+              color: color.withValues(alpha: isDark ? 0.08 : 0.05),
+              borderRadius: BorderRadius.circular(14),
+              border: Border.all(
+                color: color.withValues(alpha: 0.1),
+              ),
+            ),
+            child: Row(
               children: [
                 Container(
-                  padding: const EdgeInsets.all(8),
+                  padding: const EdgeInsets.all(10),
                   decoration: BoxDecoration(
-                    color: AppColors.primary.withValues(alpha: 0.1),
-                    borderRadius: BorderRadius.circular(10),
+                    color: color.withValues(alpha: 0.15),
+                    borderRadius: BorderRadius.circular(12),
                   ),
-                  child: const Icon(Icons.flash_on_rounded, color: AppColors.primary, size: 20),
+                  child: Icon(icon, color: color, size: 22),
                 ),
-                const SizedBox(width: 12),
-                Text(
-                  'Quick Actions',
-                  style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                    fontWeight: FontWeight.bold,
+                const SizedBox(width: 14),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        title,
+                        style: TextStyle(
+                          fontWeight: FontWeight.w600,
+                          fontSize: 15,
+                          color: isDark ? AppColors.darkTextPrimary : AppColors.textPrimary,
+                        ),
+                      ),
+                      Text(
+                        subtitle,
+                        style: TextStyle(
+                          fontSize: 12,
+                          color: isDark ? AppColors.darkTextSecondary : AppColors.textSecondary,
+                        ),
+                      ),
+                    ],
                   ),
+                ),
+                Icon(
+                  Icons.arrow_forward_ios_rounded,
+                  size: 16,
+                  color: color.withValues(alpha: 0.6),
                 ),
               ],
             ),
-            const SizedBox(height: 20),
-            // Action list
-            _buildActionListTile(
-              context,
-              icon: Icons.calendar_today_rounded,
-              title: 'Schedule Appointment',
-              color: AppColors.primary,
-              onTap: () {
-                Navigator.pop(context);
-                _scheduleAppointment(context);
-              },
-            ),
-            _buildActionListTile(
-              context,
-              icon: Icons.medication_rounded,
-              title: 'Create Prescription',
-              color: AppColors.accent,
-              onTap: () {
-                Navigator.pop(context);
-                _createPrescription(context);
-              },
-            ),
-            _buildActionListTile(
-              context,
-              icon: Icons.note_add_rounded,
-              title: 'Add Medical Record',
-              color: AppColors.warning,
-              onTap: () {
-                Navigator.pop(context);
-                _addMedicalRecord(context, 'general');
-              },
-            ),
-            _buildActionListTile(
-              context,
-              icon: Icons.receipt_long_rounded,
-              title: 'Create Invoice',
-              color: const Color(0xFF6366F1),
-              onTap: () {
-                Navigator.pop(context);
-                _createInvoice(context);
-              },
-            ),
-            _buildActionListTile(
-              context,
-              icon: Icons.psychology_rounded,
-              title: 'Quick Psychiatric Assessment',
-              color: const Color(0xFF9B59B6),
-              onTap: () {
-                Navigator.pop(context);
-                _addMedicalRecord(context, 'psychiatric_assessment');
-              },
-            ),
-            _buildActionListTile(
-              context,
-              icon: Icons.psychology_alt_rounded,
-              title: 'Comprehensive Psychiatric Assessment',
-              color: const Color(0xFF8E44AD),
-              onTap: () {
-                Navigator.pop(context);
-                _openDetailedPsychiatricAssessment(context);
-              },
-            ),
-            _buildActionListTile(
-              context,
-              icon: Icons.phone_rounded,
-              title: 'Call Patient',
-              color: AppColors.info,
-              onTap: () {
-                Navigator.pop(context);
-                if (widget.patient.phone.isNotEmpty) {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(
-                      content: Text('Calling ${widget.patient.phone}...'),
-                      behavior: SnackBarBehavior.floating,
-                    ),
-                  );
-                } else {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(
-                      content: Text('No phone number available'),
-                      behavior: SnackBarBehavior.floating,
-                    ),
-                  );
-                }
-              },
-            ),
-            const SizedBox(height: 8),
-          ],
+          ),
         ),
       ),
     );
