@@ -3,6 +3,7 @@ library;
 
 import 'package:flutter/material.dart';
 import '../../db/doctor_db.dart';
+import '../../services/doctor_auth_service.dart';
 import '../../ui/screens/add_appointment_screen.dart';
 import '../../ui/screens/add_invoice_screen.dart';
 import '../../ui/screens/add_medical_record_screen.dart';
@@ -10,6 +11,8 @@ import '../../ui/screens/add_patient_screen.dart';
 import '../../ui/screens/add_prescription_screen.dart';
 import '../../ui/screens/appointments_screen.dart';
 import '../../ui/screens/billing_screen.dart';
+import '../../ui/screens/doctor_dashboard_screen.dart';
+import '../../ui/screens/doctor_login_screen.dart';
 import '../../ui/screens/doctor_profile_screen.dart';
 import '../../ui/screens/patient_view_screen_modern.dart';
 import '../../ui/screens/patients_screen.dart';
@@ -23,6 +26,8 @@ import '../../ui/screens/user_manual_screen.dart';
 /// Route names as constants
 abstract class AppRoutes {
   static const String home = '/';
+  static const String doctorLogin = '/doctor-login';
+  static const String doctorDashboard = '/doctor-dashboard';
   static const String dashboard = '/dashboard';
   static const String patients = '/patients';
   static const String patientView = '/patients/view';
@@ -86,6 +91,12 @@ class AddInvoiceArgs {
 class AppRouter {
   static Route<dynamic> generateRoute(RouteSettings settings) {
     switch (settings.name) {
+      case AppRoutes.doctorLogin:
+        return _buildRoute(const DoctorLoginScreen(), settings);
+        
+      case AppRoutes.doctorDashboard:
+        return _buildRoute(const DoctorDashboardScreen(), settings);
+        
       case AppRoutes.patients:
         return _buildRoute(const PatientsScreen(), settings);
         
