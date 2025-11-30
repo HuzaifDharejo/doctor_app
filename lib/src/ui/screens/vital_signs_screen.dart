@@ -7,6 +7,7 @@ import '../../db/doctor_db.dart';
 import '../../providers/db_provider.dart';
 import '../../services/vital_thresholds_service.dart' as vital_service;
 import '../widgets/vital_signs_alert_dialog.dart';
+import '../widgets/quick_vital_entry_modal.dart';
 
 /// Screen to view and add vital signs for a patient
 class VitalSignsScreen extends ConsumerStatefulWidget {
@@ -89,11 +90,17 @@ class _VitalSignsScreenState extends ConsumerState<VitalSignsScreen> with Single
                 _buildWeightChart(colorScheme),
               ],
             ),
-      floatingActionButton: FloatingActionButton.extended(
-        onPressed: () => _showAddVitalSignsDialog(),
-        icon: const Icon(Icons.add),
-        label: const Text('Record Vitals'),
+      floatingActionButton: FloatingActionButton(
+        onPressed: () => QuickVitalEntryModal.showAdaptive(
+          context: context,
+          patientId: widget.patientId,
+          patientName: widget.patientName,
+          onSaved: _loadVitalSigns,
+        ),
+        tooltip: 'Quick Vital Entry',
+        child: const Icon(Icons.speed_rounded),
       ),
+      floatingActionButtonLocation: FloatingActionButtonLocation.centerDocked,
     );
   }
 
