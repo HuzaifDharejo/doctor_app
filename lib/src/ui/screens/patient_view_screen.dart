@@ -11,6 +11,7 @@ import '../../services/pdf_service.dart';
 import '../../services/whatsapp_service.dart';
 import '../../theme/app_theme.dart';
 import '../widgets/patient_avatar.dart';
+import '../widgets/clinical_overview_card.dart';
 import 'add_appointment_screen.dart';
 import 'add_invoice_screen.dart';
 import 'add_prescription_screen.dart';
@@ -488,149 +489,227 @@ class _PatientViewScreenState extends ConsumerState<PatientViewScreen>
   Widget _buildOverviewTab(BuildContext context) {
     final patient = widget.patient;
     final dateFormat = DateFormat('MMM d, yyyy');
+    final dbAsync = ref.watch(doctorDbProvider);
 
-    return Stack(
-      children: [
-        SingleChildScrollView(
-          padding: const EdgeInsets.all(20),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
+    // Extract allergies from medical history
+    final allergies = _extractAllergiesFromHistory(patient.medicalHistory);
+
+    return dbAsync.when(
+      data: (db) => FutureBuilder<List<VitalSign>>(
+        future: db.getVitalSignsForPatient(patient.id),
+        builder: (context, vitalSnapshot) {
+          String? latestBP;
+          String? latestTemperature;
+
+          if (vitalSnapshot.hasData && vitalSnapshot.data!.isNotEmpty) {
+            final latest = vitalSnapshot.data!.first;
+            if (latest.systolicBp != null && latest.diastolicBp != null) {
+              latestBP = '${latest.systolicBp!.toInt()}/${latest.diastolicBp!.toInt()}';
+            }
+            if (latest.temperature != null) {
+              latestTemperature = '${latest.temperature!.toStringAsFixed(1)}°C';
+            }
+          }
+
+          return Stack(
             children: [
-              // Quick Stats Section at top
-              _buildQuickStats(context),
-              const SizedBox(height: 20),
-              
-              // Contact Information Card (Editable)
-              _buildSectionCard(
-                context,
-                title: 'Contact Information',
-                icon: Icons.contact_phone_rounded,
-                accentColor: AppColors.info,
-                children: [
-                  _buildEditableInfoRow(Icons.phone_rounded, 'Phone', _phoneController, hint: 'Enter phone number', keyboardType: TextInputType.phone),
-                  _buildEditableInfoRow(Icons.email_rounded, 'Email', _emailController, hint: 'Enter email address', keyboardType: TextInputType.emailAddress),
-                  _buildEditableInfoRow(Icons.location_on_rounded, 'Address', _addressController, hint: 'Enter address', maxLines: 2),
-                ],
-              ),
-              const SizedBox(height: 16),
-
-              // Personal Information Card (Read-only)
-              _buildSectionCard(
-                context,
-                title: 'Personal Information',
-                icon: Icons.person_rounded,
-                accentColor: AppColors.accent,
-                children: [
-                  _buildInfoRow(
-                    Icons.cake_rounded,
-                    'Date of Birth',
-                    patient.dateOfBirth != null ? dateFormat.format(patient.dateOfBirth!) : 'Not provided',
-                  ),
-                  if (patient.dateOfBirth != null)
-                    _buildInfoRow(
-                      Icons.calendar_today_rounded,
-                      'Age',
-                      '${_calculateAge(patient.dateOfBirth!)} years old',
-                    ),
-                  _buildInfoRow(
-                    Icons.event_rounded,
-                    'Patient Since',
-                    dateFormat.format(patient.createdAt),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 16),
-
-              // Tags Card (Read-only)
-              if (patient.tags.isNotEmpty)
-                _buildSectionCard(
-                  context,
-                  title: 'Tags',
-                  icon: Icons.label_rounded,
-                  accentColor: const Color(0xFF9B59B6),
+              SingleChildScrollView(
+                padding: const EdgeInsets.all(20),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Wrap(
-                      spacing: 8,
-                      runSpacing: 8,
-                      children: patient.tags.split(',').where((tag) => tag.trim().isNotEmpty).map((tag) {
-                        final tagColor = _getTagColor(tag.trim());
-                        return Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                          decoration: BoxDecoration(
-                            color: tagColor.withValues(alpha: 0.1),
-                            borderRadius: BorderRadius.circular(16),
-                            border: Border.all(color: tagColor.withValues(alpha: 0.3)),
-                          ),
-                          child: Text(
-                            tag.trim(),
-                            style: TextStyle(
-                              color: tagColor,
-                              fontWeight: FontWeight.w500,
-                              fontSize: 13,
-                            ),
-                          ),
+                    // Clinical Overview Card (NEW - Doctor Focused)
+                    ClinicalOverviewCard(
+                      patient: patient,
+                      allergies: allergies,
+                      latestBP: latestBP,
+                      latestTemperature: latestTemperature,
+                      onViewFullHistory: () {
+                        _tabController.animateTo(1); // Medical History tab
+                      },
+                      onAddVitals: () {
+                        // Navigate to vital signs screen
+                        Navigator.of(context).pushNamed(
+                          '/vital_signs',
+                          arguments: {
+                            'patientId': patient.id,
+                            'patientName': '${patient.firstName} ${patient.lastName}',
+                          },
                         );
-                      }).toList(),
+                      },
                     ),
+                    const SizedBox(height: 20),
+
+                    // Quick Stats Section
+                    _buildQuickStats(context),
+                    const SizedBox(height: 20),
+
+                    // Contact Information Card (Editable)
+                    _buildSectionCard(
+                      context,
+                      title: 'Contact Information',
+                      icon: Icons.contact_phone_rounded,
+                      accentColor: AppColors.info,
+                      children: [
+                        _buildEditableInfoRow(Icons.phone_rounded, 'Phone', _phoneController, hint: 'Enter phone number', keyboardType: TextInputType.phone),
+                        _buildEditableInfoRow(Icons.email_rounded, 'Email', _emailController, hint: 'Enter email address', keyboardType: TextInputType.emailAddress),
+                        _buildEditableInfoRow(Icons.location_on_rounded, 'Address', _addressController, hint: 'Enter address', maxLines: 2),
+                      ],
+                    ),
+                    const SizedBox(height: 16),
+
+                    // Personal Information Card (Read-only)
+                    _buildSectionCard(
+                      context,
+                      title: 'Personal Information',
+                      icon: Icons.person_rounded,
+                      accentColor: AppColors.accent,
+                      children: [
+                        _buildInfoRow(
+                          Icons.cake_rounded,
+                          'Date of Birth',
+                          patient.dateOfBirth != null ? dateFormat.format(patient.dateOfBirth!) : 'Not provided',
+                        ),
+                        if (patient.dateOfBirth != null)
+                          _buildInfoRow(
+                            Icons.calendar_today_rounded,
+                            'Age',
+                            '${_calculateAge(patient.dateOfBirth!)} years old',
+                          ),
+                        _buildInfoRow(
+                          Icons.event_rounded,
+                          'Patient Since',
+                          dateFormat.format(patient.createdAt),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 16),
+
+                    // Tags Card (Read-only)
+                    if (patient.tags.isNotEmpty)
+                      _buildSectionCard(
+                        context,
+                        title: 'Tags',
+                        icon: Icons.label_rounded,
+                        accentColor: const Color(0xFF9B59B6),
+                        children: [
+                          Wrap(
+                            spacing: 8,
+                            runSpacing: 8,
+                            children: patient.tags.split(',').where((tag) => tag.trim().isNotEmpty).map((tag) {
+                              final tagColor = _getTagColor(tag.trim());
+                              return Container(
+                                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                                decoration: BoxDecoration(
+                                  color: tagColor.withValues(alpha: 0.1),
+                                  borderRadius: BorderRadius.circular(16),
+                                  border: Border.all(color: tagColor.withValues(alpha: 0.3)),
+                                ),
+                                child: Text(
+                                  tag.trim(),
+                                  style: TextStyle(
+                                    color: tagColor,
+                                    fontWeight: FontWeight.w500,
+                                    fontSize: 13,
+                                  ),
+                                ),
+                              );
+                            }).toList(),
+                          ),
+                        ],
+                      ),
+                    const SizedBox(height: 100), // Space for save button and FAB
                   ],
                 ),
-              const SizedBox(height: 100), // Space for save button and FAB
-            ],
-          ),
-        ),
-        
-        // Save Button (appears when changes are made)
-        if (_hasChanges)
-          Positioned(
-            bottom: 16, // Same as FAB default position
-            left: 20,
-            right: 76, // FAB is ~56px wide + 16px margin + 4px gap
-            child: Material(
-              elevation: 8,
-              shadowColor: AppColors.primary.withValues(alpha: 0.3),
-              borderRadius: BorderRadius.circular(14),
-              child: InkWell(
-                onTap: _isSaving ? null : _saveChanges,
-                borderRadius: BorderRadius.circular(14),
-                child: Container(
-                  height: 56, // Same height as FAB
-                  decoration: BoxDecoration(
-                    gradient: LinearGradient(
-                      colors: [AppColors.primary, AppColors.primary.withValues(alpha: 0.8)],
-                    ),
+              ),
+
+              // Save Button (appears when changes are made)
+              if (_hasChanges)
+                Positioned(
+                  bottom: 16,
+                  left: 20,
+                  right: 76,
+                  child: Material(
+                    elevation: 8,
+                    shadowColor: AppColors.primary.withValues(alpha: 0.3),
                     borderRadius: BorderRadius.circular(14),
-                  ),
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      if (_isSaving)
-                        const SizedBox(
-                          width: 20,
-                          height: 20,
-                          child: CircularProgressIndicator(
-                            strokeWidth: 2,
-                            valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                    child: InkWell(
+                      onTap: _isSaving ? null : _saveChanges,
+                      borderRadius: BorderRadius.circular(14),
+                      child: Container(
+                        height: 56,
+                        decoration: BoxDecoration(
+                          gradient: LinearGradient(
+                            colors: [AppColors.primary, AppColors.primary.withValues(alpha: 0.8)],
                           ),
-                        )
-                      else
-                        const Icon(Icons.save_rounded, color: Colors.white, size: 20),
-                      const SizedBox(width: 8),
-                      Text(
-                        _isSaving ? 'Saving...' : 'Save Changes',
-                        style: const TextStyle(
-                          color: Colors.white,
-                          fontWeight: FontWeight.w600,
-                          fontSize: 16,
+                          borderRadius: BorderRadius.circular(14),
+                        ),
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            if (_isSaving)
+                              const SizedBox(
+                                width: 20,
+                                height: 20,
+                                child: CircularProgressIndicator(
+                                  strokeWidth: 2,
+                                  valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                                ),
+                              )
+                            else
+                              const Icon(Icons.save_rounded, color: Colors.white, size: 20),
+                            const SizedBox(width: 8),
+                            Text(
+                              _isSaving ? 'Saving...' : 'Save Changes',
+                              style: const TextStyle(
+                                color: Colors.white,
+                                fontWeight: FontWeight.w600,
+                                fontSize: 16,
+                              ),
+                            ),
+                          ],
                         ),
                       ),
-                    ],
+                    ),
                   ),
                 ),
-              ),
-            ),
-          ),
-      ],
+            ],
+          );
+        },
+      ),
+      loading: () => const Center(
+        child: CircularProgressIndicator(color: AppColors.primary),
+      ),
+      error: (_, __) => const Center(
+        child: CircularProgressIndicator(color: AppColors.primary),
+      ),
     );
+  }
+
+  /// Extract allergies from medical history text (look for allergy-related keywords)
+  List<String> _extractAllergiesFromHistory(String medicalHistory) {
+    final allergies = <String>[];
+    if (medicalHistory.isEmpty) return allergies;
+
+    // Look for common allergy patterns
+    final allergyPatterns = [
+      RegExp(r'allerg(?:y|ies|ic)\s+to\s+([^,;.]+)', caseSensitive: false),
+      RegExp(r'([A-Za-z]+)\s+allerg(?:y|ies)', caseSensitive: false),
+    ];
+
+    for (final pattern in allergyPatterns) {
+      final matches = pattern.allMatches(medicalHistory);
+      for (final match in matches) {
+        if (match.groupCount >= 1) {
+          final allergy = match.group(1)?.trim() ?? '';
+          if (allergy.isNotEmpty && !allergies.contains(allergy)) {
+            allergies.add(allergy);
+          }
+        }
+      }
+    }
+
+    return allergies;
   }
 
   Widget _buildMedicalHistoryTab(BuildContext context) {
