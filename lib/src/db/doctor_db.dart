@@ -234,7 +234,25 @@ class MedicalRecordWithPatient {
   final Patient patient;
 }
 
-@DriftDatabase(tables: [Patients, Appointments, Prescriptions, MedicalRecords, Invoices, VitalSigns, TreatmentOutcomes, ScheduledFollowUps, TreatmentSessions, MedicationResponses, TreatmentGoals])
+/// Audit Log - HIPAA compliance tracking of all data access and modifications
+class AuditLogs extends Table {
+  IntColumn get id => integer().autoIncrement()();
+  TextColumn get action => text()(); // 'LOGIN', 'LOGOUT', 'VIEW_PATIENT', 'UPDATE_PATIENT', 'CREATE_RECORD', 'UPDATE_RECORD', 'DELETE_RECORD', 'VIEW_VITALS', 'EXPORT_DATA', etc.
+  TextColumn get doctorName => text()(); // Doctor performing the action
+  TextColumn get doctorRole => text().withDefault(const Constant('doctor'))(); // 'doctor', 'staff', 'admin'
+  IntColumn get patientId => integer().nullable()(); // Patient affected by the action
+  TextColumn get patientName => text().withDefault(const Constant(''))(); // Patient name for quick reference
+  TextColumn get entityType => text().withDefault(const Constant(''))(); // 'PATIENT', 'VITAL_SIGN', 'PRESCRIPTION', 'APPOINTMENT', etc.
+  IntColumn get entityId => integer().nullable()(); // ID of the entity being accessed/modified
+  TextColumn get actionDetails => text().withDefault(const Constant(''))(); // JSON: before/after values for changes
+  TextColumn get ipAddress => text().withDefault(const Constant(''))(); // IP address if available
+  TextColumn get deviceInfo => text().withDefault(const Constant(''))(); // Device info (platform, browser, etc.)
+  TextColumn get result => text().withDefault(const Constant('SUCCESS'))(); // 'SUCCESS', 'FAILURE', 'DENIED'
+  TextColumn get notes => text().withDefault(const Constant(''))(); // Any additional notes
+  DateTimeColumn get createdAt => dateTime().withDefault(currentDateAndTime)();
+}
+
+@DriftDatabase(tables: [Patients, Appointments, Prescriptions, MedicalRecords, Invoices, VitalSigns, TreatmentOutcomes, ScheduledFollowUps, TreatmentSessions, MedicationResponses, TreatmentGoals, AuditLogs])
 class DoctorDatabase extends _$DoctorDatabase {
   DoctorDatabase() : super(impl.openConnection());
   
@@ -243,7 +261,7 @@ class DoctorDatabase extends _$DoctorDatabase {
   DoctorDatabase.forTesting(super.e);
 
   @override
-  int get schemaVersion => 4;
+  int get schemaVersion => 5;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -290,6 +308,10 @@ class DoctorDatabase extends _$DoctorDatabase {
         await m.addColumn(invoices, invoices.appointmentId);
         await m.addColumn(invoices, invoices.prescriptionId);
         await m.addColumn(invoices, invoices.treatmentSessionId);
+      }
+      if (from < 5) {
+        // Add audit logging table for HIPAA compliance
+        await m.createTable(auditLogs);
       }
     },
   );
@@ -987,5 +1009,64 @@ class DoctorDatabase extends _$DoctorDatabase {
       grouped[session.providerType]!.add(session);
     }
     return grouped;
+  }
+
+  // Audit Log CRUD
+  Future<int> insertAuditLog(Insertable<AuditLog> log) => into(auditLogs).insert(log);
+
+  Future<List<AuditLog>> getAuditLogsForPatient(int patientId, {int limit = 100}) {
+    return (select(auditLogs)
+      ..where((log) => log.patientId.equals(patientId))
+      ..orderBy([(log) => OrderingTerm.desc(log.createdAt)])
+      ..limit(limit))
+      .get();
+  }
+
+  Future<List<AuditLog>> getAuditLogsByDoctor(String doctorName, {int limit = 100}) {
+    return (select(auditLogs)
+      ..where((log) => log.doctorName.equals(doctorName))
+      ..orderBy([(log) => OrderingTerm.desc(log.createdAt)])
+      ..limit(limit))
+      .get();
+  }
+
+  Future<List<AuditLog>> getAuditLogsByAction(String action, {int limit = 100}) {
+    return (select(auditLogs)
+      ..where((log) => log.action.equals(action))
+      ..orderBy([(log) => OrderingTerm.desc(log.createdAt)])
+      ..limit(limit))
+      .get();
+  }
+
+  Future<List<AuditLog>> getRecentAuditLogs({int days = 7, int limit = 200}) {
+    final cutoffDate = DateTime.now().subtract(Duration(days: days));
+    return (select(auditLogs)
+      ..where((log) => log.createdAt.isBiggerThanValue(cutoffDate))
+      ..orderBy([(log) => OrderingTerm.desc(log.createdAt)])
+      ..limit(limit))
+      .get();
+  }
+
+  Future<List<AuditLog>> getFailedAccessAttempts({int limit = 100}) {
+    return (select(auditLogs)
+      ..where((log) => log.result.equals('DENIED') | log.result.equals('FAILURE'))
+      ..orderBy([(log) => OrderingTerm.desc(log.createdAt)])
+      ..limit(limit))
+      .get();
+  }
+
+  Future<Map<String, int>> getAuditStatistics(DateTime startDate, DateTime endDate) async {
+    final logs = await (select(auditLogs)
+      ..where((log) => log.createdAt.isBetweenValues(startDate, endDate)))
+      .get();
+
+    return {
+      'totalActions': logs.length,
+      'logins': logs.where((l) => l.action == 'LOGIN').length,
+      'logouts': logs.where((l) => l.action == 'LOGOUT').length,
+      'dataAccess': logs.where((l) => l.action.contains('VIEW')).length,
+      'dataModifications': logs.where((l) => l.action.contains('UPDATE') | l.action.contains('CREATE') | l.action.contains('DELETE')).length,
+      'failedAttempts': logs.where((l) => l.result == 'DENIED' || l.result == 'FAILURE').length,
+    };
   }
 }
