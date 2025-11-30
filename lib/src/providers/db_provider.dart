@@ -3,6 +3,7 @@ import '../db/doctor_db.dart';
 import '../services/allergy_management_service.dart';
 import '../services/communication_service.dart';
 import '../services/doctor_settings_service.dart';
+import '../services/drug_reference_service.dart';
 import '../services/logger_service.dart';
 import '../services/notification_service.dart';
 import '../services/seed_data_service.dart';
@@ -70,3 +71,8 @@ final communicationProvider = Provider<CommunicationService>((ref) {
   return const CommunicationService();
 });
 
+// Drug reference service provider
+final drugReferenceProvider = Provider<DrugReferenceService>((ref) {
+  log.d('DRUG_REFERENCE', 'Initializing drug reference service...');
+  return const DrugReferenceService();
+});
