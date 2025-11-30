@@ -1,5 +1,6 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../db/doctor_db.dart';
+import '../services/allergy_management_service.dart';
 import '../services/doctor_settings_service.dart';
 import '../services/logger_service.dart';
 import '../services/seed_data_service.dart';
@@ -41,3 +42,10 @@ final appSettingsProvider = ChangeNotifierProvider<AppSettingsService>((ref) {
   log.d('SETTINGS', 'Loading app settings...');
   return AppSettingsService()..loadSettings();
 });
+
+// Allergy management service provider
+final allergyManagementProvider = Provider<AllergyManagementService>((ref) {
+  log.d('ALLERGY', 'Initializing allergy management service...');
+  return const AllergyManagementService();
+});
+

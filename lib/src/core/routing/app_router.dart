@@ -9,6 +9,7 @@ import '../../ui/screens/add_invoice_screen.dart';
 import '../../ui/screens/add_medical_record_screen.dart';
 import '../../ui/screens/add_patient_screen.dart';
 import '../../ui/screens/add_prescription_screen.dart';
+import '../../ui/screens/allergy_management_screen.dart';
 import '../../ui/screens/appointments_screen.dart';
 import '../../ui/screens/billing_screen.dart';
 import '../../ui/screens/doctor_dashboard_screen.dart';
@@ -49,6 +50,7 @@ abstract class AppRoutes {
   static const String addMedicalRecord = '/medical-records/add';
   static const String userManual = '/user-manual';
   static const String treatmentDashboard = '/treatment-dashboard';
+  static const String allergyManagement = '/allergy-management';
 }
 
 /// Route arguments for type-safe navigation
@@ -187,6 +189,9 @@ class AppRouter {
           settings,
         );
         
+      case AppRoutes.allergyManagement:
+        return _buildRoute(const AllergyManagementScreen(), settings);
+        
       default:
         return _buildRoute(
           Scaffold(
@@ -306,4 +311,7 @@ extension NavigationHelper on BuildContext {
       arguments: TreatmentDashboardArgs(patientId: patientId, patientName: patientName),
     );
   }
+
+  /// Navigate to allergy management
+  Future<void> goToAllergyManagement() => pushNamed(AppRoutes.allergyManagement);
 }

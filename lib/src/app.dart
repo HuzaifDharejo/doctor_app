@@ -522,6 +522,19 @@ class _HomeShellState extends ConsumerState<HomeShell> {
                     badge: _overdueFollowUps > 0 ? '$_overdueFollowUps' : null,
                   ),
                   
+                  _buildModernDrawerItem(
+                    icon: Icons.warning_rounded,
+                    title: 'Allergy Management',
+                    subtitle: 'Patient allergies',
+                    onTap: () {
+                      context
+                        ..pop<void>()
+                        ..goToAllergyManagement();
+                    },
+                    color: const Color(0xFFDC2626),
+                    isDark: isDarkMode,
+                  ),
+                  
                   if (isPsychiatricEnabled)
                     _buildModernDrawerItem(
                       icon: Icons.psychology_rounded,
