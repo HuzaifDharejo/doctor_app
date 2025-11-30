@@ -469,6 +469,7 @@ class DemographicsVisualization extends ConsumerWidget {
 
     final total = data.values.fold<int>(0, (sum, val) => sum + val);
     final sections = data.entries
+        .toList()
         .asMap()
         .entries
         .map((entry) => PieChartSectionData(
@@ -508,6 +509,7 @@ class DemographicsVisualization extends ConsumerWidget {
               spacing: 16,
               runSpacing: 8,
               children: data.entries
+                  .toList()
                   .asMap()
                   .entries
                   .map((entry) => Row(

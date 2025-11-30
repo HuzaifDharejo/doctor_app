@@ -214,7 +214,7 @@ class NotificationsPanel extends ConsumerWidget {
       case 'follow_up_reminder':
         return Icons.event_repeat_rounded;
       case 'medication_reminder':
-        return Icons.medicine_rounded;
+        return Icons.medical_services_rounded;
       case 'clinical_alert':
         return Icons.warning_rounded;
       case 'overdue_followup':

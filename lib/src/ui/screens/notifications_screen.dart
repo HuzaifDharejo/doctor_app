@@ -74,7 +74,7 @@ class _NotificationsScreenState extends ConsumerState<NotificationsScreen>
           _buildPreferenceCard(
             'Medication Reminders',
             'Reminder to take prescribed medications',
-            Icons.medicine_rounded,
+            Icons.medical_services_rounded,
             onTap: () => _showPreferencesDialog(),
           ),
           _buildPreferenceCard(

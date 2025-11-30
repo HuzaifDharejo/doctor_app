@@ -66,6 +66,50 @@ class AppCard extends StatelessWidget {
         borderRadius = null,
         boxShadow = null,
         hasBorder = false;
+
+  /// Creates a simple card with no decorations
+  const AppCard.simple({
+    required this.child, super.key,
+    this.padding,
+    this.margin,
+    this.onTap,
+    this.onLongPress,
+  })  : color = null,
+        borderColor = null,
+        borderWidth = null,
+        borderRadius = null,
+        boxShadow = null,
+        hasBorder = false,
+        gradient = null;
+
+  /// Creates an interactive card with hover effects
+  const AppCard.interactive({
+    required this.child, super.key,
+    this.padding,
+    this.margin,
+    this.onTap,
+    this.onLongPress,
+  })  : color = null,
+        borderColor = AppColors.primary,
+        borderWidth = 1.5,
+        borderRadius = null,
+        boxShadow = AppShadow.small,
+        hasBorder = true,
+        gradient = null;
+
+  /// Creates a tonal card with colored background
+  const AppCard.tonal({
+    required this.child, required this.color, super.key,
+    this.padding,
+    this.margin,
+    this.onTap,
+    this.onLongPress,
+  })  : borderColor = null,
+        borderWidth = null,
+        borderRadius = null,
+        boxShadow = null,
+        hasBorder = false,
+        gradient = null;
   final Widget child;
   final EdgeInsetsGeometry? padding;
   final EdgeInsetsGeometry? margin;

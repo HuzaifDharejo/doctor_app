@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../services/clinical_analytics_service.dart';
-import '../../widgets/analytics_widgets.dart';
+import '../widgets/analytics_widgets.dart';
 
 /// Clinical Analytics Screen
 /// Provides comprehensive analytics with 4 tabs: Trends, Success Rates, Treatment Outcomes, Demographics

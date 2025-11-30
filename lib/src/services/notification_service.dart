@@ -59,12 +59,12 @@ class NotificationService {
       scheduledFor: reminderTime,
       priority: 'high',
       channels: ['email', 'sms', 'whatsapp'],
-      subject: 'Follow-up Reminder: ${followUp.followUpType}',
+      subject: 'Follow-up Reminder: ${followUp.reason}',
       body: _buildFollowUpReminderMessage(followUp, patient, hoursBefore),
       metadata: {
         'followUpId': followUp.id.toString(),
         'patientId': patient.id.toString(),
-        'type': followUp.followUpType,
+        'type': followUp.reason,
       },
     );
   }
@@ -144,7 +144,7 @@ class NotificationService {
       if (patient != null &&
           apt.appointmentDateTime.isAfter(startDate) &&
           apt.appointmentDateTime.isBefore(endDate)) {
-        final reminder = await createAppointmentReminder(apt, patient);
+        final reminder = await createAppointmentReminder(apt, patient, doctorPhone: 'system', doctorEmail: 'system@doctor.local');
         notifications.add(reminder);
       }
     }
@@ -184,7 +184,7 @@ class NotificationService {
             scheduledFor: followUp.scheduledDate,
             priority: 'high',
             channels: ['in_app', 'email'],
-            subject: 'Overdue: ${followUp.followUpType}',
+            subject: 'Overdue: ${followUp.reason}',
             body: 'Follow-up scheduled for ${followUp.scheduledDate.toString().split(' ')[0]} is now overdue for ${patient.firstName}',
             metadata: {
               'followUpId': followUp.id.toString(),
@@ -234,9 +234,9 @@ Doctor''';
 
 This is a reminder about your upcoming follow-up:
 
-Type: ${followUp.followUpType}
+Type: ${followUp.reason}
 Scheduled Date: ${followUp.scheduledDate.toString().split(' ')[0]}
-Instructions: ${followUp.instructions}
+Instructions: ${followUp.notes}
 
 Please make sure to complete this follow-up as scheduled.
 

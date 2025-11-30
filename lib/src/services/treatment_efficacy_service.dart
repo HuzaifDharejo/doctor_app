@@ -12,8 +12,9 @@ class TreatmentEfficacyService {
     DoctorDatabase db,
     int patientId,
     String vitalType, // 'systolic_bp', 'diastolic_bp', 'heart_rate', 'temperature', 'oxygen_sat'
-    {int days = 30},
+    {required int days,}
   ) async {
+    days = days == 0 ? 30 : days;
     final startDate = DateTime.now().subtract(Duration(days: days));
     
     final vitals = await db.getVitalSignsForPatient(patientId);
@@ -49,14 +50,14 @@ class TreatmentEfficacyService {
     final first = values.first;
     final last = values.last;
     final change = last - first;
-    final percentChange = first > 0 ? (change / first * 100) : 0;
+    final percentChange = first > 0 ? (change / first * 100) : 0.0;
 
     return VitalSignTrend(
       vitalType: vitalType,
       initialValue: first,
       currentValue: last,
       change: change,
-      percentChange: percentChange,
+      percentChange: percentChange as double,
       dataPoints: values,
       recordCount: filteredVitals.length,
       startDate: filteredVitals.first.recordedAt,
@@ -78,8 +79,8 @@ class TreatmentEfficacyService {
 
     // Calculate average effectiveness and side effects
     final effectivenessRatings = responses
-        .where((r) => r.effectivenessRating != null)
-        .map((r) => r.effectivenessRating!)
+        .where((r) => r.effectivenessScore != null)
+        .map((r) => r.effectivenessScore!.toDouble())
         .toList();
 
     final sideEffectSevere = responses
@@ -94,7 +95,7 @@ class TreatmentEfficacyService {
       prescriptionId: patientId,
       avgEffectiveness: avgEffectiveness,
       responseCount: responses.length,
-      sideEffectsReported: responses.where((r) => r.sideEffectRating != null).length,
+      sideEffectsReported: responses.where((r) => r.effectivenessScore != null).length,
       severeSideEffects: sideEffectSevere,
       toleranceScore: avgEffectiveness > 7 && sideEffectSevere < 2 ? 'excellent' :
                       avgEffectiveness > 5 && sideEffectSevere < 3 ? 'good' :
@@ -106,8 +107,9 @@ class TreatmentEfficacyService {
   Future<TreatmentProgression?> getTreatmentProgression(
     DoctorDatabase db,
     int patientId,
-    {int sessions = 10},
+    {required int sessions,}
   ) async {
+    sessions = sessions == 0 ? 10 : sessions;
     final treatmentSessions = await db.getTreatmentSessionsForPatient(patientId);
     
     if (treatmentSessions.isEmpty) return null;
@@ -173,7 +175,7 @@ class TreatmentEfficacyService {
         diagnoses: [outcome.diagnosis],
         treatmentPlan: outcome.treatmentDescription,
         startDate: outcome.startDate,
-        expectedEndDate: outcome.nextReviewDate ?? outcome.endDate,
+        expectedEndDate: outcome.endDate ?? DateTime.now(),
         actualEndDate: outcome.endDate,
         outcome: outcome.outcome,
         successStatus: _calculateSuccessStatus(outcome.outcome),

@@ -82,7 +82,7 @@ class ClinicalAnalyticsService {
   // Sample Data: Diagnosis Trends (Daily Cases over 30 days)
   // ============================================================================
 
-  static const List<DiagnosisTrend> _diagnosisTrendDatabase = [
+  static final List<DiagnosisTrend> _diagnosisTrendDatabase = [
     // Hypertension - Increasing trend
     DiagnosisTrend(
       id: 'htn_001',
