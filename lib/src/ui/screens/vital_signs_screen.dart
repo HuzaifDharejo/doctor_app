@@ -5,6 +5,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 import '../../db/doctor_db.dart';
 import '../../providers/db_provider.dart';
+import '../../services/vital_thresholds_service.dart' as vital_service;
+import '../widgets/vital_signs_alert_dialog.dart';
 
 /// Screen to view and add vital signs for a patient
 class VitalSignsScreen extends ConsumerStatefulWidget {
@@ -876,9 +878,106 @@ class _VitalSignsScreenState extends ConsumerState<VitalSignsScreen> with Single
                   notes: Value(notesController.text),
                 ));
 
+                // Check vital signs against clinical thresholds
+                final vitalsList = <vital_service.VitalSign>[];
+                if (systolic != null) {
+                  vitalsList.add(vital_service.VitalSign(
+                    name: 'Systolic BP',
+                    value: systolic,
+                    unit: 'mmHg',
+                    minNormal: 90,
+                    maxNormal: 130,
+                    criticalLow: 80,
+                    criticalHigh: 180,
+                  ));
+                }
+                if (diastolic != null) {
+                  vitalsList.add(vital_service.VitalSign(
+                    name: 'Diastolic BP',
+                    value: diastolic,
+                    unit: 'mmHg',
+                    minNormal: 60,
+                    maxNormal: 85,
+                    criticalLow: 50,
+                    criticalHigh: 120,
+                  ));
+                }
+                if (heartRate != null) {
+                  vitalsList.add(vital_service.VitalSign(
+                    name: 'Heart Rate',
+                    value: heartRate.toDouble(),
+                    unit: 'bpm',
+                    minNormal: 60,
+                    maxNormal: 100,
+                    criticalLow: 40,
+                    criticalHigh: 120,
+                  ));
+                }
+                if (temp != null) {
+                  vitalsList.add(vital_service.VitalSign(
+                    name: 'Temperature',
+                    value: temp,
+                    unit: '°C',
+                    minNormal: 36.5,
+                    maxNormal: 37.5,
+                    criticalLow: 35,
+                    criticalHigh: 38.5,
+                  ));
+                }
+                if (spo2 != null) {
+                  vitalsList.add(vital_service.VitalSign(
+                    name: 'O2 Saturation',
+                    value: spo2,
+                    unit: '%',
+                    minNormal: 95,
+                    maxNormal: 100,
+                    criticalLow: 90,
+                    criticalHigh: 100,
+                  ));
+                }
+                if (respRate != null) {
+                  vitalsList.add(vital_service.VitalSign(
+                    name: 'Respiratory Rate',
+                    value: respRate.toDouble(),
+                    unit: '/min',
+                    minNormal: 12,
+                    maxNormal: 20,
+                    criticalLow: 10,
+                    criticalHigh: 24,
+                  ));
+                }
+
+                // Get abnormal and critical vitals
+                final abnormalVitals = vitalsList.where((v) => v.isAbnormal).toList();
+                final criticalVitals = vitalsList.where((v) => v.isCritical).toList();
+
                 Navigator.pop(context);
                 await _loadVitalSigns();
-                if (mounted) {
+
+                // Show alert if there are abnormal/critical vitals
+                if (abnormalVitals.isNotEmpty || criticalVitals.isNotEmpty) {
+                  if (mounted) {
+                    showDialog<void>(
+                      context: context,
+                      barrierDismissible: false,
+                      builder: (context) => VitalSignsAlertDialog(
+                        abnormalVitals: abnormalVitals,
+                        criticalVitals: criticalVitals,
+                        onAcknowledge: () {
+                          Navigator.pop(context);
+                          if (mounted) {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              const SnackBar(
+                                content: Text('Vital signs recorded and acknowledged'),
+                                backgroundColor: Colors.orange,
+                              ),
+                            );
+                          }
+                        },
+                      ),
+                    );
+                  }
+                } else if (mounted) {
                   ScaffoldMessenger.of(context).showSnackBar(
                     const SnackBar(content: Text('Vital signs recorded successfully')),
                   );

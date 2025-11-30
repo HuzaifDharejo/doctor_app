@@ -76,7 +76,8 @@ class VitalSignsAlertDialog extends StatelessWidget {
               ),
               const SizedBox(height: 16),
             ],
-            if (abnormalVitals.isNotEmpty && abnormalVitals != criticalVitals) ...[
+            if (abnormalVitals.isNotEmpty &&
+                abnormalVitals.where((v) => !v.isCritical).isNotEmpty) ...[
               Container(
                 width: double.infinity,
                 padding: const EdgeInsets.all(12),
@@ -119,7 +120,7 @@ class VitalSignsAlertDialog extends StatelessWidget {
             ],
             const SizedBox(height: 16),
             Text(
-              'Recommendations:',
+              'Clinical Recommendations:',
               style: Theme.of(context).textTheme.titleSmall?.copyWith(
                     fontWeight: FontWeight.bold,
                   ),
@@ -168,7 +169,7 @@ class VitalSignsAlertDialog extends StatelessWidget {
                       ),
                     ],
                   ),
-                );
+                ),
               );
             }).toList(),
           ],
@@ -179,10 +180,10 @@ class VitalSignsAlertDialog extends StatelessWidget {
           FilledButton.tonalIcon(
             onPressed: () {
               Navigator.pop(context);
-              // Could trigger emergency protocol here
+              // Emergency protocol placeholder
             },
-            icon: const Icon(Icons.call_emergency),
-            label: const Text('Call Emergency'),
+            icon: const Icon(Icons.local_hospital),
+            label: const Text('Emergency'),
           ),
         FilledButton(
           onPressed: onAcknowledge,
@@ -193,6 +194,7 @@ class VitalSignsAlertDialog extends StatelessWidget {
   }
 
   Widget _buildVitalAlert(VitalSign vital, Color color) {
+    final colorValue = color == Colors.red ? Colors.red[700]! : Colors.orange[700]!;
     return Container(
       padding: const EdgeInsets.all(8),
       decoration: BoxDecoration(
@@ -221,7 +223,7 @@ class VitalSignsAlertDialog extends StatelessWidget {
                       style: TextStyle(
                         fontWeight: FontWeight.bold,
                         fontSize: 12,
-                        color: color[700],
+                        color: colorValue,
                       ),
                     ),
                     Chip(
