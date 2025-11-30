@@ -22,6 +22,7 @@ import '../../ui/screens/pulmonary_evaluation_screen_modern.dart';
 import '../../ui/screens/records/records.dart';
 import '../../ui/screens/settings_screen.dart';
 import '../../ui/screens/user_manual_screen.dart';
+import '../../ui/screens/treatment_dashboard.dart';
 
 /// Route names as constants
 abstract class AppRoutes {
@@ -47,6 +48,7 @@ abstract class AppRoutes {
   static const String pulmonaryEvaluationModern = '/pulmonary-evaluation/modern';
   static const String addMedicalRecord = '/medical-records/add';
   static const String userManual = '/user-manual';
+  static const String treatmentDashboard = '/treatment-dashboard';
 }
 
 /// Route arguments for type-safe navigation
@@ -85,6 +87,12 @@ class AddInvoiceArgs {
   const AddInvoiceArgs({this.patientId, this.patientName});
   final int? patientId;
   final String? patientName;
+}
+
+class TreatmentDashboardArgs {
+  const TreatmentDashboardArgs({required this.patientId, required this.patientName});
+  final int patientId;
+  final String patientName;
 }
 
 /// App router configuration
@@ -171,6 +179,13 @@ class AppRouter {
         
       case AppRoutes.userManual:
         return _buildRoute(const UserManualScreen(), settings);
+        
+      case AppRoutes.treatmentDashboard:
+        final args = settings.arguments as TreatmentDashboardArgs;
+        return _buildRoute(
+          TreatmentDashboard(patientId: args.patientId, patientName: args.patientName),
+          settings,
+        );
         
       default:
         return _buildRoute(
@@ -281,6 +296,14 @@ extension NavigationHelper on BuildContext {
     return pushNamed(
       AppRoutes.pulmonaryEvaluationModern,
       arguments: PulmonaryEvaluationArgs(patient: patient),
+    );
+  }
+
+  /// Navigate to treatment dashboard
+  Future<void> goToTreatmentDashboard(int patientId, String patientName) {
+    return pushNamed(
+      AppRoutes.treatmentDashboard,
+      arguments: TreatmentDashboardArgs(patientId: patientId, patientName: patientName),
     );
   }
 }

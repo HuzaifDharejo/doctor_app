@@ -27,6 +27,7 @@ import 'invoice_detail_screen.dart';
 import 'lab_results_screen.dart';
 import 'medical_record_detail_screen.dart';
 import 'records/records.dart';
+import '../../core/routing/app_router.dart';
 import 'treatment_outcomes_screen.dart';
 import 'treatment_progress_screen.dart';
 import 'vital_signs_screen.dart';
@@ -792,7 +793,17 @@ class _PatientViewScreenModernState
               ),
               const SizedBox(width: 12),
               Expanded(
-                child: const SizedBox(), // Placeholder for future feature
+                child: _buildQuickActionCard(
+                  icon: Icons.dashboard_rounded,
+                  title: 'Dashboard',
+                  subtitle: 'Treatment overview',
+                  color: const Color(0xFF8B5CF6),
+                  isDark: isDark,
+                  onTap: () => context.goToTreatmentDashboard(
+                    patient.id,
+                    '${patient.firstName} ${patient.lastName}',
+                  ),
+                ),
               ),
             ],
           ),
