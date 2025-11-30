@@ -10,6 +10,8 @@ import '../../services/prescription_templates.dart';
 import '../../services/suggestions_service.dart';
 import '../../theme/app_theme.dart';
 import '../widgets/suggestion_text_field.dart';
+import '../widgets/allergy_check_dialog.dart';
+import '../widgets/drug_interaction_dialog.dart';
 
 class AddPrescriptionScreen extends ConsumerStatefulWidget {
 
@@ -155,109 +157,92 @@ class _AddPrescriptionScreenState extends ConsumerState<AddPrescriptionScreen> {
         .where((name) => name.isNotEmpty)
         .toList();
 
-    // Check drug interactions
-    final interactions = DrugInteractionService.checkInteractions(drugs);
+    if (drugs.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('No medications to check')),
+      );
+      return;
+    }
+
+    // Check allergies
+    final allergyResults = <AllergyCheckResult>[];
+    String? firstAllergyMed;
+    AllergyCheckResult? firstAllergyResult;
     
-    // Check allergy conflicts
-    final allergyAlerts = <AllergyCheckResult>[];
     for (final drug in drugs) {
       final result = AllergyCheckingService.checkDrugSafety(
         allergyHistory: _patientAllergies,
         proposedDrug: drug,
       );
       if (result.hasConcern) {
-        allergyAlerts.add(result);
+        allergyResults.add(result);
+        if (firstAllergyMed == null) {
+          firstAllergyMed = drug;
+          firstAllergyResult = result;
+        }
       }
     }
 
+    // Check interactions
+    final interactions = DrugInteractionService.checkInteractions(drugs);
+    String? firstNewMed = drugs.isNotEmpty ? drugs.last : null;
+    List<String> currentMeds = drugs.length > 1 ? drugs.sublist(0, drugs.length - 1) : [];
+
     setState(() {
       _drugInteractions = interactions;
-      _allergyAlerts = allergyAlerts;
+      _allergyAlerts = allergyResults;
     });
 
-    // Show alert dialog if there are severe warnings
-    if (interactions.any((i) => i.severity == InteractionSeverity.severe) ||
-        allergyAlerts.any((a) => a.severity == AllergySeverity.severe)) {
-      _showSafetyAlertDialog();
+    // Show dialogs for any safety concerns
+    if (firstAllergyMed != null && firstAllergyResult != null) {
+      showDialog<void>(
+        context: context,
+        barrierDismissible: false,
+        builder: (context) => AllergyCheckDialog(
+          medicationName: firstAllergyMed!,
+          patientAllergies: _patientAllergies,
+          allergyResult: firstAllergyResult!,
+          onConfirm: () {
+            Navigator.pop(context);
+            if (interactions.isNotEmpty && firstNewMed != null) {
+              _showInteractionDialog(firstNewMed, currentMeds, interactions);
+            }
+          },
+          onCancel: () {
+            Navigator.pop(context);
+          },
+        ),
+      );
+    } else if (interactions.isNotEmpty && firstNewMed != null) {
+      _showInteractionDialog(firstNewMed, currentMeds, interactions);
+    } else {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('✓ All medications are safe'),
+          backgroundColor: Colors.green,
+        ),
+      );
     }
   }
 
-  void _showSafetyAlertDialog() {
+  void _showInteractionDialog(String newMedication, List<String> currentMedications, List<DrugInteraction> interactions) {
     showDialog<void>(
       context: context,
-      builder: (context) => AlertDialog(
-        title: Row(
-          children: [
-            Icon(Icons.warning_amber_rounded, color: Colors.red.shade700, size: 28),
-            const SizedBox(width: 12),
-            const Text('Safety Alert'),
-          ],
-        ),
-        content: SingleChildScrollView(
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              if (_drugInteractions.isNotEmpty) ...[
-                const Text('⚠️ Drug Interactions:', style: TextStyle(fontWeight: FontWeight.bold)),
-                const SizedBox(height: 8),
-                ..._drugInteractions.map((i) => Container(
-                  margin: const EdgeInsets.only(bottom: 8),
-                  padding: const EdgeInsets.all(12),
-                  decoration: BoxDecoration(
-                    color: Color(i.severity.colorValue).withValues(alpha: 0.1),
-                    borderRadius: BorderRadius.circular(8),
-                    border: Border.all(color: Color(i.severity.colorValue)),
-                  ),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text('${i.drug1} + ${i.drug2}', style: const TextStyle(fontWeight: FontWeight.bold)),
-                      Text(i.description),
-                      if (i.recommendation.isNotEmpty) ...[
-                        const SizedBox(height: 4),
-                        Text('💡 ${i.recommendation}', style: TextStyle(color: Colors.blue.shade700, fontSize: 12)),
-                      ],
-                    ],
-                  ),
-                )),
-              ],
-              if (_allergyAlerts.isNotEmpty) ...[
-                const SizedBox(height: 12),
-                const Text('🚨 Allergy Warnings:', style: TextStyle(fontWeight: FontWeight.bold)),
-                const SizedBox(height: 8),
-                ..._allergyAlerts.map((a) => Container(
-                  margin: const EdgeInsets.only(bottom: 8),
-                  padding: const EdgeInsets.all(12),
-                  decoration: BoxDecoration(
-                    color: Color(a.severity.colorValue).withValues(alpha: 0.1),
-                    borderRadius: BorderRadius.circular(8),
-                    border: Border.all(color: Color(a.severity.colorValue)),
-                  ),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(a.message),
-                      if (a.recommendation.isNotEmpty) ...[
-                        const SizedBox(height: 4),
-                        Text('💡 ${a.recommendation}', style: TextStyle(color: Colors.blue.shade700, fontSize: 12)),
-                      ],
-                    ],
-                  ),
-                )),
-              ],
-            ],
-          ),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('Acknowledge & Continue'),
-          ),
-        ],
+      barrierDismissible: false,
+      builder: (context) => DrugInteractionDialog(
+        newMedication: newMedication,
+        currentMedications: currentMedications,
+        interactions: interactions,
+        onConfirm: () {
+          Navigator.pop(context);
+        },
+        onCancel: () {
+          Navigator.pop(context);
+        },
       ),
     );
   }
+
 
   String _getPatientName(Patient patient) {
     return '${patient.firstName} ${patient.lastName}'.trim();
@@ -1226,7 +1211,7 @@ class _AddPrescriptionScreenState extends ConsumerState<AddPrescriptionScreen> {
               ),
               const Spacer(),
               TextButton(
-                onPressed: _showSafetyAlertDialog,
+                onPressed: _checkSafetyAlerts,
                 child: const Text('View Details'),
               ),
             ],

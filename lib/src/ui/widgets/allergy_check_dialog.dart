@@ -33,19 +33,19 @@ class _AllergyCheckDialogState extends State<AllergyCheckDialog> {
 
   @override
   Widget build(BuildContext context) {
-    final isCritical = widget.allergyResult.severity == 'Critical';
-    final isSerious = widget.allergyResult.severity == 'Serious';
+    final isSevere = widget.allergyResult.severity == AllergySeverity.severe;
+    final isModerate = widget.allergyResult.severity == AllergySeverity.moderate;
 
     return AlertDialog(
       icon: Icon(
         Icons.warning_rounded,
         size: 56,
-        color: isCritical ? Colors.red[700] : Colors.orange[700],
+        color: isSevere ? Colors.red[700] : Colors.orange[700],
       ),
       title: Text(
         'ALLERGY ALERT',
         style: TextStyle(
-          color: isCritical ? Colors.red[700] : Colors.orange[700],
+          color: isSevere ? Colors.red[700] : Colors.orange[700],
           fontWeight: FontWeight.bold,
           fontSize: 20,
         ),
@@ -60,15 +60,15 @@ class _AllergyCheckDialogState extends State<AllergyCheckDialog> {
               width: double.infinity,
               padding: const EdgeInsets.all(12),
               decoration: BoxDecoration(
-                color: isCritical
+                color: isSevere
                     ? Colors.red[50]
-                    : isSerious
+                    : isModerate
                         ? Colors.orange[50]
                         : Colors.yellow[50],
                 border: Border.all(
-                  color: isCritical
+                  color: isSevere
                       ? Colors.red
-                      : isSerious
+                      : isModerate
                           ? Colors.orange
                           : Colors.amber,
                   width: 2,
@@ -79,20 +79,20 @@ class _AllergyCheckDialogState extends State<AllergyCheckDialog> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    'Severity: ${widget.allergyResult.severity}',
+                    'Severity: ${widget.allergyResult.severity.label}',
                     style: TextStyle(
                       fontWeight: FontWeight.bold,
                       fontSize: 14,
-                      color: isCritical
+                      color: isSevere
                           ? Colors.red[700]
-                          : isSerious
+                          : isModerate
                               ? Colors.orange[700]
                               : Colors.amber[900],
                     ),
                   ),
                   const SizedBox(height: 8),
                   Text(
-                    'Reaction Type: ${widget.allergyResult.reactionType}',
+                    'Allergy Type: ${widget.allergyResult.allergyType}',
                     style: TextStyle(
                       fontSize: 12,
                       color: Colors.grey[700],
@@ -121,63 +121,32 @@ class _AllergyCheckDialogState extends State<AllergyCheckDialog> {
                       fontSize: 13,
                     ),
                   ),
-                  const SizedBox(height: 4),
+                  const SizedBox(height: 8),
                   Text(
-                    'Known Allergy: ${widget.allergyResult.allergen}',
+                    widget.allergyResult.message,
                     style: const TextStyle(
                       fontSize: 12,
                       color: Colors.red,
                       fontWeight: FontWeight.bold,
                     ),
                   ),
-                  const SizedBox(height: 8),
-                  Text(
-                    'Reaction: ${widget.allergyResult.reaction}',
-                    style: TextStyle(
-                      fontSize: 12,
-                      color: Colors.grey[700],
+                  if (widget.allergyResult.recommendation.isNotEmpty) ...[
+                    const SizedBox(height: 8),
+                    Text(
+                      '💡 ${widget.allergyResult.recommendation}',
+                      style: TextStyle(
+                        fontSize: 12,
+                        color: Colors.blue[700],
+                      ),
                     ),
-                  ),
+                  ],
                 ],
               ),
             ),
             const SizedBox(height: 16),
 
-            // Safe Alternatives (if available)
-            if (widget.allergyResult.safeAlternatives.isNotEmpty) ...[
-              Text(
-                'Safe Alternatives:',
-                style: Theme.of(context).textTheme.titleSmall?.copyWith(
-                      fontWeight: FontWeight.bold,
-                      color: Colors.green[700],
-                    ),
-              ),
-              const SizedBox(height: 8),
-              ...widget.allergyResult.safeAlternatives.map((alt) {
-                return Padding(
-                  padding: const EdgeInsets.symmetric(vertical: 4),
-                  child: Row(
-                    children: [
-                      Icon(Icons.check_circle, color: Colors.green[700], size: 18),
-                      const SizedBox(width: 8),
-                      Expanded(
-                        child: Text(
-                          alt,
-                          style: TextStyle(
-                            fontSize: 12,
-                            color: Colors.green[700],
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                );
-              }).toList(),
-              const SizedBox(height: 16),
-            ],
-
             // Override Section (only for non-critical)
-            if (!isCritical) ...[
+            if (!isSevere) ...[
               Text(
                 'Override Prescription',
                 style: Theme.of(context).textTheme.titleSmall?.copyWith(
@@ -222,7 +191,7 @@ class _AllergyCheckDialogState extends State<AllergyCheckDialog> {
           onPressed: widget.onCancel,
           child: const Text('Cancel'),
         ),
-        if (isCritical)
+        if (isSevere)
           FilledButton.tonalIcon(
             onPressed: null, // Disabled for critical
             icon: const Icon(Icons.block),
@@ -240,3 +209,4 @@ class _AllergyCheckDialogState extends State<AllergyCheckDialog> {
     );
   }
 }
+

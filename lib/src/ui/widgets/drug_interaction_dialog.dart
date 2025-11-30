@@ -32,11 +32,11 @@ class _DrugInteractionDialogState extends State<DrugInteractionDialog> {
   }
 
   int get _criticalCount =>
-      widget.interactions.where((i) => i.severity == 'Critical').length;
+      widget.interactions.where((i) => i.severity == InteractionSeverity.severe).length;
   int get _majorCount =>
-      widget.interactions.where((i) => i.severity == 'Major').length;
+      widget.interactions.where((i) => i.severity == InteractionSeverity.moderate).length;
   int get _minorCount =>
-      widget.interactions.where((i) => i.severity == 'Minor').length;
+      widget.interactions.where((i) => i.severity == InteractionSeverity.mild).length;
 
   bool get _hasCritical => _criticalCount > 0;
   bool get _hasMajor => _majorCount > 0;
@@ -150,13 +150,14 @@ class _DrugInteractionDialogState extends State<DrugInteractionDialog> {
             ),
             const SizedBox(height: 8),
             ...widget.interactions.map((interaction) {
-              final isCritical = interaction.severity == 'Critical';
-              final isMajor = interaction.severity == 'Major';
+              final isCritical = interaction.severity == InteractionSeverity.severe;
+              final isMajor = interaction.severity == InteractionSeverity.moderate;
               final color = isCritical
                   ? Colors.red
                   : isMajor
                       ? Colors.orange
                       : Colors.green;
+              final colorValue = isCritical ? Colors.red[700]! : isMajor ? Colors.orange[700]! : Colors.green[700]!;
 
               return Padding(
                 padding: const EdgeInsets.only(bottom: 12),
@@ -178,13 +179,13 @@ class _DrugInteractionDialogState extends State<DrugInteractionDialog> {
                               style: TextStyle(
                                 fontWeight: FontWeight.bold,
                                 fontSize: 12,
-                                color: color[700],
+                                color: colorValue,
                               ),
                             ),
                           ),
                           Chip(
                             label: Text(
-                              interaction.severity,
+                              interaction.severity.label,
                               style: TextStyle(
                                 fontSize: 10,
                                 fontWeight: FontWeight.bold,
@@ -302,13 +303,14 @@ class _DrugInteractionDialogState extends State<DrugInteractionDialog> {
   }
 
   Widget _buildSeverityRow(String label, int count, Color color) {
+    final colorValue = color == Colors.red ? Colors.red[700]! : color == Colors.orange ? Colors.orange[700]! : Colors.green[700]!;
     return Row(
       children: [
         Text(
           label,
           style: TextStyle(
             fontWeight: FontWeight.bold,
-            color: color[700],
+            color: colorValue,
             fontSize: 12,
           ),
         ),
