@@ -7,6 +7,7 @@ import '../services/doctor_settings_service.dart';
 import '../services/drug_reference_service.dart';
 import '../services/logger_service.dart';
 import '../services/notification_service.dart';
+import '../services/offline_sync_service.dart';
 import '../services/seed_data_service.dart';
 import '../services/treatment_efficacy_service.dart';
 
@@ -82,4 +83,10 @@ final drugReferenceProvider = Provider<DrugReferenceService>((ref) {
 final clinicalAnalyticsProvider = Provider<ClinicalAnalyticsService>((ref) {
   log.d('ANALYTICS', 'Initializing clinical analytics service...');
   return const ClinicalAnalyticsService();
+});
+
+// Offline sync service provider
+final offlineSyncProvider = ChangeNotifierProvider<OfflineSyncService>((ref) {
+  log.d('OFFLINE_SYNC', 'Initializing offline sync service...');
+  return OfflineSyncService();
 });

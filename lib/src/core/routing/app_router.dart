@@ -19,6 +19,7 @@ import '../../ui/screens/doctor_dashboard_screen.dart';
 import '../../ui/screens/doctor_login_screen.dart';
 import '../../ui/screens/doctor_profile_screen.dart';
 import '../../ui/screens/notifications_screen.dart';
+import '../../ui/screens/offline_sync_screen.dart';
 import '../../ui/screens/patient_view_screen_modern.dart';
 import '../../ui/screens/patients_screen.dart';
 import '../../ui/screens/prescriptions_screen.dart';
@@ -59,6 +60,7 @@ abstract class AppRoutes {
   static const String communications = '/communications';
   static const String medicalReference = '/medical-reference';
   static const String clinicalAnalytics = '/clinical-analytics';
+  static const String offlineSync = '/offline-sync';
 }
 
 /// Route arguments for type-safe navigation
@@ -212,6 +214,9 @@ class AppRouter {
       case AppRoutes.clinicalAnalytics:
         return _buildRoute(const ClinicalAnalyticsScreen(), settings);
         
+      case AppRoutes.offlineSync:
+        return _buildRoute(const OfflineSyncScreen(), settings);
+        
       default:
         return _buildRoute(
           Scaffold(
@@ -346,4 +351,7 @@ extension NavigationHelper on BuildContext {
 
   /// Navigate to clinical analytics
   Future<void> goToClinicalAnalytics() => pushNamed(AppRoutes.clinicalAnalytics);
+
+  /// Navigate to offline sync
+  Future<void> goToOfflineSync() => pushNamed(AppRoutes.offlineSync);
 }
