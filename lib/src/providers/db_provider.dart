@@ -5,6 +5,7 @@ import '../services/clinical_analytics_service.dart';
 import '../services/communication_service.dart';
 import '../services/doctor_settings_service.dart';
 import '../services/drug_reference_service.dart';
+import '../services/localization_service.dart';
 import '../services/logger_service.dart';
 import '../services/notification_service.dart';
 import '../services/offline_sync_service.dart';
@@ -89,4 +90,10 @@ final clinicalAnalyticsProvider = Provider<ClinicalAnalyticsService>((ref) {
 final offlineSyncProvider = ChangeNotifierProvider<OfflineSyncService>((ref) {
   log.d('OFFLINE_SYNC', 'Initializing offline sync service...');
   return OfflineSyncService();
+});
+
+// Localization service provider
+final localizationProvider = ChangeNotifierProvider<LocalizationService>((ref) {
+  log.d('LOCALIZATION', 'Initializing localization service...');
+  return LocalizationService();
 });

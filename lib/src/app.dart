@@ -5,6 +5,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'core/core.dart';
 import 'core/routing/app_router.dart';
 import 'providers/db_provider.dart';
+import 'services/localization_service.dart';
 import 'services/logger_service.dart';
 import 'theme/app_theme.dart';
 import 'ui/screens/appointments_screen.dart';
@@ -23,11 +24,12 @@ class DoctorApp extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final appSettings = ref.watch(appSettingsProvider);
+    final localization = ref.watch(localizationProvider);
     final isDarkMode = appSettings.settings.darkModeEnabled;
     final isOnboardingComplete = appSettings.settings.onboardingComplete;
     final isLoaded = appSettings.isLoaded;
     
-    log.d('APP', 'Building app - loaded: $isLoaded, onboarding: $isOnboardingComplete, dark: $isDarkMode');
+    log.d('APP', 'Building app - loaded: $isLoaded, onboarding: $isOnboardingComplete, dark: $isDarkMode, locale: ${localization.languageCode}');
     
     return MaterialApp(
       title: AppStrings.appName,
@@ -35,6 +37,8 @@ class DoctorApp extends ConsumerWidget {
       theme: AppTheme.lightTheme,
       darkTheme: AppTheme.darkTheme,
       themeMode: isDarkMode ? ThemeMode.dark : ThemeMode.light,
+      locale: localization.currentLocale,
+      supportedLocales: LocalizationService.supportedLocales,
       onGenerateRoute: AppRouter.generateRoute,
       navigatorObservers: [_LoggingNavigatorObserver()],
       home: !isLoaded 

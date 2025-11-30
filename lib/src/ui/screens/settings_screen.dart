@@ -10,6 +10,7 @@ import '../../providers/db_provider.dart';
 import '../../providers/google_calendar_provider.dart';
 import '../../services/backup_service.dart';
 import '../../services/doctor_settings_service.dart';
+import '../../services/localization_service.dart';
 import '../../services/logger_service.dart';
 import '../../services/seed_data_service.dart';
 import '../../theme/app_theme.dart';
@@ -533,26 +534,32 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> with SingleTick
   }
 
   void _showLanguageDialog(BuildContext context, WidgetRef ref, String currentLanguage) {
-    final languages = ['English', 'Urdu', 'Arabic', 'Hindi', 'Sindhi'];
+    final locService = LocalizationService();
+    final languages = locService.getAvailableLanguages();
+    
     showDialog<void>(
       context: context,
       builder: (context) => AlertDialog(
         title: const Text('Select Language'),
         content: Column(
           mainAxisSize: MainAxisSize.min,
-          children: languages.map((lang) => RadioListTile<String>(
-            title: Text(lang),
-            value: lang,
-            // ignore: deprecated_member_use
-            groupValue: currentLanguage,
-            // ignore: deprecated_member_use
-            onChanged: (value) {
-              if (value != null) {
-                ref.read(appSettingsProvider).setLanguage(value);
-                Navigator.pop(context);
-              }
-            },
-          ),).toList(),
+          children: languages.entries.map((entry) {
+            final isSelected = locService.languageCode == entry.key;
+            return RadioListTile<String>(
+              title: Text(entry.value),
+              value: entry.key,
+              // ignore: deprecated_member_use
+              groupValue: locService.languageCode,
+              // ignore: deprecated_member_use
+              onChanged: (value) {
+                if (value != null) {
+                  locService.setLocaleByCode(value);
+                  ref.read(appSettingsProvider).setLanguage(entry.value);
+                  Navigator.pop(context);
+                }
+              },
+            );
+          }).toList(),
         ),
       ),
     );
