@@ -450,11 +450,9 @@ class _OfflineSyncScreenState extends ConsumerState<OfflineSyncScreen>
   }
 
   Widget _buildStatCard(String label, String value, Color color) {
-    return Card(
-      elevation: 2,
-      child: Padding(
-        padding: const EdgeInsets.all(12),
-        child: Column(
+    return AppCard(
+      padding: const EdgeInsets.all(12),
+      child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
             Text(
@@ -472,7 +470,6 @@ class _OfflineSyncScreenState extends ConsumerState<OfflineSyncScreen>
             ),
           ],
         ),
-      ),
     );
   }
 
