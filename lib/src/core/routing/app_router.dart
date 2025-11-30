@@ -12,6 +12,7 @@ import '../../ui/screens/add_prescription_screen.dart';
 import '../../ui/screens/allergy_management_screen.dart';
 import '../../ui/screens/appointments_screen.dart';
 import '../../ui/screens/billing_screen.dart';
+import '../../ui/screens/communications_screen.dart';
 import '../../ui/screens/doctor_dashboard_screen.dart';
 import '../../ui/screens/doctor_login_screen.dart';
 import '../../ui/screens/doctor_profile_screen.dart';
@@ -53,6 +54,7 @@ abstract class AppRoutes {
   static const String treatmentDashboard = '/treatment-dashboard';
   static const String allergyManagement = '/allergy-management';
   static const String notifications = '/notifications';
+  static const String communications = '/communications';
 }
 
 /// Route arguments for type-safe navigation
@@ -197,6 +199,9 @@ class AppRouter {
       case AppRoutes.notifications:
         return _buildRoute(const NotificationsScreen(), settings);
         
+      case AppRoutes.communications:
+        return _buildRoute(const CommunicationsScreen(), settings);
+        
       default:
         return _buildRoute(
           Scaffold(
@@ -322,4 +327,7 @@ extension NavigationHelper on BuildContext {
 
   /// Navigate to notifications
   Future<void> goToNotifications() => pushNamed(AppRoutes.notifications);
+
+  /// Navigate to communications
+  Future<void> goToCommunications() => pushNamed(AppRoutes.communications);
 }

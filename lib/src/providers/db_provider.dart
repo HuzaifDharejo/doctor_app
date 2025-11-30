@@ -1,6 +1,7 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../db/doctor_db.dart';
 import '../services/allergy_management_service.dart';
+import '../services/communication_service.dart';
 import '../services/doctor_settings_service.dart';
 import '../services/logger_service.dart';
 import '../services/notification_service.dart';
@@ -61,5 +62,11 @@ final treatmentEfficacyProvider = Provider<TreatmentEfficacyService>((ref) {
 final notificationProvider = Provider<NotificationService>((ref) {
   log.d('NOTIFICATION', 'Initializing notification service...');
   return const NotificationService();
+});
+
+// Communication service provider
+final communicationProvider = Provider<CommunicationService>((ref) {
+  log.d('COMMUNICATION', 'Initializing communication service...');
+  return const CommunicationService();
 });
 
