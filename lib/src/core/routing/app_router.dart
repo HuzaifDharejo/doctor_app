@@ -12,6 +12,7 @@ import '../../ui/screens/add_prescription_screen.dart';
 import '../../ui/screens/allergy_management_screen.dart';
 import '../../ui/screens/appointments_screen.dart';
 import '../../ui/screens/billing_screen.dart';
+import '../../ui/screens/clinical_analytics_screen.dart';
 import '../../ui/screens/communications_screen.dart';
 import '../../ui/screens/medical_reference_screen.dart';
 import '../../ui/screens/doctor_dashboard_screen.dart';
@@ -57,6 +58,7 @@ abstract class AppRoutes {
   static const String notifications = '/notifications';
   static const String communications = '/communications';
   static const String medicalReference = '/medical-reference';
+  static const String clinicalAnalytics = '/clinical-analytics';
 }
 
 /// Route arguments for type-safe navigation
@@ -207,6 +209,9 @@ class AppRouter {
       case AppRoutes.medicalReference:
         return _buildRoute(const MedicalReferenceScreen(), settings);
         
+      case AppRoutes.clinicalAnalytics:
+        return _buildRoute(const ClinicalAnalyticsScreen(), settings);
+        
       default:
         return _buildRoute(
           Scaffold(
@@ -338,4 +343,7 @@ extension NavigationHelper on BuildContext {
 
   /// Navigate to medical reference
   Future<void> goToMedicalReference() => pushNamed(AppRoutes.medicalReference);
+
+  /// Navigate to clinical analytics
+  Future<void> goToClinicalAnalytics() => pushNamed(AppRoutes.clinicalAnalytics);
 }

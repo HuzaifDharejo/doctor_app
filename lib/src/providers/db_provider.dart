@@ -1,6 +1,7 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../db/doctor_db.dart';
 import '../services/allergy_management_service.dart';
+import '../services/clinical_analytics_service.dart';
 import '../services/communication_service.dart';
 import '../services/doctor_settings_service.dart';
 import '../services/drug_reference_service.dart';
@@ -75,4 +76,10 @@ final communicationProvider = Provider<CommunicationService>((ref) {
 final drugReferenceProvider = Provider<DrugReferenceService>((ref) {
   log.d('DRUG_REFERENCE', 'Initializing drug reference service...');
   return const DrugReferenceService();
+});
+
+// Clinical analytics service provider
+final clinicalAnalyticsProvider = Provider<ClinicalAnalyticsService>((ref) {
+  log.d('ANALYTICS', 'Initializing clinical analytics service...');
+  return const ClinicalAnalyticsService();
 });

@@ -591,6 +591,18 @@ class _HomeShellState extends ConsumerState<HomeShell> {
                     isDark: isDarkMode,
                   ),
                   _buildModernDrawerItem(
+                    icon: Icons.analytics_outlined,
+                    title: 'Analytics',
+                    subtitle: 'Trends & insights',
+                    onTap: () {
+                      context
+                        ..pop<void>()
+                        ..goToClinicalAnalytics();
+                    },
+                    color: const Color(0xFF3B82F6),
+                    isDark: isDarkMode,
+                  ),
+                  _buildModernDrawerItem(
                     icon: Icons.cloud_sync_outlined,
                     title: AppStrings.backupSync,
                     subtitle: 'Cloud backup',
