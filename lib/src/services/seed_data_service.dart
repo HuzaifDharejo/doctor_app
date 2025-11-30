@@ -15,17 +15,23 @@ Future<void> seedSampleData(DoctorDatabase db) async {
     return; // Data already seeded
   }
 
-  await _insertSampleData(db);
+  await _insertSampleDataRedesigned(db);
 }
 
 /// Force seed sample data - always adds data regardless of existing records.
 /// Use this for demo/testing purposes when user explicitly requests it.
 Future<void> seedSampleDataForce(DoctorDatabase db) async {
-  await _insertSampleData(db);
+  // Clear existing data first
+  final allPatients = await db.getAllPatients();
+  for (final patient in allPatients) {
+    await db.deletePatient(patient.id);
+  }
+  
+  await _insertSampleDataRedesigned(db);
 }
 
-/// Internal function to insert sample data - Pakistani patients with comprehensive data
-Future<void> _insertSampleData(DoctorDatabase db) async {
+/// Redesigned comprehensive seeding with clinical data quality and critical safety features
+Future<void> _insertSampleDataRedesigned(DoctorDatabase db) async {
   log.i('SEED', 'Seeding database with comprehensive sample data...');
   final random = Random();
 
@@ -111,9 +117,46 @@ Future<void> _insertSampleData(DoctorDatabase db) async {
     {'firstName': 'Younis', 'lastName': 'Khan', 'dob': DateTime(1977, 11, 29), 'phone': '0313-1111155', 'email': 'younis.khan@gmail.com', 'address': '67 Hayatabad Phase 3, Peshawar', 'history': 'Knee Osteoarthritis, Previous Meniscus Surgery', 'tags': 'orthopedic,elderly', 'risk': 3},
   ];
 
-  // Insert all patients
+  // ========== ALLERGIES & CONTRAINDICATIONS (Critical Safety Feature) ==========
+  // Map of patient index to allergies and contraindications
+  final patientAllergies = <int, Map<String, dynamic>>{
+    0: {'allergies': ['Penicillin (Anaphylaxis)', 'NSAIDs'], 'contraindications': ['ACE Inhibitors (persistent cough)', 'Metformin (if eGFR <30)'], 'lastChecked': DateTime.now()},
+    1: {'allergies': ['Sertraline', 'Alprazolam'], 'contraindications': ['Benzodiazepines (risk of dependency)'], 'lastChecked': DateTime.now()},
+    2: {'allergies': ['Atorvastatin (muscle pain)', 'Aspirin'], 'contraindications': ['NSAIDs (cardio risk)', 'Clopidogrel if on aspirin'], 'lastChecked': DateTime.now()},
+    3: {'allergies': ['Sumatriptan (chest pain)', 'Ergot derivatives'], 'contraindications': ['Triptans if uncontrolled hypertension'], 'lastChecked': DateTime.now()},
+    4: {'allergies': [], 'contraindications': ['Methotrexate (renal function monitoring)', 'NSAIDs'], 'lastChecked': DateTime.now()},
+    5: {'allergies': ['Salbutamol (tremor)'], 'contraindications': [], 'lastChecked': DateTime.now()},
+    6: {'allergies': ['Lithium (dermatitis)', 'Phenytoin'], 'contraindications': ['Diuretics (lithium toxicity risk)', 'NSAIDs (lithium levels)'], 'lastChecked': DateTime.now()},
+    7: {'allergies': [], 'contraindications': ['Metformin (GI side effects)', 'Beta blockers (asthma risk)'], 'lastChecked': DateTime.now()},
+    8: {'allergies': ['Furosemide'], 'contraindications': ['NSAIDs (renal function)', 'ACE inhibitors if K+ elevated'], 'lastChecked': DateTime.now()},
+    9: {'allergies': ['Clonazepam (Stevens-Johnson risk)'], 'contraindications': ['Benzodiazepines (elderly risk)'], 'lastChecked': DateTime.now()},
+  };
+
+  // ========== VITAL SIGNS BASELINE (Critical for Monitoring) ==========
+  // Map of patient index to vital signs
+  final patientVitalSigns = <int, Map<String, dynamic>>{
+    0: {'systolic': 142, 'diastolic': 88, 'pulse': 76, 'temp': 36.8, 'respiration': 16, 'weight': 82.5, 'bmi': 29.1, 'o2Sat': 98, 'lastRecorded': DateTime.now()},
+    1: {'systolic': 118, 'diastolic': 75, 'pulse': 68, 'temp': 36.6, 'respiration': 14, 'weight': 65.0, 'bmi': 22.5, 'o2Sat': 99, 'lastRecorded': DateTime.now()},
+    2: {'systolic': 135, 'diastolic': 82, 'pulse': 72, 'temp': 36.7, 'respiration': 15, 'weight': 78.0, 'bmi': 28.3, 'o2Sat': 98, 'lastRecorded': DateTime.now()},
+    3: {'systolic': 125, 'diastolic': 80, 'pulse': 85, 'temp': 36.8, 'respiration': 16, 'weight': 60.0, 'bmi': 21.5, 'o2Sat': 99, 'lastRecorded': DateTime.now()},
+    4: {'systolic': 138, 'diastolic': 85, 'pulse': 74, 'temp': 36.6, 'respiration': 15, 'weight': 88.0, 'bmi': 31.2, 'o2Sat': 97, 'lastRecorded': DateTime.now()},
+    5: {'systolic': 120, 'diastolic': 78, 'pulse': 70, 'temp': 36.7, 'respiration': 14, 'weight': 58.0, 'bmi': 21.0, 'o2Sat': 99, 'lastRecorded': DateTime.now()},
+    6: {'systolic': 128, 'diastolic': 82, 'pulse': 75, 'temp': 36.8, 'respiration': 15, 'weight': 75.0, 'bmi': 27.1, 'o2Sat': 98, 'lastRecorded': DateTime.now()},
+    7: {'systolic': 130, 'diastolic': 81, 'pulse': 72, 'temp': 36.6, 'respiration': 15, 'weight': 70.0, 'bmi': 25.2, 'o2Sat': 98, 'lastRecorded': DateTime.now()},
+    8: {'systolic': 145, 'diastolic': 90, 'pulse': 78, 'temp': 36.7, 'respiration': 16, 'weight': 92.0, 'bmi': 32.5, 'o2Sat': 97, 'lastRecorded': DateTime.now()},
+    9: {'systolic': 122, 'diastolic': 79, 'pulse': 76, 'temp': 36.8, 'respiration': 15, 'weight': 62.0, 'bmi': 22.0, 'o2Sat': 99, 'lastRecorded': DateTime.now()},
+  };
+
+  // Insert all patients with enhanced clinical data
   final patientIds = <int>[];
-  for (final p in patientData) {
+  for (int idx = 0; idx < patientData.length; idx++) {
+    final p = patientData[idx];
+    final medicalHistory = _enhanceMedicalHistory(
+      p['history']! as String,
+      patientAllergies[idx],
+      patientVitalSigns[idx],
+    );
+
     final id = await db.insertPatient(
       PatientsCompanion(
         firstName: Value(p['firstName']! as String),
@@ -122,14 +165,14 @@ Future<void> _insertSampleData(DoctorDatabase db) async {
         phone: Value(p['phone']! as String),
         email: Value(p['email']! as String),
         address: Value(p['address']! as String),
-        medicalHistory: Value(p['history']! as String),
+        medicalHistory: Value(medicalHistory),
         tags: Value(p['tags']! as String),
         riskLevel: Value(p['risk']! as int),
       ),
     );
     patientIds.add(id);
   }
-  log.i('SEED', '✓ Inserted ${patientIds.length} patients');
+  log.i('SEED', '✓ Inserted ${patientIds.length} patients with allergies & vitals');
 
   // ========== APPOINTMENTS ==========
   final now = DateTime.now();
@@ -423,7 +466,7 @@ Future<void> _insertSampleData(DoctorDatabase db) async {
   log.i('SEED', '✓ Inserted $prescriptionCount prescriptions');
 
   // ========== MEDICAL RECORDS ==========
-  final recordTypes = ['general', 'psychiatric_assessment', 'lab_result', 'imaging', 'procedure', 'pulmonary_evaluation'];
+  final recordTypes = ['general', 'psychiatric_assessment', 'lab_result', 'imaging', 'procedure', 'pulmonary_evaluation', 'vital_signs'];
   
   // General consultation records
   final generalRecords = [
@@ -575,6 +618,60 @@ Future<void> _insertSampleData(DoctorDatabase db) async {
       'title': 'Joint Injection',
       'data': {'joint': 'Right knee', 'medication': 'Triamcinolone 40mg + Lidocaine 1ml', 'technique': 'Anterolateral approach', 'complications': 'None'},
       'notes': 'Successful injection. Expect relief in 24-48 hours. Avoid strenuous activity for 48 hours.',
+    },
+  ];
+
+  // ========== VITAL SIGNS TRACKING RECORDS (NEW) ==========
+  // Medical records for vital signs monitoring over time
+  final vitalSignsRecords = [
+    {
+      'title': 'Blood Pressure Monitoring Session',
+      'data': {
+        'date': today.subtract(const Duration(days: 7)).toIso8601String(),
+        'readings': [
+          {'time': '08:00', 'systolic': 135, 'diastolic': 82},
+          {'time': '14:00', 'systolic': 138, 'diastolic': 85},
+          {'time': '20:00', 'systolic': 132, 'diastolic': 80},
+        ],
+        'trend': 'Stable',
+        'notes': 'Blood pressure remains controlled on current medications'
+      }
+    },
+    {
+      'title': 'Weight & BMI Tracking',
+      'data': {
+        'current_weight': 78.5,
+        'previous_weight': 79.2,
+        'weight_change': -0.7,
+        'bmi': 28.4,
+        'goal_weight': 75.0,
+        'progress': 'On track',
+        'notes': 'Gradual weight loss, continue current diet and exercise'
+      }
+    },
+    {
+      'title': 'Diabetes Blood Sugar Log',
+      'data': {
+        'readings': [
+          {'date': 'Morning', 'value': 126, 'status': 'Elevated'},
+          {'date': 'Lunch', 'value': 142, 'status': 'High'},
+          {'date': 'Dinner', 'value': 138, 'status': 'High'},
+          {'date': 'Bedtime', 'value': 115, 'status': 'Acceptable'},
+        ],
+        'average': 130,
+        'trend': 'Rising',
+        'recommendation': 'Consider medication adjustment or dietary review'
+      }
+    },
+    {
+      'title': 'Oxygen Saturation Monitoring',
+      'data': {
+        'baseline': 98,
+        'current': 97,
+        'trend': 'Stable',
+        'activity_level': 'Normal activity with minimal desaturation',
+        'notes': 'COPD patient stable on current oxygen therapy'
+      }
     },
   ];
 
@@ -790,6 +887,15 @@ Future<void> _insertSampleData(DoctorDatabase db) async {
           treatment = data['treatmentPlan'] as String? ?? 'Pending';
           doctorNotes = record['notes']! as String;
           dataJson = data;
+        case 'vital_signs':
+          final record = vitalSignsRecords[random.nextInt(vitalSignsRecords.length)];
+          title = record['title']! as String;
+          description = 'Vital signs monitoring and tracking';
+          diagnosis = 'Vital signs assessment';
+          treatment = 'Continue monitoring';
+          final vitalData = record['data']! as Map<String, dynamic>;
+          doctorNotes = vitalData['notes'] as String? ?? 'Vitals recorded';
+          dataJson = vitalData;
         default:
           title = 'General Visit';
           description = 'Routine visit';
@@ -930,16 +1036,531 @@ Future<void> _insertSampleData(DoctorDatabase db) async {
       invoiceCount++;
     }
   }
+  log.i('SEED', '✓ Inserted $invoiceCount invoices');
+
+  // ══════════════════════════════════════════════════════════════════════════
+  // INSERT VITAL SIGNS INTO NEW TABLE
+  // ══════════════════════════════════════════════════════════════════════════
+  int vitalSignsCount = 0;
+  for (int i = 0; i < patientIds.length; i++) {
+    final patientId = patientIds[i];
+    final vitals = patientVitalSigns[i];
+    if (vitals == null) continue;
+
+    // Add 3-5 vital signs readings per patient over the last 6 months
+    final numReadings = 3 + random.nextInt(3);
+    for (int j = 0; j < numReadings; j++) {
+      final daysAgo = j * 30 + random.nextInt(20); // Spread over months
+      final recordedAt = today.subtract(Duration(days: daysAgo));
+      
+      // Add some variation to vitals - convert to proper types
+      final systolicVar = ((vitals['systolic'] as int) + random.nextInt(20) - 10).toDouble();
+      final diastolicVar = ((vitals['diastolic'] as int) + random.nextInt(10) - 5).toDouble();
+      final pulseVar = (vitals['pulse'] as int) + random.nextInt(10) - 5;
+      final weightVar = (vitals['weight'] as num).toDouble() + (random.nextDouble() * 2 - 1);
+      final tempVar = 36.5 + random.nextDouble() * 1.5;
+      final oxygenVar = (95 + random.nextInt(5)).toDouble();
+
+      await db.insertVitalSigns(VitalSignsCompanion.insert(
+        patientId: patientId,
+        recordedAt: recordedAt,
+        systolicBp: Value(systolicVar),
+        diastolicBp: Value(diastolicVar),
+        heartRate: Value(pulseVar),
+        temperature: Value(tempVar),
+        oxygenSaturation: Value(oxygenVar),
+        weight: Value(weightVar),
+        height: Value((vitals['height'] as num?)?.toDouble()),
+        bmi: Value(vitals['bmi'] as double?),
+        notes: Value(j == 0 ? 'Baseline reading' : 'Follow-up reading'),
+      ));
+      vitalSignsCount++;
+    }
+  }
+  log.i('SEED', '✓ Inserted $vitalSignsCount vital sign records');
+
+  // ══════════════════════════════════════════════════════════════════════════
+  // INSERT TREATMENT OUTCOMES
+  // ══════════════════════════════════════════════════════════════════════════
+  int treatmentCount = 0;
+  final treatmentTypes = ['medication', 'therapy', 'procedure', 'lifestyle', 'surgery'];
+  final outcomeStatuses = ['ongoing', 'completed', 'improved', 'no_change', 'worsened'];
+  final treatmentDescriptions = [
+    'Antihypertensive medication regimen',
+    'Diabetes management with Metformin',
+    'Physical therapy for back pain',
+    'Cognitive behavioral therapy',
+    'Statin therapy for cholesterol',
+    'Asthma management with inhalers',
+    'Anxiety treatment with SSRIs',
+    'Thyroid hormone replacement',
+    'Pain management protocol',
+    'Dietary intervention for weight loss',
+  ];
+
+  for (int i = 0; i < min(30, patientIds.length); i++) {
+    final patientId = patientIds[i];
+    final numTreatments = 1 + random.nextInt(3);
+    
+    for (int j = 0; j < numTreatments; j++) {
+      final startDaysAgo = 30 + random.nextInt(180);
+      final startDate = today.subtract(Duration(days: startDaysAgo));
+      final isCompleted = random.nextBool();
+      final endDate = isCompleted ? today.subtract(Duration(days: random.nextInt(30))) : null;
+      
+      await db.insertTreatmentOutcome(TreatmentOutcomesCompanion.insert(
+        patientId: patientId,
+        treatmentType: treatmentTypes[random.nextInt(treatmentTypes.length)],
+        treatmentDescription: treatmentDescriptions[random.nextInt(treatmentDescriptions.length)],
+        startDate: startDate,
+        endDate: Value(endDate),
+        outcome: Value(isCompleted ? outcomeStatuses[1 + random.nextInt(4)] : 'ongoing'),
+        effectivenessScore: Value(isCompleted ? 5 + random.nextInt(6) : null),
+        sideEffects: Value(random.nextInt(100) < 30 ? 'Mild nausea, headache' : ''),
+        patientFeedback: Value(random.nextInt(100) < 50 ? 'Patient reports improvement' : ''),
+        notes: Value(''),
+      ));
+      treatmentCount++;
+    }
+  }
+  log.i('SEED', '✓ Inserted $treatmentCount treatment outcomes');
+
+  // ══════════════════════════════════════════════════════════════════════════
+  // INSERT SCHEDULED FOLLOW-UPS
+  // ══════════════════════════════════════════════════════════════════════════
+  int followUpCount = 0;
+  final followUpReasons = [
+    'Blood pressure check',
+    'Medication review',
+    'Lab results review',
+    'Post-procedure follow-up',
+    'Chronic condition monitoring',
+    'Mental health check-in',
+    'Diabetes management review',
+    'Weight management check',
+    'Pain assessment',
+    'General wellness check',
+  ];
+
+  for (int i = 0; i < min(40, patientIds.length); i++) {
+    final patientId = patientIds[i];
+    
+    // Create 1-2 follow-ups per patient
+    final numFollowUps = 1 + random.nextInt(2);
+    for (int j = 0; j < numFollowUps; j++) {
+      final daysFromNow = random.nextInt(60) - 15; // -15 to +45 days
+      final scheduledDate = today.add(Duration(days: daysFromNow));
+      final isPast = scheduledDate.isBefore(today);
+      
+      String status;
+      if (isPast) {
+        status = random.nextInt(100) < 70 ? 'completed' : 'pending'; // 30% overdue
+      } else {
+        status = 'pending';
+      }
+
+      await db.insertScheduledFollowUp(ScheduledFollowUpsCompanion.insert(
+        patientId: patientId,
+        scheduledDate: scheduledDate,
+        reason: followUpReasons[random.nextInt(followUpReasons.length)],
+        status: Value(status),
+        reminderSent: Value(isPast && status == 'completed'),
+        notes: Value(''),
+      ));
+      followUpCount++;
+    }
+  }
+  log.i('SEED', '✓ Inserted $followUpCount scheduled follow-ups');
+
+  // ══════════════════════════════════════════════════════════════════════════
+  // INSERT TREATMENT SESSIONS (Therapy & Psychiatry Sessions)
+  // ══════════════════════════════════════════════════════════════════════════
+  int sessionCount = 0;
+  final providerTypes = ['psychiatrist', 'therapist', 'counselor', 'nurse'];
+  final providerNames = [
+    'Dr. Farah Naz', 'Dr. Asim Rauf', 'Dr. Saima Qadir', 'Dr. Naveed Akhtar',
+    'Ms. Hina Malik', 'Mr. Faizan Ahmed', 'Ms. Rubina Khatoon', 'Dr. Zubair Hassan'
+  ];
+  final sessionTypes = ['individual', 'group', 'family', 'couples'];
+  final interventionsUsed = [
+    ['Cognitive Restructuring', 'Behavioral Activation', 'Mindfulness'],
+    ['Exposure Therapy', 'Relaxation Training', 'Breathing Exercises'],
+    ['Psychoeducation', 'Problem-Solving Therapy', 'Stress Management'],
+    ['DBT Skills Training', 'Emotion Regulation', 'Distress Tolerance'],
+    ['Motivational Interviewing', 'Goal Setting', 'Activity Scheduling'],
+    ['Supportive Counseling', 'Active Listening', 'Empathy Building'],
+    ['Family Systems Therapy', 'Communication Training', 'Boundary Setting'],
+    ['Trauma Processing', 'EMDR', 'Grounding Techniques'],
+  ];
+  final moods = ['anxious', 'depressed', 'stable', 'irritable', 'hopeful', 'neutral', 'overwhelmed', 'improving'];
+  final riskCategories = ['none', 'low', 'moderate', 'high'];
+  final homeworkAssignments = [
+    'Practice deep breathing exercises for 10 minutes daily',
+    'Complete thought diary entries when feeling anxious',
+    'Engage in one pleasurable activity each day',
+    'Practice progressive muscle relaxation before bed',
+    'Challenge at least 3 negative thoughts this week',
+    'Attend one social gathering or call a friend',
+    'Practice grounding techniques when triggered',
+    'Complete mood rating chart twice daily',
+    'Write gratitude list each morning',
+    'Practice exposure to feared situation (level 3)',
+    'Use DBT TIPP skills when emotionally dysregulated',
+    'Complete behavioral chain analysis for any self-harm urges',
+  ];
+  final sessionNoteTemplates = [
+    'Patient presented with {mood} mood. Discussed recent stressors including work pressures. Reviewed coping strategies learned previously. Patient demonstrated good insight into patterns.',
+    'Session focused on medication response and symptom tracking. Patient reports {outcome} since last session. Sleep quality has {sleep_status}. Appetite is {appetite_status}.',
+    'Conducted {therapy_type} session. Patient was engaged and participatory. Practiced {intervention} techniques in session with good response.',
+    'Follow-up session for {condition}. Patient adherent to treatment plan. No safety concerns identified. Discussed progress toward treatment goals.',
+    'Crisis session - patient experiencing acute distress related to {trigger}. Safety plan reviewed and updated. Support system contacted with patient consent.',
+    'Initial assessment completed. Comprehensive history obtained. Diagnostic impression: {diagnosis}. Treatment plan discussed and agreed upon.',
+    'Reviewed homework from previous session. Patient {hw_completion} completing assigned tasks. Problem-solved barriers to completion.',
+    'Family session with patient and spouse. Addressed communication patterns and relationship dynamics. Both parties engaged constructively.',
+  ];
+  final progressNoteTemplates = [
+    'Patient making steady progress toward treatment goals. Symptom severity reduced from baseline.',
+    'Minimal progress this session - patient struggling with motivation. Adjusted treatment approach.',
+    'Significant breakthrough in understanding triggers. Patient developed new coping strategies.',
+    'Maintaining gains from previous sessions. Focus on relapse prevention.',
+    'Patient regressed this week due to external stressors. Increased session frequency recommended.',
+    'Good progress with behavioral activation. Patient reports improved daily functioning.',
+  ];
+
+  // Generate sessions for patients with psychiatric tags
+  for (int i = 0; i < patientIds.length; i++) {
+    final tags = patientData[i]['tags']! as String;
+    if (!tags.contains('psychiatric') && random.nextInt(100) > 30) continue; // 30% chance for non-psychiatric
+    
+    final patientId = patientIds[i];
+    final numSessions = 3 + random.nextInt(10); // 3-12 sessions per patient
+    final primaryProvider = providerTypes[random.nextInt(providerTypes.length)];
+    final primaryProviderName = providerNames[random.nextInt(providerNames.length)];
+    
+    for (int j = 0; j < numSessions; j++) {
+      final daysAgo = j * 7 + random.nextInt(5); // Weekly sessions with some variation
+      final sessionDate = today.subtract(Duration(days: daysAgo));
+      final moodRating = 3 + random.nextInt(8); // 3-10
+      final duration = [30, 45, 50, 60, 90][random.nextInt(5)];
+      
+      // Generate session notes with some randomization
+      final noteTemplate = sessionNoteTemplates[random.nextInt(sessionNoteTemplates.length)];
+      final sessionNotes = noteTemplate
+        .replaceAll('{mood}', moods[random.nextInt(moods.length)])
+        .replaceAll('{outcome}', random.nextBool() ? 'improvement' : 'stable symptoms')
+        .replaceAll('{sleep_status}', random.nextBool() ? 'improved' : 'remains disrupted')
+        .replaceAll('{appetite_status}', random.nextBool() ? 'normal' : 'reduced')
+        .replaceAll('{therapy_type}', sessionTypes[random.nextInt(sessionTypes.length)])
+        .replaceAll('{intervention}', interventionsUsed[random.nextInt(interventionsUsed.length)][0])
+        .replaceAll('{condition}', tags.contains('anxiety') ? 'anxiety disorder' : 'mood disorder')
+        .replaceAll('{trigger}', random.nextBool() ? 'family conflict' : 'work stress')
+        .replaceAll('{diagnosis}', tags.contains('anxiety') ? 'GAD' : 'MDD')
+        .replaceAll('{hw_completion}', random.nextBool() ? 'completed' : 'partially completed');
+
+      await db.insertTreatmentSession(TreatmentSessionsCompanion.insert(
+        patientId: patientId,
+        sessionDate: sessionDate,
+        providerType: Value(primaryProvider),
+        providerName: Value(primaryProviderName),
+        sessionType: Value(sessionTypes[random.nextInt(sessionTypes.length)]),
+        durationMinutes: Value(duration),
+        presentingConcerns: Value(tags.contains('anxiety') ? 'Anxiety symptoms, worry' : 'Low mood, lack of motivation'),
+        sessionNotes: Value(sessionNotes),
+        interventionsUsed: Value(jsonEncode(interventionsUsed[random.nextInt(interventionsUsed.length)])),
+        patientMood: Value(moods[random.nextInt(moods.length)]),
+        moodRating: Value(moodRating),
+        progressNotes: Value(progressNoteTemplates[random.nextInt(progressNoteTemplates.length)]),
+        homeworkAssigned: Value(homeworkAssignments[random.nextInt(homeworkAssignments.length)]),
+        homeworkReview: Value(j > 0 ? (random.nextBool() ? 'Completed' : 'Partially completed - discussed barriers') : ''),
+        riskAssessment: Value(riskCategories[random.nextInt(3)]), // Mostly none/low/moderate
+        planForNextSession: Value('Continue ${interventionsUsed[random.nextInt(interventionsUsed.length)][0]}. Review homework. Assess symptom changes.'),
+        isBillable: Value(random.nextInt(100) > 10), // 90% billable
+      ));
+      sessionCount++;
+    }
+  }
+  log.i('SEED', '✓ Inserted $sessionCount treatment sessions');
+
+  // ══════════════════════════════════════════════════════════════════════════
+  // INSERT MEDICATION RESPONSES (Effectiveness & Side Effects Tracking)
+  // ══════════════════════════════════════════════════════════════════════════
+  int medicationResponseCount = 0;
+  final medicationsList = [
+    {'name': 'Sertraline', 'dosage': '50mg', 'frequency': 'Once daily', 'targetSymptoms': ['Depression', 'Anxiety', 'OCD']},
+    {'name': 'Escitalopram', 'dosage': '10mg', 'frequency': 'Once daily', 'targetSymptoms': ['Depression', 'Anxiety', 'Panic']},
+    {'name': 'Fluoxetine', 'dosage': '20mg', 'frequency': 'Once daily', 'targetSymptoms': ['Depression', 'Bulimia', 'OCD']},
+    {'name': 'Venlafaxine XR', 'dosage': '75mg', 'frequency': 'Once daily', 'targetSymptoms': ['Depression', 'Anxiety', 'Pain']},
+    {'name': 'Quetiapine', 'dosage': '100mg', 'frequency': 'At bedtime', 'targetSymptoms': ['Insomnia', 'Agitation', 'Mood stabilization']},
+    {'name': 'Risperidone', 'dosage': '2mg', 'frequency': 'Twice daily', 'targetSymptoms': ['Psychosis', 'Agitation', 'Mania']},
+    {'name': 'Lithium', 'dosage': '300mg', 'frequency': 'Twice daily', 'targetSymptoms': ['Mania', 'Depression', 'Mood swings']},
+    {'name': 'Lamotrigine', 'dosage': '100mg', 'frequency': 'Once daily', 'targetSymptoms': ['Bipolar depression', 'Mood stabilization']},
+    {'name': 'Clonazepam', 'dosage': '0.5mg', 'frequency': 'As needed', 'targetSymptoms': ['Panic attacks', 'Anxiety', 'Insomnia']},
+    {'name': 'Buspirone', 'dosage': '10mg', 'frequency': 'Twice daily', 'targetSymptoms': ['Anxiety', 'Worry']},
+    {'name': 'Trazodone', 'dosage': '50mg', 'frequency': 'At bedtime', 'targetSymptoms': ['Insomnia', 'Depression']},
+    {'name': 'Mirtazapine', 'dosage': '15mg', 'frequency': 'At bedtime', 'targetSymptoms': ['Depression', 'Insomnia', 'Poor appetite']},
+    {'name': 'Bupropion', 'dosage': '150mg', 'frequency': 'Once daily', 'targetSymptoms': ['Depression', 'Smoking cessation', 'Fatigue']},
+    {'name': 'Aripiprazole', 'dosage': '5mg', 'frequency': 'Once daily', 'targetSymptoms': ['Depression augmentation', 'Psychosis', 'Mood']},
+    {'name': 'Prazosin', 'dosage': '1mg', 'frequency': 'At bedtime', 'targetSymptoms': ['Nightmares', 'PTSD', 'Hypertension']},
+  ];
+  final responseStatuses = ['effective', 'partial', 'ineffective', 'monitoring', 'discontinued'];
+  final sideEffectsList = [
+    {'effect': 'Nausea', 'severity': 'mild'},
+    {'effect': 'Headache', 'severity': 'mild'},
+    {'effect': 'Drowsiness', 'severity': 'moderate'},
+    {'effect': 'Dry mouth', 'severity': 'mild'},
+    {'effect': 'Weight gain', 'severity': 'moderate'},
+    {'effect': 'Sexual dysfunction', 'severity': 'moderate'},
+    {'effect': 'Insomnia', 'severity': 'mild'},
+    {'effect': 'Tremor', 'severity': 'mild'},
+    {'effect': 'Constipation', 'severity': 'mild'},
+    {'effect': 'Dizziness', 'severity': 'moderate'},
+    {'effect': 'Increased appetite', 'severity': 'mild'},
+    {'effect': 'Fatigue', 'severity': 'moderate'},
+  ];
+  final severityLevels = ['none', 'mild', 'moderate', 'severe'];
+
+  for (int i = 0; i < patientIds.length; i++) {
+    final tags = patientData[i]['tags']! as String;
+    if (!tags.contains('psychiatric') && !tags.contains('chronic') && random.nextInt(100) > 40) continue;
+    
+    final patientId = patientIds[i];
+    final numMedications = 1 + random.nextInt(4); // 1-4 medications per patient
+    
+    for (int j = 0; j < numMedications; j++) {
+      final med = medicationsList[random.nextInt(medicationsList.length)];
+      final startDaysAgo = 30 + random.nextInt(180);
+      final startDate = today.subtract(Duration(days: startDaysAgo));
+      final isActive = random.nextInt(100) > 25; // 75% active
+      final endDate = isActive ? null : today.subtract(Duration(days: random.nextInt(30)));
+      
+      // Determine response status based on time on medication
+      String responseStatus;
+      if (startDaysAgo < 30) {
+        responseStatus = 'monitoring';
+      } else if (isActive) {
+        responseStatus = random.nextInt(100) < 60 ? 'effective' : 'partial';
+      } else {
+        responseStatus = random.nextInt(100) < 30 ? 'ineffective' : 'discontinued';
+      }
+      
+      // Generate side effects
+      final hasSideEffects = random.nextInt(100) < 40; // 40% have side effects
+      List<Map<String, String>> sideEffects = [];
+      String severityLevel = 'none';
+      if (hasSideEffects) {
+        final numSideEffects = 1 + random.nextInt(3);
+        for (int k = 0; k < numSideEffects; k++) {
+          sideEffects.add(sideEffectsList[random.nextInt(sideEffectsList.length)].cast<String, String>());
+        }
+        severityLevel = sideEffects.any((e) => e['severity'] == 'moderate') ? 'moderate' : 'mild';
+      }
+      
+      // Generate symptom improvement
+      final symptoms = med['targetSymptoms'] as List<String>;
+      final Map<String, String> symptomImprovement = {};
+      for (final symptom in symptoms) {
+        if (responseStatus == 'effective') {
+          symptomImprovement[symptom] = ['Significant improvement', 'Much better', 'Resolved'][random.nextInt(3)];
+        } else if (responseStatus == 'partial') {
+          symptomImprovement[symptom] = ['Some improvement', 'Slightly better', 'Minimal change'][random.nextInt(3)];
+        } else {
+          symptomImprovement[symptom] = ['No change', 'Worsened', 'Unchanged'][random.nextInt(3)];
+        }
+      }
+
+      await db.insertMedicationResponse(MedicationResponsesCompanion.insert(
+        patientId: patientId,
+        medicationName: med['name']! as String,
+        dosage: Value(med['dosage']! as String),
+        frequency: Value(med['frequency']! as String),
+        startDate: startDate,
+        endDate: Value(endDate),
+        responseStatus: Value(responseStatus),
+        effectivenessScore: Value(responseStatus == 'effective' ? 7 + random.nextInt(4) : 
+                                   responseStatus == 'partial' ? 4 + random.nextInt(3) : 
+                                   1 + random.nextInt(4)),
+        targetSymptoms: Value(jsonEncode(symptoms)),
+        symptomImprovement: Value(jsonEncode(symptomImprovement)),
+        sideEffects: Value(jsonEncode(sideEffects)),
+        sideEffectSeverity: Value(severityLevel),
+        adherent: Value(random.nextInt(100) > 15), // 85% adherent
+        adherenceNotes: Value(random.nextInt(100) < 85 ? '' : 'Occasional missed doses reported'),
+        labsRequired: Value(med['name'] == 'Lithium' ? 'Lithium level, TSH, Creatinine' : 
+                            med['name'] == 'Quetiapine' ? 'Fasting glucose, Lipid panel' : ''),
+        nextLabDate: Value(med['name'] == 'Lithium' ? today.add(Duration(days: 30 + random.nextInt(60))) : null),
+        providerNotes: Value('Medication ${responseStatus == 'effective' ? 'working well' : 'needs monitoring'}. ${hasSideEffects ? 'Side effects discussed.' : ''}'),
+        patientFeedback: Value(responseStatus == 'effective' ? 'Feeling much better' : 
+                               responseStatus == 'partial' ? 'Some improvement noted' : 'Not sure if helping'),
+        lastReviewDate: Value(today.subtract(Duration(days: random.nextInt(30)))),
+      ));
+      medicationResponseCount++;
+    }
+  }
+  log.i('SEED', '✓ Inserted $medicationResponseCount medication responses');
+
+  // ══════════════════════════════════════════════════════════════════════════
+  // INSERT TREATMENT GOALS (Progress Tracking)
+  // ══════════════════════════════════════════════════════════════════════════
+  int goalCount = 0;
+  final goalCategories = ['symptom', 'functional', 'behavioral', 'cognitive', 'interpersonal'];
+  final goalTemplates = [
+    {'category': 'symptom', 'goal': 'Reduce anxiety symptoms', 'target': 'PHQ-9 score below 5', 'baseline': 'PHQ-9 score: 15'},
+    {'category': 'symptom', 'goal': 'Improve depressive symptoms', 'target': 'GAD-7 score below 5', 'baseline': 'GAD-7 score: 12'},
+    {'category': 'symptom', 'goal': 'Reduce panic attack frequency', 'target': 'Less than 1 panic attack per month', 'baseline': '3-4 panic attacks per week'},
+    {'category': 'symptom', 'goal': 'Improve sleep quality', 'target': '7+ hours of restful sleep', 'baseline': '4-5 hours, interrupted'},
+    {'category': 'functional', 'goal': 'Return to work full-time', 'target': 'Working 40 hours/week', 'baseline': 'On medical leave'},
+    {'category': 'functional', 'goal': 'Resume social activities', 'target': '2+ social outings per week', 'baseline': 'Isolated at home'},
+    {'category': 'functional', 'goal': 'Complete daily self-care routine', 'target': 'Consistent daily hygiene and grooming', 'baseline': 'Neglecting self-care'},
+    {'category': 'functional', 'goal': 'Improve concentration for work tasks', 'target': 'Complete work tasks without difficulty', 'baseline': 'Unable to focus for more than 10 minutes'},
+    {'category': 'behavioral', 'goal': 'Reduce avoidance behaviors', 'target': 'Engage in 3 previously avoided activities', 'baseline': 'Avoiding all triggers'},
+    {'category': 'behavioral', 'goal': 'Establish regular exercise routine', 'target': '30 minutes exercise, 5 days/week', 'baseline': 'No physical activity'},
+    {'category': 'behavioral', 'goal': 'Reduce emotional eating', 'target': 'No binge episodes for 30 days', 'baseline': '3-4 binge episodes per week'},
+    {'category': 'behavioral', 'goal': 'Improve medication adherence', 'target': '95%+ adherence rate', 'baseline': '60% adherence'},
+    {'category': 'cognitive', 'goal': 'Challenge negative thought patterns', 'target': 'Identify and reframe 80% of negative thoughts', 'baseline': 'Ruminating on negative thoughts'},
+    {'category': 'cognitive', 'goal': 'Reduce catastrophic thinking', 'target': 'Use evidence-based thinking consistently', 'baseline': 'Frequent catastrophizing'},
+    {'category': 'cognitive', 'goal': 'Improve self-esteem', 'target': 'Rosenberg Self-Esteem Scale 25+', 'baseline': 'Rosenberg score: 12'},
+    {'category': 'interpersonal', 'goal': 'Improve communication with spouse', 'target': 'Weekly couple check-ins without conflict', 'baseline': 'Frequent arguments'},
+    {'category': 'interpersonal', 'goal': 'Set healthy boundaries', 'target': 'Consistently maintain boundaries with family', 'baseline': 'Unable to say no'},
+    {'category': 'interpersonal', 'goal': 'Build support network', 'target': '3+ supportive relationships', 'baseline': 'Socially isolated'},
+  ];
+  final goalStatuses = ['active', 'achieved', 'modified', 'discontinued'];
+  final barriersList = [
+    'Lack of motivation',
+    'Financial constraints',
+    'Time limitations',
+    'Family responsibilities',
+    'Work stress',
+    'Side effects of medication',
+    'Fear of failure',
+    'Low energy',
+    'Transportation issues',
+    'Stigma concerns',
+  ];
+
+  for (int i = 0; i < patientIds.length; i++) {
+    final tags = patientData[i]['tags']! as String;
+    if (!tags.contains('psychiatric') && !tags.contains('chronic') && random.nextInt(100) > 30) continue;
+    
+    final patientId = patientIds[i];
+    final numGoals = 2 + random.nextInt(4); // 2-5 goals per patient
+    
+    for (int j = 0; j < numGoals; j++) {
+      final goalTemplate = goalTemplates[random.nextInt(goalTemplates.length)];
+      final createdDaysAgo = 30 + random.nextInt(120);
+      final createdAt = today.subtract(Duration(days: createdDaysAgo));
+      final targetDate = today.add(Duration(days: random.nextInt(90)));
+      
+      // Determine progress and status
+      final progressPercent = random.nextInt(101); // 0-100
+      String status;
+      DateTime? achievedAt;
+      if (progressPercent >= 90) {
+        status = random.nextInt(100) < 70 ? 'achieved' : 'active';
+        if (status == 'achieved') {
+          achievedAt = today.subtract(Duration(days: random.nextInt(30)));
+        }
+      } else if (progressPercent < 20 && random.nextInt(100) < 20) {
+        status = random.nextBool() ? 'modified' : 'discontinued';
+      } else {
+        status = 'active';
+      }
+      
+      // Generate current measure based on progress
+      final baselineNum = int.tryParse(RegExp(r'\d+').firstMatch(goalTemplate['baseline']!)?.group(0) ?? '10') ?? 10;
+      final targetNum = int.tryParse(RegExp(r'\d+').firstMatch(goalTemplate['target']!)?.group(0) ?? '5') ?? 5;
+      final currentNum = baselineNum - ((baselineNum - targetNum) * progressPercent / 100).round();
+      
+      // Generate barriers (more likely for lower progress)
+      List<String> barriers = [];
+      if (progressPercent < 50 && random.nextInt(100) < 60) {
+        final numBarriers = 1 + random.nextInt(2);
+        for (int k = 0; k < numBarriers; k++) {
+          barriers.add(barriersList[random.nextInt(barriersList.length)]);
+        }
+      }
+      
+      // Generate progress notes
+      final progressNotes = <Map<String, dynamic>>[];
+      final numNotes = 2 + random.nextInt(4);
+      for (int k = 0; k < numNotes; k++) {
+        final noteDate = createdAt.add(Duration(days: (createdDaysAgo / numNotes * (k + 1)).round()));
+        progressNotes.add({
+          'date': noteDate.toIso8601String(),
+          'note': progressPercent > 50 
+            ? 'Good progress. Patient ${random.nextBool() ? 'motivated' : 'engaged'} in treatment.'
+            : 'Some challenges encountered. ${barriers.isNotEmpty ? 'Barriers: ${barriers.first}' : 'Working on strategies.'}',
+          'progress': (progressPercent * (k + 1) / numNotes).round(),
+        });
+      }
+
+      await db.insertTreatmentGoal(TreatmentGoalsCompanion.insert(
+        patientId: patientId,
+        goalCategory: Value(goalTemplate['category']! as String),
+        goalDescription: goalTemplate['goal']! as String,
+        targetBehavior: Value(goalTemplate['target']! as String),
+        baselineMeasure: Value(goalTemplate['baseline']! as String),
+        targetMeasure: Value(goalTemplate['target']! as String),
+        currentMeasure: Value('Current: $currentNum'),
+        progressPercent: Value(progressPercent),
+        status: Value(status),
+        targetDate: Value(targetDate),
+        interventions: Value(jsonEncode(interventionsUsed[random.nextInt(interventionsUsed.length)])),
+        barriers: Value(barriers.isNotEmpty ? barriers.join(', ') : ''),
+        progressNotes: Value(jsonEncode(progressNotes)),
+        priority: Value(1 + random.nextInt(3)),
+        achievedAt: Value(achievedAt),
+      ));
+      goalCount++;
+    }
+  }
+  log.i('SEED', '✓ Inserted $goalCount treatment goals');
+
   log
-    ..i('SEED', '✓ Inserted $invoiceCount invoices')
     ..i('SEED', '')
     ..i('SEED', '═══════════════════════════════════════════════════════════')
-    ..i('SEED', '  DATABASE SEEDING COMPLETE')
+    ..i('SEED', '  DATABASE SEEDING COMPLETE (REDESIGNED)')
     ..i('SEED', '═══════════════════════════════════════════════════════════')
     ..i('SEED', '  ✓ ${patientIds.length} Pakistani patients')
+    ..i('SEED', '  ✓ Allergies & Contraindications for HIGH RISK patients')
+    ..i('SEED', '  ✓ Baseline Vital Signs for all patients')
     ..i('SEED', '  ✓ $appointmentCount appointments (past, today, future)')
     ..i('SEED', '  ✓ $prescriptionCount prescriptions with medications')
-    ..i('SEED', '  ✓ $medicalRecordCount medical records (5 types)')
+    ..i('SEED', '  ✓ $medicalRecordCount medical records (6 types + vitals)')
     ..i('SEED', '  ✓ $invoiceCount invoices with varied items')
+    ..i('SEED', '  ✓ $vitalSignsCount vital signs in clinical table')
+    ..i('SEED', '  ✓ $treatmentCount treatment outcomes')
+    ..i('SEED', '  ✓ $followUpCount scheduled follow-ups')
+    ..i('SEED', '  ✓ $sessionCount treatment sessions (therapy/psychiatry)')
+    ..i('SEED', '  ✓ $medicationResponseCount medication responses with side effects')
+    ..i('SEED', '  ✓ $goalCount treatment goals with progress tracking')
+    ..i('SEED', '  ✓ Clinical safety features: Drug interaction checks enabled')
     ..i('SEED', '═══════════════════════════════════════════════════════════');
+}
+
+/// Helper function to enhance medical history with allergy and vital signs data
+String _enhanceMedicalHistory(
+  String baseHistory,
+  Map<String, dynamic>? allergies,
+  Map<String, dynamic>? vitals,
+) {
+  final buffer = StringBuffer(baseHistory);
+  
+  if (allergies != null) {
+    final allergyList = allergies['allergies'] as List<dynamic>? ?? [];
+    final contraList = allergies['contraindications'] as List<dynamic>? ?? [];
+    
+    if (allergyList.isNotEmpty) {
+      buffer.write('\n🚨 ALLERGIES: ${allergyList.join(", ")}');
+    }
+    if (contraList.isNotEmpty) {
+      buffer.write('\n⚠️  CONTRAINDICATIONS: ${contraList.join(", ")}');
+    }
+  }
+  
+  if (vitals != null) {
+    buffer.write('\n📊 Baseline Vitals: BP ${vitals['systolic']}/${vitals['diastolic']}'
+        ' | HR ${vitals['pulse']} | Wt ${vitals['weight']}kg | BMI ${vitals['bmi']}');
+  }
+  
+  return buffer.toString();
 }

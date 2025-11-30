@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:io';
 
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
@@ -7,12 +8,14 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../core/core.dart';
 import '../../providers/db_provider.dart';
 import '../../providers/google_calendar_provider.dart';
+import '../../services/backup_service.dart';
 import '../../services/doctor_settings_service.dart';
 import '../../services/logger_service.dart';
 import '../../services/seed_data_service.dart';
 import '../../theme/app_theme.dart';
 import '../widgets/debug_console.dart';
 import 'doctor_profile_screen.dart';
+import 'user_manual_screen.dart';
 
 class SettingsScreen extends ConsumerStatefulWidget {
   const SettingsScreen({super.key});
@@ -349,6 +352,18 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> with SingleTick
           _buildSectionTitle(context, 'Support'),
           _buildSettingsGroup(context, [
             _SettingItem(
+              icon: Icons.menu_book_rounded,
+              iconColor: AppColors.success,
+              title: 'User Manual',
+              subtitle: 'Complete app guide & tutorials',
+              onTap: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute<void>(builder: (_) => const UserManualScreen()),
+                );
+              },
+            ),
+            _SettingItem(
               icon: Icons.help_outline_rounded,
               iconColor: AppColors.primary,
               title: 'Help Center',
@@ -574,13 +589,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> with SingleTick
               subtitle: const Text('Load data from file'),
               onTap: () {
                 Navigator.pop(context);
-                ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(
-                    content: const Text('Restore feature coming soon!'),
-                    behavior: SnackBarBehavior.floating,
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-                  ),
-                );
+                _showRestoreBackupDialog(context, ref);
               },
             ),
             const Divider(),
@@ -603,6 +612,251 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> with SingleTick
         ],
       ),
     );
+  }
+
+  void _showRestoreBackupDialog(BuildContext context, WidgetRef ref) async {
+    // First show the list of available backups
+    showDialog<void>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Row(
+          children: [
+            Icon(Icons.cloud_download, color: AppColors.info),
+            SizedBox(width: 12),
+            Text('Restore Backup'),
+          ],
+        ),
+        content: SizedBox(
+          width: double.maxFinite,
+          child: FutureBuilder<List<_BackupItem>>(
+            future: _getBackupList(),
+            builder: (context, snapshot) {
+              if (snapshot.connectionState == ConnectionState.waiting) {
+                return const SizedBox(
+                  height: 100,
+                  child: Center(child: CircularProgressIndicator()),
+                );
+              }
+
+              final backups = snapshot.data ?? [];
+
+              if (backups.isEmpty) {
+                return const Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(Icons.folder_off, size: 48, color: AppColors.textSecondary),
+                    SizedBox(height: 16),
+                    Text(
+                      'No backups found',
+                      style: TextStyle(fontWeight: FontWeight.w600),
+                    ),
+                    SizedBox(height: 8),
+                    Text(
+                      'Create a backup first to restore later.',
+                      style: TextStyle(color: AppColors.textSecondary, fontSize: 13),
+                      textAlign: TextAlign.center,
+                    ),
+                  ],
+                );
+              }
+
+              return Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Container(
+                    padding: const EdgeInsets.all(12),
+                    decoration: BoxDecoration(
+                      color: AppColors.warning.withValues(alpha: 0.1),
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: const Row(
+                      children: [
+                        Icon(Icons.warning_amber_rounded, color: AppColors.warning, size: 20),
+                        SizedBox(width: 8),
+                        Expanded(
+                          child: Text(
+                            'Restoring a backup will replace all current data.',
+                            style: TextStyle(fontSize: 12, color: AppColors.warning),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+                  const Text('Select a backup to restore:', style: TextStyle(fontWeight: FontWeight.w500)),
+                  const SizedBox(height: 8),
+                  ...backups.take(5).map((backup) => ListTile(
+                    dense: true,
+                    contentPadding: EdgeInsets.zero,
+                    leading: Icon(
+                      backup.isAuto ? Icons.schedule : Icons.backup,
+                      color: backup.isAuto ? AppColors.textSecondary : AppColors.primary,
+                    ),
+                    title: Text(backup.name),
+                    subtitle: Text('${backup.date} • ${backup.size}'),
+                    onTap: () {
+                      Navigator.pop(context);
+                      _confirmRestore(context, ref, backup);
+                    },
+                  )),
+                ],
+              );
+            },
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Cancel'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Future<List<_BackupItem>> _getBackupList() async {
+    try {
+      final backupService = BackupService();
+      final backups = await backupService.listBackups();
+      return backups.map((b) => _BackupItem(
+        name: b.fileName,
+        date: b.formattedDate,
+        size: b.formattedSize,
+        isAuto: b.metadata.isAutoBackup,
+        file: b.file,
+      )).toList();
+    } catch (e) {
+      log.e('Settings', 'Error loading backups: $e');
+      return [];
+    }
+  }
+
+  void _confirmRestore(BuildContext context, WidgetRef ref, _BackupItem backup) {
+    showDialog<void>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Row(
+          children: [
+            Icon(Icons.warning, color: AppColors.error),
+            SizedBox(width: 12),
+            Text('Confirm Restore'),
+          ],
+        ),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Text(
+              'Are you sure you want to restore this backup?',
+              style: TextStyle(fontWeight: FontWeight.w500),
+            ),
+            const SizedBox(height: 12),
+            Container(
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: AppColors.background,
+                borderRadius: BorderRadius.circular(8),
+                border: Border.all(color: AppColors.divider),
+              ),
+              child: Row(
+                children: [
+                  const Icon(Icons.backup, color: AppColors.primary),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(backup.name, style: const TextStyle(fontWeight: FontWeight.w600)),
+                        Text('${backup.date} • ${backup.size}',
+                          style: const TextStyle(fontSize: 12, color: AppColors.textSecondary)),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(height: 16),
+            const Text(
+              'Warning: This will replace all your current data. A backup of your current data will be created automatically.',
+              style: TextStyle(color: AppColors.error, fontSize: 13),
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Cancel'),
+          ),
+          ElevatedButton.icon(
+            onPressed: () async {
+              Navigator.pop(context);
+              await _performRestore(context, ref, backup);
+            },
+            icon: const Icon(Icons.restore),
+            label: const Text('Restore'),
+            style: ElevatedButton.styleFrom(backgroundColor: AppColors.info),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Future<void> _performRestore(BuildContext context, WidgetRef ref, _BackupItem backup) async {
+    // Show loading dialog
+    showDialog<void>(
+      context: context,
+      barrierDismissible: false,
+      builder: (context) => const AlertDialog(
+        content: Row(
+          children: [
+            CircularProgressIndicator(),
+            SizedBox(width: 20),
+            Text('Restoring backup...'),
+          ],
+        ),
+      ),
+    );
+
+    try {
+      final backupService = BackupService();
+      await backupService.importDatabase(backup.file);
+
+      // Close loading dialog
+      if (context.mounted) Navigator.pop(context);
+
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: const Row(
+              children: [
+                Icon(Icons.check_circle, color: Colors.white),
+                SizedBox(width: 12),
+                Text('Backup restored successfully! Please restart the app.'),
+              ],
+            ),
+            backgroundColor: AppColors.success,
+            behavior: SnackBarBehavior.floating,
+            duration: const Duration(seconds: 5),
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+          ),
+        );
+      }
+    } catch (e) {
+      // Close loading dialog
+      if (context.mounted) Navigator.pop(context);
+
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Restore failed: $e'),
+            backgroundColor: AppColors.error,
+            behavior: SnackBarBehavior.floating,
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+          ),
+        );
+      }
+    }
   }
 
   void _showLoadDemoDataDialog(BuildContext context, WidgetRef ref) {
@@ -1772,4 +2026,21 @@ class _AnimatedTapCardState extends State<_AnimatedTapCard>
       ),
     );
   }
+}
+
+/// Backup item model for restore list
+class _BackupItem {
+  _BackupItem({
+    required this.name,
+    required this.date,
+    required this.size,
+    required this.isAuto,
+    required this.file,
+  });
+
+  final String name;
+  final String date;
+  final String size;
+  final bool isAuto;
+  final File file;
 }

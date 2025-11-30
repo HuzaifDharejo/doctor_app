@@ -8,7 +8,7 @@ import '../../providers/db_provider.dart';
 import '../../services/pdf_service.dart';
 import '../../services/whatsapp_service.dart';
 import '../../theme/app_theme.dart';
-import 'patient_view_screen.dart';
+import 'patient_view_screen_modern.dart';
 
 class BillingScreen extends ConsumerStatefulWidget {
   const BillingScreen({super.key});
@@ -66,6 +66,7 @@ class _BillingScreenState extends ConsumerState<BillingScreen> {
     return AppHeader(
       title: AppStrings.billing,
       subtitle: 'Manage invoices & payments',
+      showBackButton: true,
       trailing: Container(
         padding: EdgeInsets.all(isCompact ? AppSpacing.xs : AppSpacing.sm),
         decoration: BoxDecoration(
@@ -443,7 +444,7 @@ class _BillingScreenState extends ConsumerState<BillingScreen> {
                                     Navigator.push(
                                       context,
                                       MaterialPageRoute<void>(
-                                        builder: (_) => PatientViewScreen(patient: patient),
+                                        builder: (_) => PatientViewScreenModern(patient: patient),
                                       ),
                                     );
                                   } : null,
@@ -678,7 +679,7 @@ class _BillingScreenState extends ConsumerState<BillingScreen> {
                             Navigator.push(
                               context,
                               MaterialPageRoute<void>(
-                                builder: (_) => PatientViewScreen(patient: patient),
+                                builder: (_) => PatientViewScreenModern(patient: patient),
                               ),
                             );
                           },

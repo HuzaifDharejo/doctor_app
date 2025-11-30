@@ -5,7 +5,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../db/doctor_db.dart';
 import '../../providers/db_provider.dart';
-import '../screens/patient_view_screen.dart';
+import '../screens/patient_view_screen_modern.dart';
 
 /// Represents a search result item
 class SearchResult {
@@ -156,7 +156,7 @@ class _GlobalSearchBarState extends ConsumerState<GlobalSearchBar> {
         Navigator.push<void>(
           context,
           MaterialPageRoute<void>(
-            builder: (_) => PatientViewScreen(patient: patient),
+            builder: (_) => PatientViewScreenModern(patient: patient),
           ),
         );
       case 'appointment':
@@ -171,7 +171,7 @@ class _GlobalSearchBarState extends ConsumerState<GlobalSearchBar> {
               Navigator.push<void>(
                 context,
                 MaterialPageRoute<void>(
-                  builder: (_) => PatientViewScreen(patient: patient),
+                  builder: (_) => PatientViewScreenModern(patient: patient),
                 ),
               ),
             );

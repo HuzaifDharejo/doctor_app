@@ -35,6 +35,7 @@ class AppointmentModel {
     this.reminderAt,
     this.notes = '',
     this.createdAt,
+    this.medicalRecordId,
   });
 
   /// Create from JSON map
@@ -62,6 +63,7 @@ class AppointmentModel {
           : json['created_at'] != null
               ? DateTime.tryParse(json['created_at'] as String)
               : null,
+      medicalRecordId: json['medicalRecordId'] as int? ?? json['medical_record_id'] as int?,
     );
   }
 
@@ -79,6 +81,7 @@ class AppointmentModel {
   final DateTime? reminderAt;
   final String notes;
   final DateTime? createdAt;
+  final int? medicalRecordId; // Link to assessment done during visit
 
   /// Get the end time of the appointment
   DateTime get endDateTime => appointmentDateTime.add(Duration(minutes: durationMinutes));
@@ -160,6 +163,7 @@ class AppointmentModel {
     DateTime? reminderAt,
     String? notes,
     DateTime? createdAt,
+    int? medicalRecordId,
   }) {
     return AppointmentModel(
       id: id ?? this.id,
@@ -172,6 +176,7 @@ class AppointmentModel {
       reminderAt: reminderAt ?? this.reminderAt,
       notes: notes ?? this.notes,
       createdAt: createdAt ?? this.createdAt,
+      medicalRecordId: medicalRecordId ?? this.medicalRecordId,
     );
   }
 
@@ -184,7 +189,8 @@ class AppointmentModel {
         other.appointmentDateTime == appointmentDateTime &&
         other.durationMinutes == durationMinutes &&
         other.reason == reason &&
-        other.status == status;
+        other.status == status &&
+        other.medicalRecordId == medicalRecordId;
   }
 
   @override
@@ -195,8 +201,9 @@ class AppointmentModel {
         durationMinutes,
         reason,
         status,
+        medicalRecordId,
       );
 
   @override
-  String toString() => 'AppointmentModel(id: $id, patientId: $patientId, dateTime: $appointmentDateTime, status: ${status.label})';
+  String toString() => 'AppointmentModel(id: $id, patientId: $patientId, dateTime: $appointmentDateTime, status: ${status.label}, medicalRecordId: $medicalRecordId)';
 }

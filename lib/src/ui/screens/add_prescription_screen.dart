@@ -4,6 +4,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 import '../../db/doctor_db.dart';
 import '../../providers/db_provider.dart';
+import '../../services/allergy_checking_service.dart';
+import '../../services/drug_interaction_service.dart';
 import '../../services/prescription_templates.dart';
 import '../../services/suggestions_service.dart';
 import '../../theme/app_theme.dart';
@@ -46,6 +48,11 @@ class _AddPrescriptionScreenState extends ConsumerState<AddPrescriptionScreen> {
   Map<String, dynamic>? _lastVisitVitals;
   DateTime? _lastVisitDate;
   bool _loadingVitals = false;
+
+  // Safety Alerts
+  List<DrugInteraction> _drugInteractions = [];
+  List<AllergyCheckResult> _allergyAlerts = [];
+  String _patientAllergies = '';
 
   // Additional Notes
   final _notesController = TextEditingController();
@@ -122,6 +129,16 @@ class _AddPrescriptionScreenState extends ConsumerState<AddPrescriptionScreen> {
           _loadingVitals = false;
         });
       }
+      
+      // Load patient allergies from medical history
+      if (_selectedPatient != null) {
+        // Parse allergies from medical history if available
+        final history = _selectedPatient!.medicalHistory;
+        // Check for allergy-related keywords in medical history
+        if (history.toLowerCase().contains('allerg')) {
+          _patientAllergies = _extractAllergies(history);
+        }
+      }
     } catch (e) {
       setState(() {
         _lastVisitVitals = null;
@@ -131,8 +148,150 @@ class _AddPrescriptionScreenState extends ConsumerState<AddPrescriptionScreen> {
     }
   }
 
+  /// Check for drug interactions and allergy conflicts
+  void _checkSafetyAlerts() {
+    final drugs = _medications
+        .map((m) => m.nameController.text)
+        .where((name) => name.isNotEmpty)
+        .toList();
+
+    // Check drug interactions
+    final interactions = DrugInteractionService.checkInteractions(drugs);
+    
+    // Check allergy conflicts
+    final allergyAlerts = <AllergyCheckResult>[];
+    for (final drug in drugs) {
+      final result = AllergyCheckingService.checkDrugSafety(
+        allergyHistory: _patientAllergies,
+        proposedDrug: drug,
+      );
+      if (result.hasConcern) {
+        allergyAlerts.add(result);
+      }
+    }
+
+    setState(() {
+      _drugInteractions = interactions;
+      _allergyAlerts = allergyAlerts;
+    });
+
+    // Show alert dialog if there are severe warnings
+    if (interactions.any((i) => i.severity == InteractionSeverity.severe) ||
+        allergyAlerts.any((a) => a.severity == AllergySeverity.severe)) {
+      _showSafetyAlertDialog();
+    }
+  }
+
+  void _showSafetyAlertDialog() {
+    showDialog<void>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Row(
+          children: [
+            Icon(Icons.warning_amber_rounded, color: Colors.red.shade700, size: 28),
+            const SizedBox(width: 12),
+            const Text('Safety Alert'),
+          ],
+        ),
+        content: SingleChildScrollView(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              if (_drugInteractions.isNotEmpty) ...[
+                const Text('⚠️ Drug Interactions:', style: TextStyle(fontWeight: FontWeight.bold)),
+                const SizedBox(height: 8),
+                ..._drugInteractions.map((i) => Container(
+                  margin: const EdgeInsets.only(bottom: 8),
+                  padding: const EdgeInsets.all(12),
+                  decoration: BoxDecoration(
+                    color: Color(i.severity.colorValue).withValues(alpha: 0.1),
+                    borderRadius: BorderRadius.circular(8),
+                    border: Border.all(color: Color(i.severity.colorValue)),
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text('${i.drug1} + ${i.drug2}', style: const TextStyle(fontWeight: FontWeight.bold)),
+                      Text(i.description),
+                      if (i.recommendation.isNotEmpty) ...[
+                        const SizedBox(height: 4),
+                        Text('💡 ${i.recommendation}', style: TextStyle(color: Colors.blue.shade700, fontSize: 12)),
+                      ],
+                    ],
+                  ),
+                )),
+              ],
+              if (_allergyAlerts.isNotEmpty) ...[
+                const SizedBox(height: 12),
+                const Text('🚨 Allergy Warnings:', style: TextStyle(fontWeight: FontWeight.bold)),
+                const SizedBox(height: 8),
+                ..._allergyAlerts.map((a) => Container(
+                  margin: const EdgeInsets.only(bottom: 8),
+                  padding: const EdgeInsets.all(12),
+                  decoration: BoxDecoration(
+                    color: Color(a.severity.colorValue).withValues(alpha: 0.1),
+                    borderRadius: BorderRadius.circular(8),
+                    border: Border.all(color: Color(a.severity.colorValue)),
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(a.message),
+                      if (a.recommendation.isNotEmpty) ...[
+                        const SizedBox(height: 4),
+                        Text('💡 ${a.recommendation}', style: TextStyle(color: Colors.blue.shade700, fontSize: 12)),
+                      ],
+                    ],
+                  ),
+                )),
+              ],
+            ],
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Acknowledge & Continue'),
+          ),
+        ],
+      ),
+    );
+  }
+
   String _getPatientName(Patient patient) {
     return '${patient.firstName} ${patient.lastName}'.trim();
+  }
+
+  /// Extract allergies from medical history text
+  String _extractAllergies(String medicalHistory) {
+    // Common allergy keywords to look for
+    final allergyPatterns = [
+      RegExp(r'allerg(?:y|ies|ic)[\s:]+([^,.;]+)', caseSensitive: false),
+      RegExp(r'allergic to[\s:]+([^,.;]+)', caseSensitive: false),
+    ];
+    
+    final allergies = <String>[];
+    for (final pattern in allergyPatterns) {
+      final matches = pattern.allMatches(medicalHistory);
+      for (final match in matches) {
+        if (match.groupCount >= 1) {
+          allergies.add(match.group(1)!.trim());
+        }
+      }
+    }
+    
+    // Also check for common drug names if mentioned with "allergy"
+    final commonAllergens = ['penicillin', 'sulfa', 'aspirin', 'nsaid', 'codeine', 'latex', 'iodine'];
+    for (final allergen in commonAllergens) {
+      if (medicalHistory.toLowerCase().contains(allergen)) {
+        if (!allergies.any((a) => a.toLowerCase().contains(allergen))) {
+          allergies.add(allergen.substring(0, 1).toUpperCase() + allergen.substring(1));
+        }
+      }
+    }
+    
+    return allergies.isNotEmpty ? allergies.join(', ') : medicalHistory;
   }
 
   int _calculateAge(DateTime? dob) {
@@ -278,6 +437,9 @@ class _AddPrescriptionScreenState extends ConsumerState<AddPrescriptionScreen> {
       );
       return;
     }
+
+    // Check safety before saving
+    _checkSafetyAlerts();
 
     if (_formKey.currentState!.validate()) {
       final jsonData = _buildPrescriptionJson();
@@ -496,6 +658,18 @@ class _AddPrescriptionScreenState extends ConsumerState<AddPrescriptionScreen> {
                 trailing: Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [
+                    // Check Safety Button
+                    FilledButton.icon(
+                      onPressed: _checkSafetyAlerts,
+                      icon: const Icon(Icons.health_and_safety, size: 16),
+                      label: const Text('Check'),
+                      style: FilledButton.styleFrom(
+                        backgroundColor: Colors.green,
+                        visualDensity: VisualDensity.compact,
+                        padding: const EdgeInsets.symmetric(horizontal: 12),
+                      ),
+                    ),
+                    const SizedBox(width: 8),
                     OutlinedButton.icon(
                       onPressed: _showMedicationTemplates,
                       icon: const Icon(Icons.library_books, size: 16),
@@ -516,7 +690,17 @@ class _AddPrescriptionScreenState extends ConsumerState<AddPrescriptionScreen> {
                     ),
                   ],
                 ),
-                child: _buildMedicationsSection(colorScheme),
+                child: Column(
+                  children: [
+                    // Safety Alerts Banner
+                    if (_drugInteractions.isNotEmpty || _allergyAlerts.isNotEmpty)
+                      _buildSafetyAlertsBanner(colorScheme),
+                    // Patient Allergies Display
+                    if (_patientAllergies.isNotEmpty)
+                      _buildPatientAllergiesChip(colorScheme),
+                    _buildMedicationsSection(colorScheme),
+                  ],
+                ),
               ),
               const SizedBox(height: 16),
 
@@ -999,6 +1183,93 @@ class _AddPrescriptionScreenState extends ConsumerState<AddPrescriptionScreen> {
                 ),
               ],
             ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildSafetyAlertsBanner(ColorScheme colorScheme) {
+    final hasInteractions = _drugInteractions.isNotEmpty;
+    final hasAllergyAlerts = _allergyAlerts.isNotEmpty;
+    final hasSevere = _drugInteractions.any((i) => i.severity == InteractionSeverity.severe) ||
+                      _allergyAlerts.any((a) => a.severity == AllergySeverity.severe);
+    
+    return Container(
+      margin: const EdgeInsets.only(bottom: 16),
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: hasSevere ? Colors.red.shade50 : Colors.orange.shade50,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(
+          color: hasSevere ? Colors.red.shade300 : Colors.orange.shade300,
+        ),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Icon(
+                hasSevere ? Icons.error : Icons.warning_amber,
+                color: hasSevere ? Colors.red.shade700 : Colors.orange.shade700,
+                size: 24,
+              ),
+              const SizedBox(width: 8),
+              Text(
+                hasSevere ? 'Critical Safety Alert!' : 'Safety Warning',
+                style: TextStyle(
+                  fontWeight: FontWeight.bold,
+                  color: hasSevere ? Colors.red.shade700 : Colors.orange.shade700,
+                  fontSize: 15,
+                ),
+              ),
+              const Spacer(),
+              TextButton(
+                onPressed: _showSafetyAlertDialog,
+                child: const Text('View Details'),
+              ),
+            ],
+          ),
+          const SizedBox(height: 8),
+          if (hasInteractions)
+            Text(
+              '⚠️ ${_drugInteractions.length} drug interaction(s) detected',
+              style: TextStyle(color: Colors.grey.shade700, fontSize: 13),
+            ),
+          if (hasAllergyAlerts)
+            Text(
+              '🚨 ${_allergyAlerts.length} allergy conflict(s) detected',
+              style: TextStyle(color: Colors.grey.shade700, fontSize: 13),
+            ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildPatientAllergiesChip(ColorScheme colorScheme) {
+    return Container(
+      margin: const EdgeInsets.only(bottom: 12),
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+      decoration: BoxDecoration(
+        color: Colors.red.shade50,
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: Colors.red.shade200),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(Icons.warning_rounded, color: Colors.red.shade600, size: 18),
+          const SizedBox(width: 8),
+          Expanded(
+            child: Text(
+              'Patient Allergies: $_patientAllergies',
+              style: TextStyle(
+                color: Colors.red.shade700,
+                fontSize: 12,
+                fontWeight: FontWeight.w500,
+              ),
+            ),
           ),
         ],
       ),

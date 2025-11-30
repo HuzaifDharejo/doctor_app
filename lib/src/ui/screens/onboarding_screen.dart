@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../../data/demo_data.dart';
 import '../../providers/db_provider.dart';
 import '../../providers/google_calendar_provider.dart';
 import '../../services/google_calendar_service.dart';
@@ -31,6 +32,7 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen>
   
   bool _isLoading = false;
   bool _isSignedIn = false;
+  bool _isDemoProfile = false;
   GoogleUserInfo? _googleUserInfo;
   
   // Animation controllers
@@ -190,19 +192,60 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen>
     _nextPage();
   }
 
+  /// Load demo doctor profile for testing/demonstration
+  void _loadDemoProfile() {
+    unawaited(HapticFeedback.mediumImpact());
+    final demoDoctor = DemoData.defaultDoctor;
+    
+    setState(() {
+      _nameController.text = demoDoctor.name;
+      _emailController.text = demoDoctor.email;
+      _specializationController.text = demoDoctor.specialization;
+      _clinicController.text = demoDoctor.clinicName;
+      _phoneController.text = demoDoctor.phone;
+      _isDemoProfile = true;
+    });
+
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Row(
+          children: [
+            const Icon(Icons.auto_awesome, color: Colors.white),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Text('Loaded demo profile: ${demoDoctor.name}'),
+            ),
+          ],
+        ),
+        backgroundColor: AppColors.primary,
+        behavior: SnackBarBehavior.floating,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+        duration: const Duration(seconds: 2),
+      ),
+    );
+  }
+
   Future<void> _completeSetup() async {
     setState(() => _isLoading = true);
 
     try {
       // Save doctor profile
       final doctorSettings = ref.read(doctorSettingsProvider);
-      await doctorSettings.updateProfile(
-        name: _nameController.text.trim(),
-        specialization: _specializationController.text.trim(),
-        clinicName: _clinicController.text.trim(),
-        phone: _phoneController.text.trim(),
-        email: _emailController.text.trim(),
-      );
+      
+      if (_isDemoProfile) {
+        // Save full demo profile with all details
+        final demoDoctor = DemoData.defaultDoctor;
+        await doctorSettings.saveProfile(demoDoctor);
+      } else {
+        // Save basic profile from form
+        await doctorSettings.updateProfile(
+          name: _nameController.text.trim(),
+          specialization: _specializationController.text.trim(),
+          clinicName: _clinicController.text.trim(),
+          phone: _phoneController.text.trim(),
+          email: _emailController.text.trim(),
+        );
+      }
 
       // Mark onboarding as complete
       final appSettings = ref.read(appSettingsProvider);
@@ -827,6 +870,22 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen>
                   ),
                   textAlign: TextAlign.center,
                 ),
+                const SizedBox(height: 16),
+                // Demo profile button
+                if (!_isSignedIn)
+                  OutlinedButton.icon(
+                    onPressed: _loadDemoProfile,
+                    style: OutlinedButton.styleFrom(
+                      foregroundColor: AppColors.primary,
+                      side: BorderSide(color: AppColors.primary.withValues(alpha: 0.5)),
+                      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(20),
+                      ),
+                    ),
+                    icon: const Icon(Icons.auto_awesome, size: 18),
+                    label: const Text('Use Demo Profile'),
+                  ),
               ],
             ),
           ),

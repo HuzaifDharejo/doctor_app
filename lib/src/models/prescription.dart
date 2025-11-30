@@ -108,6 +108,8 @@ class PrescriptionModel {
     this.diagnosis,
     this.chiefComplaint,
     this.vitals,
+    this.appointmentId,
+    this.medicalRecordId,
   });
 
   /// Create from JSON map
@@ -139,6 +141,8 @@ class PrescriptionModel {
       diagnosis: json['diagnosis'] as String?,
       chiefComplaint: json['chiefComplaint'] as String? ?? json['chief_complaint'] as String?,
       vitals: json['vitals'] as Map<String, dynamic>?,
+      appointmentId: json['appointmentId'] as int? ?? json['appointment_id'] as int?,
+      medicalRecordId: json['medicalRecordId'] as int? ?? json['medical_record_id'] as int?,
     );
   }
 
@@ -156,6 +160,8 @@ class PrescriptionModel {
   final String? diagnosis;
   final String? chiefComplaint;
   final Map<String, dynamic>? vitals;
+  final int? appointmentId; // Link to appointment where prescribed
+  final int? medicalRecordId; // Link to diagnosis/assessment
 
   /// Get total number of medications
   int get medicationCount => items.length;
@@ -199,6 +205,8 @@ class PrescriptionModel {
       if (diagnosis != null) 'diagnosis': diagnosis,
       if (chiefComplaint != null) 'chiefComplaint': chiefComplaint,
       if (vitals != null) 'vitals': vitals,
+      if (appointmentId != null) 'appointmentId': appointmentId,
+      if (medicalRecordId != null) 'medicalRecordId': medicalRecordId,
     };
   }
 
@@ -217,6 +225,8 @@ class PrescriptionModel {
     String? diagnosis,
     String? chiefComplaint,
     Map<String, dynamic>? vitals,
+    int? appointmentId,
+    int? medicalRecordId,
   }) {
     return PrescriptionModel(
       id: id ?? this.id,
@@ -229,6 +239,8 @@ class PrescriptionModel {
       diagnosis: diagnosis ?? this.diagnosis,
       chiefComplaint: chiefComplaint ?? this.chiefComplaint,
       vitals: vitals ?? this.vitals,
+      appointmentId: appointmentId ?? this.appointmentId,
+      medicalRecordId: medicalRecordId ?? this.medicalRecordId,
     );
   }
 
@@ -240,12 +252,14 @@ class PrescriptionModel {
         other.patientId == patientId &&
         other.createdAt == createdAt &&
         other.instructions == instructions &&
-        other.isRefillable == isRefillable;
+        other.isRefillable == isRefillable &&
+        other.appointmentId == appointmentId &&
+        other.medicalRecordId == medicalRecordId;
   }
 
   @override
-  int get hashCode => Object.hash(id, patientId, createdAt, instructions, isRefillable);
+  int get hashCode => Object.hash(id, patientId, createdAt, instructions, isRefillable, appointmentId, medicalRecordId);
 
   @override
-  String toString() => 'PrescriptionModel(id: $id, patientId: $patientId, items: ${items.length})';
+  String toString() => 'PrescriptionModel(id: $id, patientId: $patientId, items: ${items.length}, appointmentId: $appointmentId, medicalRecordId: $medicalRecordId)';
 }

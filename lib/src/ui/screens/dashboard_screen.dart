@@ -5,6 +5,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 import '../../core/core.dart';
+import '../../core/routing/app_router.dart';
 import '../../db/doctor_db.dart';
 import '../../providers/db_provider.dart';
 import '../../theme/app_theme.dart';
@@ -13,6 +14,7 @@ import '../widgets/global_search_bar.dart';
 import '../widgets/patient_card.dart';
 import 'add_appointment_screen.dart';
 import 'add_patient_screen.dart';
+import 'follow_ups_screen.dart';
 import 'patients_screen.dart';
 
 class DashboardScreen extends ConsumerStatefulWidget {
@@ -122,6 +124,16 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                   child: Padding(
                     padding: EdgeInsets.symmetric(horizontal: padding),
                     child: _buildTodaySchedule(context, todayAppointments, isCompact, db),
+                  ),
+                ),
+                
+                SliverToBoxAdapter(child: SizedBox(height: isCompact ? 20 : 28)),
+                
+                // Pending Follow-ups Section
+                SliverToBoxAdapter(
+                  child: Padding(
+                    padding: EdgeInsets.symmetric(horizontal: padding),
+                    child: _buildPendingFollowUps(context, db, isCompact),
                   ),
                 ),
                 
@@ -613,6 +625,28 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
             ),),
           ],
         ),
+        SizedBox(height: isCompact ? 12 : 14),
+        Row(
+          children: [
+            Expanded(child: _buildQuickActionCard(
+              icon: Icons.psychology_rounded,
+              label: 'Psych Assessment',
+              color: const Color(0xFF8B5CF6),
+              onTap: () => context.goToPsychiatricAssessmentModern(),
+              isCompact: isCompact,
+              isDark: isDark,
+            ),),
+            SizedBox(width: isCompact ? 10 : 14),
+            Expanded(child: _buildQuickActionCard(
+              icon: Icons.air_rounded,
+              label: 'Pulmonary Eval',
+              color: const Color(0xFFEC4899),
+              onTap: () => context.goToPulmonaryEvaluationModern(),
+              isCompact: isCompact,
+              isDark: isDark,
+            ),),
+          ],
+        ),
 
       ],
     );
@@ -881,6 +915,195 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
               },
             );
           }),
+      ],
+    );
+  }
+
+  Widget _buildPendingFollowUps(BuildContext context, DoctorDatabase db, bool isCompact) {
+    final isDark = context.isDarkMode;
+    
+    return FutureBuilder<List<ScheduledFollowUp>>(
+      future: db.getOverdueFollowUps(),
+      builder: (context, snapshot) {
+        final overdueFollowUps = snapshot.data ?? [];
+        
+        // If no overdue follow-ups, check for pending ones due soon
+        if (overdueFollowUps.isEmpty) {
+          return FutureBuilder<List<ScheduledFollowUp>>(
+            future: db.getPendingFollowUps(),
+            builder: (context, pendingSnapshot) {
+              final pendingFollowUps = pendingSnapshot.data ?? [];
+              final upcomingFollowUps = pendingFollowUps
+                  .where((f) => f.scheduledDate.difference(DateTime.now()).inDays <= 7)
+                  .take(3)
+                  .toList();
+              
+              if (upcomingFollowUps.isEmpty) {
+                return const SizedBox.shrink(); // No follow-ups to show
+              }
+              
+              return _buildFollowUpsList(
+                context, 
+                db, 
+                upcomingFollowUps, 
+                'Upcoming Follow-ups', 
+                Colors.blue, 
+                isCompact, 
+                isDark,
+              );
+            },
+          );
+        }
+        
+        return _buildFollowUpsList(
+          context, 
+          db, 
+          overdueFollowUps.take(3).toList(), 
+          'Overdue Follow-ups', 
+          Colors.red, 
+          isCompact, 
+          isDark,
+        );
+      },
+    );
+  }
+
+  Widget _buildFollowUpsList(
+    BuildContext context, 
+    DoctorDatabase db, 
+    List<ScheduledFollowUp> followUps, 
+    String title, 
+    Color accentColor, 
+    bool isCompact, 
+    bool isDark,
+  ) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          children: [
+            Container(
+              padding: const EdgeInsets.all(6),
+              decoration: BoxDecoration(
+                color: accentColor.withOpacity(0.1),
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: Icon(
+                title.contains('Overdue') ? Icons.warning_amber_rounded : Icons.event_repeat_rounded,
+                color: accentColor,
+                size: 18,
+              ),
+            ),
+            const SizedBox(width: 8),
+            Text(
+              title,
+              style: TextStyle(
+                fontSize: isCompact ? 16 : 18,
+                fontWeight: FontWeight.w700,
+                color: isDark ? Colors.white : AppColors.textPrimary,
+              ),
+            ),
+            const Spacer(),
+            TextButton(
+              onPressed: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (_) => const FollowUpsScreen()),
+                );
+              },
+              style: TextButton.styleFrom(
+                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+                backgroundColor: accentColor.withOpacity(0.1),
+              ),
+              child: Text(
+                'View All',
+                style: TextStyle(fontSize: isCompact ? 11 : 12, fontWeight: FontWeight.w600, color: accentColor),
+              ),
+            ),
+          ],
+        ),
+        SizedBox(height: isCompact ? 12 : 16),
+        ...followUps.map((followUp) {
+          return FutureBuilder<Patient?>(
+            future: db.getPatientById(followUp.patientId),
+            builder: (context, patientSnapshot) {
+              final patient = patientSnapshot.data;
+              final daysOverdue = DateTime.now().difference(followUp.scheduledDate).inDays;
+              
+              return Container(
+                margin: const EdgeInsets.only(bottom: 10),
+                padding: EdgeInsets.all(isCompact ? 12 : 14),
+                decoration: BoxDecoration(
+                  color: isDark 
+                      ? Colors.white.withOpacity(0.06)
+                      : accentColor.withOpacity(0.03),
+                  borderRadius: BorderRadius.circular(14),
+                  border: Border.all(
+                    color: isDark 
+                        ? Colors.white.withOpacity(0.1)
+                        : accentColor.withOpacity(0.2),
+                  ),
+                ),
+                child: Row(
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.all(10),
+                      decoration: BoxDecoration(
+                        color: accentColor.withOpacity(0.1),
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                      child: Icon(Icons.person_outline_rounded, color: accentColor, size: 22),
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            patient != null ? '${patient.firstName} ${patient.lastName}' : 'Unknown Patient',
+                            style: TextStyle(
+                              fontSize: isCompact ? 14 : 15,
+                              fontWeight: FontWeight.w600,
+                              color: isDark ? Colors.white : AppColors.textPrimary,
+                            ),
+                          ),
+                          const SizedBox(height: 2),
+                          Text(
+                            followUp.reason,
+                            style: TextStyle(
+                              fontSize: isCompact ? 12 : 13,
+                              color: isDark ? AppColors.darkTextSecondary : AppColors.textSecondary,
+                            ),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ],
+                      ),
+                    ),
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                      decoration: BoxDecoration(
+                        color: accentColor.withOpacity(0.1),
+                        borderRadius: BorderRadius.circular(20),
+                      ),
+                      child: Text(
+                        daysOverdue > 0 
+                            ? '$daysOverdue days overdue'
+                            : (daysOverdue == 0 ? 'Today' : 'In ${-daysOverdue} days'),
+                        style: TextStyle(
+                          fontSize: 10,
+                          fontWeight: FontWeight.w600,
+                          color: accentColor,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              );
+            },
+          );
+        }),
       ],
     );
   }

@@ -412,308 +412,529 @@ class _PsychiatricAssessmentScreenState
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
+    final isDark = theme.brightness == Brightness.dark;
 
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Psychiatric Assessment'),
-        centerTitle: true,
-        elevation: 0,
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.refresh),
-            onPressed: () {
-              showDialog<void>(
-                context: context,
-                builder: (context) => AlertDialog(
-                  title: const Text('Clear Form?'),
-                  content: const Text(
-                      'This will reset all fields. Are you sure?',),
-                  actions: [
-                    TextButton(
-                      onPressed: () => Navigator.pop(context),
-                      child: const Text('Cancel'),
+      backgroundColor: isDark ? AppColors.darkBackground : AppColors.background,
+      body: CustomScrollView(
+        controller: _scrollController,
+        slivers: [
+          // Modern Gradient Header
+          SliverAppBar(
+            expandedHeight: 140,
+            pinned: true,
+            elevation: 0,
+            backgroundColor: Colors.transparent,
+            flexibleSpace: Container(
+              decoration: const BoxDecoration(
+                gradient: LinearGradient(
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                  colors: [Color(0xFF8B5CF6), Color(0xFF6366F1)],
+                ),
+              ),
+              child: FlexibleSpaceBar(
+                titlePadding: const EdgeInsets.only(left: 20, bottom: 16),
+                title: Column(
+                  mainAxisAlignment: MainAxisAlignment.end,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      children: [
+                        Container(
+                          padding: const EdgeInsets.all(8),
+                          decoration: BoxDecoration(
+                            color: Colors.white.withValues(alpha: 0.2),
+                            borderRadius: BorderRadius.circular(10),
+                          ),
+                          child: const Icon(
+                            Icons.psychology_rounded,
+                            color: Colors.white,
+                            size: 20,
+                          ),
+                        ),
+                        const SizedBox(width: 12),
+                        const Expanded(
+                          child: Text(
+                            'Psychiatric Assessment',
+                            style: TextStyle(
+                              color: Colors.white,
+                              fontSize: 18,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                        ),
+                      ],
                     ),
-                    FilledButton(
-                      onPressed: () {
-                        Navigator.pop(context);
-                        _formKey.currentState?.reset();
-                        setState(() {
-                          _selectedDate = null;
-                          _maritalStatus = 'Single';
-                          _delusions = {
-                            'Persecutory': false,
-                            'Control': false,
-                            'Grandiosity': false,
-                            'Love': false,
-                            'Nihilism': false,
-                            'Guilt': false,
-                          };
-                        });
-                      },
-                      child: const Text('Clear'),
+                    const SizedBox(height: 4),
+                    Text(
+                      DateFormat('EEEE, dd MMMM yyyy').format(_selectedDate ?? DateTime.now()),
+                      style: TextStyle(
+                        color: Colors.white.withValues(alpha: 0.8),
+                        fontSize: 11,
+                        fontWeight: FontWeight.w400,
+                      ),
                     ),
                   ],
                 ),
-              );
-            },
-            tooltip: 'Clear Form',
-          ),
-        ],
-      ),
-      body: Form(
-        key: _formKey,
-        autovalidateMode: AutovalidateMode.onUserInteraction,
-        child: SingleChildScrollView(
-          controller: _scrollController,
-          padding: const EdgeInsets.all(16),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              // Doctor Info Header
-              _buildDoctorHeader(colorScheme),
-              const SizedBox(height: 16),
-
-              // Patient Information Section
-              _buildExpansionSection(
-                key: 'patient_info',
-                icon: Icons.person,
-                title: 'Patient Information',
-                colorScheme: colorScheme,
-                children: [
-                  _buildDateField(context),
-                  const SizedBox(height: 12),
-                  _buildTextField(
-                    controller: _nameController,
-                    label: 'Patient Name',
-                    icon: Icons.person_outline,
-                    required: true,
-                  ),
-                  const SizedBox(height: 12),
-                  Row(
-                    children: [
-                      Expanded(
-                        child: _buildTextField(
-                          controller: _ageController,
-                          label: 'Age',
-                          icon: Icons.cake_outlined,
-                          keyboardType: TextInputType.number,
-                          required: true,
-                        ),
-                      ),
-                      const SizedBox(width: 12),
-                      Expanded(
-                        child: _buildTextField(
-                          controller: _educationController,
-                          label: 'Education',
-                          icon: Icons.school_outlined,
-                        ),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 16),
-                  _buildMaritalStatusRadio(colorScheme),
-                  const SizedBox(height: 12),
-                  _buildTextField(
-                    controller: _phoneController,
-                    label: 'Phone',
-                    icon: Icons.phone_outlined,
-                    keyboardType: TextInputType.phone,
-                  ),
-                  const SizedBox(height: 12),
-                  _buildTextField(
-                    controller: _addressController,
-                    label: 'Address',
-                    icon: Icons.location_on_outlined,
-                    maxLines: 2,
-                  ),
-                  const SizedBox(height: 12),
-                  _buildTextField(
-                    controller: _occupationController,
-                    label: 'Occupation',
-                    icon: Icons.work_outline,
-                  ),
-                ],
               ),
-
-              // Presenting Complaints Section
-              _buildExpansionSection(
-                key: 'presenting_complaints',
-                icon: Icons.sentiment_dissatisfied,
-                title: 'Presenting Complaints (PC)',
-                colorScheme: colorScheme,
-                children: [
-                  _buildTextField(
-                    controller: _pcController,
-                    label: 'Chief Complaints',
-                    hint: "Describe the patient's main complaints...",
-                    maxLines: 5,
-                  ),
-                ],
+            ),
+            leading: IconButton(
+              icon: const Icon(Icons.arrow_back_rounded, color: Colors.white),
+              onPressed: () => Navigator.pop(context),
+            ),
+            actions: [
+              IconButton(
+                icon: const Icon(Icons.refresh_rounded, color: Colors.white),
+                onPressed: () => _showClearFormDialog(context),
+                tooltip: 'Clear Form',
               ),
-
-              // Symptoms Section
-              _buildExpansionSection(
-                key: 'symptoms',
-                icon: Icons.medical_services_outlined,
-                title: 'Symptoms',
-                colorScheme: colorScheme,
-                children: [
-                  _buildSymptomsGrid(),
-                ],
-              ),
-
-              // History of Present Illness
-              _buildExpansionSection(
-                key: 'hopi',
-                icon: Icons.history,
-                title: 'History of Present Illness (HOPI)',
-                colorScheme: colorScheme,
-                children: [
-                  _buildTextField(
-                    controller: _hopiController,
-                    label: 'History of Present Illness',
-                    hint: 'Detailed history of the current illness...',
-                    maxLines: 8,
-                  ),
-                ],
-              ),
-
-              // Mental State Examination
-              _buildExpansionSection(
-                key: 'mse',
-                icon: Icons.psychology,
-                title: 'Mental State Examination (MSE)',
-                colorScheme: colorScheme,
-                children: [
-                  _buildMseFields(colorScheme),
-                ],
-              ),
-
-              // Physical Examination
-              _buildExpansionSection(
-                key: 'physical_exam',
-                icon: Icons.favorite_outline,
-                title: 'Physical Examination',
-                colorScheme: colorScheme,
-                children: [
-                  _buildPhysicalExamFields(),
-                ],
-              ),
-
-              // Episode & Medication History
-              _buildExpansionSection(
-                key: 'episode_history',
-                icon: Icons.calendar_month,
-                title: 'Episode & Medication History',
-                colorScheme: colorScheme,
-                children: [
-                  _buildEpisodeHistoryFields(),
-                ],
-              ),
-
-              // Life History
-              _buildExpansionSection(
-                key: 'life_history',
-                icon: Icons.family_restroom,
-                title: 'Life History',
-                colorScheme: colorScheme,
-                children: [
-                  _buildLifeHistoryFields(),
-                ],
-              ),
-
-              // Advise & Treatment
-              _buildExpansionSection(
-                key: 'treatment',
-                icon: Icons.medication,
-                title: 'Advise & Treatment',
-                colorScheme: colorScheme,
-                children: [
-                  _buildTreatmentFields(),
-                ],
-              ),
-
-              const SizedBox(height: 24),
-
-              // Save Button
-              FilledButton.icon(
-                onPressed: _isSaving ? null : _saveForm,
-                icon: _isSaving 
-                    ? const SizedBox(
-                        width: 20,
-                        height: 20,
-                        child: CircularProgressIndicator(
-                          strokeWidth: 2,
-                          color: Colors.white,
-                        ),
-                      )
-                    : const Icon(Icons.save),
-                label: Text(_isSaving ? 'Saving...' : 'Save Assessment'),
-                style: FilledButton.styleFrom(
-                  padding: const EdgeInsets.symmetric(vertical: 16),
-                  textStyle: const TextStyle(
-                    fontSize: 16,
-                    fontWeight: FontWeight.w600,
-                  ),
-                ),
-              ),
-              const SizedBox(height: 32),
+              const SizedBox(width: 8),
             ],
           ),
-        ),
+          // Form Content
+          SliverPadding(
+            padding: const EdgeInsets.all(16),
+            sliver: SliverList(
+              delegate: SliverChildListDelegate([
+                Form(
+                  key: _formKey,
+                  autovalidateMode: AutovalidateMode.onUserInteraction,
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      // Quick Fill Section
+                      _buildQuickFillSection(context, isDark),
+                      const SizedBox(height: 20),
+
+                      // Patient Information Section
+                      _buildExpansionSection(
+                        key: 'patient_info',
+                        icon: Icons.person,
+                        title: 'Patient Information',
+                        colorScheme: colorScheme,
+                        children: [
+                          _buildDateField(context),
+                          const SizedBox(height: 12),
+                          _buildTextField(
+                            controller: _nameController,
+                            label: 'Patient Name',
+                            icon: Icons.person_outline,
+                            required: true,
+                          ),
+                          const SizedBox(height: 12),
+                          Row(
+                            children: [
+                              Expanded(
+                                child: _buildTextField(
+                                  controller: _ageController,
+                                  label: 'Age',
+                                  icon: Icons.cake_outlined,
+                                  keyboardType: TextInputType.number,
+                                  required: true,
+                                ),
+                              ),
+                              const SizedBox(width: 12),
+                              Expanded(
+                                child: _buildTextField(
+                                  controller: _educationController,
+                                  label: 'Education',
+                                  icon: Icons.school_outlined,
+                                ),
+                              ),
+                            ],
+                          ),
+                          const SizedBox(height: 16),
+                          _buildMaritalStatusRadio(colorScheme),
+                          const SizedBox(height: 12),
+                          _buildTextField(
+                            controller: _phoneController,
+                            label: 'Phone',
+                            icon: Icons.phone_outlined,
+                            keyboardType: TextInputType.phone,
+                          ),
+                          const SizedBox(height: 12),
+                          _buildTextField(
+                            controller: _addressController,
+                            label: 'Address',
+                            icon: Icons.location_on_outlined,
+                            maxLines: 2,
+                          ),
+                          const SizedBox(height: 12),
+                          _buildTextField(
+                            controller: _occupationController,
+                            label: 'Occupation',
+                            icon: Icons.work_outline,
+                          ),
+                        ],
+                      ),
+
+                      // Presenting Complaints Section
+                      _buildExpansionSection(
+                        key: 'presenting_complaints',
+                        icon: Icons.sentiment_dissatisfied,
+                        title: 'Presenting Complaints (PC)',
+                        colorScheme: colorScheme,
+                        children: [
+                          _buildTextField(
+                            controller: _pcController,
+                            label: 'Chief Complaints',
+                            hint: "Describe the patient's main complaints...",
+                            maxLines: 5,
+                          ),
+                        ],
+                      ),
+
+                      // Symptoms Section
+                      _buildExpansionSection(
+                        key: 'symptoms',
+                        icon: Icons.medical_services_outlined,
+                        title: 'Symptoms',
+                        colorScheme: colorScheme,
+                        children: [
+                          _buildSymptomsGrid(),
+                        ],
+                      ),
+
+                      // History of Present Illness
+                      _buildExpansionSection(
+                        key: 'hopi',
+                        icon: Icons.history,
+                        title: 'History of Present Illness (HOPI)',
+                        colorScheme: colorScheme,
+                        children: [
+                          _buildTextField(
+                            controller: _hopiController,
+                            label: 'History of Present Illness',
+                            hint: 'Detailed history of the current illness...',
+                            maxLines: 8,
+                          ),
+                        ],
+                      ),
+
+                      // Mental State Examination
+                      _buildExpansionSection(
+                        key: 'mse',
+                        icon: Icons.psychology,
+                        title: 'Mental State Examination (MSE)',
+                        colorScheme: colorScheme,
+                        children: [
+                          _buildMseFields(colorScheme),
+                        ],
+                      ),
+
+                      // Physical Examination
+                      _buildExpansionSection(
+                        key: 'physical_exam',
+                        icon: Icons.favorite_outline,
+                        title: 'Physical Examination',
+                        colorScheme: colorScheme,
+                        children: [
+                          _buildPhysicalExamFields(),
+                        ],
+                      ),
+
+                      // Episode & Medication History
+                      _buildExpansionSection(
+                        key: 'episode_history',
+                        icon: Icons.calendar_month,
+                        title: 'Episode & Medication History',
+                        colorScheme: colorScheme,
+                        children: [
+                          _buildEpisodeHistoryFields(),
+                        ],
+                      ),
+
+                      // Life History
+                      _buildExpansionSection(
+                        key: 'life_history',
+                        icon: Icons.family_restroom,
+                        title: 'Life History',
+                        colorScheme: colorScheme,
+                        children: [
+                          _buildLifeHistoryFields(),
+                        ],
+                      ),
+
+                      // Advise & Treatment
+                      _buildExpansionSection(
+                        key: 'treatment',
+                        icon: Icons.medication,
+                        title: 'Advise & Treatment',
+                        colorScheme: colorScheme,
+                        children: [
+                          _buildTreatmentFields(),
+                        ],
+                      ),
+
+                      const SizedBox(height: 24),
+
+                      // Save Button
+                      FilledButton.icon(
+                        onPressed: _isSaving ? null : _saveForm,
+                        icon: _isSaving 
+                            ? const SizedBox(
+                                width: 20,
+                                height: 20,
+                                child: CircularProgressIndicator(
+                                  strokeWidth: 2,
+                                  color: Colors.white,
+                                ),
+                              )
+                            : const Icon(Icons.save),
+                        label: Text(_isSaving ? 'Saving...' : 'Save Assessment'),
+                        style: FilledButton.styleFrom(
+                          padding: const EdgeInsets.symmetric(vertical: 16),
+                          textStyle: const TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                      ),
+                      const SizedBox(height: 32),
+                    ],
+                  ),
+                ),
+              ]),
+            ),
+          ),
+        ],
       ),
     );
   }
 
-  Widget _buildDoctorHeader(ColorScheme colorScheme) {
-    final doctorProfile = ref.watch(doctorSettingsProvider).profile;
-    return Card(
-      elevation: 0,
-      color: colorScheme.primaryContainer,
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Row(
+  void _showClearFormDialog(BuildContext context) {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Clear Form'),
+        content: const Text('Are you sure you want to clear all form fields? This action cannot be undone.'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Cancel'),
+          ),
+          FilledButton(
+            onPressed: () {
+              Navigator.pop(context);
+              _clearAllControllers();
+            },
+            style: FilledButton.styleFrom(
+              backgroundColor: Colors.red.shade400,
+            ),
+            child: const Text('Clear All'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _clearAllControllers() {
+    _nameController.clear();
+    _ageController.clear();
+    _educationController.clear();
+    _phoneController.clear();
+    _addressController.clear();
+    _occupationController.clear();
+    _pcController.clear();
+    _hopiController.clear();
+    _pastPsychiatricController.clear();
+    _pastMedicalController.clear();
+    _familyHistoryController.clear();
+    _appearanceBehaviorController.clear();
+    _moodController.clear();
+    _thoughtsController.clear();
+    _perceptionController.clear();
+    _insightController.clear();
+    _treatmentNotesController.clear();
+    _followUp1Controller.clear();
+    _followUp2Controller.clear();
+    setState(() {
+      _maritalStatus = 'Single';
+      _selectedDate = DateTime.now();
+    });
+  }
+
+  Widget _buildQuickFillSection(BuildContext context, bool isDark) {
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: isDark ? Colors.grey.shade800.withValues(alpha: 0.5) : Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(
+          color: isDark ? Colors.grey.shade700 : Colors.grey.shade200,
+        ),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Icon(
+                Icons.flash_on_rounded,
+                color: Colors.amber.shade600,
+                size: 20,
+              ),
+              const SizedBox(width: 8),
+              Text(
+                'Quick Fill Templates',
+                style: TextStyle(
+                  fontSize: 14,
+                  fontWeight: FontWeight.w600,
+                  color: isDark ? Colors.white : Colors.grey.shade800,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 12),
+          Wrap(
+            spacing: 8,
+            runSpacing: 8,
+            children: [
+              _buildQuickFillChip(
+                label: 'Depression',
+                icon: Icons.sentiment_dissatisfied_rounded,
+                color: Colors.blue,
+                onTap: () => _fillDepressionTemplate(),
+              ),
+              _buildQuickFillChip(
+                label: 'Anxiety',
+                icon: Icons.psychology_alt_rounded,
+                color: Colors.purple,
+                onTap: () => _fillAnxietyTemplate(),
+              ),
+              _buildQuickFillChip(
+                label: 'Schizophrenia',
+                icon: Icons.blur_on_rounded,
+                color: Colors.orange,
+                onTap: () => _fillSchizophreniaTemplate(),
+              ),
+              _buildQuickFillChip(
+                label: 'Bipolar',
+                icon: Icons.swap_vert_rounded,
+                color: Colors.teal,
+                onTap: () => _fillBipolarTemplate(),
+              ),
+              _buildQuickFillChip(
+                label: 'OCD',
+                icon: Icons.loop_rounded,
+                color: Colors.pink,
+                onTap: () => _fillOCDTemplate(),
+              ),
+              _buildQuickFillChip(
+                label: 'PTSD',
+                icon: Icons.warning_amber_rounded,
+                color: Colors.red,
+                onTap: () => _fillPTSDTemplate(),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildQuickFillChip({
+    required String label,
+    required IconData icon,
+    required Color color,
+    required VoidCallback onTap,
+  }) {
+    return ActionChip(
+      avatar: Icon(icon, size: 18, color: color),
+      label: Text(label),
+      onPressed: onTap,
+      backgroundColor: color.withValues(alpha: 0.1),
+      side: BorderSide(color: color.withValues(alpha: 0.3)),
+      labelStyle: TextStyle(
+        color: color,
+        fontWeight: FontWeight.w500,
+      ),
+    );
+  }
+
+  void _fillDepressionTemplate() {
+    _pcController.text = 'Low mood, loss of interest, sleep disturbances';
+    _moodController.text = 'Depressed, low, sad';
+    _thoughtsController.text = 'Negative automatic thoughts, hopelessness';
+    _sleepController.text = 'Disturbed - early morning awakening, difficulty falling asleep';
+    _appetiteController.text = 'Reduced appetite';
+    _treatmentNotesController.text = 'Antidepressant therapy (SSRI), Cognitive Behavioral Therapy';
+    _showQuickFillSnackbar('Depression template applied');
+  }
+
+  void _fillAnxietyTemplate() {
+    _pcController.text = 'Excessive worry, restlessness, difficulty concentrating';
+    _moodController.text = 'Anxious, worried, apprehensive';
+    _thoughtsController.text = 'Catastrophic thinking, worry about future events';
+    _anxietyFearController.text = 'Generalized anxiety, anticipatory anxiety';
+    _treatmentNotesController.text = 'Anxiolytic therapy, Relaxation techniques, CBT';
+    _showQuickFillSnackbar('Anxiety template applied');
+  }
+
+  void _fillSchizophreniaTemplate() {
+    _pcController.text = 'Auditory hallucinations, paranoid ideation, social withdrawal';
+    _moodController.text = 'Flat affect, inappropriate affect';
+    _thoughtsController.text = 'Delusions, thought disorder, loosening of associations';
+    _perceptionController.text = 'Auditory hallucinations present';
+    setState(() {
+      _delusions = {
+        'Persecutory': true,
+        'Control': true,
+        'Grandiosity': false,
+        'Love': false,
+        'Nihilism': false,
+        'Guilt': false,
+      };
+    });
+    _treatmentNotesController.text = 'Antipsychotic therapy, Psychosocial rehabilitation';
+    _showQuickFillSnackbar('Schizophrenia template applied');
+  }
+
+  void _fillBipolarTemplate() {
+    _pcController.text = 'Mood swings, periods of elevated mood and depression';
+    _moodController.text = 'Fluctuating between manic and depressive episodes';
+    _thoughtsController.text = 'Racing thoughts during mania, hopelessness during depression';
+    _sleepController.text = 'Reduced need for sleep during mania';
+    _treatmentNotesController.text = 'Mood stabilizers, Atypical antipsychotics';
+    _showQuickFillSnackbar('Bipolar template applied');
+  }
+
+  void _fillOCDTemplate() {
+    _pcController.text = 'Intrusive thoughts, repetitive behaviors, compulsions';
+    _moodController.text = 'Anxious, distressed when unable to perform rituals';
+    _thoughtsController.text = 'Obsessive thoughts, need for symmetry/order';
+    _ocdSymptomsController.text = 'Contamination fears, checking behaviors, counting rituals';
+    _ocdMseController.text = 'Obsessions and compulsions present with insight';
+    _treatmentNotesController.text = 'SSRI therapy, Exposure and Response Prevention (ERP)';
+    _showQuickFillSnackbar('OCD template applied');
+  }
+
+  void _fillPTSDTemplate() {
+    _pcController.text = 'Flashbacks, nightmares, hypervigilance, avoidance';
+    _moodController.text = 'Anxious, hyperaroused, emotionally numb';
+    _thoughtsController.text = 'Intrusive memories, negative cognitions about self/world';
+    _perceptionController.text = 'Flashback episodes, dissociative symptoms';
+    _ptsdController.text = 'Traumatic event history present';
+    _sleepController.text = 'Nightmares, insomnia';
+    _treatmentNotesController.text = 'Trauma-focused CBT, EMDR, SSRI therapy';
+    _showQuickFillSnackbar('PTSD template applied');
+  }
+
+  void _showQuickFillSnackbar(String message) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Row(
           children: [
-            CircleAvatar(
-              radius: 28,
-              backgroundColor: colorScheme.primary,
-              child: Icon(
-                Icons.medical_services,
-                color: colorScheme.onPrimary,
-                size: 28,
-              ),
-            ),
-            const SizedBox(width: 16),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    'Dr: ${doctorProfile.name}',
-                    style: TextStyle(
-                      fontSize: 18,
-                      fontWeight: FontWeight.bold,
-                      color: colorScheme.onPrimaryContainer,
-                    ),
-                  ),
-                  const SizedBox(height: 4),
-                  Text(
-                    doctorProfile.specialization,
-                    style: TextStyle(
-                      fontSize: 14,
-                      color: colorScheme.onPrimaryContainer.withValues(alpha: 0.8),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-            Icon(
-              Icons.verified,
-              color: colorScheme.primary,
-              size: 24,
-            ),
+            const Icon(Icons.check_circle, color: Colors.white),
+            const SizedBox(width: 8),
+            Text(message),
           ],
         ),
+        backgroundColor: Colors.green.shade600,
+        behavior: SnackBarBehavior.floating,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+        duration: const Duration(seconds: 2),
       ),
     );
   }

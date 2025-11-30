@@ -98,6 +98,7 @@ class _AppointmentsScreenState extends ConsumerState<AppointmentsScreen> {
     return AppHeader(
       title: AppStrings.appointments,
       subtitle: DateFormat('EEEE, MMMM d').format(_selectedDate),
+      showBackButton: true,
       trailing: GestureDetector(
         onTap: () => setState(() => _showCalendar = !_showCalendar),
         child: Container(

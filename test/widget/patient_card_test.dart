@@ -18,8 +18,14 @@ void main() {
         email: 'john.doe@example.com',
         address: '123 Main St',
         medicalHistory: 'Diabetes,Hypertension',
+        allergies: '',
         tags: 'regular,vip',
         riskLevel: 2,
+        gender: 'Male',
+        bloodType: 'O+',
+        chronicConditions: 'Diabetes,Hypertension',
+        emergencyContactName: 'Jane Doe',
+        emergencyContactPhone: '1234567891',
         createdAt: DateTime.now(),
       );
     });
@@ -90,8 +96,14 @@ void main() {
         email: '',
         address: '',
         medicalHistory: '',
+        allergies: '',
         tags: '',
-        riskLevel: 3, // Medium risk
+        riskLevel: 3,
+        gender: 'Female',
+        bloodType: 'A+',
+        chronicConditions: '',
+        emergencyContactName: '',
+        emergencyContactPhone: '',
         createdAt: DateTime.now(),
       );
 
@@ -112,8 +124,14 @@ void main() {
         email: '',
         address: '',
         medicalHistory: '',
+        allergies: '',
         tags: '',
-        riskLevel: 5, // High risk
+        riskLevel: 5,
+        gender: 'Female',
+        bloodType: 'B+',
+        chronicConditions: '',
+        emergencyContactName: '',
+        emergencyContactPhone: '',
         createdAt: DateTime.now(),
       );
 
@@ -169,8 +187,14 @@ void main() {
         email: '',
         address: '',
         medicalHistory: '',
+        allergies: '',
         tags: '',
         riskLevel: 0,
+        gender: 'Male',
+        bloodType: 'AB+',
+        chronicConditions: '',
+        emergencyContactName: '',
+        emergencyContactPhone: '',
         createdAt: DateTime.now(),
       );
 
@@ -193,8 +217,14 @@ void main() {
         email: '',
         address: '',
         medicalHistory: '',
+        allergies: '',
         tags: '',
         riskLevel: 1,
+        gender: 'Female',
+        bloodType: 'O-',
+        chronicConditions: '',
+        emergencyContactName: '',
+        emergencyContactPhone: '',
         createdAt: DateTime.now(),
       );
 
@@ -214,8 +244,14 @@ void main() {
         email: '',
         address: '',
         medicalHistory: 'VeryLongMedicalConditionName,AnotherLongCondition',
+        allergies: '',
         tags: '',
         riskLevel: 0,
+        gender: 'Male',
+        bloodType: 'A-',
+        chronicConditions: '',
+        emergencyContactName: '',
+        emergencyContactPhone: '',
         createdAt: DateTime.now(),
       );
 
@@ -236,8 +272,14 @@ void main() {
         email: '',
         address: '',
         medicalHistory: '',
+        allergies: '',
         tags: '',
         riskLevel: 1,
+        gender: 'Female',
+        bloodType: 'B-',
+        chronicConditions: '',
+        emergencyContactName: '',
+        emergencyContactPhone: '',
         createdAt: DateTime.now(),
       );
 

@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'package:drift/drift.dart' show Value;
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
@@ -44,6 +45,7 @@ class PrescriptionsScreen extends ConsumerWidget {
     return AppHeader(
       title: AppStrings.prescriptions,
       subtitle: 'Manage medications & prescriptions',
+      showBackButton: true,
       trailing: Container(
         padding: EdgeInsets.all(isCompact ? AppSpacing.xs : AppSpacing.sm),
         decoration: BoxDecoration(
@@ -792,12 +794,7 @@ class PrescriptionsScreen extends ConsumerWidget {
                           child: OutlinedButton.icon(
                             onPressed: () {
                               Navigator.pop(context);
-                              ScaffoldMessenger.of(context).showSnackBar(
-                                const SnackBar(
-                                  content: Text('Refill request feature coming soon'),
-                                  behavior: SnackBarBehavior.floating,
-                                ),
-                              );
+                              _handleRefill(context, ref, prescription, patient);
                             },
                             icon: const Icon(Icons.refresh),
                             label: const Text('Refill'),
@@ -916,4 +913,114 @@ class PrescriptionsScreen extends ConsumerWidget {
     );
   }
 
+  Future<void> _handleRefill(BuildContext context, WidgetRef ref, Prescription prescription, Patient? patient) async {
+    if (patient == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Patient information not available'),
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
+      return;
+    }
+
+    // Show confirmation dialog
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Row(
+          children: [
+            Icon(Icons.refresh, color: AppColors.primary),
+            SizedBox(width: 12),
+            Text('Refill Prescription'),
+          ],
+        ),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text('Create a new prescription with the same medications for ${patient.firstName} ${patient.lastName}?'),
+            const SizedBox(height: 12),
+            Container(
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: AppColors.info.withValues(alpha: 0.1),
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: const Row(
+                children: [
+                  Icon(Icons.info_outline, color: AppColors.info, size: 20),
+                  SizedBox(width: 8),
+                  Expanded(
+                    child: Text(
+                      'A new prescription will be created with today\'s date.',
+                      style: TextStyle(fontSize: 13, color: AppColors.info),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text('Cancel'),
+          ),
+          ElevatedButton.icon(
+            onPressed: () => Navigator.pop(context, true),
+            icon: const Icon(Icons.add),
+            label: const Text('Create Refill'),
+          ),
+        ],
+      ),
+    );
+
+    if (confirmed != true) return;
+
+    try {
+      final dbAsync = ref.read(doctorDbProvider);
+      final db = dbAsync.when(
+        data: (db) => db,
+        loading: () => throw Exception('Database loading'),
+        error: (e, _) => throw e,
+      );
+
+      // Create new prescription with same items
+      final newPrescription = PrescriptionsCompanion.insert(
+        patientId: prescription.patientId,
+        itemsJson: prescription.itemsJson,
+        instructions: Value(prescription.instructions),
+        isRefillable: Value(prescription.isRefillable),
+      );
+
+      await db.insertPrescription(newPrescription);
+
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Row(
+              children: [
+                Icon(Icons.check_circle, color: Colors.white),
+                SizedBox(width: 12),
+                Text('Prescription refilled successfully'),
+              ],
+            ),
+            backgroundColor: AppColors.success,
+            behavior: SnackBarBehavior.floating,
+          ),
+        );
+      }
+    } catch (e) {
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Error creating refill: $e'),
+            backgroundColor: AppColors.error,
+            behavior: SnackBarBehavior.floating,
+          ),
+        );
+      }
+    }
+  }
 }

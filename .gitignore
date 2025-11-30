@@ -128,6 +128,11 @@ test-results/
 # *.g.dart  # Uncomment if you want to exclude generated files
 
 # =========================
+# Context / Documentation
+# =========================
+/context/
+
+# =========================
 # Other
 # =========================
 *.log

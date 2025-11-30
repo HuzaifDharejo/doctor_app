@@ -9,7 +9,9 @@ import 'services/logger_service.dart';
 import 'theme/app_theme.dart';
 import 'ui/screens/appointments_screen.dart';
 import 'ui/screens/billing_screen.dart';
+import 'ui/screens/clinical_dashboard.dart';
 import 'ui/screens/dashboard_screen.dart';
+import 'ui/screens/follow_ups_screen.dart';
 import 'ui/screens/medical_records_list_screen.dart';
 import 'ui/screens/onboarding_screen.dart';
 import 'ui/screens/patients_screen.dart';
@@ -107,6 +109,7 @@ class _HomeShellState extends ConsumerState<HomeShell> {
   final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
   int _pendingAppointments = 0;
   int _unpaidInvoices = 0;
+  int _overdueFollowUps = 0;
   
   late final List<Widget> _pages;
 
@@ -117,8 +120,6 @@ class _HomeShellState extends ConsumerState<HomeShell> {
       DashboardScreen(onMenuTap: _openDrawer),
       const PatientsScreen(),
       const AppointmentsScreen(),
-      const PrescriptionsScreen(),
-      const BillingScreen(),
     ];
     _loadBadgeCounts();
   }
@@ -135,10 +136,14 @@ class _HomeShellState extends ConsumerState<HomeShell> {
         i.paymentStatus != 'Paid',
       ).length;
       
+      final overdueFollowUps = await db.getOverdueFollowUps();
+      final overdueCount = overdueFollowUps.length;
+      
       if (mounted) {
         setState(() {
           _pendingAppointments = pendingCount;
           _unpaidInvoices = unpaidCount;
+          _overdueFollowUps = overdueCount;
         });
       }
     });
@@ -181,8 +186,6 @@ class _HomeShellState extends ConsumerState<HomeShell> {
                 _buildNavItem(0, Icons.space_dashboard_rounded, Icons.space_dashboard_outlined, AppStrings.navHome, AppColors.primary, 0),
                 _buildNavItem(1, Icons.people_rounded, Icons.people_outlined, AppStrings.navPatients, AppColors.patients, 0),
                 _buildNavItem(2, Icons.calendar_month_rounded, Icons.calendar_month_outlined, AppStrings.navAppointments, AppColors.appointments, _pendingAppointments),
-                _buildNavItem(3, Icons.medication_rounded, Icons.medication_outlined, AppStrings.navPrescriptions, AppColors.prescriptions, 0),
-                _buildNavItem(4, Icons.account_balance_wallet_rounded, Icons.account_balance_wallet_outlined, AppStrings.navBilling, AppColors.billing, _unpaidInvoices),
               ],
             ),
           ),
@@ -458,6 +461,21 @@ class _HomeShellState extends ConsumerState<HomeShell> {
                   const SizedBox(height: 8),
                   
                   _buildModernDrawerItem(
+                    icon: Icons.dashboard_rounded,
+                    title: 'Clinical Dashboard',
+                    subtitle: 'Full clinical overview',
+                    onTap: () {
+                      context.pop<void>();
+                      Navigator.push<void>(
+                        context,
+                        MaterialPageRoute<void>(builder: (_) => const ClinicalDashboard()),
+                      );
+                    },
+                    color: const Color(0xFF8B5CF6),
+                    isDark: isDarkMode,
+                  ),
+                  
+                  _buildModernDrawerItem(
                     icon: Icons.folder_special_rounded,
                     title: 'Medical Records',
                     subtitle: 'View all records',
@@ -470,6 +488,38 @@ class _HomeShellState extends ConsumerState<HomeShell> {
                     },
                     color: const Color(0xFF10B981),
                     isDark: isDarkMode,
+                  ),
+                  
+                  _buildModernDrawerItem(
+                    icon: Icons.account_balance_wallet_rounded,
+                    title: AppStrings.billing,
+                    subtitle: 'Invoices & payments',
+                    onTap: () {
+                      context.pop<void>();
+                      Navigator.push<void>(
+                        context,
+                        MaterialPageRoute<void>(builder: (_) => const BillingScreen()),
+                      );
+                    },
+                    color: AppColors.billing,
+                    isDark: isDarkMode,
+                    badge: _unpaidInvoices > 0 ? '$_unpaidInvoices' : null,
+                  ),
+                  
+                  _buildModernDrawerItem(
+                    icon: Icons.event_repeat_rounded,
+                    title: 'Follow-ups',
+                    subtitle: 'Manage follow-ups',
+                    onTap: () {
+                      context.pop<void>();
+                      Navigator.push<void>(
+                        context,
+                        MaterialPageRoute<void>(builder: (_) => const FollowUpsScreen()),
+                      );
+                    },
+                    color: Colors.orange,
+                    isDark: isDarkMode,
+                    badge: _overdueFollowUps > 0 ? '$_overdueFollowUps' : null,
                   ),
                   
                   if (isPsychiatricEnabled)

@@ -76,6 +76,7 @@ class _PatientsScreenState extends ConsumerState<PatientsScreen> {
     return AppHeader(
       title: AppStrings.patients,
       subtitle: AppStrings.managePatients,
+      showBackButton: true,
       trailing: Container(
         padding: EdgeInsets.all(isCompact ? AppSpacing.xs : AppSpacing.xs),
         decoration: BoxDecoration(

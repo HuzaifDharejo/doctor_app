@@ -13,10 +13,11 @@ import '../../theme/app_theme.dart';
 import '../widgets/patient_avatar.dart';
 import 'add_appointment_screen.dart';
 import 'add_invoice_screen.dart';
-import 'add_medical_record_screen.dart';
 import 'add_prescription_screen.dart';
+import 'invoice_detail_screen.dart';
 import 'medical_record_detail_screen.dart';
-import 'psychiatric_assessment_screen.dart';
+import 'psychiatric_assessment_screen_modern.dart';
+import 'records/records.dart';
 
 class PatientViewScreen extends ConsumerStatefulWidget {
 
@@ -35,42 +36,49 @@ class _PatientViewScreenState extends ConsumerState<PatientViewScreen>
   late TextEditingController _phoneController;
   late TextEditingController _emailController;
   late TextEditingController _addressController;
+  late TextEditingController _medicalHistoryController;
   
   // Track changes
   bool _hasChanges = false;
   bool _isSaving = false;
+  bool _isEditingProfile = false;
   
   // Store initial values for comparison
   late String _initialPhone;
   late String _initialEmail;
   late String _initialAddress;
+  late String _initialMedicalHistory;
 
   @override
   void initState() {
     super.initState();
-    _tabController = TabController(length: 4, vsync: this);
+    _tabController = TabController(length: 6, vsync: this);
     
     // Initialize controllers with patient data
     final patient = widget.patient;
     _phoneController = TextEditingController(text: patient.phone);
     _emailController = TextEditingController(text: patient.email);
     _addressController = TextEditingController(text: patient.address);
+    _medicalHistoryController = TextEditingController(text: patient.medicalHistory);
     
     // Store initial values
     _initialPhone = patient.phone;
     _initialEmail = patient.email;
     _initialAddress = patient.address;
+    _initialMedicalHistory = patient.medicalHistory;
     
     // Add listeners for change detection
     _phoneController.addListener(_checkForChanges);
     _emailController.addListener(_checkForChanges);
     _addressController.addListener(_checkForChanges);
+    _medicalHistoryController.addListener(_checkForChanges);
   }
   
   void _checkForChanges() {
     final hasChanges = _phoneController.text != _initialPhone ||
         _emailController.text != _initialEmail ||
-        _addressController.text != _initialAddress;
+        _addressController.text != _initialAddress ||
+        _medicalHistoryController.text != _initialMedicalHistory;
     
     if (hasChanges != _hasChanges) {
       setState(() => _hasChanges = hasChanges);
@@ -92,8 +100,8 @@ class _PatientViewScreenState extends ConsumerState<PatientViewScreen>
         phone: Value(_phoneController.text),
         email: Value(_emailController.text),
         address: Value(_addressController.text),
-        medicalHistory: Value(widget.patient.medicalHistory),
-        tags: Value(widget.patient.tags), // Keep original tags (not editable)
+        medicalHistory: Value(_medicalHistoryController.text),
+        tags: Value(widget.patient.tags),
         riskLevel: Value(widget.patient.riskLevel),
         createdAt: Value(widget.patient.createdAt),
       );
@@ -105,18 +113,21 @@ class _PatientViewScreenState extends ConsumerState<PatientViewScreen>
       _initialPhone = _phoneController.text;
       _initialEmail = _emailController.text;
       _initialAddress = _addressController.text;
+      _initialMedicalHistory = _medicalHistoryController.text;
       
       setState(() {
         _hasChanges = false;
         _isSaving = false;
+        _isEditingProfile = false;
       });
       
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
-            content: Text('Patient information updated'),
+            content: Text('Patient information updated successfully'),
             behavior: SnackBarBehavior.floating,
             backgroundColor: AppColors.success,
+            duration: Duration(seconds: 2),
           ),
         );
       }
@@ -133,6 +144,17 @@ class _PatientViewScreenState extends ConsumerState<PatientViewScreen>
       }
     }
   }
+  
+  void _discardChanges() {
+    _phoneController.text = _initialPhone;
+    _emailController.text = _initialEmail;
+    _addressController.text = _initialAddress;
+    _medicalHistoryController.text = _initialMedicalHistory;
+    setState(() {
+      _hasChanges = false;
+      _isEditingProfile = false;
+    });
+  }
 
   @override
   void dispose() {
@@ -140,6 +162,7 @@ class _PatientViewScreenState extends ConsumerState<PatientViewScreen>
     _phoneController.dispose();
     _emailController.dispose();
     _addressController.dispose();
+    _medicalHistoryController.dispose();
     super.dispose();
   }
 
@@ -340,7 +363,7 @@ class _PatientViewScreenState extends ConsumerState<PatientViewScreen>
                 ),
               ),
               bottom: PreferredSize(
-                preferredSize: const Size.fromHeight(48),
+                preferredSize: const Size.fromHeight(64),
                 child: DecoratedBox(
                   decoration: BoxDecoration(
                     color: surfaceColor,
@@ -357,20 +380,48 @@ class _PatientViewScreenState extends ConsumerState<PatientViewScreen>
                     indicatorColor: AppColors.primary,
                     indicatorWeight: 3,
                     dividerColor: Colors.transparent,
-                    indicatorSize: TabBarIndicatorSize.label,
+                    indicatorSize: TabBarIndicatorSize.tab,
                     labelStyle: const TextStyle(
                       fontWeight: FontWeight.w600,
-                      fontSize: 14,
+                      fontSize: 12,
                     ),
                     unselectedLabelStyle: const TextStyle(
                       fontWeight: FontWeight.w500,
-                      fontSize: 14,
+                      fontSize: 12,
                     ),
+                    isScrollable: true,
+                    tabAlignment: TabAlignment.start,
                     tabs: const [
-                      Tab(text: 'Overview'),
-                      Tab(text: 'History'),
-                      Tab(text: 'Visits'),
-                      Tab(text: 'Rx'),
+                      Tab(
+                        icon: Icon(Icons.dashboard_rounded, size: 18),
+                        text: 'Overview',
+                        iconMargin: EdgeInsets.only(bottom: 4),
+                      ),
+                      Tab(
+                        icon: Icon(Icons.folder_special_rounded, size: 18),
+                        text: 'Records',
+                        iconMargin: EdgeInsets.only(bottom: 4),
+                      ),
+                      Tab(
+                        icon: Icon(Icons.calendar_month_rounded, size: 18),
+                        text: 'Visits',
+                        iconMargin: EdgeInsets.only(bottom: 4),
+                      ),
+                      Tab(
+                        icon: Icon(Icons.medication_rounded, size: 18),
+                        text: 'Rx',
+                        iconMargin: EdgeInsets.only(bottom: 4),
+                      ),
+                      Tab(
+                        icon: Icon(Icons.receipt_long_rounded, size: 18),
+                        text: 'Billing',
+                        iconMargin: EdgeInsets.only(bottom: 4),
+                      ),
+                      Tab(
+                        icon: Icon(Icons.person_rounded, size: 18),
+                        text: 'Profile',
+                        iconMargin: EdgeInsets.only(bottom: 4),
+                      ),
                     ],
                   ),
                 ),
@@ -385,6 +436,8 @@ class _PatientViewScreenState extends ConsumerState<PatientViewScreen>
             _buildMedicalHistoryTab(context),
             _buildAppointmentsTab(context),
             _buildPrescriptionsTab(context),
+            _buildBillingTab(context),
+            _buildProfileTab(context),
           ],
         ),
       ),
@@ -1047,15 +1100,45 @@ class _PatientViewScreenState extends ConsumerState<PatientViewScreen>
     );
   }
 
-  Future<void> _addMedicalRecord(BuildContext context, String recordType) async {
+  /// Navigate to the record type selection screen
+  Future<void> _showSelectRecordTypeScreen(BuildContext context) async {
     final result = await Navigator.push<bool>(
       context,
       MaterialPageRoute<bool>(
-        builder: (_) => AddMedicalRecordScreen(
-          preselectedPatient: widget.patient,
-          initialRecordType: recordType,
-        ),
+        builder: (_) => SelectRecordTypeScreen(preselectedPatient: widget.patient),
       ),
+    );
+    if (result ?? false) {
+      setState(() {}); // Refresh the list
+    }
+  }
+
+  Future<void> _addMedicalRecord(BuildContext context, String recordType) async {
+    Widget targetScreen;
+    
+    // Route to the appropriate screen based on record type
+    switch (recordType) {
+      case 'general':
+        targetScreen = AddGeneralRecordScreen(preselectedPatient: widget.patient);
+      case 'pulmonary_evaluation':
+        targetScreen = AddPulmonaryScreen(preselectedPatient: widget.patient);
+      case 'psychiatric_assessment':
+        targetScreen = PsychiatricAssessmentScreenModern(preselectedPatient: widget.patient);
+      case 'lab_result':
+        targetScreen = AddLabResultScreen(preselectedPatient: widget.patient);
+      case 'imaging':
+        targetScreen = AddImagingScreen(preselectedPatient: widget.patient);
+      case 'procedure':
+        targetScreen = AddProcedureScreen(preselectedPatient: widget.patient);
+      case 'follow_up':
+        targetScreen = AddFollowUpScreen(preselectedPatient: widget.patient);
+      default:
+        targetScreen = SelectRecordTypeScreen(preselectedPatient: widget.patient);
+    }
+    
+    final result = await Navigator.push<bool>(
+      context,
+      MaterialPageRoute<bool>(builder: (_) => targetScreen),
     );
     if (result ?? false) {
       setState(() {}); // Refresh the list
@@ -1066,7 +1149,7 @@ class _PatientViewScreenState extends ConsumerState<PatientViewScreen>
     final result = await Navigator.push<bool>(
       context,
       MaterialPageRoute<bool>(
-        builder: (_) => PsychiatricAssessmentScreen(
+        builder: (_) => PsychiatricAssessmentScreenModern(
           preselectedPatient: widget.patient,
         ),
       ),
@@ -1944,6 +2027,597 @@ class _PatientViewScreenState extends ConsumerState<PatientViewScreen>
     );
   }
 
+  Widget _buildBillingTab(BuildContext context) {
+    final dbAsync = ref.watch(doctorDbProvider);
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
+    return dbAsync.when(
+      data: (db) => FutureBuilder<List<Invoice>>(
+        future: db.getInvoicesForPatient(widget.patient.id),
+        builder: (context, snapshot) {
+          if (snapshot.connectionState == ConnectionState.waiting) {
+            return const Center(
+              child: CircularProgressIndicator(color: AppColors.primary),
+            );
+          }
+
+          final invoices = snapshot.data ?? [];
+
+          if (invoices.isEmpty) {
+            return _buildEmptyState(
+              context,
+              icon: Icons.receipt_long_outlined,
+              title: 'No Invoices',
+              subtitle: 'Create an invoice for this patient',
+              actionLabel: 'Create Invoice',
+              onAction: () => _createInvoice(context),
+            );
+          }
+
+          // Calculate totals
+          double totalBilled = 0;
+          double totalPaid = 0;
+          for (final invoice in invoices) {
+            totalBilled += invoice.grandTotal;
+            if (invoice.paymentStatus.toLowerCase() == 'paid') {
+              totalPaid += invoice.grandTotal;
+            }
+          }
+          final totalOutstanding = totalBilled - totalPaid;
+
+          return SingleChildScrollView(
+            padding: const EdgeInsets.all(20),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                // Billing Summary Cards
+                Row(
+                  children: [
+                    Expanded(
+                      child: _buildBillingSummaryCard(
+                        context,
+                        icon: Icons.receipt_rounded,
+                        label: 'Total Billed',
+                        amount: totalBilled,
+                        color: AppColors.primary,
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: _buildBillingSummaryCard(
+                        context,
+                        icon: Icons.check_circle_rounded,
+                        label: 'Paid',
+                        amount: totalPaid,
+                        color: AppColors.success,
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 12),
+                _buildBillingSummaryCard(
+                  context,
+                  icon: Icons.pending_rounded,
+                  label: 'Outstanding',
+                  amount: totalOutstanding,
+                  color: totalOutstanding > 0 ? AppColors.warning : AppColors.success,
+                  fullWidth: true,
+                ),
+                const SizedBox(height: 24),
+                
+                // Recent Invoices Header
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Text(
+                      'Recent Invoices',
+                      style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    TextButton.icon(
+                      onPressed: () => _createInvoice(context),
+                      icon: const Icon(Icons.add, size: 18),
+                      label: const Text('New Invoice'),
+                      style: TextButton.styleFrom(
+                        foregroundColor: AppColors.primary,
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 12),
+                
+                // Invoice List
+                ...invoices.take(10).map((invoice) => _buildInvoiceCard(context, invoice)),
+                const SizedBox(height: 80),
+              ],
+            ),
+          );
+        },
+      ),
+      loading: () => const Center(
+        child: CircularProgressIndicator(color: AppColors.primary),
+      ),
+      error: (err, stack) => _buildEmptyState(
+        context,
+        icon: Icons.error_outline,
+        title: 'Error Loading Invoices',
+        subtitle: 'Please try again later',
+      ),
+    );
+  }
+
+  Widget _buildBillingSummaryCard(
+    BuildContext context, {
+    required IconData icon,
+    required String label,
+    required double amount,
+    required Color color,
+    bool fullWidth = false,
+  }) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final currencyFormat = NumberFormat.currency(symbol: 'Rs. ', decimalDigits: 0);
+    
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: isDark ? color.withValues(alpha: 0.15) : color.withValues(alpha: 0.08),
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(
+          color: color.withValues(alpha: 0.2),
+        ),
+      ),
+      child: Row(
+        children: [
+          Container(
+            padding: const EdgeInsets.all(10),
+            decoration: BoxDecoration(
+              color: color.withValues(alpha: 0.15),
+              borderRadius: BorderRadius.circular(12),
+            ),
+            child: Icon(icon, color: color, size: 24),
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  label,
+                  style: TextStyle(
+                    color: isDark ? Colors.white70 : Colors.black54,
+                    fontSize: 13,
+                  ),
+                ),
+                const SizedBox(height: 2),
+                Text(
+                  currencyFormat.format(amount),
+                  style: TextStyle(
+                    color: color,
+                    fontSize: fullWidth ? 22 : 18,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildInvoiceCard(BuildContext context, Invoice invoice) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final dateFormat = DateFormat('MMM d, yyyy');
+    final currencyFormat = NumberFormat.currency(symbol: 'Rs. ', decimalDigits: 0);
+    
+    Color statusColor;
+    IconData statusIcon;
+    switch (invoice.paymentStatus.toLowerCase()) {
+      case 'paid':
+        statusColor = AppColors.success;
+        statusIcon = Icons.check_circle_rounded;
+        break;
+      case 'pending':
+        statusColor = AppColors.warning;
+        statusIcon = Icons.pending_rounded;
+        break;
+      case 'overdue':
+        statusColor = AppColors.error;
+        statusIcon = Icons.error_rounded;
+        break;
+      default:
+        statusColor = AppColors.textSecondary;
+        statusIcon = Icons.receipt_rounded;
+    }
+
+    return Container(
+      margin: const EdgeInsets.only(bottom: 12),
+      decoration: BoxDecoration(
+        color: isDark ? AppColors.darkSurface : Colors.white,
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(
+          color: isDark ? AppColors.darkDivider : AppColors.divider,
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: isDark ? 0.1 : 0.03),
+            blurRadius: 8,
+            offset: const Offset(0, 2),
+          ),
+        ],
+      ),
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          onTap: () {
+            Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (_) => InvoiceDetailScreen(
+                  invoice: invoice,
+                  patient: widget.patient,
+                ),
+              ),
+            );
+          },
+          borderRadius: BorderRadius.circular(14),
+          child: Padding(
+            padding: const EdgeInsets.all(16),
+            child: Row(
+              children: [
+                Container(
+                  padding: const EdgeInsets.all(10),
+                  decoration: BoxDecoration(
+                    color: statusColor.withValues(alpha: 0.1),
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                  child: Icon(statusIcon, color: statusColor, size: 20),
+                ),
+                const SizedBox(width: 14),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        invoice.invoiceNumber,
+                        style: TextStyle(
+                          fontWeight: FontWeight.w600,
+                          color: isDark ? Colors.white : Colors.black87,
+                          fontSize: 15,
+                        ),
+                      ),
+                      const SizedBox(height: 4),
+                      Text(
+                        dateFormat.format(invoice.invoiceDate),
+                        style: TextStyle(
+                          color: isDark ? Colors.white60 : Colors.black54,
+                          fontSize: 13,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.end,
+                  children: [
+                    Text(
+                      currencyFormat.format(invoice.grandTotal),
+                      style: TextStyle(
+                        fontWeight: FontWeight.bold,
+                        color: isDark ? Colors.white : Colors.black87,
+                        fontSize: 15,
+                      ),
+                    ),
+                    const SizedBox(height: 4),
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                      decoration: BoxDecoration(
+                        color: statusColor.withValues(alpha: 0.1),
+                        borderRadius: BorderRadius.circular(6),
+                      ),
+                      child: Text(
+                        invoice.paymentStatus.toUpperCase(),
+                        style: TextStyle(
+                          color: statusColor,
+                          fontSize: 10,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildProfileTab(BuildContext context) {
+    final patient = widget.patient;
+    final dateFormat = DateFormat('MMMM d, yyyy');
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
+    return Stack(
+      children: [
+        SingleChildScrollView(
+          padding: const EdgeInsets.all(20),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // Profile Header Card
+              Container(
+                padding: const EdgeInsets.all(20),
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                    colors: [
+                      AppColors.primary,
+                      AppColors.primary.withValues(alpha: 0.8),
+                    ],
+                  ),
+                  borderRadius: BorderRadius.circular(20),
+                  boxShadow: [
+                    BoxShadow(
+                      color: AppColors.primary.withValues(alpha: 0.3),
+                      blurRadius: 15,
+                      offset: const Offset(0, 5),
+                    ),
+                  ],
+                ),
+                child: Column(
+                  children: [
+                    PatientAvatarCircle(
+                      patientId: patient.id,
+                      firstName: patient.firstName,
+                      lastName: patient.lastName,
+                      size: 80,
+                      editable: true,
+                      onPhotoChanged: () => setState(() {}),
+                    ),
+                    const SizedBox(height: 12),
+                    Text(
+                      '${patient.firstName} ${patient.lastName}',
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontSize: 22,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      'Patient ID: ${patient.id.toString().padLeft(4, '0')}',
+                      style: TextStyle(
+                        color: Colors.white.withValues(alpha: 0.8),
+                        fontSize: 14,
+                      ),
+                    ),
+                    const SizedBox(height: 12),
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
+                      decoration: BoxDecoration(
+                        color: Colors.white.withValues(alpha: 0.2),
+                        borderRadius: BorderRadius.circular(20),
+                      ),
+                      child: Text(
+                        'Member since ${dateFormat.format(patient.createdAt)}',
+                        style: TextStyle(
+                          color: Colors.white.withValues(alpha: 0.9),
+                          fontSize: 12,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 20),
+
+              // Editable Contact Information
+              _buildSectionCard(
+                context,
+                title: 'Contact Information',
+                icon: Icons.contact_phone_rounded,
+                accentColor: AppColors.info,
+                children: [
+                  _buildEditableInfoRow(Icons.phone_rounded, 'Phone', _phoneController, hint: 'Enter phone number', keyboardType: TextInputType.phone),
+                  _buildEditableInfoRow(Icons.email_rounded, 'Email', _emailController, hint: 'Enter email address', keyboardType: TextInputType.emailAddress),
+                  _buildEditableInfoRow(Icons.location_on_rounded, 'Address', _addressController, hint: 'Enter address', maxLines: 2),
+                ],
+              ),
+              const SizedBox(height: 16),
+
+              // Personal Details
+              _buildSectionCard(
+                context,
+                title: 'Personal Details',
+                icon: Icons.person_outline_rounded,
+                accentColor: AppColors.accent,
+                children: [
+                  _buildInfoRow(
+                    Icons.cake_rounded,
+                    'Date of Birth',
+                    patient.dateOfBirth != null ? dateFormat.format(patient.dateOfBirth!) : 'Not provided',
+                  ),
+                  if (patient.dateOfBirth != null)
+                    _buildInfoRow(
+                      Icons.calendar_today_rounded,
+                      'Age',
+                      '${_calculateAge(patient.dateOfBirth!)} years old',
+                    ),
+                ],
+              ),
+              const SizedBox(height: 16),
+
+              // Medical Information
+              _buildSectionCard(
+                context,
+                title: 'Medical Notes',
+                icon: Icons.medical_information_rounded,
+                accentColor: AppColors.warning,
+                children: [
+                  _buildEditableInfoRow(
+                    Icons.note_alt_rounded,
+                    'Medical History',
+                    _medicalHistoryController,
+                    hint: 'Enter known conditions, allergies, etc.',
+                    maxLines: 4,
+                  ),
+                ],
+              ),
+              const SizedBox(height: 16),
+
+              // Risk Level Card
+              _buildSectionCard(
+                context,
+                title: 'Risk Assessment',
+                icon: Icons.warning_amber_rounded,
+                accentColor: _getRiskColor(patient.riskLevel),
+                children: [
+                  Row(
+                    children: [
+                      Container(
+                        padding: const EdgeInsets.all(12),
+                        decoration: BoxDecoration(
+                          color: _getRiskColor(patient.riskLevel).withValues(alpha: 0.1),
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        child: Icon(
+                          _getRiskIcon(patient.riskLevel),
+                          color: _getRiskColor(patient.riskLevel),
+                          size: 28,
+                        ),
+                      ),
+                      const SizedBox(width: 16),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              _getRiskLabel(patient.riskLevel),
+                              style: TextStyle(
+                                color: _getRiskColor(patient.riskLevel),
+                                fontWeight: FontWeight.bold,
+                                fontSize: 16,
+                              ),
+                            ),
+                            const SizedBox(height: 4),
+                            Text(
+                              'Level ${patient.riskLevel}/5',
+                              style: TextStyle(
+                                color: isDark ? Colors.white60 : Colors.black54,
+                                fontSize: 13,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+              const SizedBox(height: 16),
+
+              // Tags Card
+              if (patient.tags.isNotEmpty)
+                _buildSectionCard(
+                  context,
+                  title: 'Tags & Labels',
+                  icon: Icons.label_rounded,
+                  accentColor: const Color(0xFF9B59B6),
+                  children: [
+                    Wrap(
+                      spacing: 8,
+                      runSpacing: 8,
+                      children: patient.tags.split(',').where((tag) => tag.trim().isNotEmpty).map((tag) {
+                        final tagColor = _getTagColor(tag.trim());
+                        return Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+                          decoration: BoxDecoration(
+                            color: tagColor.withValues(alpha: 0.1),
+                            borderRadius: BorderRadius.circular(20),
+                            border: Border.all(color: tagColor.withValues(alpha: 0.3)),
+                          ),
+                          child: Text(
+                            tag.trim(),
+                            style: TextStyle(
+                              color: tagColor,
+                              fontWeight: FontWeight.w500,
+                              fontSize: 13,
+                            ),
+                          ),
+                        );
+                      }).toList(),
+                    ),
+                  ],
+                ),
+              const SizedBox(height: 100), // Space for save button
+            ],
+          ),
+        ),
+        
+        // Save Button (appears when changes are made)
+        if (_hasChanges)
+          Positioned(
+            bottom: 16,
+            left: 20,
+            right: 76,
+            child: Material(
+              elevation: 8,
+              shadowColor: AppColors.primary.withValues(alpha: 0.3),
+              borderRadius: BorderRadius.circular(14),
+              child: InkWell(
+                onTap: _isSaving ? null : _saveChanges,
+                borderRadius: BorderRadius.circular(14),
+                child: Container(
+                  height: 56,
+                  decoration: BoxDecoration(
+                    gradient: LinearGradient(
+                      colors: [AppColors.primary, AppColors.primary.withValues(alpha: 0.8)],
+                    ),
+                    borderRadius: BorderRadius.circular(14),
+                  ),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      if (_isSaving)
+                        const SizedBox(
+                          width: 20,
+                          height: 20,
+                          child: CircularProgressIndicator(
+                            strokeWidth: 2,
+                            valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                          ),
+                        )
+                      else
+                        const Icon(Icons.save_rounded, color: Colors.white, size: 20),
+                      const SizedBox(width: 8),
+                      Text(
+                        _isSaving ? 'Saving...' : 'Save Changes',
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontWeight: FontWeight.w600,
+                          fontSize: 16,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+          ),
+      ],
+    );
+  }
+
+  IconData _getRiskIcon(int riskLevel) {
+    if (riskLevel <= 2) return Icons.check_circle_rounded;
+    if (riskLevel <= 4) return Icons.warning_rounded;
+    return Icons.error_rounded;
+  }
+
   Future<List<Appointment>> _getPatientAppointments(DoctorDatabase db) async {
     final allAppointments = await db.getAllAppointments();
     return allAppointments.where((a) => a.patientId == widget.patient.id).toList();
@@ -2177,50 +2851,368 @@ class _PatientViewScreenState extends ConsumerState<PatientViewScreen>
 
   Widget _buildQuickStats(BuildContext context) {
     final dbAsync = ref.watch(doctorDbProvider);
+    final isDark = Theme.of(context).brightness == Brightness.dark;
 
     return dbAsync.when(
       data: (db) => FutureBuilder(
         future: Future.wait([
           _getPatientAppointments(db),
           db.getPrescriptionsForPatient(widget.patient.id),
+          db.getMedicalRecordsForPatient(widget.patient.id),
         ]),
         builder: (context, snapshot) {
           int appointmentCount = 0;
           int prescriptionCount = 0;
+          int recordCount = 0;
+          int upcomingVisits = 0;
 
           if (snapshot.hasData) {
             final data = snapshot.data!;
-            appointmentCount = (data[0] as List).length;
+            final appointments = data[0] as List;
+            appointmentCount = appointments.length;
+            upcomingVisits = appointments.where((a) => 
+              (a as Appointment).appointmentDateTime.isAfter(DateTime.now()) &&
+              a.status.toLowerCase() != 'cancelled',
+            ).length;
             prescriptionCount = (data[1] as List).length;
+            recordCount = (data[2] as List).length;
           }
 
-          return Row(
+          return Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Expanded(
-                child: _buildStatCard(
-                  context,
-                  'Appointments',
-                  appointmentCount.toString(),
-                  Icons.calendar_today_outlined,
-                  AppColors.primary,
+              // Stats Grid - 2x2 layout
+              Row(
+                children: [
+                  Expanded(
+                    child: _buildModernStatCard(
+                      context,
+                      label: 'Total Visits',
+                      value: appointmentCount.toString(),
+                      icon: Icons.calendar_month_rounded,
+                      color: AppColors.primary,
+                      subtitle: upcomingVisits > 0 ? '$upcomingVisits upcoming' : null,
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: _buildModernStatCard(
+                      context,
+                      label: 'Prescriptions',
+                      value: prescriptionCount.toString(),
+                      icon: Icons.medication_rounded,
+                      color: AppColors.accent,
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 12),
+              Row(
+                children: [
+                  Expanded(
+                    child: _buildModernStatCard(
+                      context,
+                      label: 'Records',
+                      value: recordCount.toString(),
+                      icon: Icons.folder_rounded,
+                      color: AppColors.info,
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: _buildModernStatCard(
+                      context,
+                      label: 'Risk Level',
+                      value: _getRiskLabel(widget.patient.riskLevel).split(' ')[0],
+                      icon: Icons.warning_amber_rounded,
+                      color: _getRiskColor(widget.patient.riskLevel),
+                      isRisk: true,
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 20),
+              
+              // Quick Actions Section
+              Text(
+                'Quick Actions',
+                style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                  fontWeight: FontWeight.bold,
+                  color: isDark ? AppColors.darkTextPrimary : AppColors.textPrimary,
                 ),
               ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: _buildStatCard(
-                  context,
-                  'Prescriptions',
-                  prescriptionCount.toString(),
-                  Icons.medication_outlined,
-                  AppColors.accent,
-                ),
-              ),
+              const SizedBox(height: 12),
+              _buildQuickActionsGrid(context),
             ],
           );
         },
       ),
-      loading: () => const SizedBox.shrink(),
+      loading: () => const Center(
+        child: Padding(
+          padding: EdgeInsets.all(20),
+          child: CircularProgressIndicator(color: AppColors.primary),
+        ),
+      ),
       error: (_, __) => const SizedBox.shrink(),
+    );
+  }
+
+  Widget _buildModernStatCard(
+    BuildContext context, {
+    required String label,
+    required String value,
+    required IconData icon,
+    required Color color,
+    String? subtitle,
+    bool isRisk = false,
+  }) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [
+            color.withValues(alpha: 0.15),
+            color.withValues(alpha: 0.05),
+          ],
+        ),
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(
+          color: color.withValues(alpha: 0.2),
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: color.withValues(alpha: 0.1),
+            blurRadius: 8,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Container(
+                padding: const EdgeInsets.all(8),
+                decoration: BoxDecoration(
+                  color: color.withValues(alpha: 0.2),
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                child: Icon(icon, color: color, size: 20),
+              ),
+              if (isRisk)
+                Container(
+                  width: 10,
+                  height: 10,
+                  decoration: BoxDecoration(
+                    color: color,
+                    shape: BoxShape.circle,
+                    boxShadow: [
+                      BoxShadow(
+                        color: color.withValues(alpha: 0.5),
+                        blurRadius: 6,
+                        spreadRadius: 1,
+                      ),
+                    ],
+                  ),
+                ),
+            ],
+          ),
+          const SizedBox(height: 12),
+          Text(
+            value,
+            style: TextStyle(
+              fontSize: 28,
+              fontWeight: FontWeight.bold,
+              color: color,
+              height: 1,
+            ),
+          ),
+          const SizedBox(height: 4),
+          Text(
+            label,
+            style: TextStyle(
+              color: isDark ? AppColors.darkTextSecondary : AppColors.textSecondary,
+              fontWeight: FontWeight.w500,
+              fontSize: 13,
+            ),
+          ),
+          if (subtitle != null) ...[
+            const SizedBox(height: 4),
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+              decoration: BoxDecoration(
+                color: AppColors.success.withValues(alpha: 0.15),
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: Text(
+                subtitle,
+                style: const TextStyle(
+                  color: AppColors.success,
+                  fontSize: 11,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+            ),
+          ],
+        ],
+      ),
+    );
+  }
+
+  Widget _buildQuickActionsGrid(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    
+    final actions = [
+      {
+        'icon': Icons.calendar_today_rounded,
+        'label': 'Appointment',
+        'color': AppColors.primary,
+        'onTap': () => _scheduleAppointment(context),
+      },
+      {
+        'icon': Icons.medication_rounded,
+        'label': 'Prescription',
+        'color': AppColors.accent,
+        'onTap': () => _createPrescription(context),
+      },
+      {
+        'icon': Icons.note_add_rounded,
+        'label': 'Add Record',
+        'color': AppColors.warning,
+        'onTap': () => _showSelectRecordTypeScreen(context),
+      },
+      {
+        'icon': Icons.receipt_long_rounded,
+        'label': 'Invoice',
+        'color': const Color(0xFF6366F1),
+        'onTap': () => _createInvoice(context),
+      },
+      {
+        'icon': Icons.psychology_rounded,
+        'label': 'Psych Eval',
+        'color': const Color(0xFF9B59B6),
+        'onTap': () => _addMedicalRecord(context, 'psychiatric_assessment'),
+      },
+      {
+        'icon': Icons.air_rounded,
+        'label': 'Pulmonary',
+        'color': const Color(0xFF00ACC1),
+        'onTap': () => _addMedicalRecord(context, 'pulmonary_evaluation'),
+      },
+    ];
+
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: isDark ? AppColors.darkSurface : Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(
+          color: (isDark ? AppColors.darkDivider : AppColors.divider).withValues(alpha: 0.5),
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.04),
+            blurRadius: 10,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
+      child: Column(
+        children: [
+          // First row - 3 actions
+          Row(
+            children: [
+              for (int i = 0; i < 3; i++) ...[
+                if (i > 0) const SizedBox(width: 12),
+                Expanded(
+                  child: _buildQuickActionButton(
+                    context,
+                    icon: actions[i]['icon']! as IconData,
+                    label: actions[i]['label']! as String,
+                    color: actions[i]['color']! as Color,
+                    onTap: actions[i]['onTap']! as VoidCallback,
+                  ),
+                ),
+              ],
+            ],
+          ),
+          const SizedBox(height: 12),
+          // Second row - 3 actions
+          Row(
+            children: [
+              for (int i = 3; i < 6; i++) ...[
+                if (i > 3) const SizedBox(width: 12),
+                Expanded(
+                  child: _buildQuickActionButton(
+                    context,
+                    icon: actions[i]['icon']! as IconData,
+                    label: actions[i]['label']! as String,
+                    color: actions[i]['color']! as Color,
+                    onTap: actions[i]['onTap']! as VoidCallback,
+                  ),
+                ),
+              ],
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildQuickActionButton(
+    BuildContext context, {
+    required IconData icon,
+    required String label,
+    required Color color,
+    required VoidCallback onTap,
+  }) {
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(12),
+        child: Container(
+          padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 8),
+          decoration: BoxDecoration(
+            color: color.withValues(alpha: 0.08),
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(
+              color: color.withValues(alpha: 0.2),
+            ),
+          ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Container(
+                padding: const EdgeInsets.all(10),
+                decoration: BoxDecoration(
+                  color: color.withValues(alpha: 0.15),
+                  shape: BoxShape.circle,
+                ),
+                child: Icon(icon, color: color, size: 22),
+              ),
+              const SizedBox(height: 8),
+              Text(
+                label,
+                style: TextStyle(
+                  color: color,
+                  fontWeight: FontWeight.w600,
+                  fontSize: 12,
+                ),
+                textAlign: TextAlign.center,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+              ),
+            ],
+          ),
+        ),
+      ),
     );
   }
 
@@ -2765,7 +3757,7 @@ class _PatientViewScreenState extends ConsumerState<PatientViewScreen>
               color: AppColors.warning,
               onTap: () {
                 Navigator.pop(context);
-                _addMedicalRecord(context, 'general');
+                _showSelectRecordTypeScreen(context);
               },
             ),
             _buildActionListTile(
@@ -3674,12 +4666,7 @@ class _PatientViewScreenState extends ConsumerState<PatientViewScreen>
                             child: OutlinedButton.icon(
                               onPressed: () {
                                 Navigator.pop(context);
-                                ScaffoldMessenger.of(context).showSnackBar(
-                                  const SnackBar(
-                                    content: Text('Reschedule feature coming soon'),
-                                    behavior: SnackBarBehavior.floating,
-                                  ),
-                                );
+                                _rescheduleAppointment(appointment);
                               },
                               icon: const Icon(Icons.edit_calendar),
                               label: const Text('Reschedule'),
@@ -3693,12 +4680,7 @@ class _PatientViewScreenState extends ConsumerState<PatientViewScreen>
                             child: OutlinedButton.icon(
                               onPressed: () {
                                 Navigator.pop(context);
-                                ScaffoldMessenger.of(context).showSnackBar(
-                                  const SnackBar(
-                                    content: Text('Cancel feature coming soon'),
-                                    behavior: SnackBarBehavior.floating,
-                                  ),
-                                );
+                                _cancelAppointment(appointment);
                               },
                               icon: const Icon(Icons.cancel_outlined),
                               label: const Text('Cancel'),
@@ -3718,12 +4700,7 @@ class _PatientViewScreenState extends ConsumerState<PatientViewScreen>
                         child: ElevatedButton.icon(
                           onPressed: () {
                             Navigator.pop(context);
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              const SnackBar(
-                                content: Text('Confirm feature coming soon'),
-                                behavior: SnackBarBehavior.floating,
-                              ),
-                            );
+                            _confirmAppointment(appointment);
                           },
                           icon: const Icon(Icons.check_circle),
                           label: const Text('Confirm Appointment'),
@@ -3738,12 +4715,7 @@ class _PatientViewScreenState extends ConsumerState<PatientViewScreen>
                         child: ElevatedButton.icon(
                           onPressed: () {
                             Navigator.pop(context);
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              const SnackBar(
-                                content: Text('Mark as completed feature coming soon'),
-                                behavior: SnackBarBehavior.floating,
-                              ),
-                            );
+                            _markAppointmentCompleted(appointment);
                           },
                           icon: const Icon(Icons.check),
                           label: const Text('Mark as Completed'),
@@ -3898,6 +4870,275 @@ class _PatientViewScreenState extends ConsumerState<PatientViewScreen>
         ),
       ),
     );
+  }
+
+  // ============ Appointment Action Methods ============
+
+  Future<void> _rescheduleAppointment(Appointment appointment) async {
+    final DateTime? newDate = await showDatePicker(
+      context: context,
+      initialDate: appointment.appointmentDateTime,
+      firstDate: DateTime.now(),
+      lastDate: DateTime.now().add(const Duration(days: 365)),
+      helpText: 'Select new appointment date',
+    );
+
+    if (newDate == null || !mounted) return;
+
+    final TimeOfDay? newTime = await showTimePicker(
+      context: context,
+      initialTime: TimeOfDay.fromDateTime(appointment.appointmentDateTime),
+      helpText: 'Select new appointment time',
+    );
+
+    if (newTime == null || !mounted) return;
+
+    final newDateTime = DateTime(
+      newDate.year,
+      newDate.month,
+      newDate.day,
+      newTime.hour,
+      newTime.minute,
+    );
+
+    try {
+      final dbAsync = ref.read(doctorDbProvider);
+      final db = dbAsync.when(
+        data: (db) => db,
+        loading: () => throw Exception('Database loading'),
+        error: (e, _) => throw e,
+      );
+
+      // Create updated appointment
+      final updatedAppointment = Appointment(
+        id: appointment.id,
+        patientId: appointment.patientId,
+        appointmentDateTime: newDateTime,
+        durationMinutes: appointment.durationMinutes,
+        reason: appointment.reason,
+        status: appointment.status,
+        reminderAt: appointment.reminderAt,
+        notes: appointment.notes,
+        createdAt: appointment.createdAt,
+      );
+
+      await db.update(db.appointments).replace(updatedAppointment);
+      
+      if (mounted) {
+        setState(() {}); // Refresh UI
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Row(
+              children: [
+                const Icon(Icons.check_circle, color: Colors.white),
+                const SizedBox(width: 12),
+                Text('Appointment rescheduled to ${DateFormat('MMM d, yyyy h:mm a').format(newDateTime)}'),
+              ],
+            ),
+            backgroundColor: AppColors.success,
+            behavior: SnackBarBehavior.floating,
+          ),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Error rescheduling appointment: $e'),
+            backgroundColor: AppColors.error,
+            behavior: SnackBarBehavior.floating,
+          ),
+        );
+      }
+    }
+  }
+
+  Future<void> _cancelAppointment(Appointment appointment) async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Row(
+          children: [
+            Icon(Icons.warning_amber_rounded, color: AppColors.warning),
+            SizedBox(width: 12),
+            Text('Cancel Appointment'),
+          ],
+        ),
+        content: Text(
+          'Are you sure you want to cancel the appointment on ${DateFormat('MMMM d, yyyy').format(appointment.appointmentDateTime)} at ${DateFormat('h:mm a').format(appointment.appointmentDateTime)}?',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text('Keep'),
+          ),
+          ElevatedButton(
+            onPressed: () => Navigator.pop(context, true),
+            style: ElevatedButton.styleFrom(backgroundColor: AppColors.error),
+            child: const Text('Cancel Appointment'),
+          ),
+        ],
+      ),
+    );
+
+    if (confirmed != true || !mounted) return;
+
+    try {
+      final dbAsync = ref.read(doctorDbProvider);
+      final db = dbAsync.when(
+        data: (db) => db,
+        loading: () => throw Exception('Database loading'),
+        error: (e, _) => throw e,
+      );
+
+      // Create updated appointment with cancelled status
+      final updatedAppointment = Appointment(
+        id: appointment.id,
+        patientId: appointment.patientId,
+        appointmentDateTime: appointment.appointmentDateTime,
+        durationMinutes: appointment.durationMinutes,
+        reason: appointment.reason,
+        status: 'cancelled',
+        reminderAt: appointment.reminderAt,
+        notes: appointment.notes,
+        createdAt: appointment.createdAt,
+      );
+
+      await db.update(db.appointments).replace(updatedAppointment);
+      
+      if (mounted) {
+        setState(() {}); // Refresh UI
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Row(
+              children: [
+                Icon(Icons.check_circle, color: Colors.white),
+                SizedBox(width: 12),
+                Text('Appointment cancelled'),
+              ],
+            ),
+            backgroundColor: AppColors.success,
+            behavior: SnackBarBehavior.floating,
+          ),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Error cancelling appointment: $e'),
+            backgroundColor: AppColors.error,
+            behavior: SnackBarBehavior.floating,
+          ),
+        );
+      }
+    }
+  }
+
+  Future<void> _confirmAppointment(Appointment appointment) async {
+    try {
+      final dbAsync = ref.read(doctorDbProvider);
+      final db = dbAsync.when(
+        data: (db) => db,
+        loading: () => throw Exception('Database loading'),
+        error: (e, _) => throw e,
+      );
+
+      // Create updated appointment with confirmed status
+      final updatedAppointment = Appointment(
+        id: appointment.id,
+        patientId: appointment.patientId,
+        appointmentDateTime: appointment.appointmentDateTime,
+        durationMinutes: appointment.durationMinutes,
+        reason: appointment.reason,
+        status: 'confirmed',
+        reminderAt: appointment.reminderAt,
+        notes: appointment.notes,
+        createdAt: appointment.createdAt,
+      );
+
+      await db.update(db.appointments).replace(updatedAppointment);
+      
+      if (mounted) {
+        setState(() {}); // Refresh UI
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Row(
+              children: [
+                Icon(Icons.check_circle, color: Colors.white),
+                SizedBox(width: 12),
+                Text('Appointment confirmed'),
+              ],
+            ),
+            backgroundColor: AppColors.success,
+            behavior: SnackBarBehavior.floating,
+          ),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Error confirming appointment: $e'),
+            backgroundColor: AppColors.error,
+            behavior: SnackBarBehavior.floating,
+          ),
+        );
+      }
+    }
+  }
+
+  Future<void> _markAppointmentCompleted(Appointment appointment) async {
+    try {
+      final dbAsync = ref.read(doctorDbProvider);
+      final db = dbAsync.when(
+        data: (db) => db,
+        loading: () => throw Exception('Database loading'),
+        error: (e, _) => throw e,
+      );
+
+      // Create updated appointment with completed status
+      final updatedAppointment = Appointment(
+        id: appointment.id,
+        patientId: appointment.patientId,
+        appointmentDateTime: appointment.appointmentDateTime,
+        durationMinutes: appointment.durationMinutes,
+        reason: appointment.reason,
+        status: 'completed',
+        reminderAt: appointment.reminderAt,
+        notes: appointment.notes,
+        createdAt: appointment.createdAt,
+      );
+
+      await db.update(db.appointments).replace(updatedAppointment);
+      
+      if (mounted) {
+        setState(() {}); // Refresh UI
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Row(
+              children: [
+                Icon(Icons.check_circle, color: Colors.white),
+                SizedBox(width: 12),
+                Text('Appointment marked as completed'),
+              ],
+            ),
+            backgroundColor: AppColors.success,
+            behavior: SnackBarBehavior.floating,
+          ),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Error updating appointment: $e'),
+            backgroundColor: AppColors.error,
+            behavior: SnackBarBehavior.floating,
+          ),
+        );
+      }
+    }
   }
 }
 

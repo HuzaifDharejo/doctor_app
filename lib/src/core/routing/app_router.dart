@@ -11,11 +11,14 @@ import '../../ui/screens/add_prescription_screen.dart';
 import '../../ui/screens/appointments_screen.dart';
 import '../../ui/screens/billing_screen.dart';
 import '../../ui/screens/doctor_profile_screen.dart';
-import '../../ui/screens/patient_view_screen.dart';
+import '../../ui/screens/patient_view_screen_modern.dart';
 import '../../ui/screens/patients_screen.dart';
 import '../../ui/screens/prescriptions_screen.dart';
-import '../../ui/screens/psychiatric_assessment_screen.dart';
+import '../../ui/screens/psychiatric_assessment_screen_modern.dart';
+import '../../ui/screens/pulmonary_evaluation_screen_modern.dart';
+import '../../ui/screens/records/records.dart';
 import '../../ui/screens/settings_screen.dart';
+import '../../ui/screens/user_manual_screen.dart';
 
 /// Route names as constants
 abstract class AppRoutes {
@@ -23,6 +26,7 @@ abstract class AppRoutes {
   static const String dashboard = '/dashboard';
   static const String patients = '/patients';
   static const String patientView = '/patients/view';
+  static const String patientViewModern = '/patients/view/modern';
   static const String addPatient = '/patients/add';
   static const String editPatient = '/patients/edit';
   static const String appointments = '/appointments';
@@ -34,7 +38,10 @@ abstract class AppRoutes {
   static const String settings = '/settings';
   static const String doctorProfile = '/doctor-profile';
   static const String psychiatricAssessment = '/psychiatric-assessment';
+  static const String psychiatricAssessmentModern = '/psychiatric-assessment/modern';
+  static const String pulmonaryEvaluationModern = '/pulmonary-evaluation/modern';
   static const String addMedicalRecord = '/medical-records/add';
+  static const String userManual = '/user-manual';
 }
 
 /// Route arguments for type-safe navigation
@@ -55,12 +62,17 @@ class AddPrescriptionArgs {
 }
 
 class AddMedicalRecordArgs {
-  const AddMedicalRecordArgs({required this.patient});
-  final Patient patient;
+  const AddMedicalRecordArgs({this.patient});
+  final Patient? patient;
 }
 
 class PsychiatricAssessmentArgs {
   const PsychiatricAssessmentArgs({this.patient});
+  final Patient? patient;
+}
+
+class PulmonaryEvaluationArgs {
+  const PulmonaryEvaluationArgs({this.patient});
   final Patient? patient;
 }
 
@@ -81,8 +93,9 @@ class AppRouter {
         return _buildRoute(const AddPatientScreen(), settings);
         
       case AppRoutes.patientView:
+      case AppRoutes.patientViewModern:
         final args = settings.arguments! as PatientViewArgs;
-        return _buildRoute(PatientViewScreen(patient: args.patient), settings);
+        return _buildRoute(PatientViewScreenModern(patient: args.patient), settings);
         
       case AppRoutes.appointments:
         return _buildRoute(const AppointmentsScreen(), settings);
@@ -124,18 +137,29 @@ class AppRouter {
         return _buildRoute(const DoctorProfileScreen(), settings);
         
       case AppRoutes.psychiatricAssessment:
+      case AppRoutes.psychiatricAssessmentModern:
         final args = settings.arguments as PsychiatricAssessmentArgs?;
         return _buildRoute(
-          PsychiatricAssessmentScreen(preselectedPatient: args?.patient),
+          PsychiatricAssessmentScreenModern(preselectedPatient: args?.patient),
+          settings,
+        );
+        
+      case AppRoutes.pulmonaryEvaluationModern:
+        final args = settings.arguments as PulmonaryEvaluationArgs?;
+        return _buildRoute(
+          PulmonaryEvaluationScreenModern(preselectedPatient: args?.patient),
           settings,
         );
         
       case AppRoutes.addMedicalRecord:
-        final args = settings.arguments! as AddMedicalRecordArgs;
+        final args = settings.arguments as AddMedicalRecordArgs?;
         return _buildRoute(
-          AddMedicalRecordScreen(preselectedPatient: args.patient),
+          SelectRecordTypeScreen(preselectedPatient: args?.patient),
           settings,
         );
+        
+      case AppRoutes.userManual:
+        return _buildRoute(const UserManualScreen(), settings);
         
       default:
         return _buildRoute(
@@ -224,4 +248,28 @@ extension NavigationHelper on BuildContext {
   /// Navigate to psychiatric assessment
   Future<void> goToPsychiatricAssessment() =>
       pushNamed(AppRoutes.psychiatricAssessment);
+
+  /// Navigate to modern patient view
+  Future<void> goToPatientViewModern(Patient patient) {
+    return pushNamed(
+      AppRoutes.patientViewModern,
+      arguments: PatientViewArgs(patient: patient),
+    );
+  }
+
+  /// Navigate to modern psychiatric assessment
+  Future<void> goToPsychiatricAssessmentModern({Patient? patient}) {
+    return pushNamed(
+      AppRoutes.psychiatricAssessmentModern,
+      arguments: PsychiatricAssessmentArgs(patient: patient),
+    );
+  }
+
+  /// Navigate to modern pulmonary evaluation
+  Future<void> goToPulmonaryEvaluationModern({Patient? patient}) {
+    return pushNamed(
+      AppRoutes.pulmonaryEvaluationModern,
+      arguments: PulmonaryEvaluationArgs(patient: patient),
+    );
+  }
 }

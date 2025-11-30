@@ -7,7 +7,7 @@ import '../../providers/db_provider.dart';
 import '../../services/pdf_service.dart';
 import '../../theme/app_theme.dart';
 import '../widgets/medical_record_widgets.dart';
-import 'add_medical_record_screen.dart';
+import 'records/records.dart';
 
 /// A modern, accessible medical record detail screen
 /// 
@@ -1420,16 +1420,48 @@ class _ActionButtons extends StatelessWidget {
   }
 
   void _handleEdit(BuildContext context) {
-    // Navigate to add screen with patient preselected
-    // Full edit support would require AddMedicalRecordScreen to accept existingRecord
+    Widget targetScreen;
+    
+    // Route to the appropriate edit screen based on record type
+    switch (record.recordType) {
+      case 'general':
+        targetScreen = AddGeneralRecordScreen(
+          preselectedPatient: patient,
+          existingRecord: record,
+        );
+      case 'pulmonary_evaluation':
+        targetScreen = AddPulmonaryScreen(
+          preselectedPatient: patient,
+          existingRecord: record,
+        );
+      case 'lab_result':
+        targetScreen = AddLabResultScreen(
+          preselectedPatient: patient,
+          existingRecord: record,
+        );
+      case 'imaging':
+        targetScreen = AddImagingScreen(
+          preselectedPatient: patient,
+          existingRecord: record,
+        );
+      case 'procedure':
+        targetScreen = AddProcedureScreen(
+          preselectedPatient: patient,
+          existingRecord: record,
+        );
+      case 'follow_up':
+        targetScreen = AddFollowUpScreen(
+          preselectedPatient: patient,
+          existingRecord: record,
+        );
+      default:
+        // For psychiatric and other types, navigate to selection screen
+        targetScreen = SelectRecordTypeScreen(preselectedPatient: patient);
+    }
+    
     Navigator.push<void>(
       context,
-      MaterialPageRoute(
-        builder: (context) => AddMedicalRecordScreen(
-          preselectedPatient: patient,
-          initialRecordType: record.recordType,
-        ),
-      ),
+      MaterialPageRoute(builder: (_) => targetScreen),
     );
   }
 

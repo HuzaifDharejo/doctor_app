@@ -1,9 +1,163 @@
 import '../db/doctor_db.dart';
+import '../services/doctor_settings_service.dart';
 
 /// Demo data for showcasing the app when database is unavailable
 class DemoData {
   static final DateTime _today = DateTime.now();
   static final DateTime _baseDate = DateTime(_today.year, _today.month, _today.day);
+
+  /// Sample doctor profiles for demo mode
+  static List<DoctorProfile> get doctors => [
+    DoctorProfile(
+      name: 'Dr. Ahmed Hassan',
+      specialization: 'General Physician',
+      qualifications: 'MBBS, FCPS (Medicine)',
+      licenseNumber: 'PMC-12345-2015',
+      experienceYears: 12,
+      bio: 'Experienced general physician with over a decade of practice in internal medicine. '
+           'Specialized in managing chronic diseases including diabetes, hypertension, and cardiovascular conditions.',
+      phone: '+92 321 1234567',
+      email: 'dr.ahmed.hassan@clinic.com',
+      clinicName: 'Hassan Medical Center',
+      clinicAddress: '45 Main Boulevard, Gulberg III, Lahore',
+      clinicPhone: '+92 42 35761234',
+      consultationFee: 2000,
+      followUpFee: 1500,
+      emergencyFee: 3500,
+      languages: ['English', 'Urdu', 'Punjabi'],
+      workingHours: {
+        'Monday': {'enabled': true, 'start': '09:00', 'end': '17:00'},
+        'Tuesday': {'enabled': true, 'start': '09:00', 'end': '17:00'},
+        'Wednesday': {'enabled': true, 'start': '09:00', 'end': '17:00'},
+        'Thursday': {'enabled': true, 'start': '09:00', 'end': '17:00'},
+        'Friday': {'enabled': true, 'start': '09:00', 'end': '13:00'},
+        'Saturday': {'enabled': true, 'start': '10:00', 'end': '14:00'},
+        'Sunday': {'enabled': false, 'start': '09:00', 'end': '17:00'},
+      },
+    ),
+    DoctorProfile(
+      name: 'Dr. Fatima Khan',
+      specialization: 'Cardiologist',
+      qualifications: 'MBBS, MRCP (UK), Fellowship in Cardiology',
+      licenseNumber: 'PMC-23456-2012',
+      experienceYears: 15,
+      bio: 'Board-certified cardiologist specializing in interventional cardiology and heart failure management. '
+           'Former senior registrar at Aga Khan University Hospital.',
+      phone: '+92 300 9876543',
+      email: 'dr.fatima.khan@heartcare.pk',
+      clinicName: 'Heart Care Specialists',
+      clinicAddress: '123 Clifton Road, Block 5, Karachi',
+      clinicPhone: '+92 21 35678901',
+      consultationFee: 5000,
+      followUpFee: 3000,
+      emergencyFee: 8000,
+      languages: ['English', 'Urdu', 'Sindhi'],
+      workingHours: {
+        'Monday': {'enabled': true, 'start': '10:00', 'end': '18:00'},
+        'Tuesday': {'enabled': true, 'start': '10:00', 'end': '18:00'},
+        'Wednesday': {'enabled': true, 'start': '10:00', 'end': '18:00'},
+        'Thursday': {'enabled': true, 'start': '10:00', 'end': '18:00'},
+        'Friday': {'enabled': false, 'start': '10:00', 'end': '18:00'},
+        'Saturday': {'enabled': true, 'start': '10:00', 'end': '14:00'},
+        'Sunday': {'enabled': false, 'start': '10:00', 'end': '18:00'},
+      },
+    ),
+    DoctorProfile(
+      name: 'Dr. Muhammad Ali Raza',
+      specialization: 'Pulmonologist',
+      qualifications: 'MBBS, FCPS (Pulmonology), PhD',
+      licenseNumber: 'PMC-34567-2010',
+      experienceYears: 18,
+      bio: 'Expert in respiratory medicine with extensive experience in COPD, asthma management, and sleep disorders. '
+           'Research interests include pulmonary rehabilitation and interventional pulmonology.',
+      phone: '+92 333 4567890',
+      email: 'dr.ali.raza@lungcare.pk',
+      clinicName: 'Breathing Easy Clinic',
+      clinicAddress: '78 F-7 Markaz, Islamabad',
+      clinicPhone: '+92 51 2345678',
+      consultationFee: 3500,
+      followUpFee: 2500,
+      emergencyFee: 5500,
+      languages: ['English', 'Urdu', 'Pashto'],
+      workingHours: {
+        'Monday': {'enabled': true, 'start': '08:00', 'end': '16:00'},
+        'Tuesday': {'enabled': true, 'start': '08:00', 'end': '16:00'},
+        'Wednesday': {'enabled': true, 'start': '08:00', 'end': '16:00'},
+        'Thursday': {'enabled': true, 'start': '08:00', 'end': '16:00'},
+        'Friday': {'enabled': true, 'start': '08:00', 'end': '12:00'},
+        'Saturday': {'enabled': false, 'start': '08:00', 'end': '16:00'},
+        'Sunday': {'enabled': false, 'start': '08:00', 'end': '16:00'},
+      },
+    ),
+    DoctorProfile(
+      name: 'Dr. Sarah Williams',
+      specialization: 'Psychiatrist',
+      qualifications: 'MD, DABPN, Fellowship in Child Psychiatry',
+      licenseNumber: 'PMC-45678-2014',
+      experienceYears: 10,
+      bio: 'Compassionate psychiatrist focusing on anxiety disorders, depression, and PTSD. '
+           'Trained in cognitive behavioral therapy and psychopharmacology.',
+      phone: '+92 312 7654321',
+      email: 'dr.sarah.williams@mindcare.pk',
+      clinicName: 'Mind Wellness Center',
+      clinicAddress: '56 DHA Phase 5, Lahore',
+      clinicPhone: '+92 42 37891234',
+      consultationFee: 4000,
+      followUpFee: 2500,
+      emergencyFee: 6000,
+      languages: ['English', 'Urdu'],
+      workingHours: {
+        'Monday': {'enabled': true, 'start': '11:00', 'end': '19:00'},
+        'Tuesday': {'enabled': true, 'start': '11:00', 'end': '19:00'},
+        'Wednesday': {'enabled': true, 'start': '11:00', 'end': '19:00'},
+        'Thursday': {'enabled': true, 'start': '11:00', 'end': '19:00'},
+        'Friday': {'enabled': true, 'start': '11:00', 'end': '17:00'},
+        'Saturday': {'enabled': true, 'start': '11:00', 'end': '15:00'},
+        'Sunday': {'enabled': false, 'start': '11:00', 'end': '19:00'},
+      },
+    ),
+    DoctorProfile(
+      name: 'Dr. Zainab Malik',
+      specialization: 'Gynecologist & Obstetrician',
+      qualifications: 'MBBS, MRCOG (UK), FCPS (Obs & Gynae)',
+      licenseNumber: 'PMC-56789-2011',
+      experienceYears: 14,
+      bio: 'Expert in high-risk pregnancies, fertility treatments, and minimally invasive gynecological surgery. '
+           'Passionate about women\'s health education and preventive care.',
+      phone: '+92 345 2345678',
+      email: 'dr.zainab.malik@womencare.pk',
+      clinicName: 'Women\'s Health Clinic',
+      clinicAddress: '90 Bahria Town Phase 4, Rawalpindi',
+      clinicPhone: '+92 51 5432109',
+      consultationFee: 3000,
+      followUpFee: 2000,
+      emergencyFee: 5000,
+      languages: ['English', 'Urdu', 'Punjabi'],
+      workingHours: {
+        'Monday': {'enabled': true, 'start': '09:00', 'end': '17:00'},
+        'Tuesday': {'enabled': true, 'start': '09:00', 'end': '17:00'},
+        'Wednesday': {'enabled': true, 'start': '09:00', 'end': '17:00'},
+        'Thursday': {'enabled': true, 'start': '09:00', 'end': '17:00'},
+        'Friday': {'enabled': true, 'start': '09:00', 'end': '14:00'},
+        'Saturday': {'enabled': true, 'start': '09:00', 'end': '13:00'},
+        'Sunday': {'enabled': false, 'start': '09:00', 'end': '17:00'},
+      },
+    ),
+  ];
+
+  /// Get default doctor profile for demo mode
+  static DoctorProfile get defaultDoctor => doctors.first;
+
+  /// Get doctor by specialization
+  static DoctorProfile? getDoctorBySpecialization(String specialization) {
+    try {
+      return doctors.firstWhere(
+        (d) => d.specialization.toLowerCase().contains(specialization.toLowerCase()),
+      );
+    } catch (e) {
+      return null;
+    }
+  }
 
   /// Sample patients for demo mode
   static List<Patient> get patients => [
@@ -16,8 +170,14 @@ class DemoData {
       email: 'sarah.johnson@email.com',
       address: '123 Oak Street, Springfield',
       medicalHistory: 'Diabetes Type 2, Hypertension',
+      allergies: 'Penicillin, Sulfa drugs',
       tags: 'regular,priority',
       riskLevel: 3,
+      gender: 'Female',
+      bloodType: 'O+',
+      emergencyContactName: 'Michael Johnson',
+      emergencyContactPhone: '+1 (555) 123-4568',
+      chronicConditions: 'Diabetes Type 2,Hypertension',
       createdAt: _baseDate.subtract(const Duration(days: 120)),
     ),
     Patient(
@@ -29,8 +189,14 @@ class DemoData {
       email: 'michael.chen@email.com',
       address: '456 Maple Avenue, Riverside',
       medicalHistory: 'Asthma, Allergies',
+      allergies: 'Pollen, Dust mites, Shellfish',
       tags: 'new',
       riskLevel: 2,
+      gender: 'Male',
+      bloodType: 'A+',
+      emergencyContactName: 'Linda Chen',
+      emergencyContactPhone: '+1 (555) 234-5679',
+      chronicConditions: 'Asthma',
       createdAt: _baseDate.subtract(const Duration(days: 45)),
     ),
     Patient(
@@ -42,8 +208,14 @@ class DemoData {
       email: 'emily.williams@email.com',
       address: '789 Pine Road, Lakewood',
       medicalHistory: 'Heart Disease, High Cholesterol',
+      allergies: '',
       tags: 'priority,followup',
       riskLevel: 5,
+      gender: 'Female',
+      bloodType: 'B+',
+      emergencyContactName: 'Richard Williams',
+      emergencyContactPhone: '+1 (555) 345-6780',
+      chronicConditions: 'Heart Disease,High Cholesterol',
       createdAt: _baseDate.subtract(const Duration(days: 200)),
     ),
     Patient(
@@ -55,8 +227,14 @@ class DemoData {
       email: 'james.r@email.com',
       address: '321 Elm Court, Meadowbrook',
       medicalHistory: 'Sports Injury',
+      allergies: 'Ibuprofen',
       tags: 'new',
       riskLevel: 1,
+      gender: 'Male',
+      bloodType: 'AB+',
+      emergencyContactName: 'Maria Rodriguez',
+      emergencyContactPhone: '+1 (555) 456-7891',
+      chronicConditions: '',
       createdAt: _baseDate.subtract(const Duration(days: 14)),
     ),
     Patient(
@@ -68,8 +246,14 @@ class DemoData {
       email: 'lisa.thompson@email.com',
       address: '654 Cedar Lane, Hillside',
       medicalHistory: 'Migraine, Anxiety',
+      allergies: 'Aspirin',
       tags: 'regular',
       riskLevel: 2,
+      gender: 'Female',
+      bloodType: 'O-',
+      emergencyContactName: 'Thomas Thompson',
+      emergencyContactPhone: '+1 (555) 567-8902',
+      chronicConditions: 'Migraine,Anxiety',
       createdAt: _baseDate.subtract(const Duration(days: 90)),
     ),
     Patient(
@@ -81,8 +265,14 @@ class DemoData {
       email: 'robert.davis@email.com',
       address: '987 Birch Street, Oakville',
       medicalHistory: 'COPD, Arthritis, Diabetes',
+      allergies: 'Codeine, Morphine',
       tags: 'priority,regular',
       riskLevel: 4,
+      gender: 'Male',
+      bloodType: 'A-',
+      emergencyContactName: 'Susan Davis',
+      emergencyContactPhone: '+1 (555) 678-9013',
+      chronicConditions: 'COPD,Arthritis,Diabetes',
       createdAt: _baseDate.subtract(const Duration(days: 365)),
     ),
     Patient(
@@ -94,8 +284,14 @@ class DemoData {
       email: 'amanda.m@email.com',
       address: '147 Walnut Drive, Sunnyvale',
       medicalHistory: 'Pregnancy, Gestational Diabetes',
+      allergies: 'Latex',
       tags: 'priority,new',
       riskLevel: 3,
+      gender: 'Female',
+      bloodType: 'B-',
+      emergencyContactName: 'Carlos Martinez',
+      emergencyContactPhone: '+1 (555) 789-0124',
+      chronicConditions: 'Gestational Diabetes',
       createdAt: _baseDate.subtract(const Duration(days: 30)),
     ),
     Patient(
@@ -107,8 +303,14 @@ class DemoData {
       email: 'david.brown@email.com',
       address: '258 Spruce Avenue, Greenfield',
       medicalHistory: 'Back Pain, Insomnia',
+      allergies: '',
       tags: 'followup',
       riskLevel: 2,
+      gender: 'Male',
+      bloodType: 'AB-',
+      emergencyContactName: 'Patricia Brown',
+      emergencyContactPhone: '+1 (555) 890-1235',
+      chronicConditions: 'Chronic Back Pain',
       createdAt: _baseDate.subtract(const Duration(days: 60)),
     ),
   ];
@@ -321,6 +523,230 @@ class DemoData {
     ),
   ];
 
+  /// Sample medical records for demo mode
+  static List<DemoMedicalRecord> get medicalRecords => [
+    DemoMedicalRecord(
+      id: 1,
+      patientId: 1,
+      patientName: 'Sarah Johnson',
+      recordType: 'general',
+      title: 'Diabetes Management Consultation',
+      description: 'Routine diabetes checkup and medication adjustment',
+      diagnosis: 'Type 2 Diabetes Mellitus, well-controlled',
+      treatment: 'Continue current medication regimen with minor adjustments',
+      doctorNotes: 'HbA1c improved from 7.2% to 6.8%. Patient showing good adherence to diet and exercise.',
+      recordDate: _baseDate.subtract(const Duration(days: 30)),
+    ),
+    DemoMedicalRecord(
+      id: 2,
+      patientId: 3,
+      patientName: 'Emily Williams',
+      recordType: 'general',
+      title: 'Cardiac Follow-up',
+      description: 'Post-stent placement follow-up',
+      diagnosis: 'Coronary Artery Disease, stable',
+      treatment: 'Continue dual antiplatelet therapy',
+      doctorNotes: 'ECG shows normal sinus rhythm. No chest pain or dyspnea reported.',
+      recordDate: _baseDate.subtract(const Duration(days: 14)),
+    ),
+    DemoMedicalRecord(
+      id: 3,
+      patientId: 2,
+      patientName: 'Michael Chen',
+      recordType: 'pulmonary_evaluation',
+      title: 'Asthma Evaluation',
+      description: 'Pulmonary function testing and medication review',
+      diagnosis: 'Moderate Persistent Asthma',
+      treatment: 'Step up controller therapy, add LABA',
+      doctorNotes: 'FEV1 72% predicted. Increased nighttime symptoms.',
+      recordDate: _baseDate.subtract(const Duration(days: 21)),
+    ),
+    DemoMedicalRecord(
+      id: 4,
+      patientId: 6,
+      patientName: 'Robert Davis',
+      recordType: 'pulmonary_evaluation',
+      title: 'COPD Assessment',
+      description: 'Comprehensive COPD evaluation with spirometry',
+      diagnosis: 'COPD Gold Stage III',
+      treatment: 'Triple inhaler therapy, pulmonary rehabilitation referral',
+      doctorNotes: 'FEV1 45% predicted. Oxygen saturation 94% on room air.',
+      recordDate: _baseDate.subtract(const Duration(days: 7)),
+    ),
+    DemoMedicalRecord(
+      id: 5,
+      patientId: 5,
+      patientName: 'Lisa Thompson',
+      recordType: 'psychiatric_assessment',
+      title: 'Anxiety Assessment',
+      description: 'Initial psychiatric evaluation for anxiety symptoms',
+      diagnosis: 'Generalized Anxiety Disorder',
+      treatment: 'CBT referral, consider SSRI if no improvement',
+      doctorNotes: 'GAD-7 score: 14 (moderate). Sleep disturbance present.',
+      recordDate: _baseDate.subtract(const Duration(days: 45)),
+    ),
+    DemoMedicalRecord(
+      id: 6,
+      patientId: 7,
+      patientName: 'Amanda Martinez',
+      recordType: 'follow_up',
+      title: 'Prenatal Checkup - 28 Weeks',
+      description: 'Third trimester routine checkup',
+      diagnosis: 'Normal pregnancy, 28 weeks gestation',
+      treatment: 'Continue prenatal vitamins, glucose tolerance test ordered',
+      doctorNotes: 'Fetal heart rate 145 bpm. Fundal height appropriate for dates.',
+      recordDate: _baseDate.subtract(const Duration(days: 10)),
+    ),
+    DemoMedicalRecord(
+      id: 7,
+      patientId: 4,
+      patientName: 'James Rodriguez',
+      recordType: 'imaging',
+      title: 'Knee MRI Report',
+      description: 'MRI of right knee following sports injury',
+      diagnosis: 'Partial ACL tear, mild meniscal damage',
+      treatment: 'Physical therapy, possible arthroscopic surgery',
+      doctorNotes: 'Grade II ACL sprain. Recommend conservative management first.',
+      recordDate: _baseDate.subtract(const Duration(days: 12)),
+    ),
+    DemoMedicalRecord(
+      id: 8,
+      patientId: 1,
+      patientName: 'Sarah Johnson',
+      recordType: 'lab_result',
+      title: 'HbA1c and Lipid Panel',
+      description: 'Routine diabetic monitoring labs',
+      diagnosis: 'Diabetes Type 2 with mild dyslipidemia',
+      treatment: 'Consider statin therapy for elevated LDL',
+      doctorNotes: 'HbA1c: 6.8%, LDL: 142 mg/dL, HDL: 48 mg/dL',
+      recordDate: _baseDate.subtract(const Duration(days: 5)),
+    ),
+  ];
+
+  /// Sample invoices for demo mode
+  static List<DemoInvoice> get invoices => [
+    DemoInvoice(
+      id: 1,
+      patientId: 1,
+      patientName: 'Sarah Johnson',
+      invoiceNumber: 'INV-2024-001',
+      invoiceDate: _baseDate.subtract(const Duration(days: 7)),
+      items: [
+        DemoInvoiceItem(description: 'Consultation Fee', quantity: 1, unitPrice: 2000),
+        DemoInvoiceItem(description: 'Blood Sugar Test', quantity: 1, unitPrice: 500),
+        DemoInvoiceItem(description: 'HbA1c Test', quantity: 1, unitPrice: 1500),
+      ],
+      subtotal: 4000,
+      discountPercent: 10,
+      discountAmount: 400,
+      taxPercent: 0,
+      taxAmount: 0,
+      grandTotal: 3600,
+      paymentStatus: 'Paid',
+      paymentMethod: 'Cash',
+    ),
+    DemoInvoice(
+      id: 2,
+      patientId: 3,
+      patientName: 'Emily Williams',
+      invoiceNumber: 'INV-2024-002',
+      invoiceDate: _baseDate.subtract(const Duration(days: 5)),
+      items: [
+        DemoInvoiceItem(description: 'Cardiac Consultation', quantity: 1, unitPrice: 5000),
+        DemoInvoiceItem(description: 'ECG', quantity: 1, unitPrice: 1000),
+        DemoInvoiceItem(description: 'Echo Report Review', quantity: 1, unitPrice: 500),
+      ],
+      subtotal: 6500,
+      discountPercent: 0,
+      discountAmount: 0,
+      taxPercent: 0,
+      taxAmount: 0,
+      grandTotal: 6500,
+      paymentStatus: 'Paid',
+      paymentMethod: 'Card',
+    ),
+    DemoInvoice(
+      id: 3,
+      patientId: 2,
+      patientName: 'Michael Chen',
+      invoiceNumber: 'INV-2024-003',
+      invoiceDate: _baseDate.subtract(const Duration(days: 3)),
+      items: [
+        DemoInvoiceItem(description: 'Follow-up Consultation', quantity: 1, unitPrice: 1500),
+        DemoInvoiceItem(description: 'Spirometry Test', quantity: 1, unitPrice: 2000),
+      ],
+      subtotal: 3500,
+      discountPercent: 0,
+      discountAmount: 0,
+      taxPercent: 0,
+      taxAmount: 0,
+      grandTotal: 3500,
+      paymentStatus: 'Pending',
+      paymentMethod: 'Cash',
+    ),
+    DemoInvoice(
+      id: 4,
+      patientId: 7,
+      patientName: 'Amanda Martinez',
+      invoiceNumber: 'INV-2024-004',
+      invoiceDate: _baseDate.subtract(const Duration(days: 10)),
+      items: [
+        DemoInvoiceItem(description: 'Prenatal Checkup', quantity: 1, unitPrice: 3000),
+        DemoInvoiceItem(description: 'Ultrasound', quantity: 1, unitPrice: 2500),
+        DemoInvoiceItem(description: 'Blood Work Panel', quantity: 1, unitPrice: 1800),
+      ],
+      subtotal: 7300,
+      discountPercent: 5,
+      discountAmount: 365,
+      taxPercent: 0,
+      taxAmount: 0,
+      grandTotal: 6935,
+      paymentStatus: 'Paid',
+      paymentMethod: 'Online',
+    ),
+    DemoInvoice(
+      id: 5,
+      patientId: 4,
+      patientName: 'James Rodriguez',
+      invoiceNumber: 'INV-2024-005',
+      invoiceDate: _baseDate.subtract(const Duration(days: 12)),
+      items: [
+        DemoInvoiceItem(description: 'Sports Injury Consultation', quantity: 1, unitPrice: 2500),
+        DemoInvoiceItem(description: 'MRI Interpretation', quantity: 1, unitPrice: 1000),
+      ],
+      subtotal: 3500,
+      discountPercent: 0,
+      discountAmount: 0,
+      taxPercent: 0,
+      taxAmount: 0,
+      grandTotal: 3500,
+      paymentStatus: 'Pending',
+      paymentMethod: 'Cash',
+    ),
+    DemoInvoice(
+      id: 6,
+      patientId: 6,
+      patientName: 'Robert Davis',
+      invoiceNumber: 'INV-2024-006',
+      invoiceDate: _baseDate,
+      items: [
+        DemoInvoiceItem(description: 'COPD Consultation', quantity: 1, unitPrice: 3500),
+        DemoInvoiceItem(description: 'Spirometry', quantity: 1, unitPrice: 2000),
+        DemoInvoiceItem(description: 'Oxygen Saturation Test', quantity: 1, unitPrice: 300),
+        DemoInvoiceItem(description: 'Chest X-Ray Review', quantity: 1, unitPrice: 500),
+      ],
+      subtotal: 6300,
+      discountPercent: 15,
+      discountAmount: 945,
+      taxPercent: 0,
+      taxAmount: 0,
+      grandTotal: 5355,
+      paymentStatus: 'Partial',
+      paymentMethod: 'Cash',
+      notes: 'Paid Rs. 3000 upfront, remaining Rs. 2355 due next visit',
+    ),
+  ];
+
   /// Get appointments for a specific day
   static List<Appointment> getAppointmentsForDay(DateTime day) {
     final dayStart = DateTime(day.year, day.month, day.day);
@@ -339,6 +765,30 @@ class DemoData {
     } catch (e) {
       return null;
     }
+  }
+
+  /// Get medical records for a patient
+  static List<DemoMedicalRecord> getMedicalRecordsForPatient(int patientId) {
+    return medicalRecords.where((r) => r.patientId == patientId).toList();
+  }
+
+  /// Get invoices for a patient
+  static List<DemoInvoice> getInvoicesForPatient(int patientId) {
+    return invoices.where((i) => i.patientId == patientId).toList();
+  }
+
+  /// Get total revenue from invoices
+  static double get totalRevenue {
+    return invoices
+        .where((i) => i.paymentStatus == 'Paid')
+        .fold(0.0, (sum, i) => sum + i.grandTotal);
+  }
+
+  /// Get pending revenue
+  static double get pendingRevenue {
+    return invoices
+        .where((i) => i.paymentStatus != 'Paid')
+        .fold(0.0, (sum, i) => sum + i.grandTotal);
   }
 
   /// Get today's appointment count
@@ -383,4 +833,83 @@ class DemoPrescription {
   final String instructions;
   final bool isRefillable;
   final String status;
+}
+
+/// Demo medical record class for display
+class DemoMedicalRecord {
+
+  DemoMedicalRecord({
+    required this.id,
+    required this.patientId,
+    required this.patientName,
+    required this.recordType,
+    required this.title,
+    required this.description,
+    required this.diagnosis,
+    required this.treatment,
+    required this.doctorNotes,
+    required this.recordDate,
+  });
+  final int id;
+  final int patientId;
+  final String patientName;
+  final String recordType;
+  final String title;
+  final String description;
+  final String diagnosis;
+  final String treatment;
+  final String doctorNotes;
+  final DateTime recordDate;
+}
+
+/// Demo invoice item class
+class DemoInvoiceItem {
+
+  DemoInvoiceItem({
+    required this.description,
+    required this.quantity,
+    required this.unitPrice,
+  });
+  final String description;
+  final int quantity;
+  final double unitPrice;
+  
+  double get total => quantity * unitPrice;
+}
+
+/// Demo invoice class for display
+class DemoInvoice {
+
+  DemoInvoice({
+    required this.id,
+    required this.patientId,
+    required this.patientName,
+    required this.invoiceNumber,
+    required this.invoiceDate,
+    required this.items,
+    required this.subtotal,
+    required this.discountPercent,
+    required this.discountAmount,
+    required this.taxPercent,
+    required this.taxAmount,
+    required this.grandTotal,
+    required this.paymentStatus,
+    required this.paymentMethod,
+    this.notes,
+  });
+  final int id;
+  final int patientId;
+  final String patientName;
+  final String invoiceNumber;
+  final DateTime invoiceDate;
+  final List<DemoInvoiceItem> items;
+  final double subtotal;
+  final double discountPercent;
+  final double discountAmount;
+  final double taxPercent;
+  final double taxAmount;
+  final double grandTotal;
+  final String paymentStatus;
+  final String paymentMethod;
+  final String? notes;
 }

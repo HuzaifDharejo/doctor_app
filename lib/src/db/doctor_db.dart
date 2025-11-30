@@ -15,8 +15,16 @@ class Patients extends Table {
   TextColumn get email => text().withDefault(const Constant(''))();
   TextColumn get address => text().withDefault(const Constant(''))();
   TextColumn get medicalHistory => text().withDefault(const Constant(''))();
+  TextColumn get allergies => text().withDefault(const Constant(''))(); // comma-separated allergies
   TextColumn get tags => text().withDefault(const Constant(''))(); // comma-separated
   IntColumn get riskLevel => integer().withDefault(const Constant(0))();
+  TextColumn get gender => text().withDefault(const Constant(''))();
+  TextColumn get bloodType => text().withDefault(const Constant(''))();
+  TextColumn get emergencyContactName => text().withDefault(const Constant(''))();
+  TextColumn get emergencyContactPhone => text().withDefault(const Constant(''))();
+  RealColumn get height => real().nullable()(); // in cm
+  RealColumn get weight => real().nullable()(); // in kg
+  TextColumn get chronicConditions => text().withDefault(const Constant(''))(); // comma-separated
   DateTimeColumn get createdAt => dateTime().withDefault(currentDateAndTime)();
 }
 
@@ -29,6 +37,7 @@ class Appointments extends Table {
   TextColumn get status => text().withDefault(const Constant('scheduled'))();
   DateTimeColumn get reminderAt => dateTime().nullable()();
   TextColumn get notes => text().withDefault(const Constant(''))();
+  IntColumn get medicalRecordId => integer().nullable().references(MedicalRecords, #id)(); // Link to assessment done during visit
   DateTimeColumn get createdAt => dateTime().withDefault(currentDateAndTime)();
 }
 
@@ -39,6 +48,11 @@ class Prescriptions extends Table {
   TextColumn get itemsJson => text()();
   TextColumn get instructions => text().withDefault(const Constant(''))();
   BoolColumn get isRefillable => boolean().withDefault(const Constant(false))();
+  IntColumn get appointmentId => integer().nullable().references(Appointments, #id)(); // Link to appointment where prescribed
+  IntColumn get medicalRecordId => integer().nullable().references(MedicalRecords, #id)(); // Link to diagnosis/assessment
+  TextColumn get diagnosis => text().withDefault(const Constant(''))(); // Diagnosis for which prescribed
+  TextColumn get chiefComplaint => text().withDefault(const Constant(''))(); // Chief complaint
+  TextColumn get vitalsJson => text().withDefault(const Constant('{}'))(); // Vital signs at time of prescription
 }
 
 class MedicalRecords extends Table {
@@ -71,7 +85,145 @@ class Invoices extends Table {
   TextColumn get paymentMethod => text().withDefault(const Constant('Cash'))();
   TextColumn get paymentStatus => text().withDefault(const Constant('Pending'))(); // 'Pending', 'Partial', 'Paid', 'Overdue'
   TextColumn get notes => text().withDefault(const Constant(''))();
+  IntColumn get appointmentId => integer().nullable().references(Appointments, #id)(); // Link to appointment for which billing
+  IntColumn get prescriptionId => integer().nullable().references(Prescriptions, #id)(); // Link to prescription items
+  IntColumn get treatmentSessionId => integer().nullable().references(TreatmentSessions, #id)(); // Link to treatment session
   DateTimeColumn get createdAt => dateTime().withDefault(currentDateAndTime)();
+}
+
+/// Vital Signs tracking for patients
+class VitalSigns extends Table {
+  IntColumn get id => integer().autoIncrement()();
+  IntColumn get patientId => integer().references(Patients, #id)();
+  DateTimeColumn get recordedAt => dateTime()();
+  RealColumn get systolicBp => real().nullable()(); // mmHg
+  RealColumn get diastolicBp => real().nullable()(); // mmHg
+  IntColumn get heartRate => integer().nullable()(); // bpm
+  RealColumn get temperature => real().nullable()(); // Celsius
+  IntColumn get respiratoryRate => integer().nullable()(); // breaths/min
+  RealColumn get oxygenSaturation => real().nullable()(); // SpO2 %
+  RealColumn get weight => real().nullable()(); // kg
+  RealColumn get height => real().nullable()(); // cm
+  RealColumn get bmi => real().nullable()(); // calculated
+  IntColumn get painLevel => integer().nullable()(); // 0-10 scale
+  TextColumn get bloodGlucose => text().withDefault(const Constant(''))(); // mg/dL
+  TextColumn get notes => text().withDefault(const Constant(''))();
+  IntColumn get recordedByAppointmentId => integer().nullable()(); // Link to appointment
+  DateTimeColumn get createdAt => dateTime().withDefault(currentDateAndTime)();
+}
+
+/// Treatment outcomes for tracking effectiveness
+class TreatmentOutcomes extends Table {
+  IntColumn get id => integer().autoIncrement()();
+  IntColumn get patientId => integer().references(Patients, #id)();
+  IntColumn get prescriptionId => integer().nullable()(); // Link to prescription
+  IntColumn get medicalRecordId => integer().nullable()(); // Link to record
+  TextColumn get treatmentType => text()(); // 'medication', 'therapy', 'procedure', 'lifestyle', 'combination'
+  TextColumn get treatmentDescription => text()();
+  TextColumn get providerType => text().withDefault(const Constant('psychiatrist'))(); // 'psychiatrist', 'therapist', 'counselor', 'primary_care'
+  TextColumn get providerName => text().withDefault(const Constant(''))();
+  TextColumn get diagnosis => text().withDefault(const Constant(''))(); // Primary diagnosis being treated
+  DateTimeColumn get startDate => dateTime()();
+  DateTimeColumn get endDate => dateTime().nullable()();
+  TextColumn get outcome => text().withDefault(const Constant('ongoing'))(); // 'improved', 'stable', 'worsened', 'resolved', 'ongoing'
+  IntColumn get effectivenessScore => integer().nullable()(); // 1-10 scale
+  TextColumn get sideEffects => text().withDefault(const Constant(''))();
+  TextColumn get patientFeedback => text().withDefault(const Constant(''))();
+  TextColumn get treatmentPhase => text().withDefault(const Constant('acute'))(); // 'acute', 'continuation', 'maintenance'
+  TextColumn get notes => text().withDefault(const Constant(''))();
+  DateTimeColumn get lastReviewDate => dateTime().nullable()();
+  DateTimeColumn get nextReviewDate => dateTime().nullable()();
+  DateTimeColumn get createdAt => dateTime().withDefault(currentDateAndTime)();
+}
+
+/// Scheduled follow-ups for automation
+class ScheduledFollowUps extends Table {
+  IntColumn get id => integer().autoIncrement()();
+  IntColumn get patientId => integer().references(Patients, #id)();
+  IntColumn get sourceAppointmentId => integer().nullable()(); // Original appointment
+  IntColumn get sourcePrescriptionId => integer().nullable()(); // If follow-up for prescription
+  DateTimeColumn get scheduledDate => dateTime()();
+  TextColumn get reason => text()();
+  TextColumn get status => text().withDefault(const Constant('pending'))(); // 'pending', 'scheduled', 'completed', 'cancelled'
+  IntColumn get createdAppointmentId => integer().nullable()(); // When converted to appointment
+  BoolColumn get reminderSent => boolean().withDefault(const Constant(false))();
+  TextColumn get notes => text().withDefault(const Constant(''))();
+  DateTimeColumn get createdAt => dateTime().withDefault(currentDateAndTime)();
+}
+
+/// Treatment Sessions - Session notes linked to assessments
+class TreatmentSessions extends Table {
+  IntColumn get id => integer().autoIncrement()();
+  IntColumn get patientId => integer().references(Patients, #id)();
+  IntColumn get treatmentOutcomeId => integer().nullable()(); // Link to treatment being tracked
+  IntColumn get appointmentId => integer().nullable()(); // Link to appointment
+  IntColumn get medicalRecordId => integer().nullable()(); // Link to assessment/record
+  DateTimeColumn get sessionDate => dateTime()();
+  TextColumn get providerType => text().withDefault(const Constant('psychiatrist'))(); // 'psychiatrist', 'therapist', 'counselor', 'nurse'
+  TextColumn get providerName => text().withDefault(const Constant(''))();
+  TextColumn get sessionType => text().withDefault(const Constant('individual'))(); // 'individual', 'group', 'family', 'couples'
+  IntColumn get durationMinutes => integer().withDefault(const Constant(50))();
+  TextColumn get presentingConcerns => text().withDefault(const Constant(''))();
+  TextColumn get sessionNotes => text().withDefault(const Constant(''))();
+  TextColumn get interventionsUsed => text().withDefault(const Constant(''))(); // JSON array
+  TextColumn get patientMood => text().withDefault(const Constant(''))(); // e.g., 'anxious', 'depressed', 'stable'
+  IntColumn get moodRating => integer().nullable()(); // 1-10 scale
+  TextColumn get progressNotes => text().withDefault(const Constant(''))();
+  TextColumn get homeworkAssigned => text().withDefault(const Constant(''))();
+  TextColumn get homeworkReview => text().withDefault(const Constant(''))(); // Review of previous homework
+  TextColumn get riskAssessment => text().withDefault(const Constant(''))(); // 'none', 'low', 'moderate', 'high'
+  TextColumn get planForNextSession => text().withDefault(const Constant(''))();
+  BoolColumn get isBillable => boolean().withDefault(const Constant(true))();
+  DateTimeColumn get createdAt => dateTime().withDefault(currentDateAndTime)();
+}
+
+/// Medication Responses - Track medication effectiveness and side effects
+class MedicationResponses extends Table {
+  IntColumn get id => integer().autoIncrement()();
+  IntColumn get patientId => integer().references(Patients, #id)();
+  IntColumn get prescriptionId => integer().nullable()(); // Link to prescription
+  IntColumn get treatmentOutcomeId => integer().nullable()(); // Link to treatment outcome
+  TextColumn get medicationName => text()();
+  TextColumn get dosage => text().withDefault(const Constant(''))();
+  TextColumn get frequency => text().withDefault(const Constant(''))();
+  DateTimeColumn get startDate => dateTime()();
+  DateTimeColumn get endDate => dateTime().nullable()();
+  TextColumn get responseStatus => text().withDefault(const Constant('monitoring'))(); // 'effective', 'partial', 'ineffective', 'monitoring', 'discontinued'
+  IntColumn get effectivenessScore => integer().nullable()(); // 1-10 scale
+  TextColumn get targetSymptoms => text().withDefault(const Constant(''))(); // JSON array of symptoms being treated
+  TextColumn get symptomImprovement => text().withDefault(const Constant(''))(); // JSON: symptom -> improvement level
+  TextColumn get sideEffects => text().withDefault(const Constant(''))(); // JSON array of side effects
+  TextColumn get sideEffectSeverity => text().withDefault(const Constant('none'))(); // 'none', 'mild', 'moderate', 'severe'
+  BoolColumn get adherent => boolean().withDefault(const Constant(true))();
+  TextColumn get adherenceNotes => text().withDefault(const Constant(''))();
+  TextColumn get labsRequired => text().withDefault(const Constant(''))(); // Labs needed for monitoring
+  DateTimeColumn get nextLabDate => dateTime().nullable()();
+  TextColumn get providerNotes => text().withDefault(const Constant(''))();
+  TextColumn get patientFeedback => text().withDefault(const Constant(''))();
+  DateTimeColumn get lastReviewDate => dateTime().nullable()();
+  DateTimeColumn get createdAt => dateTime().withDefault(currentDateAndTime)();
+}
+
+/// Treatment Goals - Track progress toward treatment goals
+class TreatmentGoals extends Table {
+  IntColumn get id => integer().autoIncrement()();
+  IntColumn get patientId => integer().references(Patients, #id)();
+  IntColumn get treatmentOutcomeId => integer().nullable()(); // Link to overall treatment
+  TextColumn get goalCategory => text().withDefault(const Constant('symptom'))(); // 'symptom', 'functional', 'behavioral', 'cognitive', 'interpersonal'
+  TextColumn get goalDescription => text()();
+  TextColumn get targetBehavior => text().withDefault(const Constant(''))(); // Specific measurable behavior
+  TextColumn get baselineMeasure => text().withDefault(const Constant(''))(); // Starting point
+  TextColumn get targetMeasure => text().withDefault(const Constant(''))(); // Goal to achieve
+  TextColumn get currentMeasure => text().withDefault(const Constant(''))(); // Current progress
+  IntColumn get progressPercent => integer().withDefault(const Constant(0))(); // 0-100%
+  TextColumn get status => text().withDefault(const Constant('active'))(); // 'active', 'achieved', 'modified', 'discontinued'
+  DateTimeColumn get targetDate => dateTime().nullable()();
+  TextColumn get interventions => text().withDefault(const Constant(''))(); // JSON array of interventions used
+  TextColumn get barriers => text().withDefault(const Constant(''))(); // Barriers to progress
+  TextColumn get progressNotes => text().withDefault(const Constant(''))(); // JSON array of progress entries
+  IntColumn get priority => integer().withDefault(const Constant(1))(); // 1=high, 2=medium, 3=low
+  DateTimeColumn get createdAt => dateTime().withDefault(currentDateAndTime)();
+  DateTimeColumn get achievedAt => dateTime().nullable()();
 }
 
 /// Model to hold a medical record with its associated patient
@@ -82,7 +234,7 @@ class MedicalRecordWithPatient {
   final Patient patient;
 }
 
-@DriftDatabase(tables: [Patients, Appointments, Prescriptions, MedicalRecords, Invoices])
+@DriftDatabase(tables: [Patients, Appointments, Prescriptions, MedicalRecords, Invoices, VitalSigns, TreatmentOutcomes, ScheduledFollowUps, TreatmentSessions, MedicationResponses, TreatmentGoals])
 class DoctorDatabase extends _$DoctorDatabase {
   DoctorDatabase() : super(impl.openConnection());
   
@@ -91,7 +243,56 @@ class DoctorDatabase extends _$DoctorDatabase {
   DoctorDatabase.forTesting(super.e);
 
   @override
-  int get schemaVersion => 1;
+  int get schemaVersion => 4;
+
+  @override
+  MigrationStrategy get migration => MigrationStrategy(
+    onCreate: (Migrator m) async {
+      await m.createAll();
+    },
+    onUpgrade: (Migrator m, int from, int to) async {
+      if (from < 2) {
+        // Add new tables for clinical decision support
+        await m.createTable(vitalSigns);
+        await m.createTable(treatmentOutcomes);
+        await m.createTable(scheduledFollowUps);
+        
+        // Add allergies column to patients table if not exists
+        await m.addColumn(patients, patients.allergies);
+      }
+      if (from < 3) {
+        // Add new tables for enhanced treatment tracking
+        await m.createTable(treatmentSessions);
+        await m.createTable(medicationResponses);
+        await m.createTable(treatmentGoals);
+        
+        // Add new columns to treatment outcomes
+        await m.addColumn(treatmentOutcomes, treatmentOutcomes.providerType);
+        await m.addColumn(treatmentOutcomes, treatmentOutcomes.providerName);
+        await m.addColumn(treatmentOutcomes, treatmentOutcomes.diagnosis);
+        await m.addColumn(treatmentOutcomes, treatmentOutcomes.treatmentPhase);
+        await m.addColumn(treatmentOutcomes, treatmentOutcomes.lastReviewDate);
+        await m.addColumn(treatmentOutcomes, treatmentOutcomes.nextReviewDate);
+      }
+      if (from < 4) {
+        // Add relationship columns for data integrity
+        // Appointments now link to medical records
+        await m.addColumn(appointments, appointments.medicalRecordId);
+        
+        // Prescriptions now link to appointments and medical records with diagnosis context
+        await m.addColumn(prescriptions, prescriptions.appointmentId);
+        await m.addColumn(prescriptions, prescriptions.medicalRecordId);
+        await m.addColumn(prescriptions, prescriptions.diagnosis);
+        await m.addColumn(prescriptions, prescriptions.chiefComplaint);
+        await m.addColumn(prescriptions, prescriptions.vitalsJson);
+        
+        // Invoices now link to appointments, prescriptions, and treatment sessions
+        await m.addColumn(invoices, invoices.appointmentId);
+        await m.addColumn(invoices, invoices.prescriptionId);
+        await m.addColumn(invoices, invoices.treatmentSessionId);
+      }
+    },
+  );
 
   // Patient CRUD
   Future<int> insertPatient(Insertable<Patient> p) => into(patients).insert(p);
@@ -194,5 +395,597 @@ class DoctorDatabase extends _$DoctorDatabase {
       'paid': paid,
       'pendingCount': pendingCount.toDouble(),
     };
+  }
+
+  // Vital Signs CRUD
+  Future<int> insertVitalSigns(Insertable<VitalSign> v) => into(vitalSigns).insert(v);
+  Future<List<VitalSign>> getAllVitalSigns() => select(vitalSigns).get();
+  Future<List<VitalSign>> getVitalSignsForPatient(int patientId) {
+    return (select(vitalSigns)
+      ..where((v) => v.patientId.equals(patientId))
+      ..orderBy([(v) => OrderingTerm.desc(v.recordedAt)]))
+      .get();
+  }
+  Future<VitalSign?> getVitalSignById(int id) =>
+    (select(vitalSigns)..where((v) => v.id.equals(id))).getSingleOrNull();
+  Future<VitalSign?> getLatestVitalSignsForPatient(int patientId) {
+    return (select(vitalSigns)
+      ..where((v) => v.patientId.equals(patientId))
+      ..orderBy([(v) => OrderingTerm.desc(v.recordedAt)])
+      ..limit(1))
+      .getSingleOrNull();
+  }
+  Future<bool> updateVitalSigns(Insertable<VitalSign> v) => update(vitalSigns).replace(v);
+  Future<int> deleteVitalSigns(int id) => (delete(vitalSigns)..where((v) => v.id.equals(id))).go();
+
+  // Treatment Outcome CRUD
+  Future<int> insertTreatmentOutcome(Insertable<TreatmentOutcome> t) => into(treatmentOutcomes).insert(t);
+  Future<List<TreatmentOutcome>> getAllTreatmentOutcomes() => select(treatmentOutcomes).get();
+  Future<List<TreatmentOutcome>> getTreatmentOutcomesForPatient(int patientId) {
+    return (select(treatmentOutcomes)
+      ..where((t) => t.patientId.equals(patientId))
+      ..orderBy([(t) => OrderingTerm.desc(t.startDate)]))
+      .get();
+  }
+  Future<TreatmentOutcome?> getTreatmentOutcomeById(int id) =>
+    (select(treatmentOutcomes)..where((t) => t.id.equals(id))).getSingleOrNull();
+  Future<List<TreatmentOutcome>> getOngoingTreatmentsForPatient(int patientId) {
+    return (select(treatmentOutcomes)
+      ..where((t) => t.patientId.equals(patientId) & t.outcome.equals('ongoing')))
+      .get();
+  }
+  Future<bool> updateTreatmentOutcome(Insertable<TreatmentOutcome> t) => update(treatmentOutcomes).replace(t);
+  Future<int> deleteTreatmentOutcome(int id) => (delete(treatmentOutcomes)..where((t) => t.id.equals(id))).go();
+
+  // Scheduled Follow-Up CRUD
+  Future<int> insertScheduledFollowUp(Insertable<ScheduledFollowUp> f) => into(scheduledFollowUps).insert(f);
+  Future<List<ScheduledFollowUp>> getAllScheduledFollowUps() => select(scheduledFollowUps).get();
+  Future<List<ScheduledFollowUp>> getScheduledFollowUpsForPatient(int patientId) {
+    return (select(scheduledFollowUps)
+      ..where((f) => f.patientId.equals(patientId))
+      ..orderBy([(f) => OrderingTerm.asc(f.scheduledDate)]))
+      .get();
+  }
+  Future<ScheduledFollowUp?> getScheduledFollowUpById(int id) =>
+    (select(scheduledFollowUps)..where((f) => f.id.equals(id))).getSingleOrNull();
+  Future<List<ScheduledFollowUp>> getPendingFollowUps() {
+    return (select(scheduledFollowUps)
+      ..where((f) => f.status.equals('pending'))
+      ..orderBy([(f) => OrderingTerm.asc(f.scheduledDate)]))
+      .get();
+  }
+  Future<List<ScheduledFollowUp>> getOverdueFollowUps() {
+    final now = DateTime.now();
+    return (select(scheduledFollowUps)
+      ..where((f) => f.status.equals('pending') & f.scheduledDate.isSmallerThanValue(now)))
+      .get();
+  }
+  Future<bool> updateScheduledFollowUp(Insertable<ScheduledFollowUp> f) => update(scheduledFollowUps).replace(f);
+  Future<int> deleteScheduledFollowUp(int id) => (delete(scheduledFollowUps)..where((f) => f.id.equals(id))).go();
+
+  // Treatment Session CRUD
+  Future<int> insertTreatmentSession(Insertable<TreatmentSession> s) => into(treatmentSessions).insert(s);
+  Future<List<TreatmentSession>> getAllTreatmentSessions() => select(treatmentSessions).get();
+  Future<List<TreatmentSession>> getTreatmentSessionsForPatient(int patientId) {
+    return (select(treatmentSessions)
+      ..where((s) => s.patientId.equals(patientId))
+      ..orderBy([(s) => OrderingTerm.desc(s.sessionDate)]))
+      .get();
+  }
+  Future<List<TreatmentSession>> getTreatmentSessionsForTreatment(int treatmentOutcomeId) {
+    return (select(treatmentSessions)
+      ..where((s) => s.treatmentOutcomeId.equals(treatmentOutcomeId))
+      ..orderBy([(s) => OrderingTerm.desc(s.sessionDate)]))
+      .get();
+  }
+  Future<List<TreatmentSession>> getSessionsByProvider(String providerType) {
+    return (select(treatmentSessions)
+      ..where((s) => s.providerType.equals(providerType))
+      ..orderBy([(s) => OrderingTerm.desc(s.sessionDate)]))
+      .get();
+  }
+  Future<TreatmentSession?> getTreatmentSessionById(int id) =>
+    (select(treatmentSessions)..where((s) => s.id.equals(id))).getSingleOrNull();
+  Future<bool> updateTreatmentSession(Insertable<TreatmentSession> s) => update(treatmentSessions).replace(s);
+  Future<int> deleteTreatmentSession(int id) => (delete(treatmentSessions)..where((s) => s.id.equals(id))).go();
+
+  // Medication Response CRUD
+  Future<int> insertMedicationResponse(Insertable<MedicationResponse> m) => into(medicationResponses).insert(m);
+  Future<List<MedicationResponse>> getAllMedicationResponses() => select(medicationResponses).get();
+  Future<List<MedicationResponse>> getMedicationResponsesForPatient(int patientId) {
+    return (select(medicationResponses)
+      ..where((m) => m.patientId.equals(patientId))
+      ..orderBy([(m) => OrderingTerm.desc(m.startDate)]))
+      .get();
+  }
+  Future<List<MedicationResponse>> getActiveMedicationResponses(int patientId) {
+    return (select(medicationResponses)
+      ..where((m) => m.patientId.equals(patientId) & m.endDate.isNull())
+      ..orderBy([(m) => OrderingTerm.desc(m.startDate)]))
+      .get();
+  }
+  Future<List<MedicationResponse>> getMedicationsWithSideEffects(int patientId) {
+    return (select(medicationResponses)
+      ..where((m) => m.patientId.equals(patientId) & m.sideEffectSeverity.isNotIn(['none', ''])))
+      .get();
+  }
+  Future<MedicationResponse?> getMedicationResponseById(int id) =>
+    (select(medicationResponses)..where((m) => m.id.equals(id))).getSingleOrNull();
+  Future<bool> updateMedicationResponse(Insertable<MedicationResponse> m) => update(medicationResponses).replace(m);
+  Future<int> deleteMedicationResponse(int id) => (delete(medicationResponses)..where((m) => m.id.equals(id))).go();
+
+  // Treatment Goal CRUD
+  Future<int> insertTreatmentGoal(Insertable<TreatmentGoal> g) => into(treatmentGoals).insert(g);
+  Future<List<TreatmentGoal>> getAllTreatmentGoals() => select(treatmentGoals).get();
+  Future<List<TreatmentGoal>> getTreatmentGoalsForPatient(int patientId) {
+    return (select(treatmentGoals)
+      ..where((g) => g.patientId.equals(patientId))
+      ..orderBy([(g) => OrderingTerm.asc(g.priority), (g) => OrderingTerm.desc(g.createdAt)]))
+      .get();
+  }
+  Future<List<TreatmentGoal>> getActiveGoalsForPatient(int patientId) {
+    return (select(treatmentGoals)
+      ..where((g) => g.patientId.equals(patientId) & g.status.equals('active'))
+      ..orderBy([(g) => OrderingTerm.asc(g.priority)]))
+      .get();
+  }
+  Future<List<TreatmentGoal>> getGoalsForTreatment(int treatmentOutcomeId) {
+    return (select(treatmentGoals)
+      ..where((g) => g.treatmentOutcomeId.equals(treatmentOutcomeId))
+      ..orderBy([(g) => OrderingTerm.asc(g.priority)]))
+      .get();
+  }
+  Future<TreatmentGoal?> getTreatmentGoalById(int id) =>
+    (select(treatmentGoals)..where((g) => g.id.equals(id))).getSingleOrNull();
+  Future<bool> updateTreatmentGoal(Insertable<TreatmentGoal> g) => update(treatmentGoals).replace(g);
+  Future<int> deleteTreatmentGoal(int id) => (delete(treatmentGoals)..where((g) => g.id.equals(id))).go();
+
+  // Aggregate queries for treatment progress
+  Future<Map<String, dynamic>> getTreatmentProgressSummary(int patientId) async {
+    final sessions = await getTreatmentSessionsForPatient(patientId);
+    final medications = await getActiveMedicationResponses(patientId);
+    final goals = await getActiveGoalsForPatient(patientId);
+    final outcomes = await getOngoingTreatmentsForPatient(patientId);
+    
+    int totalGoals = goals.length;
+    int achievedGoals = goals.where((g) => g.status == 'achieved').length;
+    double avgProgress = goals.isEmpty ? 0 : goals.map((g) => g.progressPercent).reduce((a, b) => a + b) / goals.length;
+    
+    int effectiveMeds = medications.where((m) => m.responseStatus == 'effective').length;
+    int withSideEffects = medications.where((m) => m.sideEffectSeverity != 'none' && m.sideEffectSeverity.isNotEmpty).length;
+    
+    return {
+      'totalSessions': sessions.length,
+      'recentSessions': sessions.take(5).toList(),
+      'activeMedications': medications.length,
+      'effectiveMedications': effectiveMeds,
+      'medicationsWithSideEffects': withSideEffects,
+      'activeGoals': totalGoals,
+      'achievedGoals': achievedGoals,
+      'averageProgress': avgProgress,
+      'ongoingTreatments': outcomes.length,
+    };
+  }
+
+  // ============================================================================
+  // PATIENT-CENTRIC COMPREHENSIVE QUERIES
+  // All data revolves around the patient - these methods provide complete views
+  // ============================================================================
+
+  /// Get complete patient profile with all related data
+  Future<Map<String, dynamic>> getCompletePatientProfile(int patientId) async {
+    final patient = await getPatientById(patientId);
+    if (patient == null) return {};
+
+    final appointments = await getAppointmentsForPatient(patientId);
+    final prescriptions = await getPrescriptionsForPatient(patientId);
+    final medicalRecords = await getMedicalRecordsForPatient(patientId);
+    final invoices = await getInvoicesForPatient(patientId);
+    final vitals = await getVitalSignsForPatient(patientId);
+    final latestVitals = await getLatestVitalSignsForPatient(patientId);
+    final treatments = await getTreatmentOutcomesForPatient(patientId);
+    final followUps = await getScheduledFollowUpsForPatient(patientId);
+    final sessions = await getTreatmentSessionsForPatient(patientId);
+    final medications = await getMedicationResponsesForPatient(patientId);
+    final goals = await getTreatmentGoalsForPatient(patientId);
+
+    // Calculate patient statistics
+    final totalSpent = invoices.fold<double>(0, (sum, inv) => sum + inv.grandTotal);
+    final paidAmount = invoices.where((i) => i.paymentStatus == 'Paid').fold<double>(0, (sum, inv) => sum + inv.grandTotal);
+    final pendingAmount = totalSpent - paidAmount;
+
+    final completedAppointments = appointments.where((a) => a.status == 'completed').length;
+    final upcomingAppointments = appointments.where((a) => 
+      a.status == 'scheduled' && a.appointmentDateTime.isAfter(DateTime.now())).toList();
+    
+    final activeMedications = medications.where((m) => m.endDate == null).toList();
+    final activeGoals = goals.where((g) => g.status == 'active').toList();
+    final pendingFollowUps = followUps.where((f) => f.status == 'pending').toList();
+
+    return {
+      'patient': patient,
+      'appointments': {
+        'all': appointments,
+        'completed': completedAppointments,
+        'upcoming': upcomingAppointments,
+        'total': appointments.length,
+      },
+      'prescriptions': {
+        'all': prescriptions,
+        'total': prescriptions.length,
+        'latest': prescriptions.isNotEmpty ? prescriptions.first : null,
+      },
+      'medicalRecords': {
+        'all': medicalRecords,
+        'total': medicalRecords.length,
+        'byType': _groupRecordsByType(medicalRecords),
+      },
+      'billing': {
+        'invoices': invoices,
+        'totalSpent': totalSpent,
+        'paidAmount': paidAmount,
+        'pendingAmount': pendingAmount,
+        'invoiceCount': invoices.length,
+      },
+      'vitals': {
+        'history': vitals,
+        'latest': latestVitals,
+        'total': vitals.length,
+      },
+      'treatments': {
+        'outcomes': treatments,
+        'ongoing': treatments.where((t) => t.outcome == 'ongoing').toList(),
+        'completed': treatments.where((t) => t.outcome != 'ongoing').toList(),
+      },
+      'sessions': {
+        'all': sessions,
+        'total': sessions.length,
+        'byProvider': _groupSessionsByProvider(sessions),
+      },
+      'medications': {
+        'all': medications,
+        'active': activeMedications,
+        'withSideEffects': medications.where((m) => m.sideEffectSeverity != 'none').toList(),
+      },
+      'goals': {
+        'all': goals,
+        'active': activeGoals,
+        'achieved': goals.where((g) => g.status == 'achieved').toList(),
+        'averageProgress': activeGoals.isEmpty ? 0 : 
+          activeGoals.map((g) => g.progressPercent).reduce((a, b) => a + b) / activeGoals.length,
+      },
+      'followUps': {
+        'all': followUps,
+        'pending': pendingFollowUps,
+        'overdue': pendingFollowUps.where((f) => f.scheduledDate.isBefore(DateTime.now())).toList(),
+      },
+    };
+  }
+
+  /// Get patient's appointments with full details
+  Future<List<Appointment>> getAppointmentsForPatient(int patientId) {
+    return (select(appointments)
+      ..where((a) => a.patientId.equals(patientId))
+      ..orderBy([(a) => OrderingTerm.desc(a.appointmentDateTime)]))
+      .get();
+  }
+
+  /// Get patient's upcoming appointments
+  Future<List<Appointment>> getUpcomingAppointmentsForPatient(int patientId) {
+    final now = DateTime.now();
+    return (select(appointments)
+      ..where((a) => a.patientId.equals(patientId) & 
+        a.appointmentDateTime.isBiggerThanValue(now) &
+        a.status.equals('scheduled'))
+      ..orderBy([(a) => OrderingTerm.asc(a.appointmentDateTime)]))
+      .get();
+  }
+
+  /// Get patient's next appointment
+  Future<Appointment?> getNextAppointmentForPatient(int patientId) async {
+    final upcoming = await getUpcomingAppointmentsForPatient(patientId);
+    return upcoming.isNotEmpty ? upcoming.first : null;
+  }
+
+  /// Get patient's last visit date
+  Future<DateTime?> getLastVisitDateForPatient(int patientId) async {
+    final result = await (select(appointments)
+      ..where((a) => a.patientId.equals(patientId) & a.status.equals('completed'))
+      ..orderBy([(a) => OrderingTerm.desc(a.appointmentDateTime)])
+      ..limit(1))
+      .getSingleOrNull();
+    return result?.appointmentDateTime;
+  }
+
+  /// Get patient's active medications with responses
+  Future<List<MedicationResponse>> getActivePatientMedications(int patientId) {
+    return (select(medicationResponses)
+      ..where((m) => m.patientId.equals(patientId) & m.endDate.isNull())
+      ..orderBy([(m) => OrderingTerm.desc(m.startDate)]))
+      .get();
+  }
+
+  /// Get patient's medication history
+  Future<List<MedicationResponse>> getPatientMedicationHistory(int patientId) {
+    return (select(medicationResponses)
+      ..where((m) => m.patientId.equals(patientId))
+      ..orderBy([(m) => OrderingTerm.desc(m.startDate)]))
+      .get();
+  }
+
+  /// Get all side effects for a patient
+  Future<List<MedicationResponse>> getPatientSideEffects(int patientId) {
+    return (select(medicationResponses)
+      ..where((m) => m.patientId.equals(patientId) & 
+        m.sideEffects.length.isBiggerThanValue(0)))
+      .get();
+  }
+
+  /// Get patient's treatment timeline (all events chronologically)
+  Future<List<Map<String, dynamic>>> getPatientTimeline(int patientId) async {
+    final List<Map<String, dynamic>> timeline = [];
+
+    // Add appointments
+    final appointments = await getAppointmentsForPatient(patientId);
+    for (final apt in appointments) {
+      timeline.add({
+        'type': 'appointment',
+        'date': apt.appointmentDateTime,
+        'title': apt.reason.isNotEmpty ? apt.reason : 'Appointment',
+        'status': apt.status,
+        'data': apt,
+      });
+    }
+
+    // Add prescriptions
+    final prescriptions = await getPrescriptionsForPatient(patientId);
+    for (final rx in prescriptions) {
+      timeline.add({
+        'type': 'prescription',
+        'date': rx.createdAt,
+        'title': 'Prescription Created',
+        'data': rx,
+      });
+    }
+
+    // Add medical records
+    final records = await getMedicalRecordsForPatient(patientId);
+    for (final rec in records) {
+      timeline.add({
+        'type': 'record',
+        'date': rec.recordDate,
+        'title': rec.title,
+        'recordType': rec.recordType,
+        'data': rec,
+      });
+    }
+
+    // Add sessions
+    final sessions = await getTreatmentSessionsForPatient(patientId);
+    for (final session in sessions) {
+      timeline.add({
+        'type': 'session',
+        'date': session.sessionDate,
+        'title': '${session.sessionType} session with ${session.providerType}',
+        'data': session,
+      });
+    }
+
+    // Add vital signs
+    final vitals = await getVitalSignsForPatient(patientId);
+    for (final vital in vitals) {
+      timeline.add({
+        'type': 'vitals',
+        'date': vital.recordedAt,
+        'title': 'Vital Signs Recorded',
+        'data': vital,
+      });
+    }
+
+    // Sort by date descending
+    timeline.sort((a, b) => (b['date'] as DateTime).compareTo(a['date'] as DateTime));
+
+    return timeline;
+  }
+
+  /// Get patient's billing summary
+  Future<Map<String, dynamic>> getPatientBillingSummary(int patientId) async {
+    final invoices = await getInvoicesForPatient(patientId);
+    
+    double totalBilled = 0;
+    double totalPaid = 0;
+    double totalPending = 0;
+    int paidCount = 0;
+    int pendingCount = 0;
+
+    for (final inv in invoices) {
+      totalBilled += inv.grandTotal;
+      if (inv.paymentStatus == 'Paid') {
+        totalPaid += inv.grandTotal;
+        paidCount++;
+      } else {
+        totalPending += inv.grandTotal;
+        pendingCount++;
+      }
+    }
+
+    return {
+      'totalBilled': totalBilled,
+      'totalPaid': totalPaid,
+      'totalPending': totalPending,
+      'paidCount': paidCount,
+      'pendingCount': pendingCount,
+      'invoiceCount': invoices.length,
+      'recentInvoices': invoices.take(5).toList(),
+    };
+  }
+
+  /// Get patient's clinical summary for quick overview
+  Future<Map<String, dynamic>> getPatientClinicalSummary(int patientId) async {
+    final patient = await getPatientById(patientId);
+    final latestVitals = await getLatestVitalSignsForPatient(patientId);
+    final activeMeds = await getActivePatientMedications(patientId);
+    final activeGoals = await getActiveGoalsForPatient(patientId);
+    final ongoingTreatments = await getOngoingTreatmentsForPatient(patientId);
+    final pendingFollowUps = await getPendingFollowUpsForPatient(patientId);
+    final lastVisit = await getLastVisitDateForPatient(patientId);
+    final nextAppointment = await getNextAppointmentForPatient(patientId);
+
+    // Get recent records
+    final recentRecords = await (select(medicalRecords)
+      ..where((r) => r.patientId.equals(patientId))
+      ..orderBy([(r) => OrderingTerm.desc(r.recordDate)])
+      ..limit(3))
+      .get();
+
+    return {
+      'patient': patient,
+      'riskLevel': patient?.riskLevel ?? 0,
+      'allergies': patient?.allergies ?? '',
+      'latestVitals': latestVitals,
+      'activeMedications': activeMeds,
+      'activeMedicationCount': activeMeds.length,
+      'activeGoals': activeGoals,
+      'activeGoalCount': activeGoals.length,
+      'ongoingTreatments': ongoingTreatments,
+      'ongoingTreatmentCount': ongoingTreatments.length,
+      'pendingFollowUps': pendingFollowUps,
+      'pendingFollowUpCount': pendingFollowUps.length,
+      'lastVisit': lastVisit,
+      'nextAppointment': nextAppointment,
+      'recentRecords': recentRecords,
+    };
+  }
+
+  /// Get pending follow-ups for a specific patient
+  Future<List<ScheduledFollowUp>> getPendingFollowUpsForPatient(int patientId) {
+    return (select(scheduledFollowUps)
+      ..where((f) => f.patientId.equals(patientId) & f.status.equals('pending'))
+      ..orderBy([(f) => OrderingTerm.asc(f.scheduledDate)]))
+      .get();
+  }
+
+  /// Search patients by name, phone, or email
+  Future<List<Patient>> searchPatients(String query) {
+    final searchTerm = '%$query%';
+    return (select(patients)
+      ..where((p) => 
+        p.firstName.like(searchTerm) | 
+        p.lastName.like(searchTerm) | 
+        p.phone.like(searchTerm) |
+        p.email.like(searchTerm) |
+        p.tags.like(searchTerm)))
+      .get();
+  }
+
+  /// Get patients by risk level
+  Future<List<Patient>> getPatientsByRiskLevel(int riskLevel) {
+    return (select(patients)
+      ..where((p) => p.riskLevel.equals(riskLevel))
+      ..orderBy([(p) => OrderingTerm.asc(p.lastName)]))
+      .get();
+  }
+
+  /// Get high-risk patients
+  Future<List<Patient>> getHighRiskPatients() {
+    return (select(patients)
+      ..where((p) => p.riskLevel.equals(2))
+      ..orderBy([(p) => OrderingTerm.asc(p.lastName)]))
+      .get();
+  }
+
+  /// Get patients with pending follow-ups
+  Future<List<Patient>> getPatientsWithPendingFollowUps() async {
+    final followUps = await getPendingFollowUps();
+    final patientIds = followUps.map((f) => f.patientId).toSet();
+    
+    if (patientIds.isEmpty) return [];
+    
+    return (select(patients)
+      ..where((p) => p.id.isIn(patientIds)))
+      .get();
+  }
+
+  /// Get patients with overdue follow-ups
+  Future<List<Patient>> getPatientsWithOverdueFollowUps() async {
+    final overdueFollowUps = await getOverdueFollowUps();
+    final patientIds = overdueFollowUps.map((f) => f.patientId).toSet();
+    
+    if (patientIds.isEmpty) return [];
+    
+    return (select(patients)
+      ..where((p) => p.id.isIn(patientIds)))
+      .get();
+  }
+
+  /// Get patients with appointments today
+  Future<List<Patient>> getPatientsWithAppointmentsToday() async {
+    final todayAppointments = await getAppointmentsForDay(DateTime.now());
+    final patientIds = todayAppointments.map((a) => a.patientId).toSet();
+    
+    if (patientIds.isEmpty) return [];
+    
+    return (select(patients)
+      ..where((p) => p.id.isIn(patientIds)))
+      .get();
+  }
+
+  /// Get recently active patients (had activity in last N days)
+  Future<List<Patient>> getRecentlyActivePatients({int days = 30}) async {
+    final cutoffDate = DateTime.now().subtract(Duration(days: days));
+    
+    // Get patients with recent appointments
+    final recentAppointments = await (select(appointments)
+      ..where((a) => a.appointmentDateTime.isBiggerThanValue(cutoffDate)))
+      .get();
+    
+    final patientIds = recentAppointments.map((a) => a.patientId).toSet();
+    
+    if (patientIds.isEmpty) return [];
+    
+    return (select(patients)
+      ..where((p) => p.id.isIn(patientIds))
+      ..orderBy([(p) => OrderingTerm.asc(p.lastName)]))
+      .get();
+  }
+
+  /// Get patient count statistics
+  Future<Map<String, int>> getPatientStatistics() async {
+    final allPatients = await getAllPatients();
+    final highRisk = allPatients.where((p) => p.riskLevel == 2).length;
+    final mediumRisk = allPatients.where((p) => p.riskLevel == 1).length;
+    final lowRisk = allPatients.where((p) => p.riskLevel == 0).length;
+    
+    final patientsToday = await getPatientsWithAppointmentsToday();
+    final patientsWithOverdue = await getPatientsWithOverdueFollowUps();
+
+    return {
+      'total': allPatients.length,
+      'highRisk': highRisk,
+      'mediumRisk': mediumRisk,
+      'lowRisk': lowRisk,
+      'withAppointmentsToday': patientsToday.length,
+      'withOverdueFollowUps': patientsWithOverdue.length,
+    };
+  }
+
+  // Helper method to group records by type
+  Map<String, List<MedicalRecord>> _groupRecordsByType(List<MedicalRecord> records) {
+    final Map<String, List<MedicalRecord>> grouped = {};
+    for (final record in records) {
+      grouped.putIfAbsent(record.recordType, () => []);
+      grouped[record.recordType]!.add(record);
+    }
+    return grouped;
+  }
+
+  // Helper method to group sessions by provider
+  Map<String, List<TreatmentSession>> _groupSessionsByProvider(List<TreatmentSession> sessions) {
+    final Map<String, List<TreatmentSession>> grouped = {};
+    for (final session in sessions) {
+      grouped.putIfAbsent(session.providerType, () => []);
+      grouped[session.providerType]!.add(session);
+    }
+    return grouped;
   }
 }

@@ -14,6 +14,14 @@ class PatientModel {
     this.tags = const [],
     this.riskLevel = 0,
     this.createdAt,
+    this.gender = '',
+    this.bloodType = '',
+    this.emergencyContactName = '',
+    this.emergencyContactPhone = '',
+    this.allergies = '',
+    this.height,
+    this.weight,
+    this.chronicConditions = const [],
   });
 
   /// Create from JSON map
@@ -40,6 +48,16 @@ class PatientModel {
           : json['created_at'] != null
               ? DateTime.tryParse(json['created_at'] as String)
               : null,
+      gender: json['gender'] as String? ?? '',
+      bloodType: json['bloodType'] as String? ?? json['blood_type'] as String? ?? '',
+      emergencyContactName: json['emergencyContactName'] as String? ?? json['emergency_contact_name'] as String? ?? '',
+      emergencyContactPhone: json['emergencyContactPhone'] as String? ?? json['emergency_contact_phone'] as String? ?? '',
+      allergies: json['allergies'] as String? ?? '',
+      height: json['height'] as double?,
+      weight: json['weight'] as double?,
+      chronicConditions: json['chronicConditions'] is String
+          ? parseChronicConditions(json['chronicConditions'] as String)
+          : (json['chronicConditions'] as List<dynamic>?)?.cast<String>() ?? [],
     );
   }
 
@@ -58,6 +76,14 @@ class PatientModel {
   final List<String> tags;
   final int riskLevel; // 0 = Low, 1 = Medium, 2 = High
   final DateTime? createdAt;
+  final String gender;
+  final String bloodType;
+  final String emergencyContactName;
+  final String emergencyContactPhone;
+  final String allergies; // comma-separated
+  final double? height; // in cm
+  final double? weight; // in kg
+  final List<String> chronicConditions;
 
   /// Full name of the patient
   String get fullName => lastName.isEmpty ? firstName : '$firstName $lastName';
@@ -80,6 +106,24 @@ class PatientModel {
     }
     return age;
   }
+
+  /// Calculate BMI from height and weight
+  double? get bmi {
+    if (height == null || weight == null || height! <= 0) return null;
+    return weight! / ((height! / 100) * (height! / 100));
+  }
+
+  /// Get allergy list
+  List<String> get allergyList {
+    if (allergies.isEmpty) return [];
+    return allergies.split(',').map((a) => a.trim()).where((a) => a.isNotEmpty).toList();
+  }
+
+  /// Check if patient has allergies
+  bool get hasAllergies => allergyList.isNotEmpty;
+
+  /// Get chronic conditions list
+  List<String> get conditionsList => chronicConditions;
 
   /// Risk level as string
   String get riskLevelString {
@@ -104,6 +148,12 @@ class PatientModel {
     return tagsString.split(',').map((t) => t.trim()).where((t) => t.isNotEmpty).toList();
   }
 
+  /// Create from comma-separated chronic conditions string
+  static List<String> parseChronicConditions(String conditionsString) {
+    if (conditionsString.isEmpty) return [];
+    return conditionsString.split(',').map((c) => c.trim()).where((c) => c.isNotEmpty).toList();
+  }
+
   /// Convert to JSON map
   Map<String, dynamic> toJson() {
     return {
@@ -118,6 +168,14 @@ class PatientModel {
       'tags': tags,
       'riskLevel': riskLevel,
       'createdAt': createdAt?.toIso8601String(),
+      'gender': gender,
+      'bloodType': bloodType,
+      'emergencyContactName': emergencyContactName,
+      'emergencyContactPhone': emergencyContactPhone,
+      'allergies': allergies,
+      'height': height,
+      'weight': weight,
+      'chronicConditions': chronicConditions,
     };
   }
 
@@ -137,6 +195,14 @@ class PatientModel {
     List<String>? tags,
     int? riskLevel,
     DateTime? createdAt,
+    String? gender,
+    String? bloodType,
+    String? emergencyContactName,
+    String? emergencyContactPhone,
+    String? allergies,
+    double? height,
+    double? weight,
+    List<String>? chronicConditions,
   }) {
     return PatientModel(
       id: id ?? this.id,
@@ -150,6 +216,14 @@ class PatientModel {
       tags: tags ?? this.tags,
       riskLevel: riskLevel ?? this.riskLevel,
       createdAt: createdAt ?? this.createdAt,
+      gender: gender ?? this.gender,
+      bloodType: bloodType ?? this.bloodType,
+      emergencyContactName: emergencyContactName ?? this.emergencyContactName,
+      emergencyContactPhone: emergencyContactPhone ?? this.emergencyContactPhone,
+      allergies: allergies ?? this.allergies,
+      height: height ?? this.height,
+      weight: weight ?? this.weight,
+      chronicConditions: chronicConditions ?? this.chronicConditions,
     );
   }
 
@@ -166,7 +240,15 @@ class PatientModel {
         other.address == address &&
         other.medicalHistory == medicalHistory &&
         _listEquals(other.tags, tags) &&
-        other.riskLevel == riskLevel;
+        other.riskLevel == riskLevel &&
+        other.gender == gender &&
+        other.bloodType == bloodType &&
+        other.emergencyContactName == emergencyContactName &&
+        other.emergencyContactPhone == emergencyContactPhone &&
+        other.allergies == allergies &&
+        other.height == height &&
+        other.weight == weight &&
+        _listEquals(other.chronicConditions, chronicConditions);
   }
 
   @override
@@ -181,6 +263,14 @@ class PatientModel {
         medicalHistory,
         Object.hashAll(tags),
         riskLevel,
+        gender,
+        bloodType,
+        emergencyContactName,
+        emergencyContactPhone,
+        allergies,
+        height,
+        weight,
+        Object.hashAll(chronicConditions),
       );
 
   @override

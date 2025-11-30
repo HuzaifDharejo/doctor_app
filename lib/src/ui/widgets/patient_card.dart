@@ -6,7 +6,7 @@ import 'package:intl/intl.dart';
 import 'package:url_launcher/url_launcher.dart';
 import '../../db/doctor_db.dart';
 import '../../theme/app_theme.dart';
-import '../screens/patient_view_screen.dart';
+import '../screens/patient_view_screen_modern.dart';
 import 'patient_avatar.dart';
 
 class PatientCard extends StatefulWidget {
@@ -127,7 +127,7 @@ class _PatientCardState extends State<PatientCard>
       context,
       PageRouteBuilder<void>(
         pageBuilder: (context, animation, secondaryAnimation) =>
-            PatientViewScreen(patient: widget.patient),
+            PatientViewScreenModern(patient: widget.patient),
         transitionsBuilder: (context, animation, secondaryAnimation, child) {
           return FadeTransition(
             opacity: animation,

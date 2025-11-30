@@ -408,7 +408,7 @@ class _AnimatedBadgeState extends State<AnimatedBadge>
       ),
     ]).animate(CurvedAnimation(
       parent: _controller,
-      curve: Curves.easeOutBack,
+      curve: Curves.easeOutCubic,
     ),);
     
     _previousCount = widget.count;

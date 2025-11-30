@@ -146,6 +146,9 @@ class InvoiceModel {
     this.amountPaid,
     this.notes = '',
     this.createdAt,
+    this.appointmentId,
+    this.prescriptionId,
+    this.treatmentSessionId,
   });
 
   /// Calculate totals from items
@@ -159,6 +162,9 @@ class InvoiceModel {
     PaymentStatus paymentStatus = PaymentStatus.pending,
     double? amountPaid,
     String notes = '',
+    int? appointmentId,
+    int? prescriptionId,
+    int? treatmentSessionId,
   }) {
     final subtotal = items.fold<double>(0, (sum, item) => sum + item.total);
     final discountAmount = subtotal * discountPercent / 100;
@@ -184,6 +190,9 @@ class InvoiceModel {
       paymentStatus: paymentStatus,
       amountPaid: amountPaid,
       notes: notes,
+      appointmentId: appointmentId,
+      prescriptionId: prescriptionId,
+      treatmentSessionId: treatmentSessionId,
     );
   }
 
@@ -242,6 +251,9 @@ class InvoiceModel {
           : json['created_at'] != null
               ? DateTime.tryParse(json['created_at'] as String)
               : null,
+      appointmentId: json['appointmentId'] as int? ?? json['appointment_id'] as int?,
+      prescriptionId: json['prescriptionId'] as int? ?? json['prescription_id'] as int?,
+      treatmentSessionId: json['treatmentSessionId'] as int? ?? json['treatment_session_id'] as int?,
     );
   }
 
@@ -267,6 +279,9 @@ class InvoiceModel {
   final double? amountPaid;
   final String notes;
   final DateTime? createdAt;
+  final int? appointmentId; // Link to appointment for which billing
+  final int? prescriptionId; // Link to prescription items
+  final int? treatmentSessionId; // Link to treatment session
 
   /// Calculate balance due
   double get balanceDue {
@@ -325,6 +340,9 @@ class InvoiceModel {
       if (amountPaid != null) 'amountPaid': amountPaid,
       'notes': notes,
       if (createdAt != null) 'createdAt': createdAt!.toIso8601String(),
+      if (appointmentId != null) 'appointmentId': appointmentId,
+      if (prescriptionId != null) 'prescriptionId': prescriptionId,
+      if (treatmentSessionId != null) 'treatmentSessionId': treatmentSessionId,
     };
   }
 
@@ -351,6 +369,9 @@ class InvoiceModel {
     double? amountPaid,
     String? notes,
     DateTime? createdAt,
+    int? appointmentId,
+    int? prescriptionId,
+    int? treatmentSessionId,
   }) {
     return InvoiceModel(
       id: id ?? this.id,
@@ -371,6 +392,9 @@ class InvoiceModel {
       amountPaid: amountPaid ?? this.amountPaid,
       notes: notes ?? this.notes,
       createdAt: createdAt ?? this.createdAt,
+      appointmentId: appointmentId ?? this.appointmentId,
+      prescriptionId: prescriptionId ?? this.prescriptionId,
+      treatmentSessionId: treatmentSessionId ?? this.treatmentSessionId,
     );
   }
 
@@ -380,12 +404,14 @@ class InvoiceModel {
     return other is InvoiceModel &&
         other.id == id &&
         other.invoiceNumber == invoiceNumber &&
-        other.patientId == patientId;
+        other.patientId == patientId &&
+        other.appointmentId == appointmentId &&
+        other.prescriptionId == prescriptionId;
   }
 
   @override
-  int get hashCode => Object.hash(id, invoiceNumber, patientId);
+  int get hashCode => Object.hash(id, invoiceNumber, patientId, appointmentId, prescriptionId);
 
   @override
-  String toString() => 'InvoiceModel(id: $id, #$invoiceNumber, total: $formattedTotal)';
+  String toString() => 'InvoiceModel(id: $id, #$invoiceNumber, total: $formattedTotal, appointmentId: $appointmentId, prescriptionId: $prescriptionId)';
 }

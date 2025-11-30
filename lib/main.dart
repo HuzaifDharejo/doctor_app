@@ -5,21 +5,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'src/app.dart';
 import 'src/services/logger_service.dart';
 
-void main() async {
-  // Ensure Flutter binding is initialized
-  WidgetsFlutterBinding.ensureInitialized();
-
-  // Configure logger
-  log
-    ..configure(
-      minLevel: kDebugMode ? LogLevel.verbose : LogLevel.warning,
-      enableConsoleOutput: kDebugMode,
-    )
-    ..i('APP', '═══════════════════════════════════════════════')
-    ..i('APP', '  Doctor App Starting...')
-    ..i('APP', '  Debug Mode: $kDebugMode')
-    ..i('APP', '═══════════════════════════════════════════════');
-
+void main() {
   // Catch Flutter framework errors
   FlutterError.onError = (FlutterErrorDetails details) {
     log.e('FLUTTER', details.exceptionAsString(),
@@ -46,17 +32,21 @@ void main() async {
     return true; // Handled
   };
 
-  // Run app in guarded zone to catch all errors
-  runZonedGuarded(
-    () {
-      runApp(const ProviderScope(child: DoctorApp()));
-      log.i('APP', 'App launched successfully');
-    },
-    (error, stackTrace) {
-      log.f('ZONE', 'Uncaught zone error',
-        error: error,
-        stackTrace: stackTrace,
-      );
-    },
-  );
+  // Ensure Flutter binding is initialized BEFORE runZonedGuarded
+  WidgetsFlutterBinding.ensureInitialized();
+
+  // Configure logger
+  log
+    ..configure(
+      minLevel: kDebugMode ? LogLevel.verbose : LogLevel.warning,
+      enableConsoleOutput: kDebugMode,
+    )
+    ..i('APP', '═══════════════════════════════════════════════')
+    ..i('APP', '  Doctor App Starting...')
+    ..i('APP', '  Debug Mode: $kDebugMode')
+    ..i('APP', '═══════════════════════════════════════════════');
+
+  // Run app - no need for runZonedGuarded since we have other error handlers
+  runApp(const ProviderScope(child: DoctorApp()));
+  log.i('APP', 'App launched successfully');
 }
