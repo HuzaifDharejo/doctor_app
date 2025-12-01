@@ -200,12 +200,11 @@ class _Header extends StatelessWidget {
   }
 
   Widget _buildSearchBar() {
-    return Container(
+    return AppCard(
       padding: const EdgeInsets.symmetric(horizontal: MedicalRecordConstants.paddingLarge),
-      decoration: BoxDecoration(
-        color: Colors.white.withValues(alpha: 0.2),
-        borderRadius: BorderRadius.circular(MedicalRecordConstants.radiusLarge),
-      ),
+      color: Colors.white.withValues(alpha: 0.2),
+      borderRadius: BorderRadius.circular(MedicalRecordConstants.radiusLarge),
+      hasBorder: false,
       child: TextField(
         controller: searchController,
         style: const TextStyle(color: Colors.white),

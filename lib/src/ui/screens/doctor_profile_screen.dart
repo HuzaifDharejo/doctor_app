@@ -757,15 +757,13 @@ class _DoctorProfileScreenState extends ConsumerState<DoctorProfileScreen>
   }
 
   Widget _buildCard({required bool isDark, required String title, required IconData icon, required Widget child, Widget? trailing}) {
-    return DecoratedBox(
-      decoration: BoxDecoration(
-        color: isDark ? AppColors.darkSurface : Colors.white,
-        borderRadius: BorderRadius.circular(20),
-        boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.05), blurRadius: 20, offset: const Offset(0, 4))],
-      ),
-      child: Padding(
-        padding: const EdgeInsets.all(20),
-        child: Column(
+    return AppCard(
+      color: isDark ? AppColors.darkSurface : Colors.white,
+      borderRadius: BorderRadius.circular(20),
+      boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.05), blurRadius: 20, offset: const Offset(0, 4))],
+      hasBorder: false,
+      padding: const EdgeInsets.all(20),
+      child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Row(
@@ -784,7 +782,6 @@ class _DoctorProfileScreenState extends ConsumerState<DoctorProfileScreen>
             child,
           ],
         ),
-      ),
     );
   }
 

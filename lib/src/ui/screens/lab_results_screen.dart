@@ -305,19 +305,20 @@ class _LabResultsScreenState extends ConsumerState<LabResultsScreen> with Single
     final testHistory = groupedByTest[testName] ?? [];
     final hasTrend = testHistory.length > 1;
 
-    return Card(
+    return AppCard(
       margin: const EdgeInsets.only(bottom: 12),
       color: isDark ? AppColors.darkSurface : Colors.white,
-      elevation: 2,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(12),
-        side: status == 'Critical' 
-            ? BorderSide(color: Colors.red.shade900, width: 2)
-            : BorderSide.none,
-      ),
-      child: InkWell(
-        borderRadius: BorderRadius.circular(12),
-        onTap: () => _showResultDetails(record, data, isDark),
+      borderRadius: BorderRadius.circular(12),
+      borderColor: status == 'Critical' ? Colors.red.shade900 : null,
+      borderWidth: status == 'Critical' ? 2 : 0,
+      boxShadow: [
+        BoxShadow(
+          color: Colors.black.withValues(alpha: 0.1),
+          blurRadius: 4,
+          offset: const Offset(0, 2),
+        ),
+      ],
+      onTap: () => _showResultDetails(record, data, isDark),
         child: Padding(
           padding: const EdgeInsets.all(16),
           child: Column(
