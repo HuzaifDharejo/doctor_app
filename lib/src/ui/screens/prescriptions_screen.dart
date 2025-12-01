@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 import '../../core/core.dart';
+import '../../core/theme/design_tokens.dart';
 import '../../db/doctor_db.dart';
 import '../../providers/db_provider.dart';
 import '../../services/pdf_service.dart';
@@ -219,7 +220,7 @@ class PrescriptionsScreen extends ConsumerWidget {
                             ),
                             const SizedBox(height: 4),
                             Container(
-                              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                              padding: const EdgeInsets.symmetric(horizontal: AppSpacing.md, vertical: AppSpacing.xs),
                               decoration: BoxDecoration(
                                 gradient: prescription.isRefillable
                                     ? LinearGradient(
@@ -276,7 +277,7 @@ class PrescriptionsScreen extends ConsumerWidget {
                           Row(
                             children: [
                               Container(
-                                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                                padding: const EdgeInsets.symmetric(horizontal: AppSpacing.md, vertical: AppSpacing.xs),
                                 decoration: BoxDecoration(
                                   color: AppColors.primary.withValues(alpha: 0.1),
                                   borderRadius: BorderRadius.circular(8),
@@ -372,7 +373,7 @@ class PrescriptionsScreen extends ConsumerWidget {
                       child: Row(
                         children: [
                           Container(
-                            padding: const EdgeInsets.all(6),
+                            padding: const EdgeInsets.all(AppSpacing.xs),
                             decoration: BoxDecoration(
                               color: AppColors.info.withValues(alpha: 0.12),
                               borderRadius: BorderRadius.circular(8),
@@ -429,7 +430,7 @@ class PrescriptionsScreen extends ConsumerWidget {
         maxChildSize: 0.95,
         expand: false,
         builder: (context, scrollController) => Container(
-          padding: const EdgeInsets.all(24),
+          padding: const EdgeInsets.all(AppSpacing.xxl),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
@@ -451,7 +452,7 @@ class PrescriptionsScreen extends ConsumerWidget {
                   GestureDetector(
                     onTap: () => Navigator.pop(context),
                     child: Container(
-                      padding: const EdgeInsets.all(8),
+                      padding: const EdgeInsets.all(AppSpacing.sm),
                       decoration: BoxDecoration(
                         color: (isDark ? AppColors.darkDivider : AppColors.divider).withValues(alpha: 0.5),
                         borderRadius: BorderRadius.circular(8),
@@ -465,7 +466,7 @@ class PrescriptionsScreen extends ConsumerWidget {
                   ),
                   const SizedBox(width: 12),
                   Container(
-                    padding: const EdgeInsets.all(12),
+                    padding: const EdgeInsets.all(AppSpacing.md),
                     decoration: BoxDecoration(
                       color: AppColors.warning.withValues(alpha: 0.1),
                       borderRadius: BorderRadius.circular(12),
@@ -513,7 +514,7 @@ class PrescriptionsScreen extends ConsumerWidget {
                             ),
                             if (prescription.isRefillable)
                               Container(
-                                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                                padding: const EdgeInsets.symmetric(horizontal: AppSpacing.sm, vertical: AppSpacing.xxs),
                                 decoration: BoxDecoration(
                                   color: AppColors.success.withValues(alpha: 0.1),
                                   borderRadius: BorderRadius.circular(8),
@@ -545,7 +546,7 @@ class PrescriptionsScreen extends ConsumerWidget {
               // Patient info
               if (patient != null)
                 Container(
-                  padding: const EdgeInsets.all(16),
+                  padding: const EdgeInsets.all(AppSpacing.lg),
                   decoration: BoxDecoration(
                     color: isDark ? AppColors.darkBackground : AppColors.background,
                     borderRadius: BorderRadius.circular(12),
@@ -587,7 +588,7 @@ class PrescriptionsScreen extends ConsumerWidget {
               const SizedBox(height: 16),
               // Summary card
               Container(
-                padding: const EdgeInsets.all(16),
+                padding: const EdgeInsets.all(AppSpacing.lg),
                 decoration: BoxDecoration(
                   gradient: LinearGradient(
                     colors: [AppColors.warning.withValues(alpha: 0.1), AppColors.primary.withValues(alpha: 0.05)],
@@ -678,7 +679,7 @@ class PrescriptionsScreen extends ConsumerWidget {
                       final med = entry.value as Map<String, dynamic>;
                       return Container(
                         margin: const EdgeInsets.only(bottom: 12),
-                        padding: const EdgeInsets.all(16),
+                        padding: const EdgeInsets.all(AppSpacing.lg),
                         decoration: BoxDecoration(
                           color: isDark ? AppColors.darkBackground : AppColors.background,
                           borderRadius: BorderRadius.circular(12),
@@ -690,7 +691,7 @@ class PrescriptionsScreen extends ConsumerWidget {
                             Row(
                               children: [
                                 Container(
-                                  padding: const EdgeInsets.all(8),
+                                  padding: const EdgeInsets.all(AppSpacing.sm),
                                   decoration: BoxDecoration(
                                     color: AppColors.warning.withValues(alpha: 0.1),
                                     borderRadius: BorderRadius.circular(8),
@@ -755,7 +756,7 @@ class PrescriptionsScreen extends ConsumerWidget {
                       ),
                       const SizedBox(height: 12),
                       Container(
-                        padding: const EdgeInsets.all(16),
+                        padding: const EdgeInsets.all(AppSpacing.lg),
                         decoration: BoxDecoration(
                           color: AppColors.info.withValues(alpha: 0.1),
                           borderRadius: BorderRadius.circular(12),
@@ -792,7 +793,7 @@ class PrescriptionsScreen extends ConsumerWidget {
                             icon: const Icon(Icons.refresh),
                             label: const Text('Refill'),
                             style: OutlinedButton.styleFrom(
-                              padding: const EdgeInsets.symmetric(vertical: 12),
+                              padding: const EdgeInsets.symmetric(vertical: AppSpacing.md),
                             ),
                           ),
                         ),
@@ -823,7 +824,7 @@ class PrescriptionsScreen extends ConsumerWidget {
                             icon: const Icon(Icons.chat, color: Color(0xFF25D366)),
                             label: const Text('WhatsApp'),
                             style: OutlinedButton.styleFrom(
-                              padding: const EdgeInsets.symmetric(vertical: 12),
+                              padding: const EdgeInsets.symmetric(vertical: AppSpacing.md),
                               foregroundColor: const Color(0xFF25D366),
                             ),
                           ),
@@ -850,7 +851,7 @@ class PrescriptionsScreen extends ConsumerWidget {
                             icon: const Icon(Icons.picture_as_pdf),
                             label: const Text('PDF'),
                             style: ElevatedButton.styleFrom(
-                              padding: const EdgeInsets.symmetric(vertical: 12),
+                              padding: const EdgeInsets.symmetric(vertical: AppSpacing.md),
                             ),
                           ),
                         ),
@@ -870,7 +871,7 @@ class PrescriptionsScreen extends ConsumerWidget {
 
   Widget _buildMedChip(IconData icon, String label, String value, bool isDark) {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+      padding: const EdgeInsets.symmetric(horizontal: AppSpacing.md, vertical: AppSpacing.sm),
       decoration: BoxDecoration(
         color: isDark ? AppColors.darkBackground.withValues(alpha: 0.5) : AppColors.background,
         borderRadius: BorderRadius.circular(8),
@@ -935,7 +936,7 @@ class PrescriptionsScreen extends ConsumerWidget {
             Text('Create a new prescription with the same medications for ${patient.firstName} ${patient.lastName}?'),
             const SizedBox(height: 12),
             Container(
-              padding: const EdgeInsets.all(12),
+              padding: const EdgeInsets.all(AppSpacing.md),
               decoration: BoxDecoration(
                 color: AppColors.info.withValues(alpha: 0.1),
                 borderRadius: BorderRadius.circular(8),

@@ -18,6 +18,7 @@ import '../../db/doctor_db.dart';
 import '../../providers/db_provider.dart';
 import '../../services/whatsapp_service.dart';
 import '../../core/components/app_button.dart';
+import '../../core/theme/design_tokens.dart';
 import '../../theme/app_theme.dart';
 import '../widgets/patient_avatar.dart';
 import 'add_appointment_screen.dart';
@@ -618,7 +619,7 @@ class _PatientViewScreenModernState
     final borderColor = isDark ? AppColors.darkDivider : AppColors.divider;
     
     return SingleChildScrollView(
-      padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.all(AppSpacing.lg),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
@@ -660,7 +661,7 @@ class _PatientViewScreenModernState
           ),
           const SizedBox(height: 8),
           Container(
-            padding: const EdgeInsets.all(12),
+            padding: const EdgeInsets.all(AppSpacing.md),
             decoration: BoxDecoration(
               border: Border.all(color: borderColor),
               borderRadius: BorderRadius.circular(12),
@@ -837,12 +838,12 @@ class _PatientViewScreenModernState
         onTap: onTap,
         borderRadius: BorderRadius.circular(12),
         child: Padding(
-          padding: const EdgeInsets.all(12),
+          padding: const EdgeInsets.all(AppSpacing.md),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Container(
-                padding: const EdgeInsets.all(8),
+                padding: const EdgeInsets.all(AppSpacing.sm),
                 decoration: BoxDecoration(
                   color: color.withOpacity(0.1),
                   borderRadius: BorderRadius.circular(8),
@@ -971,7 +972,7 @@ class _PatientViewScreenModernState
     final secondaryColor = isDark ? AppColors.darkTextSecondary : AppColors.textSecondary;
     
     return Container(
-      padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.all(AppSpacing.lg),
       decoration: BoxDecoration(
         border: Border.all(color: borderColor),
         borderRadius: BorderRadius.circular(12),
@@ -1043,7 +1044,7 @@ class _PatientViewScreenModernState
           appointments.sort((a, b) => b.appointmentDateTime.compareTo(a.appointmentDateTime));
 
           return ListView.builder(
-            padding: const EdgeInsets.all(16),
+            padding: const EdgeInsets.all(AppSpacing.lg),
             itemCount: appointments.length,
             itemBuilder: (context, index) => _buildAppointmentCard(appointments[index], isDark),
           );
@@ -1080,7 +1081,7 @@ class _PatientViewScreenModernState
 
     return Container(
       margin: const EdgeInsets.only(bottom: 12),
-      padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.all(AppSpacing.lg),
       decoration: BoxDecoration(
         color: cardColor,
         borderRadius: BorderRadius.circular(12),
@@ -1089,7 +1090,7 @@ class _PatientViewScreenModernState
       child: Row(
         children: [
           Container(
-            padding: const EdgeInsets.all(10),
+            padding: const EdgeInsets.all(AppSpacing.md),
             decoration: BoxDecoration(
               color: AppColors.primary.withValues(alpha: 0.1),
               borderRadius: BorderRadius.circular(10),
@@ -1117,7 +1118,7 @@ class _PatientViewScreenModernState
             ),
           ),
           Container(
-            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+            padding: const EdgeInsets.symmetric(horizontal: AppSpacing.md, vertical: AppSpacing.xs),
             decoration: BoxDecoration(
               color: statusColor.withValues(alpha: 0.1),
               borderRadius: BorderRadius.circular(20),
@@ -1164,7 +1165,7 @@ class _PatientViewScreenModernState
           prescriptions.sort((a, b) => b.createdAt.compareTo(a.createdAt));
 
           return ListView.builder(
-            padding: const EdgeInsets.all(16),
+            padding: const EdgeInsets.all(AppSpacing.lg),
             itemCount: prescriptions.length,
             itemBuilder: (context, index) => _buildPrescriptionCard(prescriptions[index], isDark),
           );
@@ -1196,7 +1197,7 @@ class _PatientViewScreenModernState
 
     return Container(
       margin: const EdgeInsets.only(bottom: 12),
-      padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.all(AppSpacing.lg),
       decoration: BoxDecoration(
         color: cardColor,
         borderRadius: BorderRadius.circular(12),
@@ -1208,7 +1209,7 @@ class _PatientViewScreenModernState
           Row(
             children: [
               Container(
-                padding: const EdgeInsets.all(10),
+                padding: const EdgeInsets.all(AppSpacing.md),
                 decoration: BoxDecoration(
                   color: AppColors.warning.withValues(alpha: 0.1),
                   borderRadius: BorderRadius.circular(10),
@@ -1249,7 +1250,7 @@ class _PatientViewScreenModernState
               children: medications.take(3).map((med) {
                 final name = med is Map ? (med['name'] ?? 'Unknown') : med.toString();
                 return Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                  padding: const EdgeInsets.symmetric(horizontal: AppSpacing.md, vertical: AppSpacing.xs),
                   decoration: BoxDecoration(
                     color: AppColors.primary.withValues(alpha: 0.1),
                     borderRadius: BorderRadius.circular(20),
@@ -1299,7 +1300,7 @@ class _PatientViewScreenModernState
           records.sort((a, b) => b.recordDate.compareTo(a.recordDate));
 
           return ListView.builder(
-            padding: const EdgeInsets.all(16),
+            padding: const EdgeInsets.all(AppSpacing.lg),
             itemCount: records.length,
             itemBuilder: (context, index) => _buildMedicalRecordCard(records[index], isDark),
           );
@@ -1368,14 +1369,14 @@ class _PatientViewScreenModernState
           borderRadius: BorderRadius.circular(12),
           onTap: () => _showMedicalRecordDetails(record, data),
           child: Padding(
-            padding: const EdgeInsets.all(16),
+            padding: const EdgeInsets.all(AppSpacing.lg),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Row(
                   children: [
                     Container(
-                      padding: const EdgeInsets.all(10),
+                      padding: const EdgeInsets.all(AppSpacing.md),
                       decoration: BoxDecoration(
                         color: recordColor.withValues(alpha: 0.1),
                         borderRadius: BorderRadius.circular(10),
@@ -1403,7 +1404,7 @@ class _PatientViewScreenModernState
                       ),
                     ),
                     Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                      padding: const EdgeInsets.symmetric(horizontal: AppSpacing.md, vertical: AppSpacing.xs),
                       decoration: BoxDecoration(
                         color: recordColor.withValues(alpha: 0.1),
                         borderRadius: BorderRadius.circular(20),
@@ -1473,7 +1474,7 @@ class _PatientViewScreenModernState
           final totalOutstanding = totalBilled - totalPaid;
 
           return SingleChildScrollView(
-            padding: const EdgeInsets.all(16),
+            padding: const EdgeInsets.all(AppSpacing.lg),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
@@ -1522,7 +1523,7 @@ class _PatientViewScreenModernState
     final currencyFormat = NumberFormat.currency(symbol: 'Rs. ', decimalDigits: 0);
     
     return Container(
-      padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.all(AppSpacing.lg),
       decoration: BoxDecoration(
         color: cardColor,
         borderRadius: BorderRadius.circular(12),
@@ -1586,11 +1587,11 @@ class _PatientViewScreenModernState
             );
           },
           child: Padding(
-            padding: const EdgeInsets.all(16),
+            padding: const EdgeInsets.all(AppSpacing.lg),
             child: Row(
               children: [
                 Container(
-                  padding: const EdgeInsets.all(10),
+                  padding: const EdgeInsets.all(AppSpacing.md),
                   decoration: BoxDecoration(
                     color: AppColors.billing.withValues(alpha: 0.1),
                     borderRadius: BorderRadius.circular(10),
@@ -1623,7 +1624,7 @@ class _PatientViewScreenModernState
                     ),
                     const SizedBox(height: 4),
                     Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                      padding: const EdgeInsets.symmetric(horizontal: AppSpacing.sm, vertical: AppSpacing.xxs),
                       decoration: BoxDecoration(
                         color: statusColor.withValues(alpha: 0.1),
                         borderRadius: BorderRadius.circular(20),
@@ -1674,7 +1675,7 @@ class _PatientViewScreenModernState
           children: [
             // Upload button
             Padding(
-              padding: const EdgeInsets.all(16),
+              padding: const EdgeInsets.all(AppSpacing.lg),
               child: SizedBox(
                 width: double.infinity,
                 child: OutlinedButton.icon(
@@ -1682,7 +1683,7 @@ class _PatientViewScreenModernState
                   icon: const Icon(Icons.upload_file),
                   label: const Text('Upload Document'),
                   style: OutlinedButton.styleFrom(
-                    padding: const EdgeInsets.symmetric(vertical: 12),
+                    padding: const EdgeInsets.symmetric(vertical: AppSpacing.md),
                   ),
                 ),
               ),
@@ -1690,7 +1691,7 @@ class _PatientViewScreenModernState
             // Documents list
             Expanded(
               child: ListView.builder(
-                padding: const EdgeInsets.symmetric(horizontal: 16),
+                padding: const EdgeInsets.symmetric(horizontal: AppSpacing.lg),
                 itemCount: documents.length,
                 itemBuilder: (context, index) {
                   final doc = documents[index];
@@ -1703,7 +1704,7 @@ class _PatientViewScreenModernState
                     ),
                     child: ListTile(
                       leading: Container(
-                        padding: const EdgeInsets.all(10),
+                        padding: const EdgeInsets.all(AppSpacing.md),
                         decoration: BoxDecoration(
                           color: _getDocTypeColor(doc.extension).withValues(alpha: 0.1),
                           borderRadius: BorderRadius.circular(10),
@@ -1964,12 +1965,12 @@ class _PatientViewScreenModernState
     
     return Center(
       child: Padding(
-        padding: const EdgeInsets.all(32),
+        padding: const EdgeInsets.all(AppSpacing.xxxl),
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
             Container(
-              padding: const EdgeInsets.all(20),
+              padding: const EdgeInsets.all(AppSpacing.xl),
               decoration: BoxDecoration(
                 color: AppColors.primary.withValues(alpha: 0.1),
                 shape: BoxShape.circle,
