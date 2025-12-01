@@ -5,6 +5,7 @@ import 'package:intl/intl.dart';
 import '../../db/doctor_db.dart';
 import '../../providers/db_provider.dart';
 import '../../services/pdf_service.dart';
+import '../../core/components/app_button.dart';
 import '../../theme/app_theme.dart';
 import '../widgets/medical_record_widgets.dart';
 import 'records/records.dart';
@@ -1472,11 +1473,12 @@ class _ActionButtons extends StatelessWidget {
         title: const Text('Delete Record'),
         content: const Text('Are you sure you want to delete this record? This action cannot be undone.'),
         actions: [
-          TextButton(
+          AppButton.tertiary(
+            label: 'Cancel',
             onPressed: () => Navigator.pop(dialogContext),
-            child: const Text('Cancel'),
           ),
-          TextButton(
+          AppButton.danger(
+            label: 'Delete',
             onPressed: () async {
               Navigator.pop(dialogContext);
               try {
@@ -1502,8 +1504,6 @@ class _ActionButtons extends StatelessWidget {
                 }
               }
             },
-            style: TextButton.styleFrom(foregroundColor: AppColors.error),
-            child: const Text('Delete'),
           ),
         ],
       ),

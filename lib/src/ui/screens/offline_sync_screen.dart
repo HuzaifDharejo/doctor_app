@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../../core/components/app_button.dart';
 import '../../core/widgets/app_card.dart';
 import '../../services/offline_sync_service.dart';
 import '../widgets/offline_sync_widgets.dart';
@@ -310,11 +311,11 @@ class _OfflineSyncScreenState extends ConsumerState<OfflineSyncScreen>
                   ],
                 ),
                 const SizedBox(height: 12),
-                ElevatedButton(
+                AppButton.primary(
+                  label: 'Resolve',
                   onPressed: () {
                     _showConflictDialog(conflict);
                   },
-                  child: const Text('Resolve'),
                 ),
               ],
             ),
@@ -502,17 +503,17 @@ class _OfflineSyncScreenState extends ConsumerState<OfflineSyncScreen>
         title: const Text('Clear Cache?'),
         content: const Text('This will remove all cached data.'),
         actions: [
-          TextButton(
+          AppButton.tertiary(
+            label: 'Cancel',
             onPressed: Navigator.of(context).pop,
-            child: const Text('Cancel'),
           ),
-          ElevatedButton(
+          AppButton.primary(
+            label: 'Clear',
             onPressed: () {
               _syncService.clearCache();
               Navigator.pop(context);
               setState(() {});
             },
-            child: const Text('Clear'),
           ),
         ],
       ),
@@ -526,17 +527,17 @@ class _OfflineSyncScreenState extends ConsumerState<OfflineSyncScreen>
         title: const Text('Clear Queue?'),
         content: const Text('Unsynced changes will be lost.'),
         actions: [
-          TextButton(
+          AppButton.tertiary(
+            label: 'Cancel',
             onPressed: Navigator.of(context).pop,
-            child: const Text('Cancel'),
           ),
-          ElevatedButton(
+          AppButton.primary(
+            label: 'Clear',
             onPressed: () {
               _syncService.clearSyncQueue();
               Navigator.pop(context);
               setState(() {});
             },
-            child: const Text('Clear'),
           ),
         ],
       ),

@@ -9,6 +9,7 @@ import '../../db/doctor_db.dart';
 import '../../providers/db_provider.dart';
 import '../../services/pdf_service.dart';
 import '../../services/whatsapp_service.dart';
+import '../../core/components/app_button.dart';
 import '../../theme/app_theme.dart';
 import '../widgets/patient_avatar.dart';
 import '../widgets/clinical_overview_card.dart';
@@ -5047,14 +5048,13 @@ class _PatientViewScreenState extends ConsumerState<PatientViewScreen>
           'Are you sure you want to cancel the appointment on ${DateFormat('MMMM d, yyyy').format(appointment.appointmentDateTime)} at ${DateFormat('h:mm a').format(appointment.appointmentDateTime)}?',
         ),
         actions: [
-          TextButton(
+          AppButton.tertiary(
+            label: 'Keep',
             onPressed: () => Navigator.pop(context, false),
-            child: const Text('Keep'),
           ),
-          ElevatedButton(
+          AppButton.danger(
+            label: 'Cancel Appointment',
             onPressed: () => Navigator.pop(context, true),
-            style: ElevatedButton.styleFrom(backgroundColor: AppColors.error),
-            child: const Text('Cancel Appointment'),
           ),
         ],
       ),
