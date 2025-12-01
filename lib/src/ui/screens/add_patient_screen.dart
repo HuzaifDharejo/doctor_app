@@ -7,6 +7,7 @@ import '../../db/doctor_db.dart';
 import '../../providers/db_provider.dart';
 import '../../services/photo_service.dart';
 import '../../services/suggestions_service.dart';
+import '../../core/theme/design_tokens.dart';
 import '../../theme/app_theme.dart';
 import '../widgets/suggestion_text_field.dart';
 
@@ -126,7 +127,7 @@ class _AddPatientScreenState extends ConsumerState<AddPatientScreen> {
                         GestureDetector(
                           onTap: () => Navigator.pop(context),
                           child: Container(
-                            padding: const EdgeInsets.all(10),
+                            padding: const EdgeInsets.all(AppSpacing.md),
                             decoration: BoxDecoration(
                               color: Colors.white.withValues(alpha: 0.2),
                               borderRadius: BorderRadius.circular(12),
@@ -146,7 +147,7 @@ class _AddPatientScreenState extends ConsumerState<AddPatientScreen> {
                           ),
                         ),
                         Container(
-                          padding: const EdgeInsets.all(10),
+                          padding: const EdgeInsets.all(AppSpacing.md),
                           decoration: BoxDecoration(
                             color: Colors.white.withValues(alpha: 0.2),
                             borderRadius: BorderRadius.circular(12),
@@ -393,7 +394,7 @@ class _AddPatientScreenState extends ConsumerState<AddPatientScreen> {
                                   mainAxisAlignment: MainAxisAlignment.center,
                                   children: [
                                     Container(
-                                      padding: const EdgeInsets.all(8),
+                                      padding: const EdgeInsets.all(AppSpacing.sm),
                                       decoration: BoxDecoration(
                                         color: Colors.white.withValues(alpha: 0.2),
                                         borderRadius: BorderRadius.circular(10),
@@ -452,11 +453,11 @@ class _AddPatientScreenState extends ConsumerState<AddPatientScreen> {
         children: [
           // Section Header
           Padding(
-            padding: const EdgeInsets.all(16),
+            padding: const EdgeInsets.all(AppSpacing.lg),
             child: Row(
               children: [
                 Container(
-                  padding: const EdgeInsets.all(10),
+                  padding: const EdgeInsets.all(AppSpacing.md),
                   decoration: BoxDecoration(
                     gradient: LinearGradient(
                       colors: [iconColor, iconColor.withValues(alpha: 0.7)],
@@ -488,7 +489,7 @@ class _AddPatientScreenState extends ConsumerState<AddPatientScreen> {
           ),
           // Section Content
           Padding(
-            padding: const EdgeInsets.all(16),
+            padding: const EdgeInsets.all(AppSpacing.lg),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: children,
@@ -604,7 +605,7 @@ class _AddPatientScreenState extends ConsumerState<AddPatientScreen> {
       builder: (context) {
         final isDark = Theme.of(context).brightness == Brightness.dark;
         return Container(
-          padding: const EdgeInsets.all(8),
+          padding: const EdgeInsets.all(AppSpacing.sm),
           decoration: BoxDecoration(
             color: isDark 
                 ? Colors.black.withValues(alpha: 0.2) 
@@ -632,7 +633,7 @@ class _AddPatientScreenState extends ConsumerState<AddPatientScreen> {
                   child: AnimatedContainer(
                     duration: const Duration(milliseconds: 200),
                     margin: EdgeInsets.only(right: index < 4 ? 6 : 0),
-                    padding: const EdgeInsets.symmetric(vertical: 14),
+                    padding: const EdgeInsets.symmetric(vertical: AppSpacing.lg),
                     decoration: BoxDecoration(
                       gradient: isSelected 
                           ? LinearGradient(
@@ -756,7 +757,7 @@ class _AddPatientScreenState extends ConsumerState<AddPatientScreen> {
         final isDark = Theme.of(context).brightness == Brightness.dark;
         
         return Container(
-          padding: const EdgeInsets.all(24),
+          padding: const EdgeInsets.all(AppSpacing.xxl),
           decoration: BoxDecoration(
             color: Theme.of(context).colorScheme.surface,
             borderRadius: const BorderRadius.vertical(top: Radius.circular(28)),
@@ -781,7 +782,7 @@ class _AddPatientScreenState extends ConsumerState<AddPatientScreen> {
                 ),
               ),
               Container(
-                padding: const EdgeInsets.all(16),
+                padding: const EdgeInsets.all(AppSpacing.lg),
                 decoration: BoxDecoration(
                   gradient: AppColors.primaryGradient,
                   shape: BoxShape.circle,
@@ -864,7 +865,7 @@ class _AddPatientScreenState extends ConsumerState<AddPatientScreen> {
         onTap: onTap,
         borderRadius: BorderRadius.circular(16),
         child: Container(
-          padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 16),
+          padding: const EdgeInsets.symmetric(horizontal: AppSpacing.lg, vertical: AppSpacing.lg),
           decoration: BoxDecoration(
             color: color.withValues(alpha: 0.08),
             borderRadius: BorderRadius.circular(16),
@@ -873,7 +874,7 @@ class _AddPatientScreenState extends ConsumerState<AddPatientScreen> {
           child: Row(
             children: [
               Container(
-                padding: const EdgeInsets.all(12),
+                padding: const EdgeInsets.all(AppSpacing.md),
                 decoration: BoxDecoration(
                   gradient: LinearGradient(
                     colors: [color, color.withValues(alpha: 0.8)],
@@ -914,7 +915,7 @@ class _AddPatientScreenState extends ConsumerState<AddPatientScreen> {
                 ),
               ),
               Container(
-                padding: const EdgeInsets.all(8),
+                padding: const EdgeInsets.all(AppSpacing.sm),
                 decoration: BoxDecoration(
                   color: color.withValues(alpha: 0.1),
                   shape: BoxShape.circle,
@@ -931,12 +932,12 @@ class _AddPatientScreenState extends ConsumerState<AddPatientScreen> {
   Widget _buildErrorState(BuildContext context) {
     return Center(
       child: Padding(
-        padding: const EdgeInsets.all(32),
+        padding: const EdgeInsets.all(AppSpacing.xxxl),
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
             Container(
-              padding: const EdgeInsets.all(24),
+              padding: const EdgeInsets.all(AppSpacing.xxl),
               decoration: BoxDecoration(
                 color: AppColors.error.withValues(alpha: 0.1),
                 shape: BoxShape.circle,

@@ -7,6 +7,7 @@ import '../../providers/db_provider.dart';
 import '../../providers/google_calendar_provider.dart';
 import '../../services/suggestions_service.dart';
 import '../../core/components/app_button.dart';
+import '../../core/theme/design_tokens.dart';
 import '../../theme/app_theme.dart';
 import '../widgets/suggestion_text_field.dart';
 
@@ -88,7 +89,7 @@ class _AddAppointmentScreenState extends ConsumerState<AddAppointmentScreen> {
                             GestureDetector(
                               onTap: () => Navigator.pop(context),
                               child: Container(
-                                padding: const EdgeInsets.all(10),
+                                padding: const EdgeInsets.all(AppSpacing.md),
                                 decoration: BoxDecoration(
                                   color: Colors.white.withValues(alpha: 0.2),
                                   borderRadius: BorderRadius.circular(12),
@@ -113,7 +114,7 @@ class _AddAppointmentScreenState extends ConsumerState<AddAppointmentScreen> {
                         const SizedBox(height: 20),
                         // Appointment Icon
                         Container(
-                          padding: const EdgeInsets.all(16),
+                          padding: const EdgeInsets.all(AppSpacing.lg),
                           decoration: BoxDecoration(
                             color: Colors.white.withValues(alpha: 0.2),
                             shape: BoxShape.circle,
@@ -208,7 +209,7 @@ class _AddAppointmentScreenState extends ConsumerState<AddAppointmentScreen> {
     return Column(
       children: [
         AppCard.gradient(
-          padding: const EdgeInsets.all(20),
+          padding: const EdgeInsets.all(AppSpacing.xl),
           gradient: AppColors.primaryGradient,
           borderRadius: BorderRadius.circular(20),
           child: Row(
@@ -339,7 +340,7 @@ class _AddAppointmentScreenState extends ConsumerState<AddAppointmentScreen> {
     return Row(
       children: [
         Container(
-          padding: const EdgeInsets.all(8),
+          padding: const EdgeInsets.all(AppSpacing.sm),
           decoration: BoxDecoration(
             color: AppColors.primary.withValues(alpha: 0.1),
             borderRadius: BorderRadius.circular(10),
@@ -376,7 +377,7 @@ class _AddAppointmentScreenState extends ConsumerState<AddAppointmentScreen> {
               hintText: 'Select a patient',
               prefixIcon: Icon(Icons.person_search_rounded, color: isDark ? AppColors.darkTextSecondary : AppColors.textHint),
               border: InputBorder.none,
-              contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+              contentPadding: const EdgeInsets.symmetric(horizontal: AppSpacing.lg, vertical: AppSpacing.md),
             ),
             items: patients.map((p) => DropdownMenuItem(
               value: p.id,
@@ -424,7 +425,7 @@ class _AddAppointmentScreenState extends ConsumerState<AddAppointmentScreen> {
               children: AppointmentSuggestions.visitReasons.map((reason) {
                 final isSelected = _reason == reason;
                 return Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 4),
+                  padding: const EdgeInsets.symmetric(horizontal: AppSpacing.xs),
                   child: ChoiceChip(
                     label: Text(reason),
                     selected: isSelected,
@@ -457,7 +458,7 @@ class _AddAppointmentScreenState extends ConsumerState<AddAppointmentScreen> {
   Widget _buildDurationSelector(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     return AppCard(
-      padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.all(AppSpacing.lg),
       color: Theme.of(context).colorScheme.surface,
       borderRadius: BorderRadius.circular(16),
       borderColor: isDark ? AppColors.darkDivider : AppColors.divider,
@@ -477,7 +478,7 @@ class _AddAppointmentScreenState extends ConsumerState<AddAppointmentScreen> {
                 ),
               ),
               Container(
-                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                padding: const EdgeInsets.symmetric(horizontal: AppSpacing.md, vertical: AppSpacing.xs),
                 decoration: BoxDecoration(
                   color: AppColors.primary.withValues(alpha: 0.1),
                   borderRadius: BorderRadius.circular(8),
@@ -501,8 +502,8 @@ class _AddAppointmentScreenState extends ConsumerState<AddAppointmentScreen> {
                   onTap: () => setState(() => _duration = duration),
                   child: AnimatedContainer(
                     duration: const Duration(milliseconds: 200),
-                    margin: const EdgeInsets.symmetric(horizontal: 4),
-                    padding: const EdgeInsets.symmetric(vertical: 12),
+                    margin: const EdgeInsets.symmetric(horizontal: AppSpacing.xs),
+                    padding: const EdgeInsets.symmetric(vertical: AppSpacing.md),
                     decoration: BoxDecoration(
                       gradient: isSelected ? AppColors.accentGradient : null,
                       color: isSelected ? null : (isDark ? AppColors.darkBackground : AppColors.background),
@@ -543,7 +544,7 @@ class _AddAppointmentScreenState extends ConsumerState<AddAppointmentScreen> {
   Widget _buildReminderToggle(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     return AppCard(
-      padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.all(AppSpacing.lg),
       color: Theme.of(context).colorScheme.surface,
       borderRadius: BorderRadius.circular(16),
       borderColor: isDark ? AppColors.darkDivider : AppColors.divider,
@@ -551,7 +552,7 @@ class _AddAppointmentScreenState extends ConsumerState<AddAppointmentScreen> {
       child: Row(
         children: [
           Container(
-            padding: const EdgeInsets.all(10),
+            padding: const EdgeInsets.all(AppSpacing.md),
             decoration: BoxDecoration(
               color: AppColors.warning.withValues(alpha: 0.1),
               borderRadius: BorderRadius.circular(12),
@@ -626,12 +627,12 @@ class _AddAppointmentScreenState extends ConsumerState<AddAppointmentScreen> {
   Widget _buildErrorState(BuildContext context) {
     return Center(
       child: Padding(
-        padding: const EdgeInsets.all(32),
+        padding: const EdgeInsets.all(AppSpacing.xxxl),
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
             Container(
-              padding: const EdgeInsets.all(24),
+              padding: const EdgeInsets.all(AppSpacing.xxl),
               decoration: BoxDecoration(
                 color: AppColors.error.withValues(alpha: 0.1),
                 shape: BoxShape.circle,
