@@ -5,7 +5,6 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import '../../core/core.dart';
 import '../../core/components/app_button.dart';
 import '../../core/theme/design_tokens.dart';
 import '../../providers/db_provider.dart';

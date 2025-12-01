@@ -4,6 +4,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import '../../services/logger_service.dart';
+import '../../core/components/app_input.dart';
 import '../../theme/app_theme.dart';
 import '../../core/theme/design_tokens.dart';
 

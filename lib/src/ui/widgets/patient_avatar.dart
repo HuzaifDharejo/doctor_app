@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import '../../services/photo_service.dart';
+import '../../core/components/app_button.dart';
 import '../../theme/app_theme.dart';
 import '../../core/theme/design_tokens.dart';
 

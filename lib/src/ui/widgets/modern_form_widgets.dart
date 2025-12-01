@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:intl/intl.dart';
 import '../../db/doctor_db.dart';
+import '../../core/components/app_input.dart';
 import '../../theme/app_theme.dart';
 import '../../core/theme/design_tokens.dart';
 
