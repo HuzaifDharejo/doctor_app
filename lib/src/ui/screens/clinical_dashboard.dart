@@ -12,6 +12,7 @@ import '../../providers/db_provider.dart';
 import '../../services/allergy_checking_service.dart';
 import '../../services/drug_interaction_service.dart';
 import '../../theme/app_theme.dart';
+import '../../core/theme/design_tokens.dart';
 import 'follow_ups_screen.dart';
 import 'patients_screen.dart';
 import 'vital_signs_screen.dart';
@@ -397,7 +398,7 @@ class _ClinicalDashboardState extends ConsumerState<ClinicalDashboard>
               GestureDetector(
                 onTap: () => Navigator.of(context).pop(),
                 child: Container(
-                  padding: const EdgeInsets.all(12),
+                  padding: const EdgeInsets.all(AppSpacing.md),
                   decoration: BoxDecoration(
                     color: isDark ? Colors.white.withValues(alpha: 0.08) : Colors.grey.withValues(alpha: 0.1),
                     borderRadius: BorderRadius.circular(14),
@@ -412,7 +413,7 @@ class _ClinicalDashboardState extends ConsumerState<ClinicalDashboard>
                 GestureDetector(
                   onTap: widget.onMenuTap,
                   child: Container(
-                    padding: const EdgeInsets.all(12),
+                    padding: const EdgeInsets.all(AppSpacing.md),
                     decoration: BoxDecoration(
                       gradient: LinearGradient(
                         colors: [
@@ -429,7 +430,7 @@ class _ClinicalDashboardState extends ConsumerState<ClinicalDashboard>
               const Spacer(),
               // Date
               Container(
-                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                padding: const EdgeInsets.symmetric(horizontal: AppSpacing.md, vertical: AppSpacing.xs),
                 decoration: BoxDecoration(
                   color: isDark ? Colors.white.withValues(alpha: 0.08) : Colors.grey.withValues(alpha: 0.1),
                   borderRadius: BorderRadius.circular(20),
@@ -455,7 +456,7 @@ class _ClinicalDashboardState extends ConsumerState<ClinicalDashboard>
               Stack(
                 children: [
                   Container(
-                    padding: const EdgeInsets.all(12),
+                    padding: const EdgeInsets.all(AppSpacing.md),
                     decoration: BoxDecoration(
                       color: isDark ? Colors.white.withValues(alpha: 0.08) : Colors.grey.withValues(alpha: 0.1),
                       borderRadius: BorderRadius.circular(14),
@@ -484,7 +485,7 @@ class _ClinicalDashboardState extends ConsumerState<ClinicalDashboard>
           Row(
             children: [
               Container(
-                padding: const EdgeInsets.all(12),
+                padding: const EdgeInsets.all(AppSpacing.md),
                 decoration: BoxDecoration(
                   gradient: LinearGradient(
                     colors: [greetingColor.withValues(alpha: 0.2), greetingColor.withValues(alpha: 0.1)],
@@ -518,7 +519,7 @@ class _ClinicalDashboardState extends ConsumerState<ClinicalDashboard>
           const SizedBox(height: 16),
           // Quick Stats Row
           Container(
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+            padding: const EdgeInsets.symmetric(horizontal: AppSpacing.lg, vertical: AppSpacing.md),
             decoration: BoxDecoration(
               gradient: LinearGradient(
                 colors: [AppColors.primary.withValues(alpha: 0.1), AppColors.primary.withValues(alpha: 0.05)],
@@ -571,7 +572,7 @@ class _ClinicalDashboardState extends ConsumerState<ClinicalDashboard>
         data.clinicalAlerts.where((a) => a.severity == AlertSeverity.warning).length;
     
     return AppCard(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+      padding: const EdgeInsets.symmetric(horizontal: AppSpacing.lg, vertical: AppSpacing.md),
       gradient: LinearGradient(
         colors: criticalCount > 0 
             ? [const Color(0xFFDC2626).withValues(alpha: 0.15), const Color(0xFFDC2626).withValues(alpha: 0.05)]
@@ -585,7 +586,7 @@ class _ClinicalDashboardState extends ConsumerState<ClinicalDashboard>
       child: Row(
         children: [
           Container(
-            padding: const EdgeInsets.all(8),
+            padding: const EdgeInsets.all(AppSpacing.sm),
             decoration: BoxDecoration(
               color: criticalCount > 0 ? const Color(0xFFDC2626) : const Color(0xFFF59E0B),
               borderRadius: BorderRadius.circular(10),
@@ -669,7 +670,7 @@ class _ClinicalDashboardState extends ConsumerState<ClinicalDashboard>
       child: Column(
         children: [
           Container(
-            padding: const EdgeInsets.all(10),
+            padding: const EdgeInsets.all(AppSpacing.md),
             decoration: BoxDecoration(
               gradient: LinearGradient(
                 colors: [color.withValues(alpha: 0.2), color.withValues(alpha: 0.1)],
@@ -721,7 +722,7 @@ class _ClinicalDashboardState extends ConsumerState<ClinicalDashboard>
         ],
         if (data.todayAppointments.isEmpty)
           Container(
-            padding: const EdgeInsets.all(24),
+            padding: const EdgeInsets.all(AppSpacing.xxl),
             margin: const EdgeInsets.only(top: 12),
             decoration: BoxDecoration(
               color: isDark ? Colors.white.withValues(alpha: 0.06) : Colors.white,
@@ -746,7 +747,7 @@ class _ClinicalDashboardState extends ConsumerState<ClinicalDashboard>
 
   Widget _buildAppointmentStat(String label, int count, Color color, bool isDark, {bool highlight = false}) {
     return Container(
-      padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 14),
+      padding: const EdgeInsets.symmetric(vertical: AppSpacing.md, horizontal: AppSpacing.lg),
       decoration: BoxDecoration(
         color: highlight ? color.withValues(alpha: 0.15) : (isDark ? Colors.white.withValues(alpha: 0.06) : Colors.white),
         borderRadius: BorderRadius.circular(12),
@@ -772,7 +773,7 @@ class _ClinicalDashboardState extends ConsumerState<ClinicalDashboard>
         
         return Container(
           margin: const EdgeInsets.only(bottom: 10),
-          padding: const EdgeInsets.all(14),
+          padding: const EdgeInsets.all(AppSpacing.lg),
           decoration: BoxDecoration(
             color: isDark ? Colors.white.withValues(alpha: 0.06) : Colors.white,
             borderRadius: BorderRadius.circular(14),
@@ -781,7 +782,7 @@ class _ClinicalDashboardState extends ConsumerState<ClinicalDashboard>
           child: Row(
             children: [
               Container(
-                padding: const EdgeInsets.all(10),
+                padding: const EdgeInsets.all(AppSpacing.md),
                 decoration: BoxDecoration(
                   color: AppColors.primary.withValues(alpha: 0.1),
                   borderRadius: BorderRadius.circular(10),
@@ -804,7 +805,7 @@ class _ClinicalDashboardState extends ConsumerState<ClinicalDashboard>
                 ),
               ),
               Container(
-                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                padding: const EdgeInsets.symmetric(horizontal: AppSpacing.md, vertical: AppSpacing.xs),
                 decoration: BoxDecoration(
                   color: AppColors.primary.withValues(alpha: 0.1),
                   borderRadius: BorderRadius.circular(8),
@@ -867,7 +868,7 @@ class _ClinicalDashboardState extends ConsumerState<ClinicalDashboard>
     
     return Container(
       margin: const EdgeInsets.only(bottom: 10),
-      padding: const EdgeInsets.all(14),
+      padding: const EdgeInsets.all(AppSpacing.lg),
       decoration: BoxDecoration(
         gradient: LinearGradient(
           colors: [color.withValues(alpha: 0.1), color.withValues(alpha: 0.05)],
@@ -878,7 +879,7 @@ class _ClinicalDashboardState extends ConsumerState<ClinicalDashboard>
       child: Row(
         children: [
           Container(
-            padding: const EdgeInsets.all(10),
+            padding: const EdgeInsets.all(AppSpacing.md),
             decoration: BoxDecoration(
               color: color, borderRadius: BorderRadius.circular(10),
             ),
@@ -899,7 +900,7 @@ class _ClinicalDashboardState extends ConsumerState<ClinicalDashboard>
                     )),
                     const SizedBox(width: 8),
                     Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                      padding: const EdgeInsets.symmetric(horizontal: AppSpacing.xs, vertical: AppSpacing.xxs),
                       decoration: BoxDecoration(
                         color: color.withValues(alpha: 0.2),
                         borderRadius: BorderRadius.circular(4),
@@ -923,7 +924,7 @@ class _ClinicalDashboardState extends ConsumerState<ClinicalDashboard>
               builder: (_) => VitalSignsScreen(patientId: alert.patient.id, patientName: '${alert.patient.firstName} ${alert.patient.lastName}'),
             )),
             child: Container(
-              padding: const EdgeInsets.all(8),
+              padding: const EdgeInsets.all(AppSpacing.sm),
               decoration: BoxDecoration(
                 color: isDark ? Colors.white.withValues(alpha: 0.1) : Colors.white,
                 borderRadius: BorderRadius.circular(8),
@@ -962,7 +963,7 @@ class _ClinicalDashboardState extends ConsumerState<ClinicalDashboard>
         
         return Container(
           margin: const EdgeInsets.only(bottom: 10),
-          padding: const EdgeInsets.all(14),
+          padding: const EdgeInsets.all(AppSpacing.lg),
           decoration: BoxDecoration(
             color: isDark ? Colors.white.withValues(alpha: 0.06) : Colors.white,
             borderRadius: BorderRadius.circular(14),
@@ -971,7 +972,7 @@ class _ClinicalDashboardState extends ConsumerState<ClinicalDashboard>
           child: Row(
             children: [
               Container(
-                padding: const EdgeInsets.all(10),
+                padding: const EdgeInsets.all(AppSpacing.md),
                 decoration: BoxDecoration(
                   color: const Color(0xFFEF4444).withValues(alpha: 0.1),
                   borderRadius: BorderRadius.circular(10),
@@ -993,7 +994,7 @@ class _ClinicalDashboardState extends ConsumerState<ClinicalDashboard>
                 ),
               ),
               Container(
-                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                padding: const EdgeInsets.symmetric(horizontal: AppSpacing.md, vertical: AppSpacing.xs),
                 decoration: BoxDecoration(
                   color: const Color(0xFFEF4444).withValues(alpha: 0.1),
                   borderRadius: BorderRadius.circular(8),
@@ -1022,7 +1023,7 @@ class _ClinicalDashboardState extends ConsumerState<ClinicalDashboard>
         }, isCompact),
         SizedBox(height: isCompact ? 12 : 16),
         Container(
-          padding: const EdgeInsets.all(18),
+          padding: const EdgeInsets.all(AppSpacing.xl),
           decoration: BoxDecoration(
             color: isDark ? Colors.white.withValues(alpha: 0.06) : Colors.white,
             borderRadius: BorderRadius.circular(16),
@@ -1126,7 +1127,7 @@ class _ClinicalDashboardState extends ConsumerState<ClinicalDashboard>
         if (drugAlerts.isNotEmpty || allergyAlerts.isNotEmpty) ...[
           const SizedBox(height: 12),
           Container(
-            padding: const EdgeInsets.all(14),
+            padding: const EdgeInsets.all(AppSpacing.lg),
             decoration: BoxDecoration(
               color: isDark ? Colors.white.withValues(alpha: 0.06) : Colors.white,
               borderRadius: BorderRadius.circular(14),
@@ -1173,7 +1174,7 @@ class _ClinicalDashboardState extends ConsumerState<ClinicalDashboard>
 
   Widget _buildCDSCard(String title, String subtitle, IconData icon, Color color, bool isDark, bool hasAlerts) {
     return Container(
-      padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.all(AppSpacing.lg),
       decoration: BoxDecoration(
         gradient: hasAlerts 
             ? LinearGradient(colors: [color.withValues(alpha: 0.15), color.withValues(alpha: 0.05)])
@@ -1188,7 +1189,7 @@ class _ClinicalDashboardState extends ConsumerState<ClinicalDashboard>
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Container(
-            padding: const EdgeInsets.all(10),
+            padding: const EdgeInsets.all(AppSpacing.md),
             decoration: BoxDecoration(
               color: color.withValues(alpha: hasAlerts ? 0.2 : 0.1),
               borderRadius: BorderRadius.circular(10),
@@ -1226,7 +1227,7 @@ class _ClinicalDashboardState extends ConsumerState<ClinicalDashboard>
             if (badgeCount != null && badgeCount > 0) ...[
               const SizedBox(width: 8),
               Container(
-                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                padding: const EdgeInsets.symmetric(horizontal: AppSpacing.sm, vertical: AppSpacing.xxs),
                 decoration: BoxDecoration(
                   color: badgeColor ?? AppColors.primary,
                   borderRadius: BorderRadius.circular(10),
@@ -1241,7 +1242,7 @@ class _ClinicalDashboardState extends ConsumerState<ClinicalDashboard>
         GestureDetector(
           onTap: onViewAll,
           child: Container(
-            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+            padding: const EdgeInsets.symmetric(horizontal: AppSpacing.md, vertical: AppSpacing.xs),
             decoration: BoxDecoration(
               color: AppColors.primary.withValues(alpha: 0.1),
               borderRadius: BorderRadius.circular(8),
@@ -1370,3 +1371,4 @@ class ClinicalAlert {
 
 enum AlertSeverity { info, warning, critical }
 enum ClinicalAlertType { allergy, drugInteraction, drugAllergy, labResult, vitalSign }
+

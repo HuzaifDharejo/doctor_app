@@ -133,7 +133,7 @@ class _AuditLogViewerScreenState extends ConsumerState<AuditLogViewerScreen>
       children: [
         // Filter controls
         Padding(
-          padding: const EdgeInsets.all(16),
+          padding: const EdgeInsets.all(AppSpacing.lg),
           child: Column(
             spacing: 12,
             children: [
@@ -186,7 +186,7 @@ class _AuditLogViewerScreenState extends ConsumerState<AuditLogViewerScreen>
                   ),
                 )
               : ListView.builder(
-                  padding: const EdgeInsets.all(8),
+                  padding: const EdgeInsets.all(AppSpacing.sm),
                   itemCount: _filteredLogs.length,
                   itemBuilder: (context, index) => _buildAuditLogCard(
                     _filteredLogs[index],
@@ -204,10 +204,10 @@ class _AuditLogViewerScreenState extends ConsumerState<AuditLogViewerScreen>
     final resultColor = log.result == 'SUCCESS' ? Colors.green : Colors.red;
 
     return Card(
-      margin: const EdgeInsets.symmetric(vertical: 4, horizontal: 8),
+      margin: const EdgeInsets.symmetric(vertical: AppSpacing.xs, horizontal: AppSpacing.sm),
       color: isDark ? Colors.grey[900] : Colors.white,
       child: Padding(
-        padding: const EdgeInsets.all(12),
+        padding: const EdgeInsets.all(AppSpacing.md),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           spacing: 8,
@@ -224,7 +224,7 @@ class _AuditLogViewerScreenState extends ConsumerState<AuditLogViewerScreen>
                         spacing: 8,
                         children: [
                           Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                            padding: const EdgeInsets.symmetric(horizontal: AppSpacing.sm, vertical: AppSpacing.xs),
                             decoration: BoxDecoration(
                               color: actionColor.withValues(alpha: 0.2),
                               borderRadius: BorderRadius.circular(4),
@@ -239,7 +239,7 @@ class _AuditLogViewerScreenState extends ConsumerState<AuditLogViewerScreen>
                             ),
                           ),
                           Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                            padding: const EdgeInsets.symmetric(horizontal: AppSpacing.xs, vertical: AppSpacing.xxs),
                             decoration: BoxDecoration(
                               color: resultColor.withValues(alpha: 0.2),
                               borderRadius: BorderRadius.circular(4),
@@ -338,7 +338,7 @@ class _AuditLogViewerScreenState extends ConsumerState<AuditLogViewerScreen>
             ),
           )
         : ListView.builder(
-            padding: const EdgeInsets.all(8),
+            padding: const EdgeInsets.all(AppSpacing.sm),
             itemCount: failedLogs.length,
             itemBuilder: (context, index) => _buildAuditLogCard(failedLogs[index], isDark),
           );
@@ -348,7 +348,7 @@ class _AuditLogViewerScreenState extends ConsumerState<AuditLogViewerScreen>
     final stats = _calculateStats();
 
     return SingleChildScrollView(
-      padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.all(AppSpacing.lg),
       child: Column(
         spacing: 16,
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -407,7 +407,7 @@ class _AuditLogViewerScreenState extends ConsumerState<AuditLogViewerScreen>
     return actionMap.entries.map((e) {
       final percentage = _filteredLogs.isEmpty ? 0 : (e.value / _filteredLogs.length * 100).toStringAsFixed(1);
       return Padding(
-        padding: const EdgeInsets.symmetric(vertical: 8),
+        padding: const EdgeInsets.symmetric(vertical: AppSpacing.sm),
         child: Row(
           spacing: 12,
           children: [
@@ -452,7 +452,7 @@ class _AuditLogViewerScreenState extends ConsumerState<AuditLogViewerScreen>
         ),
         borderRadius: BorderRadius.circular(12),
       ),
-      padding: const EdgeInsets.all(12),
+      padding: const EdgeInsets.all(AppSpacing.md),
       child: Column(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -486,3 +486,4 @@ class _AuditLogViewerScreenState extends ConsumerState<AuditLogViewerScreen>
     return Colors.grey;
   }
 }
+
