@@ -6,6 +6,7 @@ import '../../db/doctor_db.dart';
 import '../../providers/db_provider.dart';
 import '../../theme/app_theme.dart';
 import '../../core/theme/design_tokens.dart';
+import '../../core/widgets/app_card.dart';
 import 'records/add_lab_result_screen.dart';
 
 /// Screen to display lab results history with normal range indicators
@@ -288,18 +289,23 @@ class _LabResultsScreenState extends ConsumerState<LabResultsScreen> with Single
       case 'Normal':
         statusColor = AppColors.success;
         statusIcon = Icons.check_circle;
+        break;
       case 'High':
         statusColor = AppColors.error;
         statusIcon = Icons.arrow_upward;
+        break;
       case 'Low':
         statusColor = AppColors.warning;
         statusIcon = Icons.arrow_downward;
+        break;
       case 'Critical':
         statusColor = Colors.red.shade900;
         statusIcon = Icons.warning;
+        break;
       default:
         statusColor = AppColors.info;
         statusIcon = Icons.info;
+        break;
     }
 
     // Check if this test has history for trend

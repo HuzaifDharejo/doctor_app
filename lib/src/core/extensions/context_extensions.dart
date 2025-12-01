@@ -2,7 +2,7 @@
 library;
 
 import 'package:flutter/material.dart';
-import '../constants/app_constants.dart';
+import '../theme/design_tokens.dart';
 
 /// Theme and color extensions
 extension ThemeExtension on BuildContext {
@@ -123,7 +123,7 @@ extension ScaffoldExtension on BuildContext {
         backgroundColor: backgroundColor,
         behavior: SnackBarBehavior.floating,
         shape: const RoundedRectangleBorder(
-          borderRadius: AppRadius.mediumRadius,
+          borderRadius: BorderRadius.all(Radius.circular(AppRadius.md)),
         ),
         margin: EdgeInsets.all(responsivePadding),
       ),

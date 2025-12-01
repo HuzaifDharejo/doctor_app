@@ -2,8 +2,12 @@ import 'dart:convert';
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../../core/components/app_input.dart';
+import '../../core/components/app_button.dart';
+import '../../core/widgets/app_card.dart';
+import '../../core/extensions/context_extensions.dart';
 import '../../core/theme/design_tokens.dart';
-import '../../providers/db_provider.dart;
+import '../../providers/db_provider.dart';
 import '../../services/doctor_settings_service.dart';
 import '../../theme/app_theme.dart';
 import '../widgets/signature_pad.dart';
@@ -785,23 +789,24 @@ class _DoctorProfileScreenState extends ConsumerState<DoctorProfileScreen>
     );
   }
 
-  Widget _buildEditableField({required String label, required TextEditingController controller, required bool isDark, IconData? icon, int maxLines = 1, String? hint, TextInputType keyboardType = TextInputType.text}) {
-    return maxLines > 1
-        ? AppInput.multiline(
-            controller: controller,
-            label: label,
-            hint: hint,
-            prefixIcon: icon,
-            maxLines: maxLines,
-            keyboardType: keyboardType,
-          )
-        : AppInput.text(
-            controller: controller,
-            label: label,
-            hint: hint,
-            prefixIcon: icon,
-            keyboardType: keyboardType,
-          );
+  Widget _buildEditableField({
+    required String label,
+    required TextEditingController controller,
+    required bool isDark,
+    IconData? icon,
+    int maxLines = 1,
+    String? hint,
+    TextInputType keyboardType = TextInputType.text,
+  }) {
+    return AppInput(
+      controller: controller,
+      label: label,
+      hint: hint,
+      prefixIcon: icon,
+      keyboardType: keyboardType,
+      maxLines: maxLines,
+      minLines: maxLines > 1 ? 2 : null,
+    );
   }
 
   Widget _buildFeeField({required String label, required TextEditingController controller, required bool isDark, required IconData icon, required Color color}) {
@@ -888,10 +893,22 @@ class _DoctorProfileScreenState extends ConsumerState<DoctorProfileScreen>
       context: context,
       builder: (context) => AlertDialog(
         title: const Text('Add Language'),
-        content: AppInput.text(controller: controller, hint: 'Enter language', autofocus: true),
+        content: AppInput(
+          controller: controller,
+          hint: 'Enter language',
+          label: 'Language',
+        ),
         actions: [
           AppButton.tertiary(label: 'Cancel', onPressed: () => Navigator.pop(context)),
-          FilledButton(onPressed: () { if (controller.text.isNotEmpty) { setState(() => _languages.add(controller.text)); Navigator.pop(context); } }, child: const Text('Add')),
+          FilledButton(
+            onPressed: () {
+              if (controller.text.isNotEmpty) {
+                setState(() => _languages.add(controller.text));
+                Navigator.pop(context);
+              }
+            },
+            child: const Text('Add'),
+          ),
         ],
       ),
     );

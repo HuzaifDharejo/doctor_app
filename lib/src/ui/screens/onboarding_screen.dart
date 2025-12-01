@@ -8,6 +8,8 @@ import '../../providers/db_provider.dart';
 import '../../providers/google_calendar_provider.dart';
 import '../../services/google_calendar_service.dart';
 import '../../core/components/app_button.dart';
+import '../../core/components/app_input.dart';
+import '../../core/widgets/app_card.dart';
 import '../../theme/app_theme.dart';
 import '../../core/theme/design_tokens.dart';
 
@@ -360,12 +362,14 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen>
                       onPressed: _nameController.text.isEmpty ? null : _nextPage,
                     )
                   else if (_currentPage == 2)
-                    AppButton.primary(
+                    AppButton(
                       label: 'Start Using App',
                       icon: Icons.check,
-                      backgroundColor: AppColors.success,
-                      isLoading: _isLoading,
                       onPressed: _isLoading ? null : _completeSetup,
+                      backgroundColor: AppColors.success,
+                      foregroundColor: Colors.white,
+                      isLoading: _isLoading,
+                      fullWidth: false,
                     ),
                 ],
               ),

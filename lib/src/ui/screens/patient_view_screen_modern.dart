@@ -18,6 +18,7 @@ import '../../db/doctor_db.dart';
 import '../../providers/db_provider.dart';
 import '../../services/whatsapp_service.dart';
 import '../../core/components/app_button.dart';
+import '../../core/components/app_input.dart';
 import '../../core/theme/design_tokens.dart';
 import '../../theme/app_theme.dart';
 import '../widgets/patient_avatar.dart';
@@ -921,12 +922,7 @@ class _PatientViewScreenModernState
           controller: _tagsController,
           label: 'Tags (comma-separated)',
           prefixIcon: Icons.label,
-              borderRadius: BorderRadius.circular(12),
-              borderSide: BorderSide(color: borderColor),
-            ),
-            fillColor: fillColor,
-            filled: true,
-          ),
+        ),
         ),
         const SizedBox(height: 16),
         Row(

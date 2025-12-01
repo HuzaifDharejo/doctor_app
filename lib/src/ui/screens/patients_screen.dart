@@ -6,6 +6,17 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../db/doctor_db.dart';
 import '../../providers/db_provider.dart';
 import '../../theme/app_theme.dart';
+import '../../core/theme/design_tokens.dart';
+import '../../core/extensions/context_extensions.dart';
+import '../../core/widgets/app_header.dart';
+import '../../core/widgets/app_search_bar.dart';
+import '../../core/widgets/shimmer_loading.dart';
+import '../../core/widgets/error_display.dart';
+import '../../core/widgets/loading_state.dart';
+import '../../core/widgets/error_state.dart';
+import '../../core/widgets/empty_state.dart';
+import '../../core/widgets/gradient_fab.dart';
+import '../../core/constants/app_strings.dart';
 import '../widgets/patient_card.dart';
 import 'add_patient_screen.dart';
 

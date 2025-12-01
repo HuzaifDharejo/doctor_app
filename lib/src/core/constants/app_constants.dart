@@ -1,165 +1,75 @@
-/// App-wide constants for consistent styling and behavior
+/// Application-wide constants
 library;
 
-import 'package:flutter/material.dart';
+/// Application metadata and configuration
+abstract class AppConstants {
+  // App Info
+  static const String appName = 'Doctor App';
+  static const String appVersion = '1.0.0';
+  static const String appDescription = 'Comprehensive Medical Practice Management System';
 
-/// Spacing and padding constants
-abstract class AppSpacing {
-  // Base unit
-  static const double unit = 4;
-  
-  // Spacing values
-  static const double xxs = 2;
-  static const double xs = 4;
-  static const double sm = 8;
-  static const double md = 12;
-  static const double lg = 16;
-  static const double xl = 20;
-  static const double xxl = 24;
-  static const double xxxl = 32;
-  
-  // Screen padding
-  static const double screenPadding = 20;
-  static const double screenPaddingCompact = 12;
-  
-  // Card padding
-  static const double cardPadding = 16;
-  static const double cardPaddingCompact = 12;
-  
-  // List item spacing
-  static const double listItemSpacing = 12;
-  static const double listItemSpacingCompact = 8;
-}
+  // Storage Keys
+  static const String tokenKey = 'auth_token';
+  static const String userIdKey = 'user_id';
+  static const String themeKey = 'theme_mode';
+  static const String languageKey = 'language_code';
+  static const String onboardingKey = 'onboarding_complete';
 
-/// Border radius constants
-abstract class AppRadius {
-  static const double xs = 4;
-  static const double sm = 8;
-  static const double md = 12;
-  static const double lg = 16;
-  static const double xl = 20;
-  static const double xxl = 24;
-  static const double full = 999;
-  
-  // Common border radius
-  static const BorderRadius smallRadius = BorderRadius.all(Radius.circular(sm));
-  static const BorderRadius mediumRadius = BorderRadius.all(Radius.circular(md));
-  static const BorderRadius largeRadius = BorderRadius.all(Radius.circular(lg));
-  static const BorderRadius cardRadius = BorderRadius.all(Radius.circular(lg));
-  static const BorderRadius buttonRadius = BorderRadius.all(Radius.circular(md));
-  static const BorderRadius inputRadius = BorderRadius.all(Radius.circular(md));
-  static const BorderRadius chipRadius = BorderRadius.all(Radius.circular(xl));
-}
+  // API Configuration
+  static const String baseUrl = 'https://api.doctorapp.com';
+  static const int requestTimeout = 30;
+  static const int maxRetries = 3;
 
-/// Icon sizes
-abstract class AppIconSize {
-  static const double xs = 16;
-  static const double sm = 20;
-  static const double md = 24;
-  static const double lg = 28;
-  static const double xl = 32;
-  static const double xxl = 48;
-  
-  // Compact mode sizes
-  static const double smCompact = 18;
-  static const double mdCompact = 22;
-  static const double lgCompact = 26;
-}
+  // Pagination
+  static const int defaultPageSize = 20;
+  static const int maxPageSize = 100;
 
-/// Font sizes
-abstract class AppFontSize {
-  static const double xxs = 10;
-  static const double xs = 11;
-  static const double sm = 12;
-  static const double md = 13;
-  static const double lg = 14;
-  static const double xl = 16;
-  static const double xxl = 18;
-  static const double xxxl = 22;
-  static const double display = 26;
-  
-  // Compact mode sizes
-  static const double smCompact = 10;
-  static const double mdCompact = 11;
-  static const double lgCompact = 13;
-  static const double xlCompact = 15;
-  static const double xxlCompact = 18;
-}
-
-/// Animation durations
-abstract class AppDuration {
-  static const Duration instant = Duration(milliseconds: 100);
-  static const Duration fast = Duration(milliseconds: 200);
-  static const Duration short = Duration(milliseconds: 250);
-  static const Duration normal = Duration(milliseconds: 300);
-  static const Duration slow = Duration(milliseconds: 400);
-  static const Duration slower = Duration(milliseconds: 500);
-  
-  // Specific animations
-  static const Duration pageTransition = Duration(milliseconds: 300);
-  static const Duration buttonPress = Duration(milliseconds: 150);
-  static const Duration fadeIn = Duration(milliseconds: 200);
-  static const Duration slideIn = Duration(milliseconds: 250);
-}
-
-/// Breakpoints for responsive design
-abstract class AppBreakpoint {
-  static const double compact = 400;
-  static const double medium = 600;
-  static const double expanded = 840;
-  static const double large = 1200;
-  
-  /// Check if width is compact
-  static bool isCompact(double width) => width < compact;
-  
-  /// Check if width is medium
-  static bool isMedium(double width) => width >= compact && width < expanded;
-  
-  /// Check if width is expanded
-  static bool isExpanded(double width) => width >= expanded;
-}
-
-/// Elevation values
-abstract class AppElevation {
-  static const double none = 0;
-  static const double xs = 1;
-  static const double sm = 2;
-  static const double md = 4;
-  static const double lg = 8;
-  static const double xl = 16;
-}
-
-/// Common box shadows
-abstract class AppShadow {
-  static List<BoxShadow> get small => [
-    BoxShadow(
-      color: Colors.black.withValues(alpha: 0.04),
-      blurRadius: 8,
-      offset: const Offset(0, 2),
-    ),
+  // File Upload
+  static const int maxFileSize = 10 * 1024 * 1024; // 10MB
+  static const List<String> allowedFileTypes = [
+    'jpg',
+    'jpeg',
+    'png',
+    'pdf',
+    'doc',
+    'docx'
   ];
-  
-  static List<BoxShadow> get medium => [
-    BoxShadow(
-      color: Colors.black.withValues(alpha: 0.08),
-      blurRadius: 16,
-      offset: const Offset(0, 4),
-    ),
-  ];
-  
-  static List<BoxShadow> get large => [
-    BoxShadow(
-      color: Colors.black.withValues(alpha: 0.08),
-      blurRadius: 24,
-      offset: const Offset(0, 8),
-    ),
-  ];
-  
-  static List<BoxShadow> coloredShadow(Color color, {double opacity = 0.4}) => [
-    BoxShadow(
-      color: color.withValues(alpha: opacity),
-      blurRadius: 16,
-      offset: const Offset(0, 6),
-    ),
-  ];
+
+  // Validation
+  static const int minPasswordLength = 8;
+  static const int maxPasswordLength = 32;
+  static const int minNameLength = 2;
+  static const int maxNameLength = 50;
+
+  // Cache Duration
+  static const Duration shortCacheDuration = Duration(minutes: 5);
+  static const Duration mediumCacheDuration = Duration(hours: 1);
+  static const Duration longCacheDuration = Duration(days: 1);
+
+  // Sync Configuration
+  static const Duration syncInterval = Duration(minutes: 15);
+  static const int maxSyncRetries = 3;
+  static const Duration syncRetryDelay = Duration(seconds: 5);
+
+  // Notification
+  static const String notificationChannelId = 'doctor_app_channel';
+  static const String notificationChannelName = 'Doctor App Notifications';
 }
+
+/// Database table names
+abstract class DbTables {
+  static const String patients = 'patients';
+  static const String appointments = 'appointments';
+  static const String prescriptions = 'prescriptions';
+  static const String medicalRecords = 'medical_records';
+  static const String billing = 'billing';
+  static const String vitals = 'vitals';
+  static const String syncQueue = 'sync_queue';
+  static const String cacheMetadata = 'cache_metadata';
+}
+
+// Note:
+// Route name constants have been centralized under core/routing/app_router.dart (AppRoutes).
+// UI string constants are defined in core/constants/app_strings.dart (AppStrings).
+// This file intentionally does not define AppRoutes or AppStrings to avoid
+// symbol duplication and ambiguous exports.

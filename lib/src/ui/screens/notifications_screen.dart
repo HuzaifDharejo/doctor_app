@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../providers/db_provider.dart';
 import '../widgets/notifications_panel.dart';
+import '../../core/theme/design_tokens.dart';
 
 /// Screen for managing notifications and preferences
 class NotificationsScreen extends ConsumerStatefulWidget {

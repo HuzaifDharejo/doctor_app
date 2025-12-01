@@ -6,6 +6,7 @@ import '../../db/doctor_db.dart';
 import '../../providers/db_provider.dart';
 import '../../theme/app_theme.dart';
 import '../../core/theme/design_tokens.dart';
+import '../../core/widgets/app_card.dart';
 import '../widgets/medical_record_widgets.dart';
 import 'medical_record_detail_screen.dart';
 import 'records/records.dart';

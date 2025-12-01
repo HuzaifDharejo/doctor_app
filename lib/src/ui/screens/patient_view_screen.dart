@@ -10,6 +10,7 @@ import '../../providers/db_provider.dart';
 import '../../services/pdf_service.dart';
 import '../../services/whatsapp_service.dart';
 import '../../core/components/app_button.dart';
+import '../../core/components/app_input.dart';
 import '../../theme/app_theme.dart';
 import '../../core/theme/design_tokens.dart';
 import '../widgets/patient_avatar.dart';

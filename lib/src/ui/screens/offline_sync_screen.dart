@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../core/components/app_button.dart';
 import '../../core/widgets/app_card.dart';
+import '../../core/theme/design_tokens.dart';
 import '../../services/offline_sync_service.dart';
 import '../widgets/offline_sync_widgets.dart';
 

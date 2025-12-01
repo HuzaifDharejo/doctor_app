@@ -6,6 +6,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../core/components/app_button.dart';
+import '../../core/constants/app_strings.dart';
+import '../../core/extensions/context_extensions.dart';
+import '../../core/widgets/app_header.dart';
 import '../../core/theme/design_tokens.dart';
 import '../../providers/db_provider.dart';
 import '../../providers/google_calendar_provider.dart';
@@ -14,6 +17,7 @@ import '../../services/doctor_settings_service.dart';
 import '../../services/localization_service.dart';
 import '../../services/logger_service.dart';
 import '../../services/seed_data_service.dart';
+import '../../core/utils/date_time_formatter.dart';
 import '../../theme/app_theme.dart';
 import '../widgets/debug_console.dart';
 import 'doctor_profile_screen.dart';
@@ -269,8 +273,8 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> with SingleTick
     final settings = appSettings.settings;
     final lastBackup = settings.lastBackupDate;
     final backupText = lastBackup != null 
-        ? lastBackup.relative
-        : 'Never';
+      ? DateTimeFormatter.formatRelative(lastBackup)
+      : 'Never';
     
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: AppSpacing.lg),
@@ -810,10 +814,11 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> with SingleTick
             label: 'Cancel',
             onPressed: () => Navigator.pop(context),
           ),
-          AppButton.primary(
+          AppButton(
             label: 'Restore',
             icon: Icons.restore,
             backgroundColor: AppColors.info,
+            foregroundColor: Colors.white,
             onPressed: () async {
               Navigator.pop(context);
               await _performRestore(context, ref, backup);

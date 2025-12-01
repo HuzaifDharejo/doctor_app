@@ -72,15 +72,19 @@ class _InvoiceDetailScreenState extends ConsumerState<InvoiceDetailScreen> {
       case 'paid':
         statusColor = AppColors.success;
         statusIcon = Icons.check_circle_rounded;
+        break;
       case 'pending':
         statusColor = AppColors.warning;
         statusIcon = Icons.pending_rounded;
+        break;
       case 'overdue':
         statusColor = AppColors.error;
         statusIcon = Icons.error_rounded;
+        break;
       case 'partial':
         statusColor = AppColors.info;
         statusIcon = Icons.timelapse_rounded;
+        break;
       default:
         statusColor = AppColors.textSecondary;
         statusIcon = Icons.receipt_rounded;
@@ -500,10 +504,11 @@ class _InvoiceDetailScreenState extends ConsumerState<InvoiceDetailScreen> {
             label: 'Cancel',
             onPressed: () => Navigator.pop(context, false),
           ),
-          AppButton.primary(
+          AppButton(
             label: 'Mark as Paid',
-            backgroundColor: AppColors.success,
             onPressed: () => Navigator.pop(context, true),
+            backgroundColor: AppColors.success,
+            foregroundColor: Colors.white,
           ),
         ],
       ),
@@ -574,12 +579,16 @@ class _InvoiceDetailScreenState extends ConsumerState<InvoiceDetailScreen> {
     switch (action) {
       case 'pdf':
         _exportPdf();
+        break;
       case 'whatsapp':
         _shareWhatsApp();
+        break;
       case 'edit':
         _showNotImplemented('Edit invoice');
+        break;
       case 'delete':
         _confirmDelete();
+        break;
     }
   }
 

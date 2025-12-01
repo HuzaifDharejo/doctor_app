@@ -5,7 +5,14 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 import '../../core/routing/app_router.dart';
+import '../../core/constants/app_strings.dart';
+import '../../core/extensions/context_extensions.dart';
 import '../../core/theme/design_tokens.dart';
+import '../../core/widgets/app_card.dart';
+import '../../core/widgets/empty_state.dart';
+import '../../core/widgets/error_state.dart';
+import '../../core/widgets/loading_state.dart';
+import '../../core/components/app_button.dart';
 import '../../db/doctor_db.dart';
 import '../../providers/db_provider.dart';
 import '../../theme/app_theme.dart';
@@ -1213,14 +1220,18 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
         switch (appt.status.toLowerCase()) {
           case 'completed':
             completed++;
+            break;
           case 'scheduled':
           case 'pending':
             scheduled++;
+            break;
           case 'cancelled':
             cancelled++;
+            break;
           case 'no-show':
           case 'noshow':
             noShow++;
+            break;
         }
       }
     }

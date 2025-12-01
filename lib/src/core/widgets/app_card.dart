@@ -3,7 +3,7 @@ library;
 
 import 'package:flutter/material.dart';
 import '../../theme/app_theme.dart';
-import '../constants/app_constants.dart';
+import '../theme/design_tokens.dart';
 import '../extensions/context_extensions.dart';
 
 class AppCard extends StatelessWidget {
@@ -125,7 +125,7 @@ class AppCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final effectiveBorderRadius = borderRadius ?? AppRadius.cardRadius;
+    final effectiveBorderRadius = borderRadius ?? BorderRadius.circular(AppRadius.card);
     final effectivePadding = padding ?? EdgeInsets.all(context.responsiveCardPadding);
     final isDark = context.isDarkMode;
     

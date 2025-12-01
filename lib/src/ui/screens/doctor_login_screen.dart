@@ -2,6 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../core/widgets/app_card.dart';
 import '../../services/doctor_auth_service.dart';
+import '../../core/theme/design_tokens.dart';
+import '../../core/components/app_input.dart';
+import '../../core/components/app_button.dart';
 
 class DoctorLoginScreen extends ConsumerStatefulWidget {
   const DoctorLoginScreen({Key? key}) : super(key: key);
@@ -164,12 +167,13 @@ class _DoctorLoginScreenState extends ConsumerState<DoctorLoginScreen> {
                         const SizedBox(height: 24),
 
                         // Login button
-                        AppButton.primary(
+                        AppButton(
                           label: 'LOGIN',
                           onPressed: _isLoading ? null : _handleLogin,
                           isLoading: _isLoading,
                           fullWidth: true,
-                          backgroundColor: Colors.blue[900],
+                          backgroundColor: Colors.blue.shade900,
+                          foregroundColor: Colors.white,
                         ),
                         const SizedBox(height: 24),
 

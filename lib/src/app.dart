@@ -3,6 +3,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import 'core/core.dart';
+import 'core/theme/design_tokens.dart';
 import 'core/routing/app_router.dart';
 import 'providers/db_provider.dart';
 import 'services/localization_service.dart';

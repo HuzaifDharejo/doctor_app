@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import '../../../src/core/core.dart';
+import '../../core/core.dart';
+import '../../core/theme/design_tokens.dart';
 
 class UserManualScreen extends ConsumerStatefulWidget {
   const UserManualScreen({super.key});

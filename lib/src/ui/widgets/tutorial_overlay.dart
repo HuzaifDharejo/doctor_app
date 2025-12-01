@@ -273,12 +273,13 @@ class _TutorialOverlayState extends State<TutorialOverlay>
                     onPressed: _skip,
                   ),
                   const SizedBox(width: 8),
-                  AppButton.primary(
+                  AppButton(
                     label: _currentStep == widget.steps.length - 1
                         ? 'Done'
                         : 'Next →',
                     onPressed: _nextStep,
                     backgroundColor: widget.highlightColor,
+                    foregroundColor: Colors.white,
                   ),
                 ],
               ),
