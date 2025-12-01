@@ -986,22 +986,14 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
               ),
             ),
             const Spacer(),
-            TextButton(
+            AppButton.tertiary(
+              label: 'View All',
               onPressed: () {
                 Navigator.push(
                   context,
                   MaterialPageRoute(builder: (_) => const FollowUpsScreen()),
                 );
               },
-              style: TextButton.styleFrom(
-                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-                backgroundColor: accentColor.withOpacity(0.1),
-              ),
-              child: Text(
-                'View All',
-                style: TextStyle(fontSize: isCompact ? 11 : 12, fontWeight: FontWeight.w600, color: accentColor),
-              ),
             ),
           ],
         ),
@@ -1101,23 +1093,9 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
             letterSpacing: -0.3,
           ),
         ),
-        TextButton(
+        AppButton.tertiary(
+          label: 'See All',
           onPressed: onSeeAll,
-          style: TextButton.styleFrom(
-            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(20),
-            ),
-            backgroundColor: AppColors.primary.withValues(alpha: 0.1),
-          ),
-          child: Text(
-            'See All',
-            style: TextStyle(
-              fontSize: isCompact ? 11 : 12,
-              fontWeight: FontWeight.w600,
-              color: AppColors.primary,
-            ),
-          ),
         ),
       ],
     );

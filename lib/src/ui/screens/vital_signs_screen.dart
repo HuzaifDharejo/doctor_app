@@ -652,13 +652,13 @@ class _VitalSignsScreenState extends ConsumerState<VitalSignsScreen> with Single
         title: const Text('Delete Vital Signs'),
         content: const Text('Are you sure you want to delete this record?'),
         actions: [
-          TextButton(
+          AppButton.tertiary(
+            label: 'Cancel',
             onPressed: () => Navigator.pop(context, false),
-            child: const Text('Cancel'),
           ),
-          TextButton(
+          AppButton.danger(
+            label: 'Delete',
             onPressed: () => Navigator.pop(context, true),
-            child: const Text('Delete', style: TextStyle(color: Colors.red)),
           ),
         ],
       ),
@@ -844,9 +844,9 @@ class _VitalSignsScreenState extends ConsumerState<VitalSignsScreen> with Single
           ),
         ),
         actions: [
-          TextButton(
+          AppButton.tertiary(
+            label: 'Cancel',
             onPressed: () => Navigator.pop(context),
-            child: const Text('Cancel'),
           ),
           FilledButton(
             onPressed: () async {

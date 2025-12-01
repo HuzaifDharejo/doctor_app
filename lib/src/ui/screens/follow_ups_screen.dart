@@ -561,13 +561,13 @@ class _FollowUpsScreenState extends ConsumerState<FollowUpsScreen> with SingleTi
         title: const Text('Cancel Follow-up'),
         content: const Text('Are you sure you want to cancel this follow-up?'),
         actions: [
-          TextButton(
+          AppButton.tertiary(
+            label: 'No',
             onPressed: () => Navigator.pop(context, false),
-            child: const Text('No'),
           ),
-          TextButton(
+          AppButton.danger(
+            label: 'Yes, Cancel',
             onPressed: () => Navigator.pop(context, true),
-            child: const Text('Yes, Cancel', style: TextStyle(color: Colors.red)),
           ),
         ],
       ),
@@ -678,9 +678,9 @@ class _FollowUpsScreenState extends ConsumerState<FollowUpsScreen> with SingleTi
             ),
           ),
           actions: [
-            TextButton(
+            AppButton.tertiary(
+              label: 'Cancel',
               onPressed: () => Navigator.pop(context),
-              child: const Text('Cancel'),
             ),
             FilledButton(
               onPressed: () async {

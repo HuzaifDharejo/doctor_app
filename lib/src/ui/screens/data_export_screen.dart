@@ -239,16 +239,16 @@ class _DataExportScreenState extends ConsumerState<DataExportScreen> {
           ),
         ),
         actions: [
-          TextButton(
+          AppButton.tertiary(
+            label: 'Close',
             onPressed: Navigator.of(context).pop,
-            child: const Text('Close'),
           ),
-          ElevatedButton(
+          AppButton.primary(
+            label: 'Export',
             onPressed: () {
               Navigator.pop(context);
               _handleExport();
             },
-            child: const Text('Export'),
           ),
         ],
       ),
