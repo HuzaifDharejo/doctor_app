@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import '../../services/ocr_service.dart';
 import '../../theme/app_theme.dart';
+import '../../core/theme/design_tokens.dart';
 
 /// Widget for extracting data from images and PDFs
 class DocumentDataExtractor extends StatefulWidget {
@@ -220,7 +221,7 @@ class _DocumentDataExtractorState extends State<DocumentDataExtractor> {
         children: [
           // Header
           Container(
-            padding: const EdgeInsets.all(16),
+            padding: const EdgeInsets.all(AppSpacing.lg),
             decoration: const BoxDecoration(
               gradient: AppColors.primaryGradient,
               borderRadius: BorderRadius.only(
@@ -231,7 +232,7 @@ class _DocumentDataExtractorState extends State<DocumentDataExtractor> {
             child: Row(
               children: [
                 Container(
-                  padding: const EdgeInsets.all(8),
+                  padding: const EdgeInsets.all(AppSpacing.sm),
                   decoration: BoxDecoration(
                     color: Colors.white.withValues(alpha: 0.2),
                     borderRadius: BorderRadius.circular(10),
@@ -271,7 +272,7 @@ class _DocumentDataExtractorState extends State<DocumentDataExtractor> {
           ),
 
           Padding(
-            padding: const EdgeInsets.all(16),
+            padding: const EdgeInsets.all(AppSpacing.lg),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
@@ -314,7 +315,7 @@ class _DocumentDataExtractorState extends State<DocumentDataExtractor> {
                 if (_isProcessing) ...[
                   const SizedBox(height: 20),
                   Container(
-                    padding: const EdgeInsets.all(16),
+                    padding: const EdgeInsets.all(AppSpacing.lg),
                     decoration: BoxDecoration(
                       color: AppColors.primary.withValues(alpha: 0.1),
                       borderRadius: BorderRadius.circular(12),
@@ -375,7 +376,7 @@ class _DocumentDataExtractorState extends State<DocumentDataExtractor> {
   Widget _buildResultsSection(bool isDark) {
     if (!_result!.success) {
       return Container(
-        padding: const EdgeInsets.all(16),
+        padding: const EdgeInsets.all(AppSpacing.lg),
         decoration: BoxDecoration(
           color: AppColors.error.withValues(alpha: 0.1),
           borderRadius: BorderRadius.circular(12),
@@ -406,7 +407,7 @@ class _DocumentDataExtractorState extends State<DocumentDataExtractor> {
       children: [
         // Success header
         Container(
-          padding: const EdgeInsets.all(12),
+          padding: const EdgeInsets.all(AppSpacing.md),
           decoration: BoxDecoration(
             color: AppColors.success.withValues(alpha: 0.1),
             borderRadius: BorderRadius.circular(10),
@@ -452,7 +453,7 @@ class _DocumentDataExtractorState extends State<DocumentDataExtractor> {
                 final index = entry.key;
                 final field = entry.value;
                 return Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                  padding: const EdgeInsets.symmetric(horizontal: AppSpacing.md, vertical: AppSpacing.md),
                   decoration: BoxDecoration(
                     border: index < displayFields.length - 1
                         ? Border(
@@ -466,7 +467,7 @@ class _DocumentDataExtractorState extends State<DocumentDataExtractor> {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                        padding: const EdgeInsets.symmetric(horizontal: AppSpacing.sm, vertical: AppSpacing.xs),
                         decoration: BoxDecoration(
                           color: AppColors.primary.withValues(alpha: 0.1),
                           borderRadius: BorderRadius.circular(6),
@@ -511,7 +512,7 @@ class _DocumentDataExtractorState extends State<DocumentDataExtractor> {
             children: [
               Container(
                 width: double.infinity,
-                padding: const EdgeInsets.all(12),
+                padding: const EdgeInsets.all(AppSpacing.md),
                 decoration: BoxDecoration(
                   color: isDark ? AppColors.darkBackground : AppColors.background,
                   borderRadius: BorderRadius.circular(10),
@@ -544,7 +545,7 @@ class _DocumentDataExtractorState extends State<DocumentDataExtractor> {
             style: ElevatedButton.styleFrom(
               backgroundColor: AppColors.primary,
               foregroundColor: Colors.white,
-              padding: const EdgeInsets.symmetric(vertical: 14),
+              padding: const EdgeInsets.symmetric(vertical: AppSpacing.lg),
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(12),
               ),
@@ -590,7 +591,7 @@ class _SourceButton extends StatelessWidget {
         onTap: onTap,
         borderRadius: BorderRadius.circular(12),
         child: Container(
-          padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 8),
+          padding: const EdgeInsets.symmetric(vertical: AppSpacing.lg, horizontal: AppSpacing.sm),
           decoration: BoxDecoration(
             borderRadius: BorderRadius.circular(12),
             border: Border.all(
@@ -600,7 +601,7 @@ class _SourceButton extends StatelessWidget {
           child: Column(
             children: [
               Container(
-                padding: const EdgeInsets.all(10),
+                padding: const EdgeInsets.all(AppSpacing.md),
                 decoration: BoxDecoration(
                   color: AppColors.primary.withValues(alpha: 0.1),
                   shape: BoxShape.circle,
@@ -630,3 +631,4 @@ class _SourceButton extends StatelessWidget {
     );
   }
 }
+

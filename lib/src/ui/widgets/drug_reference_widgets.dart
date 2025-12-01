@@ -134,7 +134,7 @@ class _DrugSearchWidgetState extends ConsumerState<DrugSearchWidget> {
           )
         else if (_searchController.text.isNotEmpty && !_isSearching)
           Padding(
-            padding: const EdgeInsets.symmetric(vertical: 16),
+            padding: const EdgeInsets.symmetric(vertical: AppSpacing.lg),
             child: Text(
               'No drugs found',
               style: TextStyle(
@@ -251,7 +251,7 @@ class _InteractionCheckerDialogState
         children: [
           // Header
           Container(
-            padding: const EdgeInsets.all(16),
+            padding: const EdgeInsets.all(AppSpacing.lg),
             decoration: BoxDecoration(
               color: const Color(0xFF6366F1),
               borderRadius: const BorderRadius.only(
@@ -353,7 +353,7 @@ class _InteractionCheckerDialogState
                 }
 
                 return ListView.builder(
-                  padding: const EdgeInsets.all(16),
+                  padding: const EdgeInsets.all(AppSpacing.lg),
                   itemCount: interactions.length,
                   itemBuilder: (context, index) {
                     final interaction = interactions[index];
@@ -398,7 +398,7 @@ class _InteractionCheckerDialogState
                         ),
                         children: [
                           Padding(
-                            padding: const EdgeInsets.all(16),
+                            padding: const EdgeInsets.all(AppSpacing.lg),
                             child: Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
@@ -451,7 +451,7 @@ class _InteractionCheckerDialogState
 
           // Footer
           Container(
-            padding: const EdgeInsets.all(16),
+            padding: const EdgeInsets.all(AppSpacing.lg),
             decoration: BoxDecoration(
               border: Border(
                 top: BorderSide(
@@ -526,7 +526,7 @@ class DrugWarningsPanel extends ConsumerWidget {
             ...warnings.map(
               (warning) => Container(
                 margin: const EdgeInsets.only(bottom: 8),
-                padding: const EdgeInsets.all(12),
+                padding: const EdgeInsets.all(AppSpacing.md),
                 decoration: BoxDecoration(
                   color: const Color(0xFFF44336).withValues(alpha: 0.1),
                   border: Border.all(
@@ -575,3 +575,4 @@ class DrugWarningsPanel extends ConsumerWidget {
     );
   }
 }
+

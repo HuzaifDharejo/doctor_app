@@ -37,14 +37,14 @@ class _CommunicationPanelState extends ConsumerState<CommunicationPanel> {
       children: [
         // Communication stats header
         Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+          padding: const EdgeInsets.symmetric(horizontal: AppSpacing.lg, vertical: AppSpacing.md),
           child: Container(
             decoration: BoxDecoration(
               color: Colors.grey[900],
               borderRadius: BorderRadius.circular(12),
               border: Border.all(color: Colors.grey[800]!),
             ),
-            padding: const EdgeInsets.all(12),
+            padding: const EdgeInsets.all(AppSpacing.md),
             child: Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
@@ -76,7 +76,7 @@ class _CommunicationPanelState extends ConsumerState<CommunicationPanel> {
         // Communication history list
         Expanded(
           child: ListView(
-            padding: const EdgeInsets.symmetric(vertical: 12),
+            padding: const EdgeInsets.symmetric(vertical: AppSpacing.md),
             children: [
               _buildHistorySection(
                 context,
@@ -121,7 +121,7 @@ class _CommunicationPanelState extends ConsumerState<CommunicationPanel> {
           decoration: BoxDecoration(
             border: Border(top: BorderSide(color: Colors.grey[800]!)),
           ),
-          padding: const EdgeInsets.all(12),
+          padding: const EdgeInsets.all(AppSpacing.md),
           child: Row(
             children: [
               Expanded(
@@ -133,7 +133,7 @@ class _CommunicationPanelState extends ConsumerState<CommunicationPanel> {
                       borderRadius: BorderRadius.circular(24),
                       borderSide: BorderSide(color: Colors.grey[700]!),
                     ),
-                    contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                    contentPadding: const EdgeInsets.symmetric(horizontal: AppSpacing.lg, vertical: AppSpacing.md),
                     suffixIcon: GestureDetector(
                       onTap: () {
                         // Future: Add attachment functionality
@@ -226,7 +226,7 @@ class _CommunicationPanelState extends ConsumerState<CommunicationPanel> {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+          padding: const EdgeInsets.symmetric(horizontal: AppSpacing.lg, vertical: AppSpacing.sm),
           child: Text(
             title,
             style: const TextStyle(
@@ -251,9 +251,9 @@ class _CommunicationPanelState extends ConsumerState<CommunicationPanel> {
 
   Widget _buildMessageCard(BuildContext context, _MessageHistoryItem item) {
     return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+      padding: const EdgeInsets.symmetric(horizontal: AppSpacing.sm, vertical: AppSpacing.xs),
       child: ListTile(
-        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+        contentPadding: const EdgeInsets.symmetric(horizontal: AppSpacing.lg, vertical: AppSpacing.xs),
         leading: CircleAvatar(
           backgroundColor: item.from == 'Doctor' ? const Color(0xFF6366F1) : const Color(0xFF10B981),
           child: Text(
@@ -281,9 +281,9 @@ class _CommunicationPanelState extends ConsumerState<CommunicationPanel> {
 
   Widget _buildCallCard(BuildContext context, _CallHistoryItem item) {
     return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+      padding: const EdgeInsets.symmetric(horizontal: AppSpacing.sm, vertical: AppSpacing.xs),
       child: ListTile(
-        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+        contentPadding: const EdgeInsets.symmetric(horizontal: AppSpacing.lg, vertical: AppSpacing.xs),
         leading: CircleAvatar(
           backgroundColor: const Color(0xFF10B981).withOpacity(0.2),
           child: const Icon(Icons.phone_in_talk_rounded, color: Color(0xFF10B981), size: 20),
@@ -372,14 +372,14 @@ class _MessageThreadDialogState extends State<MessageThreadDialog> {
   Widget build(BuildContext context) {
     return Dialog(
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-      insetPadding: const EdgeInsets.all(16),
+      insetPadding: const EdgeInsets.all(AppSpacing.lg),
       child: Container(
         constraints: const BoxConstraints(maxHeight: 600),
         child: Column(
           children: [
             // Header
             Container(
-              padding: const EdgeInsets.all(16),
+              padding: const EdgeInsets.all(AppSpacing.lg),
               decoration: BoxDecoration(
                 border: Border(bottom: BorderSide(color: Colors.grey[800]!)),
               ),
@@ -418,7 +418,7 @@ class _MessageThreadDialogState extends State<MessageThreadDialog> {
             // Messages
             Expanded(
               child: ListView(
-                padding: const EdgeInsets.all(16),
+                padding: const EdgeInsets.all(AppSpacing.lg),
                 children: [
                   _buildMessageBubble(
                     'Your test results came back normal. Continue with current medication.',
@@ -442,7 +442,7 @@ class _MessageThreadDialogState extends State<MessageThreadDialog> {
             ),
             // Reply input
             Container(
-              padding: const EdgeInsets.all(12),
+              padding: const EdgeInsets.all(AppSpacing.md),
               decoration: BoxDecoration(
                 border: Border(top: BorderSide(color: Colors.grey[800]!)),
               ),
@@ -457,7 +457,7 @@ class _MessageThreadDialogState extends State<MessageThreadDialog> {
                           borderRadius: BorderRadius.circular(24),
                           borderSide: BorderSide(color: Colors.grey[700]!),
                         ),
-                        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+                        contentPadding: const EdgeInsets.symmetric(horizontal: AppSpacing.lg, vertical: AppSpacing.md),
                       ),
                       maxLines: null,
                     ),
@@ -494,7 +494,7 @@ class _MessageThreadDialogState extends State<MessageThreadDialog> {
       alignment: isFromDoctor ? Alignment.centerLeft : Alignment.centerRight,
       child: Container(
         constraints: const BoxConstraints(maxWidth: 250),
-        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+        padding: const EdgeInsets.symmetric(horizontal: AppSpacing.md, vertical: AppSpacing.sm),
         decoration: BoxDecoration(
           color: isFromDoctor
               ? Colors.grey[800]
@@ -529,7 +529,7 @@ class CallLogsWidget extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     return SingleChildScrollView(
-      padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.all(AppSpacing.lg),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -550,7 +550,7 @@ class CallLogsWidget extends ConsumerWidget {
                   borderRadius: BorderRadius.circular(12),
                   border: Border.all(color: Colors.grey[800]!),
                 ),
-                padding: const EdgeInsets.all(12),
+                padding: const EdgeInsets.all(AppSpacing.md),
                 child: Row(
                   children: [
                     CircleAvatar(
@@ -594,3 +594,4 @@ class CallLogsWidget extends ConsumerWidget {
     );
   }
 }
+

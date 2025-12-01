@@ -65,7 +65,7 @@ class _DrugInteractionDialogState extends State<DrugInteractionDialog> {
             // Summary
             Container(
               width: double.infinity,
-              padding: const EdgeInsets.all(12),
+              padding: const EdgeInsets.all(AppSpacing.md),
               decoration: BoxDecoration(
                 color: Colors.grey[100],
                 borderRadius: BorderRadius.circular(8),
@@ -96,7 +96,7 @@ class _DrugInteractionDialogState extends State<DrugInteractionDialog> {
             // Interaction Summary
             Container(
               width: double.infinity,
-              padding: const EdgeInsets.all(12),
+              padding: const EdgeInsets.all(AppSpacing.md),
               decoration: BoxDecoration(
                 color: Colors.amber[50],
                 border: Border.all(color: Colors.amber, width: 1),
@@ -162,7 +162,7 @@ class _DrugInteractionDialogState extends State<DrugInteractionDialog> {
               return Padding(
                 padding: const EdgeInsets.only(bottom: 12),
                 child: Container(
-                  padding: const EdgeInsets.all(12),
+                  padding: const EdgeInsets.all(AppSpacing.md),
                   decoration: BoxDecoration(
                     color: color.withOpacity(0.05),
                     border: Border.all(color: color, width: 1),
@@ -208,7 +208,7 @@ class _DrugInteractionDialogState extends State<DrugInteractionDialog> {
                       if (interaction.recommendation.isNotEmpty) ...[
                         const SizedBox(height: 8),
                         Container(
-                          padding: const EdgeInsets.all(8),
+                          padding: const EdgeInsets.all(AppSpacing.sm),
                           decoration: BoxDecoration(
                             color: Colors.blue[50],
                             borderRadius: BorderRadius.circular(6),
@@ -321,3 +321,4 @@ class _DrugInteractionDialogState extends State<DrugInteractionDialog> {
     );
   }
 }
+
