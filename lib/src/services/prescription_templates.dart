@@ -375,21 +375,12 @@ class _MedicationTemplateBottomSheetState extends State<MedicationTemplateBottom
           const SizedBox(height: 16),
           
           // Search box
-          TextField(
+          AppInput.search(
+            hint: 'Search medications...',
             onChanged: (value) => setState(() {
               _searchQuery = value;
               if (value.isNotEmpty) _selectedCategory = null;
             }),
-            decoration: InputDecoration(
-              hintText: 'Search medications...',
-              prefixIcon: const Icon(Icons.search),
-              border: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(12),
-                borderSide: BorderSide.none,
-              ),
-              filled: true,
-              fillColor: isDark ? AppColors.darkBackground : AppColors.background,
-            ),
           ),
           const SizedBox(height: 16),
           

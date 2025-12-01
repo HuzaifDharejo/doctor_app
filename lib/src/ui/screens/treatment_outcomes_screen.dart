@@ -526,28 +526,22 @@ class _TreatmentOutcomesScreenState extends ConsumerState<TreatmentOutcomesScree
                   onChanged: (value) => setDialogState(() => selectedProviderType = value!),
                 ),
                 const SizedBox(height: 16),
-                TextField(
+                AppInput.text(
                   controller: providerNameController,
-                  decoration: const InputDecoration(
-                    labelText: 'Provider Name',
-                    hintText: 'Dr. Smith',
-                  ),
+                  label: 'Provider Name',
+                  hint: 'Dr. Smith',
                 ),
                 const SizedBox(height: 16),
-                TextField(
+                AppInput.text(
                   controller: diagnosisController,
-                  decoration: const InputDecoration(
-                    labelText: 'Diagnosis',
-                    hintText: 'e.g., Major Depressive Disorder',
-                  ),
+                  label: 'Diagnosis',
+                  hint: 'e.g., Major Depressive Disorder',
                 ),
                 const SizedBox(height: 16),
-                TextField(
+                AppInput.multiline(
                   controller: descController,
-                  decoration: const InputDecoration(
-                    labelText: 'Treatment Description',
-                    hintText: 'e.g., Metformin 500mg twice daily',
-                  ),
+                  label: 'Treatment Description',
+                  hint: 'e.g., Metformin 500mg twice daily',
                   maxLines: 2,
                 ),
                 const SizedBox(height: 16),
@@ -641,28 +635,22 @@ class _TreatmentOutcomesScreenState extends ConsumerState<TreatmentOutcomesScree
                   onChanged: (value) => setDialogState(() => effectivenessScore = value.toInt()),
                 ),
                 const SizedBox(height: 8),
-                TextField(
+                AppInput.text(
                   controller: sideEffectsController,
-                  decoration: const InputDecoration(
-                    labelText: 'Side Effects',
-                    hintText: 'Any observed side effects...',
-                  ),
+                  label: 'Side Effects',
+                  hint: 'Any observed side effects...',
                 ),
                 const SizedBox(height: 16),
-                TextField(
+                AppInput.text(
                   controller: feedbackController,
-                  decoration: const InputDecoration(
-                    labelText: 'Patient Feedback',
-                    hintText: 'What does the patient say...',
-                  ),
+                  label: 'Patient Feedback',
+                  hint: 'What does the patient say...',
                 ),
                 const SizedBox(height: 16),
-                TextField(
+                AppInput.multiline(
                   controller: notesController,
-                  decoration: const InputDecoration(
-                    labelText: 'Notes',
-                    hintText: 'Additional notes...',
-                  ),
+                  label: 'Notes',
+                  hint: 'Additional notes...',
                   maxLines: 2,
                 ),
               ],

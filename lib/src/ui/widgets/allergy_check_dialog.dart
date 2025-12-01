@@ -154,17 +154,10 @@ class _AllergyCheckDialogState extends State<AllergyCheckDialog> {
                     ),
               ),
               const SizedBox(height: 8),
-              TextField(
+              AppInput.multiline(
                 controller: _reasonController,
+                hint: 'Enter reason for override...',
                 maxLines: 2,
-                decoration: InputDecoration(
-                  hintText: 'Enter reason for override...',
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                  filled: true,
-                  fillColor: Colors.grey[50],
-                ),
               ),
               const SizedBox(height: 12),
               CheckboxListTile(

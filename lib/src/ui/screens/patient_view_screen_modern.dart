@@ -890,82 +890,36 @@ class _PatientViewScreenModernState
           ),
         ),
         const SizedBox(height: 12),
-        TextField(
+        AppInput.phone(
           controller: _phoneController,
-          style: TextStyle(color: textColor),
-          decoration: InputDecoration(
-            label: Text('Phone', style: TextStyle(color: isDark ? AppColors.darkTextSecondary : null)),
-            prefixIcon: Icon(Icons.phone, color: isDark ? AppColors.darkTextSecondary : null),
-            border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
-            enabledBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(12),
-              borderSide: BorderSide(color: borderColor),
-            ),
-            fillColor: fillColor,
-            filled: true,
-          ),
-          keyboardType: TextInputType.phone,
+          label: 'Phone',
+          prefixIcon: Icons.phone,
         ),
         const SizedBox(height: 12),
-        TextField(
+        AppInput.email(
           controller: _emailController,
-          style: TextStyle(color: textColor),
-          decoration: InputDecoration(
-            label: Text('Email', style: TextStyle(color: isDark ? AppColors.darkTextSecondary : null)),
-            prefixIcon: Icon(Icons.email, color: isDark ? AppColors.darkTextSecondary : null),
-            border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
-            enabledBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(12),
-              borderSide: BorderSide(color: borderColor),
-            ),
-            fillColor: fillColor,
-            filled: true,
-          ),
-          keyboardType: TextInputType.emailAddress,
+          label: 'Email',
+          prefixIcon: Icons.email,
         ),
         const SizedBox(height: 12),
-        TextField(
+        AppInput.multiline(
           controller: _addressController,
-          style: TextStyle(color: textColor),
-          decoration: InputDecoration(
-            label: Text('Address', style: TextStyle(color: isDark ? AppColors.darkTextSecondary : null)),
-            prefixIcon: Icon(Icons.location_on, color: isDark ? AppColors.darkTextSecondary : null),
-            border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
-            enabledBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(12),
-              borderSide: BorderSide(color: borderColor),
-            ),
-            fillColor: fillColor,
-            filled: true,
-          ),
+          label: 'Address',
+          prefixIcon: Icons.location_on,
           maxLines: 3,
         ),
         const SizedBox(height: 12),
-        TextField(
+        AppInput.multiline(
           controller: _medicalHistoryController,
-          style: TextStyle(color: textColor),
-          decoration: InputDecoration(
-            label: Text('Medical History', style: TextStyle(color: isDark ? AppColors.darkTextSecondary : null)),
-            prefixIcon: Icon(Icons.note_alt, color: isDark ? AppColors.darkTextSecondary : null),
-            border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
-            enabledBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(12),
-              borderSide: BorderSide(color: borderColor),
-            ),
-            fillColor: fillColor,
-            filled: true,
-          ),
+          label: 'Medical History',
+          prefixIcon: Icons.note_alt,
           maxLines: 4,
         ),
         const SizedBox(height: 12),
-        TextField(
+        AppInput.text(
           controller: _tagsController,
-          style: TextStyle(color: textColor),
-          decoration: InputDecoration(
-            label: Text('Tags (comma-separated)', style: TextStyle(color: isDark ? AppColors.darkTextSecondary : null)),
-            prefixIcon: Icon(Icons.label, color: isDark ? AppColors.darkTextSecondary : null),
-            border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
-            enabledBorder: OutlineInputBorder(
+          label: 'Tags (comma-separated)',
+          prefixIcon: Icons.label,
               borderRadius: BorderRadius.circular(12),
               borderSide: BorderSide(color: borderColor),
             ),

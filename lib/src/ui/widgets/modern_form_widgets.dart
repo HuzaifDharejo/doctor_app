@@ -484,25 +484,9 @@ class ModernFormWidgets {
         children: [
           Icon(icon, color: color, size: 20),
           const SizedBox(height: 6),
-          TextField(
+          AppInput.text(
             controller: controller,
-            textAlign: TextAlign.center,
-            keyboardType: TextInputType.text,
-            style: TextStyle(
-              fontSize: 18,
-              fontWeight: FontWeight.bold,
-              color: isDark ? Colors.white : AppColors.textPrimary,
-            ),
-            decoration: InputDecoration(
-              hintText: '---',
-              hintStyle: TextStyle(
-                color: isDark ? AppColors.darkTextHint : AppColors.textHint,
-                fontSize: 16,
-              ),
-              border: InputBorder.none,
-              isDense: true,
-              contentPadding: EdgeInsets.zero,
-            ),
+            hint: '---',
           ),
           Text(
             unit,

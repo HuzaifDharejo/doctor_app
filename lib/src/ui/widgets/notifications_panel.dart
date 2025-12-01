@@ -467,15 +467,9 @@ class _NotificationPreferencesDialogState
           style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600),
         ),
         const SizedBox(height: 6),
-        TextField(
+        AppInput.text(
           controller: TextEditingController(text: value),
-          decoration: InputDecoration(
-            hintText: 'HH:MM',
-            border: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(8),
-            ),
-            contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-          ),
+          hint: 'HH:MM',
           onChanged: onChanged,
         ),
       ],

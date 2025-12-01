@@ -832,12 +832,10 @@ class _VitalSignsScreenState extends ConsumerState<VitalSignsScreen> with Single
                 ],
               ),
               const SizedBox(height: 16),
-              TextField(
+              AppInput.multiline(
                 controller: notesController,
-                decoration: const InputDecoration(
-                  labelText: 'Notes',
-                  hintText: 'Any additional notes...',
-                ),
+                label: 'Notes',
+                hint: 'Any additional notes...',
                 maxLines: 2,
               ),
             ],

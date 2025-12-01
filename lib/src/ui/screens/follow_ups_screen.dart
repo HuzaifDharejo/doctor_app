@@ -634,12 +634,10 @@ class _FollowUpsScreenState extends ConsumerState<FollowUpsScreen> with SingleTi
                   ),
                   const SizedBox(height: 16),
                 ],
-                TextField(
+                AppInput.text(
                   controller: reasonController,
-                  decoration: const InputDecoration(
-                    labelText: 'Reason for Follow-up',
-                    hintText: 'e.g., Blood test review, Medication check',
-                  ),
+                  label: 'Reason for Follow-up',
+                  hint: 'e.g., Blood test review, Medication check',
                 ),
                 const SizedBox(height: 16),
                 InkWell(
@@ -666,12 +664,10 @@ class _FollowUpsScreenState extends ConsumerState<FollowUpsScreen> with SingleTi
                   ),
                 ),
                 const SizedBox(height: 16),
-                TextField(
+                AppInput.multiline(
                   controller: notesController,
-                  decoration: const InputDecoration(
-                    labelText: 'Notes',
-                    hintText: 'Additional notes...',
-                  ),
+                  label: 'Notes',
+                  hint: 'Additional notes...',
                   maxLines: 2,
                 ),
               ],

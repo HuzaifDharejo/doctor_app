@@ -902,36 +902,14 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen>
           ),
         ),
         const SizedBox(height: 8),
-        TextFormField(
+        AppInput.text(
           controller: controller,
+          hint: hint,
+          prefixIcon: icon,
+          suffixIcon: suffixIcon,
           keyboardType: keyboardType,
-          readOnly: readOnly,
+          enabled: !readOnly,
           onChanged: (_) => setState(() {}),
-          decoration: InputDecoration(
-            hintText: hint,
-            prefixIcon: Icon(icon, color: readOnly ? AppColors.primary.withValues(alpha: 0.5) : AppColors.primary),
-            suffixIcon: suffixIcon,
-            filled: true,
-            fillColor: readOnly 
-                ? (isDark ? AppColors.darkSurface.withValues(alpha: 0.5) : Colors.grey.shade100)
-                : (isDark ? AppColors.darkSurface : Colors.white),
-            border: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(12),
-              borderSide: BorderSide(
-                color: isDark ? AppColors.darkDivider : AppColors.divider,
-              ),
-            ),
-            enabledBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(12),
-              borderSide: BorderSide(
-                color: isDark ? AppColors.darkDivider : AppColors.divider,
-              ),
-            ),
-            focusedBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(12),
-              borderSide: const BorderSide(color: AppColors.primary, width: 2),
-            ),
-          ),
         ),
       ],
     );

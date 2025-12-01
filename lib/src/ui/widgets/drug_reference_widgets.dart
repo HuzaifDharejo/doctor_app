@@ -94,22 +94,12 @@ class _DrugSearchWidgetState extends ConsumerState<DrugSearchWidget> {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         // Search field
-        TextField(
+        AppInput.search(
           controller: _searchController,
+          hint: widget.placeholder ?? 'Search drugs...',
+          prefixIcon: Icons.medication_outlined,
+          suffixIcon: _isSearching ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2)) : null,
           onChanged: _performSearch,
-          decoration: InputDecoration(
-            hintText: widget.placeholder ?? 'Search drugs...',
-            prefixIcon: const Icon(Icons.medication_outlined),
-            suffixIcon:
-                _isSearching ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2)) : null,
-            border: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(8),
-            ),
-            contentPadding: const EdgeInsets.symmetric(
-              horizontal: 16,
-              vertical: 12,
-            ),
-          ),
         ),
         const SizedBox(height: 12),
 

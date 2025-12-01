@@ -2848,46 +2848,18 @@ class _PatientViewScreenState extends ConsumerState<PatientViewScreen>
                       ),
                     ),
                     const SizedBox(height: 4),
-                    TextField(
-                      controller: controller,
-                      keyboardType: keyboardType,
-                      maxLines: maxLines,
-                      style: TextStyle(
-                        fontSize: 15,
-                        fontWeight: FontWeight.w500,
-                        color: Theme.of(context).colorScheme.onSurface,
-                      ),
-                      decoration: InputDecoration(
-                        hintText: hint ?? 'Enter $label',
-                        hintStyle: TextStyle(
-                          color: isDark ? AppColors.darkTextSecondary.withValues(alpha: 0.5) : AppColors.textSecondary.withValues(alpha: 0.5),
-                          fontWeight: FontWeight.normal,
-                        ),
-                        isDense: true,
-                        contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-                        filled: true,
-                        fillColor: isDark ? Colors.white.withValues(alpha: 0.05) : Colors.grey.withValues(alpha: 0.05),
-                        border: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(8),
-                          borderSide: BorderSide(
-                            color: isDark ? Colors.white.withValues(alpha: 0.1) : Colors.grey.withValues(alpha: 0.2),
+                    maxLines > 1
+                        ? AppInput.multiline(
+                            controller: controller,
+                            hint: hint ?? 'Enter $label',
+                            keyboardType: keyboardType,
+                            maxLines: maxLines,
+                          )
+                        : AppInput.text(
+                            controller: controller,
+                            hint: hint ?? 'Enter $label',
+                            keyboardType: keyboardType,
                           ),
-                        ),
-                        enabledBorder: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(8),
-                          borderSide: BorderSide(
-                            color: isDark ? Colors.white.withValues(alpha: 0.1) : Colors.grey.withValues(alpha: 0.2),
-                          ),
-                        ),
-                        focusedBorder: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(8),
-                          borderSide: const BorderSide(
-                            color: AppColors.primary,
-                            width: 1.5,
-                          ),
-                        ),
-                      ),
-                    ),
                   ],
                 ),
               ),
