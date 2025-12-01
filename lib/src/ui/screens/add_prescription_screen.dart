@@ -715,18 +715,12 @@ class _AddPrescriptionScreenState extends ConsumerState<AddPrescriptionScreen> {
                       suggestions: PrescriptionSuggestions.instructions,
                     ),
                     const SizedBox(height: 16),
-                    TextFormField(
+                    AppInput.multiline(
                       controller: _notesController,
+                      label: 'Additional Notes',
+                      hint: 'Any additional notes...',
+                      prefixIcon: Icons.note_outlined,
                       maxLines: 2,
-                      decoration: InputDecoration(
-                        labelText: 'Additional Notes',
-                        hintText: 'Any additional notes...',
-                        prefixIcon: const Icon(Icons.note_outlined),
-                        border: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                        filled: true,
-                      ),
                     ),
                   ],
                 ),
@@ -889,14 +883,9 @@ class _AddPrescriptionScreenState extends ConsumerState<AddPrescriptionScreen> {
 
     return Column(
       children: [
-        TextField(
+        AppInput.search(
           controller: _searchController,
-          decoration: InputDecoration(
-            hintText: 'Search patient...',
-            prefixIcon: const Icon(Icons.search),
-            border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
-            filled: true,
-          ),
+          hint: 'Search patient...',
           onChanged: (_) => setState(() {}),
         ),
         const SizedBox(height: 8),
@@ -1292,15 +1281,10 @@ class _AddPrescriptionScreenState extends ConsumerState<AddPrescriptionScreen> {
                     ),
                     const SizedBox(width: 12),
                     Expanded(
-                      child: TextFormField(
+                      child: AppInput.text(
                         controller: _medications[i].nameController,
-                        decoration: InputDecoration(
-                          labelText: 'Medicine Name *',
-                          hintText: 'e.g., Paracetamol 500mg',
-                          border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
-                          filled: true,
-                          isDense: true,
-                        ),
+                        label: 'Medicine Name *',
+                        hint: 'e.g., Paracetamol 500mg',
                         validator: (value) {
                           if (value == null || value.isEmpty) {
                             return 'Required';
@@ -1322,16 +1306,11 @@ class _AddPrescriptionScreenState extends ConsumerState<AddPrescriptionScreen> {
                     Expanded(
                       child: Focus(
                         onFocusChange: (f) => setState(() => _medications[i].dosageFocused = f),
-                        child: TextFormField(
+                        child: AppInput.text(
                           controller: _medications[i].dosageController,
                           focusNode: _medications[i].dosageFocus,
-                          decoration: InputDecoration(
-                            labelText: 'Dosage',
-                            hintText: '1 tablet',
-                            border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
-                            filled: true,
-                            isDense: true,
-                          ),
+                          label: 'Dosage',
+                          hint: '1 tablet',
                         ),
                       ),
                     ),
@@ -1355,16 +1334,11 @@ class _AddPrescriptionScreenState extends ConsumerState<AddPrescriptionScreen> {
                     Expanded(
                       child: Focus(
                         onFocusChange: (f) => setState(() => _medications[i].durationFocused = f),
-                        child: TextFormField(
+                        child: AppInput.text(
                           controller: _medications[i].durationController,
                           focusNode: _medications[i].durationFocus,
-                          decoration: InputDecoration(
-                            labelText: 'Duration',
-                            hintText: '7 days',
-                            border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
-                            filled: true,
-                            isDense: true,
-                          ),
+                          label: 'Duration',
+                          hint: '7 days',
                         ),
                       ),
                     ),
@@ -1476,15 +1450,10 @@ class _AddPrescriptionScreenState extends ConsumerState<AddPrescriptionScreen> {
                   ],
                 ),
                 const SizedBox(height: 8),
-                TextFormField(
+                AppInput.text(
                   controller: _medications[i].instructionsController,
-                  decoration: InputDecoration(
-                    labelText: 'Special Instructions',
-                    hintText: 'e.g., Take with warm water',
-                    border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
-                    filled: true,
-                    isDense: true,
-                  ),
+                  label: 'Special Instructions',
+                  hint: 'e.g., Take with warm water',
                 ),
               ],
             ),
@@ -1587,15 +1556,11 @@ class _AddPrescriptionScreenState extends ConsumerState<AddPrescriptionScreen> {
           ),
         ),
         const SizedBox(height: 12),
-        TextFormField(
+        AppInput.multiline(
           controller: _followUpNotesController,
-          decoration: InputDecoration(
-            labelText: 'Follow-up Notes',
-            hintText: 'What to check on follow-up...',
-            prefixIcon: const Icon(Icons.note_outlined),
-            border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
-            filled: true,
-          ),
+          label: 'Follow-up Notes',
+          hint: 'What to check on follow-up...',
+          prefixIcon: Icons.note_outlined,
         ),
       ],
     );
