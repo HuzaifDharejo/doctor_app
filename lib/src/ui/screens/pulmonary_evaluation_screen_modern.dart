@@ -761,20 +761,27 @@ class _PulmonaryEvaluationScreenModernState
     bool required = false,
     ValueChanged<String>? onChanged,
   }) {
-    return TextFormField(
-      controller: controller,
-      onChanged: onChanged,
-      decoration: InputDecoration(
-        label: Text(label),
-        hintText: hint,
-        border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
-        contentPadding: const EdgeInsets.all(16),
-      ),
-      maxLines: maxLines,
-      keyboardType: keyboardType,
-      validator: required && controller.text.isEmpty
-          ? (value) => '$label is required'
-          : null,
-    );
+    return maxLines > 1
+        ? AppInput.multiline(
+            controller: controller,
+            label: label,
+            hint: hint,
+            maxLines: maxLines,
+            keyboardType: keyboardType,
+            onChanged: onChanged,
+            validator: required && controller.text.isEmpty
+                ? (value) => '$label is required'
+                : null,
+          )
+        : AppInput.text(
+            controller: controller,
+            label: label,
+            hint: hint,
+            keyboardType: keyboardType,
+            onChanged: onChanged,
+            validator: required && controller.text.isEmpty
+                ? (value) => '$label is required'
+                : null,
+          );
   }
 }

@@ -812,33 +812,26 @@ class _PsychiatricAssessmentScreenModernState
     bool required = false,
     bool isDark = false,
   }) {
-    return TextFormField(
-      controller: controller,
-      maxLines: maxLines,
-      keyboardType: keyboardType,
-      style: TextStyle(color: isDark ? Colors.white : Colors.black87),
-      decoration: InputDecoration(
-        labelText: label,
-        hintText: hint,
-        labelStyle: TextStyle(color: isDark ? Colors.white70 : Colors.black54),
-        hintStyle: TextStyle(color: isDark ? Colors.white38 : Colors.black38),
-        border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
-        enabledBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12),
-          borderSide: BorderSide(color: isDark ? Colors.grey.shade700 : Colors.grey.shade300),
-        ),
-        focusedBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12),
-          borderSide: const BorderSide(color: AppColors.primary, width: 2),
-        ),
-        filled: true,
-        fillColor: isDark ? Colors.grey.shade900 : Colors.grey.shade50,
-        contentPadding: const EdgeInsets.all(16),
-      ),
-      validator: required && controller.text.isEmpty
-          ? (value) => '$label is required'
-          : null,
-    );
+    return maxLines > 1
+        ? AppInput.multiline(
+            controller: controller,
+            label: label,
+            hint: hint,
+            maxLines: maxLines,
+            keyboardType: keyboardType,
+            validator: required && controller.text.isEmpty
+                ? (value) => '$label is required'
+                : null,
+          )
+        : AppInput.text(
+            controller: controller,
+            label: label,
+            hint: hint,
+            keyboardType: keyboardType,
+            validator: required && controller.text.isEmpty
+                ? (value) => '$label is required'
+                : null,
+          );
   }
 
   Widget _buildMaritalStatusField(bool isDark) {

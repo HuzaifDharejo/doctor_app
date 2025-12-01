@@ -1974,27 +1974,16 @@ class _AddMedicalRecordScreenState extends ConsumerState<AddMedicalRecordScreen>
     required String hint,
     int maxLines = 1,
   }) {
-    return Builder(
-      builder: (context) {
-        final isDark = Theme.of(context).brightness == Brightness.dark;
-        return DecoratedBox(
-          decoration: BoxDecoration(
-            color: Theme.of(context).colorScheme.surface,
-            borderRadius: BorderRadius.circular(16),
-            border: Border.all(color: isDark ? AppColors.darkDivider : AppColors.divider),
-          ),
-          child: TextField(
+    return maxLines > 1
+        ? AppInput.multiline(
             controller: controller,
+            hint: hint,
             maxLines: maxLines,
-            decoration: InputDecoration(
-              hintText: hint,
-              border: InputBorder.none,
-              contentPadding: const EdgeInsets.all(16),
-            ),
-          ),
-        );
-      },
-    );
+          )
+        : AppInput.text(
+            controller: controller,
+            hint: hint,
+          );
   }
 
   Widget _buildMSEField(TextEditingController controller, String label, List<String> suggestions) {
@@ -2007,21 +1996,9 @@ class _AddMedicalRecordScreenState extends ConsumerState<AddMedicalRecordScreen>
   }
 
   Widget _buildCompactField(TextEditingController controller, String label) {
-    return Builder(
-      builder: (context) {
-        final isDark = Theme.of(context).brightness == Brightness.dark;
-        return TextFormField(
-          controller: controller,
-          decoration: InputDecoration(
-            labelText: label,
-            isDense: true,
-            contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
-            border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
-            filled: true,
-            fillColor: isDark ? AppColors.darkBackground : AppColors.background,
-          ),
-        );
-      },
+    return AppInput.text(
+      controller: controller,
+      label: label,
     );
   }
 
