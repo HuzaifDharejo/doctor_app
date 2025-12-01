@@ -570,21 +570,18 @@ class _ClinicalDashboardState extends ConsumerState<ClinicalDashboard>
     final warningCount = data.abnormalVitals.where((v) => v.severity == AlertSeverity.warning).length +
         data.clinicalAlerts.where((a) => a.severity == AlertSeverity.warning).length;
     
-    return Container(
+    return AppCard(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-      decoration: BoxDecoration(
-        gradient: LinearGradient(
-          colors: criticalCount > 0 
-              ? [const Color(0xFFDC2626).withValues(alpha: 0.15), const Color(0xFFDC2626).withValues(alpha: 0.05)]
-              : [const Color(0xFFF59E0B).withValues(alpha: 0.15), const Color(0xFFF59E0B).withValues(alpha: 0.05)],
-        ),
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(
-          color: criticalCount > 0 
-              ? const Color(0xFFDC2626).withValues(alpha: 0.3)
-              : const Color(0xFFF59E0B).withValues(alpha: 0.3),
-        ),
+      gradient: LinearGradient(
+        colors: criticalCount > 0 
+            ? [const Color(0xFFDC2626).withValues(alpha: 0.15), const Color(0xFFDC2626).withValues(alpha: 0.05)]
+            : [const Color(0xFFF59E0B).withValues(alpha: 0.15), const Color(0xFFF59E0B).withValues(alpha: 0.05)],
       ),
+      borderRadius: BorderRadius.circular(16),
+      borderColor: criticalCount > 0 
+          ? const Color(0xFFDC2626).withValues(alpha: 0.3)
+          : const Color(0xFFF59E0B).withValues(alpha: 0.3),
+      borderWidth: 1,
       child: Row(
         children: [
           Container(
