@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 import '../../core/core.dart';
+import '../../core/theme/design_tokens.dart';
 import '../../db/doctor_db.dart';
 import '../../providers/db_provider.dart';
 import '../../services/pdf_service.dart';
@@ -182,7 +183,7 @@ class _BillingScreenState extends ConsumerState<BillingScreen> {
                 ),
               ),
               Container(
-                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                padding: const EdgeInsets.symmetric(horizontal: AppSpacing.md, vertical: AppSpacing.xs),
                 decoration: BoxDecoration(
                   color: useGradient 
                       ? Colors.white.withValues(alpha: 0.2)
@@ -236,7 +237,7 @@ class _BillingScreenState extends ConsumerState<BillingScreen> {
     final filters = ['All', 'Paid', 'Pending', 'Overdue'];
     final isDark = Theme.of(context).brightness == Brightness.dark;
     return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 20),
+      padding: const EdgeInsets.symmetric(horizontal: AppSpacing.xl),
       child: SingleChildScrollView(
         scrollDirection: Axis.horizontal,
         child: Row(
@@ -291,7 +292,7 @@ class _BillingScreenState extends ConsumerState<BillingScreen> {
         }
 
         return ListView.builder(
-          padding: const EdgeInsets.all(20),
+          padding: const EdgeInsets.all(AppSpacing.xl),
           itemCount: invoices.length,
           itemBuilder: (context, index) {
             return _buildInvoiceCard(context, db, invoices[index]);
@@ -402,7 +403,7 @@ class _BillingScreenState extends ConsumerState<BillingScreen> {
                               ),
                               const SizedBox(width: 8),
                               Container(
-                                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                                padding: const EdgeInsets.symmetric(horizontal: AppSpacing.md, vertical: AppSpacing.xs),
                                 decoration: BoxDecoration(
                                   gradient: LinearGradient(
                                     colors: [
@@ -446,7 +447,7 @@ class _BillingScreenState extends ConsumerState<BillingScreen> {
                                   child: Row(
                                     children: [
                                       Container(
-                                        padding: const EdgeInsets.all(4),
+                                        padding: const EdgeInsets.all(AppSpacing.xs),
                                         decoration: BoxDecoration(
                                           color: AppColors.primary.withValues(alpha: 0.1),
                                           borderRadius: BorderRadius.circular(6),
@@ -553,7 +554,7 @@ class _BillingScreenState extends ConsumerState<BillingScreen> {
         builder: (context, scrollController) {
           final isDark = Theme.of(context).brightness == Brightness.dark;
           return Container(
-            padding: const EdgeInsets.all(24),
+            padding: const EdgeInsets.all(AppSpacing.xxl),
             child: ListView(
               controller: scrollController,
               children: [
@@ -595,7 +596,7 @@ class _BillingScreenState extends ConsumerState<BillingScreen> {
                       ],
                     ),
                     Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                      padding: const EdgeInsets.symmetric(horizontal: AppSpacing.lg, vertical: AppSpacing.sm),
                       decoration: BoxDecoration(
                         color: statusColor.withValues(alpha: 0.1),
                         borderRadius: BorderRadius.circular(20),
@@ -630,7 +631,7 @@ class _BillingScreenState extends ConsumerState<BillingScreen> {
                 // Patient
                 if (patient != null)
                   Container(
-                    padding: const EdgeInsets.all(16),
+                    padding: const EdgeInsets.all(AppSpacing.lg),
                     decoration: BoxDecoration(
                       color: isDark ? AppColors.darkBackground : AppColors.background,
                       borderRadius: BorderRadius.circular(12),
@@ -692,7 +693,7 @@ class _BillingScreenState extends ConsumerState<BillingScreen> {
                 ...items.map((item) {
                   return Container(
                     margin: const EdgeInsets.only(bottom: 8),
-                    padding: const EdgeInsets.all(12),
+                    padding: const EdgeInsets.all(AppSpacing.md),
                     decoration: BoxDecoration(
                       color: isDark ? AppColors.darkBackground : AppColors.background,
                       borderRadius: BorderRadius.circular(10),
@@ -871,7 +872,7 @@ class _BillingScreenState extends ConsumerState<BillingScreen> {
       builder: (context) {
         final isDark = Theme.of(context).brightness == Brightness.dark;
         return Padding(
-          padding: const EdgeInsets.symmetric(vertical: 4),
+          padding: const EdgeInsets.symmetric(vertical: AppSpacing.xs),
           child: Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
@@ -895,12 +896,12 @@ class _BillingScreenState extends ConsumerState<BillingScreen> {
   Widget _buildEmptyState(BuildContext context) {
     return Center(
       child: Padding(
-        padding: const EdgeInsets.all(32),
+        padding: const EdgeInsets.all(AppSpacing.xxxl),
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
             Container(
-              padding: const EdgeInsets.all(24),
+              padding: const EdgeInsets.all(AppSpacing.xxl),
               decoration: BoxDecoration(
                 color: const Color(0xFF6366F1).withValues(alpha: 0.1),
                 shape: BoxShape.circle,

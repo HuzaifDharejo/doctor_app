@@ -7,6 +7,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../core/core.dart';
 import '../../core/components/app_button.dart';
+import '../../core/theme/design_tokens.dart';
 import '../../providers/db_provider.dart';
 import '../../providers/google_calendar_provider.dart';
 import '../../services/backup_service.dart';
@@ -166,7 +167,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> with SingleTick
                 );
               },
               child: Container(
-                padding: const EdgeInsets.all(3),
+                padding: const EdgeInsets.all(AppSpacing.xxs),
                 decoration: BoxDecoration(
                   shape: BoxShape.circle,
                   border: Border.all(color: Colors.white.withValues(alpha: 0.5), width: 2),
@@ -523,7 +524,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> with SingleTick
 
   Widget _buildSummaryRow(String label, String value, {Color? color}) {
     return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 4),
+      padding: const EdgeInsets.symmetric(vertical: AppSpacing.xs),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
@@ -687,7 +688,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> with SingleTick
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Container(
-                    padding: const EdgeInsets.all(12),
+                    padding: const EdgeInsets.all(AppSpacing.md),
                     decoration: BoxDecoration(
                       color: AppColors.warning.withValues(alpha: 0.1),
                       borderRadius: BorderRadius.circular(8),
@@ -775,7 +776,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> with SingleTick
             ),
             const SizedBox(height: 12),
             Container(
-              padding: const EdgeInsets.all(12),
+              padding: const EdgeInsets.all(AppSpacing.md),
               decoration: BoxDecoration(
                 color: AppColors.background,
                 borderRadius: BorderRadius.circular(8),
@@ -1060,7 +1061,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> with SingleTick
 
   Widget _buildHelpItem(String question, String answer) {
     return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 8),
+      padding: const EdgeInsets.symmetric(vertical: AppSpacing.sm),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -1123,7 +1124,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> with SingleTick
         title: Row(
           children: [
             Container(
-              padding: const EdgeInsets.all(8),
+              padding: const EdgeInsets.all(AppSpacing.sm),
               decoration: BoxDecoration(
                 gradient: AppColors.primaryGradient,
                 borderRadius: BorderRadius.circular(12),
@@ -1169,7 +1170,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> with SingleTick
 
   Widget _buildFeatureItem(String text) {
     return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 2),
+      padding: const EdgeInsets.symmetric(vertical: AppSpacing.xxs),
       child: Row(
         children: [
           const Icon(Icons.check_circle, size: 16, color: AppColors.success),
@@ -1466,7 +1467,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> with SingleTick
             child: Row(
               children: [
                 Container(
-                  padding: const EdgeInsets.all(12),
+                  padding: const EdgeInsets.all(AppSpacing.md),
                   decoration: BoxDecoration(
                     color: const Color(0xFF4285F4).withValues(alpha: 0.1),
                     borderRadius: BorderRadius.circular(12),
@@ -1504,7 +1505,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> with SingleTick
                   ),
                 ),
                 Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                  padding: const EdgeInsets.symmetric(horizontal: AppSpacing.lg, vertical: AppSpacing.sm),
                   decoration: BoxDecoration(
                     color: const Color(0xFF4285F4),
                     borderRadius: BorderRadius.circular(20),
@@ -1642,7 +1643,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> with SingleTick
                       ref.read(appSettingsProvider).toggleMedicalRecordType(type, value);
                     },
                     secondary: Container(
-                      padding: const EdgeInsets.all(8),
+                      padding: const EdgeInsets.all(AppSpacing.sm),
                       decoration: BoxDecoration(
                         color: (isEnabled ? AppColors.primary : AppColors.textHint).withValues(alpha: 0.1),
                         borderRadius: BorderRadius.circular(8),
@@ -1712,7 +1713,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> with SingleTick
           child: Row(
             children: [
               Container(
-                padding: const EdgeInsets.all(8),
+                padding: const EdgeInsets.all(AppSpacing.sm),
                 decoration: BoxDecoration(
                   color: iconColor.withValues(alpha: 0.1),
                   borderRadius: BorderRadius.circular(8),
