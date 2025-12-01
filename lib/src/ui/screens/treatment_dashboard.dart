@@ -284,17 +284,13 @@ class _TreatmentDashboardState extends ConsumerState<TreatmentDashboard>
     required Color color,
     required bool isDark,
   }) {
-    return Container(
-      decoration: BoxDecoration(
-        color: isDark 
-            ? Color.alphaBlend(color.withValues(alpha: 0.1), Colors.grey[900]!)
-            : color.withValues(alpha: 0.08),
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(
-          color: color.withValues(alpha: 0.3),
-          width: 1,
-        ),
-      ),
+    return AppCard(
+      color: isDark 
+          ? Color.alphaBlend(color.withValues(alpha: 0.1), Colors.grey[900]!)
+          : color.withValues(alpha: 0.08),
+      borderRadius: BorderRadius.circular(12),
+      borderColor: color.withValues(alpha: 0.3),
+      borderWidth: 1,
       padding: const EdgeInsets.all(12),
       child: Column(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,

@@ -206,19 +206,10 @@ class _AddAppointmentScreenState extends ConsumerState<AddAppointmentScreen> {
   Widget _buildDateTimeCard(BuildContext context) {
     return Column(
       children: [
-        Container(
+        AppCard.gradient(
           padding: const EdgeInsets.all(20),
-          decoration: BoxDecoration(
-            gradient: AppColors.primaryGradient,
-            borderRadius: BorderRadius.circular(20),
-            boxShadow: [
-              BoxShadow(
-                color: AppColors.primary.withValues(alpha: 0.3),
-                blurRadius: 20,
-                offset: const Offset(0, 10),
-              ),
-            ],
-          ),
+          gradient: AppColors.primaryGradient,
+          borderRadius: BorderRadius.circular(20),
           child: Row(
             children: [
               Expanded(
@@ -464,13 +455,12 @@ class _AddAppointmentScreenState extends ConsumerState<AddAppointmentScreen> {
 
   Widget _buildDurationSelector(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    return Container(
+    return AppCard(
       padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: Theme.of(context).colorScheme.surface,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: isDark ? AppColors.darkDivider : AppColors.divider),
-      ),
+      color: Theme.of(context).colorScheme.surface,
+      borderRadius: BorderRadius.circular(16),
+      borderColor: isDark ? AppColors.darkDivider : AppColors.divider,
+      borderWidth: 1,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -551,13 +541,12 @@ class _AddAppointmentScreenState extends ConsumerState<AddAppointmentScreen> {
 
   Widget _buildReminderToggle(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    return Container(
+    return AppCard(
       padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: Theme.of(context).colorScheme.surface,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: isDark ? AppColors.darkDivider : AppColors.divider),
-      ),
+      color: Theme.of(context).colorScheme.surface,
+      borderRadius: BorderRadius.circular(16),
+      borderColor: isDark ? AppColors.darkDivider : AppColors.divider,
+      borderWidth: 1,
       child: Row(
         children: [
           Container(

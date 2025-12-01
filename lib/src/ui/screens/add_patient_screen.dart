@@ -439,21 +439,18 @@ class _AddPatientScreenState extends ConsumerState<AddPatientScreen> {
   }) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     
-    return DecoratedBox(
-      decoration: BoxDecoration(
-        color: Theme.of(context).colorScheme.surface,
-        borderRadius: BorderRadius.circular(20),
-        border: Border.all(
-          color: isDark ? AppColors.darkDivider : AppColors.divider.withValues(alpha: 0.5),
+    return AppCard(
+      color: Theme.of(context).colorScheme.surface,
+      borderRadius: BorderRadius.circular(20),
+      borderColor: isDark ? AppColors.darkDivider : AppColors.divider.withValues(alpha: 0.5),
+      borderWidth: 1,
+      boxShadow: [
+        BoxShadow(
+          color: Colors.black.withValues(alpha: isDark ? 0.2 : 0.04),
+          blurRadius: 16,
+          offset: const Offset(0, 4),
         ),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: isDark ? 0.2 : 0.04),
-            blurRadius: 16,
-            offset: const Offset(0, 4),
-          ),
-        ],
-      ),
+      ],
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [

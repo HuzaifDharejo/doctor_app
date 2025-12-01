@@ -990,15 +990,12 @@ class _AddInvoiceScreenState extends ConsumerState<AddInvoiceScreen> {
     required Widget child,
     Widget? trailing,
   }) {
-    return Card(
-      elevation: 0,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(16),
-        side: BorderSide(color: colorScheme.outlineVariant),
-      ),
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(
+    return AppCard(
+      borderRadius: BorderRadius.circular(16),
+      borderColor: colorScheme.outlineVariant,
+      borderWidth: 1,
+      padding: const EdgeInsets.all(16),
+      child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Row(
@@ -1029,7 +1026,6 @@ class _AddInvoiceScreenState extends ConsumerState<AddInvoiceScreen> {
             child,
           ],
         ),
-      ),
     );
   }
 
