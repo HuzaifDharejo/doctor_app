@@ -7,6 +7,7 @@ import '../../../db/doctor_db.dart';
 import '../../../providers/db_provider.dart';
 import '../../../services/suggestions_service.dart';
 import '../../../theme/app_theme.dart';
+import '../../../core/theme/design_tokens.dart';
 import '../../widgets/suggestion_text_field.dart';
 import 'record_form_widgets.dart';
 
@@ -576,7 +577,7 @@ class _AddFollowUpScreenState extends ConsumerState<AddFollowUpScreen> {
         }
       },
       child: Container(
-        padding: const EdgeInsets.all(16),
+        padding: const EdgeInsets.all(AppSpacing.lg),
         decoration: BoxDecoration(
           color: Theme.of(context).colorScheme.surface,
           borderRadius: BorderRadius.circular(12),
@@ -629,3 +630,4 @@ class _AddFollowUpScreenState extends ConsumerState<AddFollowUpScreen> {
     );
   }
 }
+

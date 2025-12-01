@@ -7,6 +7,7 @@ import '../../../db/doctor_db.dart';
 import '../../../providers/db_provider.dart';
 import '../../../services/suggestions_service.dart';
 import '../../../theme/app_theme.dart';
+import '../../../core/theme/design_tokens.dart';
 import '../../widgets/suggestion_text_field.dart';
 import 'record_form_widgets.dart';
 
@@ -317,7 +318,7 @@ class _AddPulmonaryScreenState extends ConsumerState<AddPulmonaryScreen> {
 
   Widget _buildQuickFillSection(BuildContext context, bool isDark) {
     return Container(
-      padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.all(AppSpacing.lg),
       decoration: BoxDecoration(
         color: isDark ? Colors.grey.shade800.withValues(alpha: 0.5) : Colors.white,
         borderRadius: BorderRadius.circular(16),
@@ -994,3 +995,4 @@ class _AddPulmonaryScreenState extends ConsumerState<AddPulmonaryScreen> {
     );
   }
 }
+

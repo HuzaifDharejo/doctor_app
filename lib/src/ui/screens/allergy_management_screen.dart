@@ -5,6 +5,7 @@ import '../../db/doctor_db.dart';
 import '../../providers/db_provider.dart';
 import '../../services/allergy_management_service.dart';
 import '../../theme/app_theme.dart';
+import '../../core/theme/design_tokens.dart';
 import '../widgets/allergy_filter_widget.dart';
 
 /// Screen for managing and analyzing patient allergies
@@ -107,7 +108,7 @@ class _AllergyManagementScreenState extends ConsumerState<AllergyManagementScree
             final patients = snapshot.data!;
 
             return ListView.builder(
-              padding: const EdgeInsets.all(16),
+              padding: const EdgeInsets.all(AppSpacing.lg),
               itemCount: patients.length,
               itemBuilder: (context, index) {
                 final patientInfo = patients[index];
@@ -124,7 +125,7 @@ class _AllergyManagementScreenState extends ConsumerState<AllergyManagementScree
     return Column(
       children: [
         Padding(
-          padding: const EdgeInsets.all(16),
+          padding: const EdgeInsets.all(AppSpacing.lg),
           child: TextField(
             controller: _searchController,
             decoration: InputDecoration(
@@ -133,7 +134,7 @@ class _AllergyManagementScreenState extends ConsumerState<AllergyManagementScree
               border: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(12),
               ),
-              contentPadding: const EdgeInsets.symmetric(horizontal: 16),
+              contentPadding: const EdgeInsets.symmetric(horizontal: AppSpacing.lg),
             ),
             onChanged: (value) => setState(() {}),
           ),
@@ -203,7 +204,7 @@ class _AllergyManagementScreenState extends ConsumerState<AllergyManagementScree
                   }
 
                   return ListView.builder(
-                    padding: const EdgeInsets.all(16),
+                    padding: const EdgeInsets.all(AppSpacing.lg),
                     itemCount: patients.length,
                     itemBuilder: (context, index) {
                       return _buildPatientAllergyCard(patients[index]);
@@ -241,7 +242,7 @@ class _AllergyManagementScreenState extends ConsumerState<AllergyManagementScree
             final isDark = Theme.of(context).brightness == Brightness.dark;
 
             return ListView(
-              padding: const EdgeInsets.all(16),
+              padding: const EdgeInsets.all(AppSpacing.lg),
               children: [
                 // Statistics cards
                 Row(
@@ -320,7 +321,7 @@ class _AllergyManagementScreenState extends ConsumerState<AllergyManagementScree
                       final percentage = (allergen.count / maxCount * 100).toInt();
 
                       return Padding(
-                        padding: const EdgeInsets.all(12),
+                        padding: const EdgeInsets.all(AppSpacing.md),
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
@@ -392,7 +393,7 @@ class _AllergyManagementScreenState extends ConsumerState<AllergyManagementScree
     required bool isDark,
   }) {
     return Container(
-      padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.all(AppSpacing.lg),
       decoration: BoxDecoration(
         color: color.withValues(alpha: 0.1),
         border: Border.all(color: color.withValues(alpha: 0.3)),
@@ -430,7 +431,7 @@ class _AllergyManagementScreenState extends ConsumerState<AllergyManagementScree
     return Card(
       margin: const EdgeInsets.only(bottom: 12),
       child: Padding(
-        padding: const EdgeInsets.all(16),
+        padding: const EdgeInsets.all(AppSpacing.lg),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -522,3 +523,4 @@ class _AllergyManagementScreenState extends ConsumerState<AllergyManagementScree
     );
   }
 }
+

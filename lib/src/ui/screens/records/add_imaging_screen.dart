@@ -7,6 +7,7 @@ import '../../../db/doctor_db.dart';
 import '../../../providers/db_provider.dart';
 import '../../../services/suggestions_service.dart';
 import '../../../theme/app_theme.dart';
+import '../../../core/theme/design_tokens.dart';
 import '../../widgets/suggestion_text_field.dart';
 import 'record_form_widgets.dart';
 
@@ -457,7 +458,7 @@ class _AddImagingScreenState extends ConsumerState<AddImagingScreen> {
         ),
         const SizedBox(height: 8),
         Container(
-          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+          padding: const EdgeInsets.symmetric(horizontal: AppSpacing.md, vertical: AppSpacing.xs),
           decoration: BoxDecoration(
             color: Theme.of(context).colorScheme.surface,
             borderRadius: BorderRadius.circular(12),
@@ -519,7 +520,7 @@ class _AddImagingScreenState extends ConsumerState<AddImagingScreen> {
         ),
         const SizedBox(height: 8),
         Container(
-          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+          padding: const EdgeInsets.symmetric(horizontal: AppSpacing.md, vertical: AppSpacing.sm),
           decoration: BoxDecoration(
             color: Theme.of(context).colorScheme.surface,
             borderRadius: BorderRadius.circular(12),
@@ -556,3 +557,4 @@ class _AddImagingScreenState extends ConsumerState<AddImagingScreen> {
     );
   }
 }
+

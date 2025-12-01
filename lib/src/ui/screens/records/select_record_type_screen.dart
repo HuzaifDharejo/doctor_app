@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../../../db/doctor_db.dart';
 import '../../../theme/app_theme.dart';
+import '../../../core/theme/design_tokens.dart';
 import 'add_follow_up_screen.dart';
 import 'add_general_record_screen.dart';
 import 'add_imaging_screen.dart';
@@ -77,7 +78,7 @@ class SelectRecordTypeScreen extends StatelessWidget {
                   GestureDetector(
                     onTap: () => Navigator.pop(context),
                     child: Container(
-                      padding: const EdgeInsets.all(10),
+                      padding: const EdgeInsets.all(AppSpacing.md),
                       decoration: BoxDecoration(
                         color: Colors.white.withValues(alpha: 0.2),
                         borderRadius: BorderRadius.circular(12),
@@ -102,7 +103,7 @@ class SelectRecordTypeScreen extends StatelessWidget {
               const SizedBox(height: 20),
               // Icon
               Container(
-                padding: const EdgeInsets.all(16),
+                padding: const EdgeInsets.all(AppSpacing.lg),
                 decoration: BoxDecoration(
                   color: Colors.white.withValues(alpha: 0.2),
                   shape: BoxShape.circle,
@@ -125,7 +126,7 @@ class SelectRecordTypeScreen extends StatelessWidget {
               if (preselectedPatient != null) ...[
                 const SizedBox(height: 8),
                 Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                  padding: const EdgeInsets.symmetric(horizontal: AppSpacing.lg, vertical: AppSpacing.sm),
                   decoration: BoxDecoration(
                     color: Colors.white.withValues(alpha: 0.2),
                     borderRadius: BorderRadius.circular(20),
@@ -257,12 +258,12 @@ class SelectRecordTypeScreen extends StatelessWidget {
           ],
         ),
         child: Padding(
-          padding: const EdgeInsets.all(16),
+          padding: const EdgeInsets.all(AppSpacing.lg),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Container(
-                padding: const EdgeInsets.all(12),
+                padding: const EdgeInsets.all(AppSpacing.md),
                 decoration: BoxDecoration(
                   color: Colors.white.withValues(alpha: 0.2),
                   borderRadius: BorderRadius.circular(14),
@@ -296,7 +297,7 @@ class SelectRecordTypeScreen extends StatelessWidget {
                 mainAxisAlignment: MainAxisAlignment.end,
                 children: [
                   Container(
-                    padding: const EdgeInsets.all(6),
+                    padding: const EdgeInsets.all(AppSpacing.xs),
                     decoration: BoxDecoration(
                       color: Colors.white.withValues(alpha: 0.2),
                       shape: BoxShape.circle,
@@ -343,3 +344,4 @@ class _RecordTypeInfo {
   final List<Color> gradientColors;
   final VoidCallback onTap;
 }
+

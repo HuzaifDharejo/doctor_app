@@ -521,7 +521,7 @@ class RecordFormWidgets {
           style: ElevatedButton.styleFrom(
             backgroundColor: Colors.transparent,
             shadowColor: Colors.transparent,
-            padding: const EdgeInsets.symmetric(vertical: 18),
+            padding: const EdgeInsets.symmetric(vertical: AppSpacing.lg),
             shape: RoundedRectangleBorder(
               borderRadius: BorderRadius.circular(16),
             ),
@@ -590,3 +590,4 @@ class RecordFormWidgets {
     );
   }
 }
+

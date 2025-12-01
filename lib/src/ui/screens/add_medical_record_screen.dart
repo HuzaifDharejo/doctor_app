@@ -7,6 +7,7 @@ import '../../db/doctor_db.dart';
 import '../../providers/db_provider.dart';
 import '../../services/suggestions_service.dart';
 import '../../theme/app_theme.dart';
+import '../../core/theme/design_tokens.dart';
 import '../widgets/document_data_extractor.dart';
 import '../widgets/suggestion_text_field.dart';
 
@@ -491,7 +492,7 @@ class _AddMedicalRecordScreenState extends ConsumerState<AddMedicalRecordScreen>
                             GestureDetector(
                               onTap: () => Navigator.pop(context),
                               child: Container(
-                                padding: const EdgeInsets.all(10),
+                                padding: const EdgeInsets.all(AppSpacing.md),
                                 decoration: BoxDecoration(
                                   color: Colors.white.withValues(alpha: 0.2),
                                   borderRadius: BorderRadius.circular(12),
@@ -516,7 +517,7 @@ class _AddMedicalRecordScreenState extends ConsumerState<AddMedicalRecordScreen>
                         const SizedBox(height: 20),
                         // Record Icon
                         Container(
-                          padding: const EdgeInsets.all(16),
+                          padding: const EdgeInsets.all(AppSpacing.lg),
                           decoration: BoxDecoration(
                             color: Colors.white.withValues(alpha: 0.2),
                             shape: BoxShape.circle,
@@ -660,7 +661,7 @@ class _AddMedicalRecordScreenState extends ConsumerState<AddMedicalRecordScreen>
       builder: (context) {
         final isDark = Theme.of(context).brightness == Brightness.dark;
         return Container(
-          padding: const EdgeInsets.all(16),
+          padding: const EdgeInsets.all(AppSpacing.lg),
           decoration: BoxDecoration(
             color: Theme.of(context).colorScheme.surface,
             borderRadius: BorderRadius.circular(16),
@@ -757,7 +758,7 @@ class _AddMedicalRecordScreenState extends ConsumerState<AddMedicalRecordScreen>
                   hintText: 'Select a patient',
                   prefixIcon: Icon(Icons.person_search_rounded, color: isDark ? AppColors.darkTextSecondary : AppColors.textHint),
                   border: InputBorder.none,
-                  contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                  contentPadding: const EdgeInsets.symmetric(horizontal: AppSpacing.lg, vertical: AppSpacing.md),
                 ),
                 items: patients.map((p) => DropdownMenuItem(
                   value: p.id,
@@ -794,7 +795,7 @@ class _AddMedicalRecordScreenState extends ConsumerState<AddMedicalRecordScreen>
             }
           },
           child: Container(
-            padding: const EdgeInsets.all(16),
+            padding: const EdgeInsets.all(AppSpacing.lg),
             decoration: BoxDecoration(
               color: Theme.of(context).colorScheme.surface,
               borderRadius: BorderRadius.circular(16),
@@ -836,7 +837,7 @@ class _AddMedicalRecordScreenState extends ConsumerState<AddMedicalRecordScreen>
         return GestureDetector(
           onTap: () => setState(() => _showDataExtractor = true),
           child: Container(
-            padding: const EdgeInsets.all(16),
+            padding: const EdgeInsets.all(AppSpacing.lg),
             decoration: BoxDecoration(
               gradient: LinearGradient(
                 colors: [
@@ -855,7 +856,7 @@ class _AddMedicalRecordScreenState extends ConsumerState<AddMedicalRecordScreen>
             child: Row(
               children: [
                 Container(
-                  padding: const EdgeInsets.all(12),
+                  padding: const EdgeInsets.all(AppSpacing.md),
                   decoration: BoxDecoration(
                     color: AppColors.primary.withValues(alpha: 0.15),
                     borderRadius: BorderRadius.circular(12),
@@ -891,7 +892,7 @@ class _AddMedicalRecordScreenState extends ConsumerState<AddMedicalRecordScreen>
                   ),
                 ),
                 Container(
-                  padding: const EdgeInsets.all(8),
+                  padding: const EdgeInsets.all(AppSpacing.sm),
                   decoration: BoxDecoration(
                     color: AppColors.primary,
                     borderRadius: BorderRadius.circular(10),
@@ -1337,7 +1338,7 @@ class _AddMedicalRecordScreenState extends ConsumerState<AddMedicalRecordScreen>
     
     return Container(
       width: double.infinity,
-      padding: const EdgeInsets.all(12),
+      padding: const EdgeInsets.all(AppSpacing.md),
       decoration: BoxDecoration(
         color: isDark ? Colors.white.withValues(alpha: 0.05) : Colors.grey.withValues(alpha: 0.05),
         borderRadius: BorderRadius.circular(12),
@@ -1387,7 +1388,7 @@ class _AddMedicalRecordScreenState extends ConsumerState<AddMedicalRecordScreen>
     final isDark = Theme.of(context).brightness == Brightness.dark;
     
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+      padding: const EdgeInsets.symmetric(horizontal: AppSpacing.md, vertical: AppSpacing.sm),
       decoration: BoxDecoration(
         color: isDark ? Colors.white.withValues(alpha: 0.05) : Colors.grey.withValues(alpha: 0.05),
         borderRadius: BorderRadius.circular(12),
@@ -1450,7 +1451,7 @@ class _AddMedicalRecordScreenState extends ConsumerState<AddMedicalRecordScreen>
     final isDark = Theme.of(context).brightness == Brightness.dark;
     
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+      padding: const EdgeInsets.symmetric(horizontal: AppSpacing.md, vertical: AppSpacing.sm),
       decoration: BoxDecoration(
         color: isDark ? Colors.white.withValues(alpha: 0.05) : Colors.grey.withValues(alpha: 0.05),
         borderRadius: BorderRadius.circular(12),
@@ -1711,7 +1712,7 @@ class _AddMedicalRecordScreenState extends ConsumerState<AddMedicalRecordScreen>
                             GestureDetector(
                               onTap: () => setState(() => _isCelsius = false),
                               child: Container(
-                                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
+                                padding: const EdgeInsets.symmetric(horizontal: AppSpacing.sm, vertical: AppSpacing.xs),
                                 decoration: BoxDecoration(
                                   color: !_isCelsius ? AppColors.primary : Colors.transparent,
                                   borderRadius: BorderRadius.circular(6),
@@ -1729,7 +1730,7 @@ class _AddMedicalRecordScreenState extends ConsumerState<AddMedicalRecordScreen>
                             GestureDetector(
                               onTap: () => setState(() => _isCelsius = true),
                               child: Container(
-                                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
+                                padding: const EdgeInsets.symmetric(horizontal: AppSpacing.sm, vertical: AppSpacing.xs),
                                 decoration: BoxDecoration(
                                   color: _isCelsius ? AppColors.primary : Colors.transparent,
                                   borderRadius: BorderRadius.circular(6),
@@ -1790,7 +1791,7 @@ class _AddMedicalRecordScreenState extends ConsumerState<AddMedicalRecordScreen>
                 decoration: InputDecoration(
                   labelText: label,
                   isDense: true,
-                  contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
+                  contentPadding: const EdgeInsets.symmetric(horizontal: AppSpacing.md, vertical: AppSpacing.md),
                   border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
                   filled: true,
                   fillColor: isDark ? AppColors.darkBackground : AppColors.background,
@@ -1817,7 +1818,7 @@ class _AddMedicalRecordScreenState extends ConsumerState<AddMedicalRecordScreen>
                                 });
                               },
                               child: Container(
-                                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                                padding: const EdgeInsets.symmetric(horizontal: AppSpacing.md, vertical: AppSpacing.xs),
                                 decoration: BoxDecoration(
                                   color: AppColors.primary.withValues(alpha: 0.05),
                                   borderRadius: BorderRadius.circular(16),
@@ -1903,7 +1904,7 @@ class _AddMedicalRecordScreenState extends ConsumerState<AddMedicalRecordScreen>
     return Row(
       children: [
         Container(
-          padding: const EdgeInsets.all(8),
+          padding: const EdgeInsets.all(AppSpacing.sm),
           decoration: BoxDecoration(
             color: AppColors.primary.withValues(alpha: 0.1),
             borderRadius: BorderRadius.circular(10),
@@ -1931,7 +1932,7 @@ class _AddMedicalRecordScreenState extends ConsumerState<AddMedicalRecordScreen>
       builder: (context) {
         final isDark = Theme.of(context).brightness == Brightness.dark;
         return Container(
-          padding: const EdgeInsets.all(16),
+          padding: const EdgeInsets.all(AppSpacing.lg),
           decoration: BoxDecoration(
             color: Theme.of(context).colorScheme.surface,
             borderRadius: BorderRadius.circular(16),
@@ -1943,7 +1944,7 @@ class _AddMedicalRecordScreenState extends ConsumerState<AddMedicalRecordScreen>
               Row(
                 children: [
                   Container(
-                    padding: const EdgeInsets.all(8),
+                    padding: const EdgeInsets.all(AppSpacing.sm),
                     decoration: BoxDecoration(
                       color: AppColors.primary.withValues(alpha: 0.1),
                       borderRadius: BorderRadius.circular(8),
@@ -2017,3 +2018,4 @@ class _AddMedicalRecordScreenState extends ConsumerState<AddMedicalRecordScreen>
     );
   }
 }
+

@@ -9,6 +9,7 @@ import '../../db/doctor_db.dart';
 import '../../providers/db_provider.dart';
 import '../../services/suggestions_service.dart';
 import '../../theme/app_theme.dart';
+import '../../core/theme/design_tokens.dart';
 import '../widgets/suggestion_text_field.dart';
 
 class AddInvoiceScreen extends ConsumerStatefulWidget {
@@ -323,7 +324,7 @@ class _AddInvoiceScreenState extends ConsumerState<AddInvoiceScreen> {
                             GestureDetector(
                               onTap: () => Navigator.pop(context),
                               child: Container(
-                                padding: const EdgeInsets.all(10),
+                                padding: const EdgeInsets.all(AppSpacing.md),
                                 decoration: BoxDecoration(
                                   color: Colors.white.withValues(alpha: 0.2),
                                   borderRadius: BorderRadius.circular(12),
@@ -345,7 +346,7 @@ class _AddInvoiceScreenState extends ConsumerState<AddInvoiceScreen> {
                             GestureDetector(
                               onTap: _printInvoice,
                               child: Container(
-                                padding: const EdgeInsets.all(10),
+                                padding: const EdgeInsets.all(AppSpacing.md),
                                 decoration: BoxDecoration(
                                   color: Colors.white.withValues(alpha: 0.2),
                                   borderRadius: BorderRadius.circular(12),
@@ -361,7 +362,7 @@ class _AddInvoiceScreenState extends ConsumerState<AddInvoiceScreen> {
                           alignment: Alignment.center,
                           children: [
                             Container(
-                              padding: const EdgeInsets.all(16),
+                              padding: const EdgeInsets.all(AppSpacing.lg),
                               decoration: BoxDecoration(
                                 color: Colors.white.withValues(alpha: 0.2),
                                 shape: BoxShape.circle,
@@ -376,7 +377,7 @@ class _AddInvoiceScreenState extends ConsumerState<AddInvoiceScreen> {
                               bottom: 0,
                               right: 0,
                               child: Container(
-                                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                                padding: const EdgeInsets.symmetric(horizontal: AppSpacing.sm, vertical: AppSpacing.xs),
                                 decoration: BoxDecoration(
                                   color: _getStatusColor(_paymentStatus),
                                   borderRadius: BorderRadius.circular(12),
@@ -507,7 +508,7 @@ class _AddInvoiceScreenState extends ConsumerState<AddInvoiceScreen> {
                       icon: const Icon(Icons.print),
                       label: const Text('Print'),
                       style: OutlinedButton.styleFrom(
-                        padding: const EdgeInsets.symmetric(vertical: 14),
+                        padding: const EdgeInsets.symmetric(vertical: AppSpacing.lg),
                       ),
                     ),
                   ),
@@ -519,7 +520,7 @@ class _AddInvoiceScreenState extends ConsumerState<AddInvoiceScreen> {
                       icon: const Icon(Icons.save),
                       label: const Text('Save Invoice'),
                       style: FilledButton.styleFrom(
-                        padding: const EdgeInsets.symmetric(vertical: 14),
+                        padding: const EdgeInsets.symmetric(vertical: AppSpacing.lg),
                       ),
                     ),
                   ),
@@ -540,7 +541,7 @@ class _AddInvoiceScreenState extends ConsumerState<AddInvoiceScreen> {
       final patient = _selectedPatient!;
       final patientName = _getPatientName(patient);
       return Container(
-        padding: const EdgeInsets.all(12),
+        padding: const EdgeInsets.all(AppSpacing.md),
         decoration: BoxDecoration(
           color: colorScheme.primaryContainer,
           borderRadius: BorderRadius.circular(12),
@@ -601,12 +602,12 @@ class _AddInvoiceScreenState extends ConsumerState<AddInvoiceScreen> {
         const SizedBox(height: 8),
         if (_patients.isEmpty)
           Container(
-            padding: const EdgeInsets.all(16),
+            padding: const EdgeInsets.all(AppSpacing.lg),
             child: const Text('Loading patients...'),
           )
         else if (filteredPatients.isEmpty)
           Container(
-            padding: const EdgeInsets.all(16),
+            padding: const EdgeInsets.all(AppSpacing.lg),
             child: const Text('No patients found'),
           )
         else
@@ -662,7 +663,7 @@ class _AddInvoiceScreenState extends ConsumerState<AddInvoiceScreen> {
   Widget _buildItemsSection(ColorScheme colorScheme) {
     if (_items.isEmpty) {
       return Container(
-        padding: const EdgeInsets.all(32),
+        padding: const EdgeInsets.all(AppSpacing.xxxl),
         decoration: BoxDecoration(
           color: colorScheme.surfaceContainerHighest.withValues(alpha: 0.3),
           borderRadius: BorderRadius.circular(12),
@@ -697,7 +698,7 @@ class _AddInvoiceScreenState extends ConsumerState<AddInvoiceScreen> {
       children: [
         // Header
         Container(
-          padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 12),
+          padding: const EdgeInsets.symmetric(vertical: AppSpacing.sm, horizontal: AppSpacing.md),
           decoration: BoxDecoration(
             color: colorScheme.surfaceContainerHighest,
             borderRadius: BorderRadius.circular(8),
@@ -717,7 +718,7 @@ class _AddInvoiceScreenState extends ConsumerState<AddInvoiceScreen> {
         for (int i = 0; i < _items.length; i++)
           Container(
             margin: const EdgeInsets.only(bottom: 8),
-            padding: const EdgeInsets.all(12),
+            padding: const EdgeInsets.all(AppSpacing.md),
             decoration: BoxDecoration(
               border: Border.all(color: colorScheme.outlineVariant),
               borderRadius: BorderRadius.circular(12),
@@ -804,7 +805,7 @@ class _AddInvoiceScreenState extends ConsumerState<AddInvoiceScreen> {
 
   Widget _buildTotalsSection(ColorScheme colorScheme) {
     return Container(
-      padding: const EdgeInsets.all(20),
+      padding: const EdgeInsets.all(AppSpacing.xl),
       decoration: BoxDecoration(
         color: colorScheme.surfaceContainerHighest,
         borderRadius: BorderRadius.circular(16),
@@ -989,14 +990,14 @@ class _AddInvoiceScreenState extends ConsumerState<AddInvoiceScreen> {
       borderRadius: BorderRadius.circular(16),
       borderColor: colorScheme.outlineVariant,
       borderWidth: 1,
-      padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.all(AppSpacing.lg),
       child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Row(
               children: [
                 Container(
-                  padding: const EdgeInsets.all(8),
+                  padding: const EdgeInsets.all(AppSpacing.sm),
                   decoration: BoxDecoration(
                     color: colorScheme.primaryContainer,
                     borderRadius: BorderRadius.circular(8),
@@ -1099,3 +1100,4 @@ class InvoiceItem {
     };
   }
 }
+
