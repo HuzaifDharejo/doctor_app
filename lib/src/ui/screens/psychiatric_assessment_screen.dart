@@ -7,6 +7,7 @@ import '../../db/doctor_db.dart';
 import '../../providers/db_provider.dart';
 import '../../services/suggestions_service.dart';
 import '../../theme/app_theme.dart';
+import '../../core/theme/design_tokens.dart';
 import '../widgets/suggestion_text_field.dart';
 
 class PsychiatricAssessmentScreen extends ConsumerStatefulWidget {
@@ -442,7 +443,7 @@ class _PsychiatricAssessmentScreenState
                     Row(
                       children: [
                         Container(
-                          padding: const EdgeInsets.all(8),
+                          padding: const EdgeInsets.all(AppSpacing.sm),
                           decoration: BoxDecoration(
                             color: Colors.white.withValues(alpha: 0.2),
                             borderRadius: BorderRadius.circular(10),
@@ -494,7 +495,7 @@ class _PsychiatricAssessmentScreenState
           ),
           // Form Content
           SliverPadding(
-            padding: const EdgeInsets.all(16),
+            padding: const EdgeInsets.all(AppSpacing.lg),
             sliver: SliverList(
               delegate: SliverChildListDelegate([
                 Form(
@@ -684,7 +685,7 @@ class _PsychiatricAssessmentScreenState
                             : const Icon(Icons.save),
                         label: Text(_isSaving ? 'Saving...' : 'Save Assessment'),
                         style: FilledButton.styleFrom(
-                          padding: const EdgeInsets.symmetric(vertical: 16),
+                          padding: const EdgeInsets.symmetric(vertical: AppSpacing.lg),
                           textStyle: const TextStyle(
                             fontSize: 16,
                             fontWeight: FontWeight.w600,
@@ -757,7 +758,7 @@ class _PsychiatricAssessmentScreenState
 
   Widget _buildQuickFillSection(BuildContext context, bool isDark) {
     return Container(
-      padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.all(AppSpacing.lg),
       decoration: BoxDecoration(
         color: isDark ? Colors.grey.shade800.withValues(alpha: 0.5) : Colors.white,
         borderRadius: BorderRadius.circular(16),
@@ -964,10 +965,10 @@ class _PsychiatricAssessmentScreenState
         child: ExpansionTile(
           initiallyExpanded: isExpanded,
           onExpansionChanged: (expanded) => _toggleSection(key),
-          tilePadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+          tilePadding: const EdgeInsets.symmetric(horizontal: AppSpacing.lg, vertical: AppSpacing.xs),
           childrenPadding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
           leading: Container(
-            padding: const EdgeInsets.all(8),
+            padding: const EdgeInsets.all(AppSpacing.sm),
             decoration: BoxDecoration(
               color: isExpanded
                   ? colorScheme.primary.withValues(alpha: 0.1)
@@ -1442,7 +1443,7 @@ class _PsychiatricAssessmentScreenState
       children: [
         // First Episode
         Container(
-          padding: const EdgeInsets.all(12),
+          padding: const EdgeInsets.all(AppSpacing.md),
           decoration: BoxDecoration(
             color: colorScheme.surfaceContainerHighest.withValues(alpha: 0.5),
             borderRadius: BorderRadius.circular(8),
@@ -1474,7 +1475,7 @@ class _PsychiatricAssessmentScreenState
 
         // Second Episode
         Container(
-          padding: const EdgeInsets.all(12),
+          padding: const EdgeInsets.all(AppSpacing.md),
           decoration: BoxDecoration(
             color: colorScheme.surfaceContainerHighest.withValues(alpha: 0.5),
             borderRadius: BorderRadius.circular(8),
@@ -1565,3 +1566,4 @@ class _PsychiatricAssessmentScreenState
     );
   }
 }
+

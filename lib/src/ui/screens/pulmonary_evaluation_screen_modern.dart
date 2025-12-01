@@ -9,6 +9,7 @@ import 'package:intl/intl.dart';
 import '../../db/doctor_db.dart';
 import '../../providers/db_provider.dart';
 import '../../theme/app_theme.dart';
+import '../../core/theme/design_tokens.dart';
 
 class PulmonaryEvaluationScreenModern extends ConsumerStatefulWidget {
   
@@ -309,7 +310,7 @@ class _PulmonaryEvaluationScreenModernState
         key: _formKey,
         child: SingleChildScrollView(
           controller: _scrollController,
-          padding: const EdgeInsets.all(16),
+          padding: const EdgeInsets.all(AppSpacing.lg),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
@@ -401,7 +402,7 @@ class _PulmonaryEvaluationScreenModernState
               // Section 4: Red Flags (with warning)
               if (_hasRedFlags())
                 Container(
-                  padding: const EdgeInsets.all(12),
+                  padding: const EdgeInsets.all(AppSpacing.md),
                   margin: const EdgeInsets.only(bottom: 16),
                   decoration: BoxDecoration(
                     color: AppColors.error.withValues(alpha: 0.1),
@@ -646,7 +647,7 @@ class _PulmonaryEvaluationScreenModernState
   Widget _buildEvaluationHeader(BuildContext context) {
     return Card(
       child: Padding(
-        padding: const EdgeInsets.all(16),
+        padding: const EdgeInsets.all(AppSpacing.lg),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -678,7 +679,7 @@ class _PulmonaryEvaluationScreenModernState
   Widget _buildQuickDiagnosisBar() {
     return Card(
       child: Padding(
-        padding: const EdgeInsets.all(12),
+        padding: const EdgeInsets.all(AppSpacing.md),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -726,7 +727,7 @@ class _PulmonaryEvaluationScreenModernState
           ? AppColors.error.withValues(alpha: 0.05)
           : null,
       child: Padding(
-        padding: const EdgeInsets.all(16),
+        padding: const EdgeInsets.all(AppSpacing.lg),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -785,3 +786,4 @@ class _PulmonaryEvaluationScreenModernState
           );
   }
 }
+

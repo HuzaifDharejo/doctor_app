@@ -124,7 +124,7 @@ class _VitalSignsScreenState extends ConsumerState<VitalSignsScreen> with Single
     }
 
     return ListView.builder(
-      padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.all(AppSpacing.lg),
       itemCount: _vitalSigns.length,
       itemBuilder: (context, index) {
         final vital = _vitalSigns[index];
@@ -147,7 +147,7 @@ class _VitalSignsScreenState extends ConsumerState<VitalSignsScreen> with Single
         subtitle: Text(_buildQuickSummary(vital)),
         children: [
           Padding(
-            padding: const EdgeInsets.all(16),
+            padding: const EdgeInsets.all(AppSpacing.lg),
             child: Column(
               children: [
                 _buildVitalRow('Blood Pressure', 
@@ -240,7 +240,7 @@ class _VitalSignsScreenState extends ConsumerState<VitalSignsScreen> with Single
     }
 
     return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 4),
+      padding: const EdgeInsets.symmetric(vertical: AppSpacing.xs),
       child: Row(
         children: [
           Expanded(
@@ -253,7 +253,7 @@ class _VitalSignsScreenState extends ConsumerState<VitalSignsScreen> with Single
           ),
           if (statusColor != null)
             Container(
-              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+              padding: const EdgeInsets.symmetric(horizontal: AppSpacing.sm, vertical: AppSpacing.xxs),
               decoration: BoxDecoration(
                 color: statusColor.withOpacity(0.1),
                 borderRadius: BorderRadius.circular(12),
@@ -355,7 +355,7 @@ class _VitalSignsScreenState extends ConsumerState<VitalSignsScreen> with Single
     }
 
     return Padding(
-      padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.all(AppSpacing.lg),
       child: Column(
         children: [
           Text('Blood Pressure Trend (Last ${bpData.length} readings)', 
@@ -487,7 +487,7 @@ class _VitalSignsScreenState extends ConsumerState<VitalSignsScreen> with Single
     final maxWeight = weightData.map((e) => e.weight!).reduce((a, b) => a > b ? a : b);
 
     return Padding(
-      padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.all(AppSpacing.lg),
       child: Column(
         children: [
           Text('Weight Trend (Last ${weightData.length} readings)', 
@@ -599,7 +599,7 @@ class _VitalSignsScreenState extends ConsumerState<VitalSignsScreen> with Single
 
     return Card(
       child: Padding(
-        padding: const EdgeInsets.all(16),
+        padding: const EdgeInsets.all(AppSpacing.lg),
         child: Row(
           mainAxisAlignment: MainAxisAlignment.spaceAround,
           children: [
@@ -620,7 +620,7 @@ class _VitalSignsScreenState extends ConsumerState<VitalSignsScreen> with Single
 
     return Card(
       child: Padding(
-        padding: const EdgeInsets.all(16),
+        padding: const EdgeInsets.all(AppSpacing.lg),
         child: Row(
           mainAxisAlignment: MainAxisAlignment.spaceAround,
           children: [
@@ -996,3 +996,4 @@ class _VitalSignsScreenState extends ConsumerState<VitalSignsScreen> with Single
     );
   }
 }
+

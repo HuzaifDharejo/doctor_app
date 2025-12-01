@@ -133,7 +133,7 @@ class _UserManualScreenState extends ConsumerState<UserManualScreen>
             .animate(_scaleController),
         child: SingleChildScrollView(
           child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 60),
+            padding: const EdgeInsets.symmetric(horizontal: AppSpacing.xxl, vertical: AppSpacing.xxxxxl),
             child: Column(
               children: [
                 // Animated icon
@@ -141,7 +141,7 @@ class _UserManualScreenState extends ConsumerState<UserManualScreen>
                   scale: Tween<double>(begin: 0.5, end: 1.0)
                       .animate(_scaleController),
                   child: Container(
-                    padding: const EdgeInsets.all(24),
+                    padding: const EdgeInsets.all(AppSpacing.xxl),
                     decoration: BoxDecoration(
                       gradient: const LinearGradient(
                         colors: [Color(0xFF6366F1), Color(0xFF8B5CF6)],
@@ -217,7 +217,7 @@ class _UserManualScreenState extends ConsumerState<UserManualScreen>
 
   Widget _buildFeatureCard(String emoji, String title, String desc) {
     return AppCard(
-      padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.all(AppSpacing.lg),
       color: context.isDarkMode
           ? Colors.white.withValues(alpha: 0.05)
           : Colors.white,
@@ -497,11 +497,11 @@ class _UserManualScreenState extends ConsumerState<UserManualScreen>
       opacity: _fadeController,
       child: SingleChildScrollView(
         child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 60),
+          padding: const EdgeInsets.symmetric(horizontal: AppSpacing.xxl, vertical: AppSpacing.xxxxxl),
           child: Column(
             children: [
               Container(
-                padding: const EdgeInsets.all(24),
+                padding: const EdgeInsets.all(AppSpacing.xxl),
                 decoration: BoxDecoration(
                   gradient: const LinearGradient(
                     colors: [Color(0xFF10B981), Color(0xFF059669)],
@@ -557,7 +557,7 @@ class _UserManualScreenState extends ConsumerState<UserManualScreen>
   Widget _buildTipCard(String emoji, String title, String description, bool isDark) {
     return Container(
       margin: const EdgeInsets.only(bottom: 12),
-      padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.all(AppSpacing.lg),
       decoration: BoxDecoration(
         color: isDark ? Colors.white.withValues(alpha: 0.05) : Colors.white,
         borderRadius: BorderRadius.circular(12),
@@ -607,11 +607,11 @@ class _UserManualScreenState extends ConsumerState<UserManualScreen>
   }) {
     return SingleChildScrollView(
       child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 60),
+        padding: const EdgeInsets.symmetric(horizontal: AppSpacing.xxl, vertical: AppSpacing.xxxxxl),
         child: Column(
           children: [
             Container(
-              padding: const EdgeInsets.all(16),
+              padding: const EdgeInsets.all(AppSpacing.lg),
               decoration: BoxDecoration(
                 gradient: LinearGradient(
                   colors: [color, color.withValues(alpha: 0.7)],
@@ -696,7 +696,7 @@ class _UserManualScreenState extends ConsumerState<UserManualScreen>
   Widget _buildBottomNav(bool isDark) {
     return SafeArea(
       child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
+        padding: const EdgeInsets.symmetric(horizontal: AppSpacing.xxl, vertical: AppSpacing.lg),
         decoration: BoxDecoration(
           color: isDark
               ? Colors.black.withValues(alpha: 0.3)
@@ -735,7 +735,7 @@ class _UserManualScreenState extends ConsumerState<UserManualScreen>
                   children: List.generate(
                     8,
                     (index) => Container(
-                      margin: const EdgeInsets.symmetric(horizontal: 4),
+                      margin: const EdgeInsets.symmetric(horizontal: AppSpacing.xs),
                       width: _currentPage == index ? 24 : 8,
                       height: 8,
                       decoration: BoxDecoration(
@@ -779,3 +779,4 @@ class _UserManualScreenState extends ConsumerState<UserManualScreen>
     );
   }
 }
+

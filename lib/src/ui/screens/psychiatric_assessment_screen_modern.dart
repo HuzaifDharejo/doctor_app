@@ -10,6 +10,7 @@ import '../../db/doctor_db.dart';
 import '../../providers/db_provider.dart';
 import '../../services/suggestions_service.dart';
 import '../../theme/app_theme.dart';
+import '../../core/theme/design_tokens.dart';
 import '../widgets/suggestion_text_field.dart';
 
 class PsychiatricAssessmentScreenModern extends ConsumerStatefulWidget {
@@ -333,7 +334,7 @@ class _PsychiatricAssessmentScreenModernState
         key: _formKey,
         child: SingleChildScrollView(
           controller: _scrollController,
-          padding: const EdgeInsets.all(16),
+          padding: const EdgeInsets.all(AppSpacing.lg),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
@@ -531,7 +532,7 @@ class _PsychiatricAssessmentScreenModernState
                 children: [
                   if (_showRiskWarning)
                     Container(
-                      padding: const EdgeInsets.all(12),
+                      padding: const EdgeInsets.all(AppSpacing.md),
                       decoration: BoxDecoration(
                         color: AppColors.error.withValues(alpha: 0.15),
                         border: Border.all(color: AppColors.error),
@@ -656,7 +657,7 @@ class _PsychiatricAssessmentScreenModernState
         side: isDark ? BorderSide(color: Colors.grey.shade800) : BorderSide.none,
       ),
       child: Padding(
-        padding: const EdgeInsets.all(16),
+        padding: const EdgeInsets.all(AppSpacing.lg),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -697,7 +698,7 @@ class _PsychiatricAssessmentScreenModernState
         side: isDark ? BorderSide(color: Colors.grey.shade800) : BorderSide.none,
       ),
       child: Padding(
-        padding: const EdgeInsets.all(12),
+        padding: const EdgeInsets.all(AppSpacing.md),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -757,7 +758,7 @@ class _PsychiatricAssessmentScreenModernState
             : BorderSide.none,
       ),
       child: Padding(
-        padding: const EdgeInsets.all(16),
+        padding: const EdgeInsets.all(AppSpacing.lg),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -952,7 +953,7 @@ class _PsychiatricAssessmentScreenModernState
             ),
             filled: true,
             fillColor: isDark ? Colors.grey.shade900 : Colors.grey.shade50,
-            contentPadding: const EdgeInsets.all(16),
+            contentPadding: const EdgeInsets.all(AppSpacing.lg),
             helperText: 'Start typing to see suggestions',
             helperStyle: TextStyle(color: isDark ? Colors.white54 : Colors.black45),
           ),
@@ -996,3 +997,4 @@ class _PsychiatricAssessmentScreenModernState
     );
   }
 }
+
