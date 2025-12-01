@@ -464,24 +464,15 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
     required bool isCompact,
     required bool isDark,
   }) {
-    return Container(
+    return SizedBox(
       width: isCompact ? 155 : 175,
-      padding: EdgeInsets.all(isCompact ? 14 : 18),
-      decoration: BoxDecoration(
+      child: AppCard.gradient(
         gradient: LinearGradient(
           colors: gradient,
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
         ),
-        borderRadius: BorderRadius.circular(20),
-        boxShadow: [
-          BoxShadow(
-            color: gradient[0].withValues(alpha: 0.4),
-            blurRadius: 16,
-            offset: const Offset(0, 8),
-          ),
-        ],
-      ),
+        padding: EdgeInsets.all(isCompact ? 14 : 18),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -552,6 +543,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
             ],
           ),
         ],
+      ),
       ),
     );
   }
@@ -660,35 +652,27 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
     required bool isCompact,
     required bool isDark,
   }) {
-    return Material(
-      color: Colors.transparent,
+    return AppCard(
+      onTap: onTap,
+      padding: EdgeInsets.symmetric(
+        horizontal: isCompact ? 14 : 18,
+        vertical: isCompact ? 14 : 18,
+      ),
+      color: isDark 
+          ? Colors.white.withValues(alpha: 0.06)
+          : Colors.white,
       borderRadius: BorderRadius.circular(16),
-      child: InkWell(
-        onTap: onTap,
-        borderRadius: BorderRadius.circular(16),
-        child: Container(
-          padding: EdgeInsets.symmetric(
-            horizontal: isCompact ? 14 : 18,
-            vertical: isCompact ? 14 : 18,
-          ),
-          decoration: BoxDecoration(
-            color: isDark 
-                ? Colors.white.withValues(alpha: 0.06)
-                : Colors.white,
-            borderRadius: BorderRadius.circular(16),
-            border: Border.all(
-              color: isDark 
-                  ? Colors.white.withValues(alpha: 0.1)
-                  : color.withValues(alpha: 0.15),
-            ),
-            boxShadow: isDark ? null : [
-              BoxShadow(
-                color: color.withValues(alpha: 0.08),
-                blurRadius: 12,
-                offset: const Offset(0, 4),
-              ),
-            ],
-          ),
+      borderColor: isDark 
+          ? Colors.white.withValues(alpha: 0.1)
+          : color.withValues(alpha: 0.15),
+      borderWidth: 1,
+      boxShadow: isDark ? null : [
+        BoxShadow(
+          color: color.withValues(alpha: 0.08),
+          blurRadius: 12,
+          offset: const Offset(0, 4),
+        ),
+      ],
           child: Row(
             children: [
               Container(
@@ -726,8 +710,6 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
               ),
             ],
           ),
-        ),
-      ),
     );
   }
 
@@ -1031,20 +1013,17 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
               final patient = patientSnapshot.data;
               final daysOverdue = DateTime.now().difference(followUp.scheduledDate).inDays;
               
-              return Container(
+              return AppCard(
                 margin: const EdgeInsets.only(bottom: 10),
                 padding: EdgeInsets.all(isCompact ? 12 : 14),
-                decoration: BoxDecoration(
-                  color: isDark 
-                      ? Colors.white.withOpacity(0.06)
-                      : accentColor.withOpacity(0.03),
-                  borderRadius: BorderRadius.circular(14),
-                  border: Border.all(
-                    color: isDark 
-                        ? Colors.white.withOpacity(0.1)
-                        : accentColor.withOpacity(0.2),
-                  ),
-                ),
+                color: isDark 
+                    ? Colors.white.withOpacity(0.06)
+                    : accentColor.withOpacity(0.03),
+                borderRadius: BorderRadius.circular(14),
+                borderColor: isDark 
+                    ? Colors.white.withOpacity(0.1)
+                    : accentColor.withOpacity(0.2),
+                borderWidth: 1,
                 child: Row(
                   children: [
                     Container(
