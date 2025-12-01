@@ -5,6 +5,7 @@ import '../../db/doctor_db.dart';
 import '../../providers/db_provider.dart';
 import '../../services/allergy_management_service.dart';
 import '../../theme/app_theme.dart';
+import '../../core/theme/design_tokens.dart';
 
 /// Allergy filter and search widget for finding patients with specific allergies
 class AllergyFilterWidget extends ConsumerStatefulWidget {
@@ -72,7 +73,7 @@ class _AllergyFilterWidgetState extends ConsumerState<AllergyFilterWidget> {
     if (_isLoading) {
       return Center(
         child: Padding(
-          padding: const EdgeInsets.all(16),
+          padding: const EdgeInsets.all(AppSpacing.lg),
           child: const CircularProgressIndicator(color: AppColors.primary),
         ),
       );
@@ -80,7 +81,7 @@ class _AllergyFilterWidgetState extends ConsumerState<AllergyFilterWidget> {
 
     if (_allergens.isEmpty) {
       return Padding(
-        padding: const EdgeInsets.all(16),
+        padding: const EdgeInsets.all(AppSpacing.lg),
         child: Text(
           'No allergies found in system',
           style: TextStyle(
@@ -96,7 +97,7 @@ class _AllergyFilterWidgetState extends ConsumerState<AllergyFilterWidget> {
       children: [
         // Header with clear button
         Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+          padding: const EdgeInsets.symmetric(horizontal: AppSpacing.lg, vertical: AppSpacing.md),
           child: Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
@@ -112,7 +113,7 @@ class _AllergyFilterWidgetState extends ConsumerState<AllergyFilterWidget> {
                   icon: const Icon(Icons.clear, size: 18),
                   label: const Text('Clear'),
                   style: TextButton.styleFrom(
-                    padding: const EdgeInsets.symmetric(horizontal: 8),
+                    padding: const EdgeInsets.symmetric(horizontal: AppSpacing.sm),
                   ),
                 ),
             ],
@@ -121,7 +122,7 @@ class _AllergyFilterWidgetState extends ConsumerState<AllergyFilterWidget> {
         // Selected allergens display
         if (_selectedAllergies.isNotEmpty)
           Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 16),
+            padding: const EdgeInsets.symmetric(horizontal: AppSpacing.lg),
             child: Wrap(
               spacing: 8,
               runSpacing: 8,
@@ -141,7 +142,7 @@ class _AllergyFilterWidgetState extends ConsumerState<AllergyFilterWidget> {
         const SizedBox(height: 8),
         // Allergen list
         Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 16),
+          padding: const EdgeInsets.symmetric(horizontal: AppSpacing.lg),
           child: Wrap(
             spacing: 8,
             runSpacing: 8,
@@ -194,7 +195,7 @@ class HighRiskAllergiesCard extends ConsumerWidget {
             final highRiskPatients = allergySnapshot.data!.take(5).toList();
 
             return Container(
-              margin: const EdgeInsets.all(16),
+              margin: const EdgeInsets.all(AppSpacing.lg),
               decoration: BoxDecoration(
                 color: isDark
                     ? Colors.white.withValues(alpha: 0.05)
@@ -209,7 +210,7 @@ class HighRiskAllergiesCard extends ConsumerWidget {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Padding(
-                    padding: const EdgeInsets.all(12),
+                    padding: const EdgeInsets.all(AppSpacing.md),
                     child: Row(
                       children: [
                         const Icon(
@@ -238,7 +239,7 @@ class HighRiskAllergiesCard extends ConsumerWidget {
                     itemBuilder: (context, index) {
                       final patientInfo = highRiskPatients[index];
                       return Padding(
-                        padding: const EdgeInsets.all(12),
+                        padding: const EdgeInsets.all(AppSpacing.md),
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
@@ -358,3 +359,4 @@ class HighRiskAllergiesCard extends ConsumerWidget {
     );
   }
 }
+

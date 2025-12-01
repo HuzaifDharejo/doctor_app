@@ -18,7 +18,7 @@ class AllergyBadges extends StatelessWidget {
     
     if (allergyList.isEmpty) {
       return Padding(
-        padding: const EdgeInsets.symmetric(vertical: 8),
+        padding: const EdgeInsets.symmetric(vertical: AppSpacing.sm),
         child: Text(
           'No allergies documented',
           style: TextStyle(color: Colors.grey.shade600, fontStyle: FontStyle.italic),
@@ -64,3 +64,4 @@ class AllergyBadges extends StatelessWidget {
         .toList();
   }
 }
+

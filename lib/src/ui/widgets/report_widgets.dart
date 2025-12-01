@@ -530,7 +530,7 @@ class _ExportProgressDialogState extends State<ExportProgressDialog> {
   Widget build(BuildContext context) {
     return Dialog(
       child: Padding(
-        padding: const EdgeInsets.all(24),
+        padding: const EdgeInsets.all(AppSpacing.xxl),
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
@@ -562,4 +562,5 @@ class _ExportProgressDialogState extends State<ExportProgressDialog> {
     );
   }
 }
+
 
