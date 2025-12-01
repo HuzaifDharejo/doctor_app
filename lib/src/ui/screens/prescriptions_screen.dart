@@ -110,26 +110,21 @@ class PrescriptionsScreen extends ConsumerWidget {
         final screenWidth = MediaQuery.of(context).size.width;
         final isCompact = screenWidth < 400;
         
-        return Container(
+        return AppCard(
           margin: EdgeInsets.only(bottom: isCompact ? 12 : 16),
-          decoration: BoxDecoration(
-            color: Theme.of(context).colorScheme.surface,
-            borderRadius: BorderRadius.circular(24),
-            border: Border.all(color: (isDark ? AppColors.darkDivider : AppColors.divider).withValues(alpha: 0.5)),
-            boxShadow: [
-              BoxShadow(
-                color: AppColors.prescriptions.withValues(alpha: 0.08),
-                blurRadius: 20,
-                offset: const Offset(0, 8),
-              ),
-            ],
-          ),
-          child: Material(
-            color: Colors.transparent,
-            child: InkWell(
-              borderRadius: BorderRadius.circular(24),
-              onTap: () => _showPrescriptionDetails(context, ref, prescription, medications, patient),
-              child: Column(
+          color: Theme.of(context).colorScheme.surface,
+          borderRadius: BorderRadius.circular(24),
+          borderColor: (isDark ? AppColors.darkDivider : AppColors.divider).withValues(alpha: 0.5),
+          borderWidth: 1,
+          boxShadow: [
+            BoxShadow(
+              color: AppColors.prescriptions.withValues(alpha: 0.08),
+              blurRadius: 20,
+              offset: const Offset(0, 8),
+            ),
+          ],
+          onTap: () => _showPrescriptionDetails(context, ref, prescription, medications, patient),
+          child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   // Header with gradient
@@ -406,8 +401,6 @@ class PrescriptionsScreen extends ConsumerWidget {
                     ),
                 ],
               ),
-            ),
-          ),
         );
       },
     );

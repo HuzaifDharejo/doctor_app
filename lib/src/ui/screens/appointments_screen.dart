@@ -359,26 +359,21 @@ class _AppointmentsScreenState extends ConsumerState<AppointmentsScreen> {
             }
             return false; // Don't actually dismiss
           },
-          child: Container(
+          child: AppCard(
             margin: EdgeInsets.only(bottom: isCompact ? AppSpacing.sm : AppSpacing.lg),
-            decoration: BoxDecoration(
-              color: context.colorScheme.surface,
-              borderRadius: BorderRadius.circular(AppRadius.xl),
-              border: Border.all(color: (isDark ? AppColors.darkDivider : AppColors.divider).withValues(alpha: 0.5)),
-              boxShadow: [
-                BoxShadow(
-                  color: AppColors.appointments.withValues(alpha: 0.08),
-                  blurRadius: 20,
-                  offset: const Offset(0, 8),
-                ),
-              ],
-            ),
-            child: Material(
-              color: Colors.transparent,
-              child: InkWell(
-                borderRadius: BorderRadius.circular(AppRadius.xl),
-                onTap: () => _showAppointmentDetails(context, appt, patient),
-                child: Column(
+            color: context.colorScheme.surface,
+            borderRadius: BorderRadius.circular(AppRadius.xl),
+            borderColor: (isDark ? AppColors.darkDivider : AppColors.divider).withValues(alpha: 0.5),
+            borderWidth: 1,
+            boxShadow: [
+              BoxShadow(
+                color: AppColors.appointments.withValues(alpha: 0.08),
+                blurRadius: 20,
+                offset: const Offset(0, 8),
+              ),
+            ],
+            onTap: () => _showAppointmentDetails(context, appt, patient),
+            child: Column(
                   children: [
                     Row(
                       children: [
@@ -579,8 +574,6 @@ class _AppointmentsScreenState extends ConsumerState<AppointmentsScreen> {
                       ),
                   ],
                 ),
-              ),
-            ),
           ),
         );
       },

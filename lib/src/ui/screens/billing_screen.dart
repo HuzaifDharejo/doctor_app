@@ -336,27 +336,22 @@ class _BillingScreenState extends ConsumerState<BillingScreen> {
             ? '${patient.firstName} ${patient.lastName}'
             : 'Patient #${invoice.patientId}';
 
-        return Container(
+        return AppCard(
           margin: EdgeInsets.only(bottom: isCompact ? 12 : 16),
-          decoration: BoxDecoration(
-            color: Theme.of(context).colorScheme.surface,
-            borderRadius: BorderRadius.circular(20),
-            border: Border.all(color: (isDark ? AppColors.darkDivider : AppColors.divider).withValues(alpha: 0.5)),
-            boxShadow: [
-              BoxShadow(
-                color: AppColors.billing.withValues(alpha: 0.06),
-                blurRadius: 16,
-                offset: const Offset(0, 6),
-              ),
-            ],
-          ),
-          child: Material(
-            color: Colors.transparent,
-            child: InkWell(
-              onTap: () => _showInvoiceDetails(context, db, invoice, patient),
-              borderRadius: BorderRadius.circular(20),
-              child: Padding(
-                padding: EdgeInsets.all(isCompact ? 14 : 18),
+          color: Theme.of(context).colorScheme.surface,
+          borderRadius: BorderRadius.circular(20),
+          borderColor: (isDark ? AppColors.darkDivider : AppColors.divider).withValues(alpha: 0.5),
+          borderWidth: 1,
+          boxShadow: [
+            BoxShadow(
+              color: AppColors.billing.withValues(alpha: 0.06),
+              blurRadius: 16,
+              offset: const Offset(0, 6),
+            ),
+          ],
+          onTap: () => _showInvoiceDetails(context, db, invoice, patient),
+          padding: EdgeInsets.all(isCompact ? 14 : 18),
+          child: Row(
                 child: Row(
                   children: [
                     // Invoice icon with gradient
@@ -518,9 +513,6 @@ class _BillingScreenState extends ConsumerState<BillingScreen> {
                     ),
                   ],
                 ),
-              ),
-            ),
-          ),
         );
       },
     );
