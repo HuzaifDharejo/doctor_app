@@ -190,34 +190,12 @@ class _DoctorLoginScreenState extends ConsumerState<DoctorLoginScreen> {
                         const SizedBox(height: 24),
 
                         // Login button
-                        ElevatedButton(
+                        AppButton.primary(
+                          label: 'LOGIN',
                           onPressed: _isLoading ? null : _handleLogin,
-                          style: ElevatedButton.styleFrom(
-                            padding: const EdgeInsets.symmetric(vertical: 16),
-                            backgroundColor: Colors.blue[900],
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(8),
-                            ),
-                          ),
-                          child: _isLoading
-                              ? SizedBox(
-                                  height: 20,
-                                  width: 20,
-                                  child: CircularProgressIndicator(
-                                    valueColor: AlwaysStoppedAnimation<Color>(
-                                      Colors.white,
-                                    ),
-                                    strokeWidth: 2,
-                                  ),
-                                )
-                              : Text(
-                                  'LOGIN',
-                                  style: TextStyle(
-                                    fontSize: 16,
-                                    fontWeight: FontWeight.bold,
-                                    color: Colors.white,
-                                  ),
-                                ),
+                          isLoading: _isLoading,
+                          fullWidth: true,
+                          backgroundColor: Colors.blue[900],
                         ),
                         const SizedBox(height: 24),
 

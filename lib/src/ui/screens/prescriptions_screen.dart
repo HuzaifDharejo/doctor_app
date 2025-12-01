@@ -956,14 +956,14 @@ class PrescriptionsScreen extends ConsumerWidget {
           ],
         ),
         actions: [
-          TextButton(
+          AppButton.tertiary(
+            label: 'Cancel',
             onPressed: () => Navigator.pop(context, false),
-            child: const Text('Cancel'),
           ),
-          ElevatedButton.icon(
+          AppButton.primary(
+            label: 'Create Refill',
+            icon: Icons.add,
             onPressed: () => Navigator.pop(context, true),
-            icon: const Icon(Icons.add),
-            label: const Text('Create Refill'),
           ),
         ],
       ),

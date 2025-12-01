@@ -710,9 +710,9 @@ class _PsychiatricAssessmentScreenState
         title: const Text('Clear Form'),
         content: const Text('Are you sure you want to clear all form fields? This action cannot be undone.'),
         actions: [
-          TextButton(
+          AppButton.tertiary(
+            label: 'Cancel',
             onPressed: () => Navigator.pop(context),
-            child: const Text('Cancel'),
           ),
           FilledButton(
             onPressed: () {

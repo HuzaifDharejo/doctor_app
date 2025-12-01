@@ -903,7 +903,7 @@ class _DoctorProfileScreenState extends ConsumerState<DoctorProfileScreen>
         title: const Text('Add Language'),
         content: TextField(controller: controller, decoration: const InputDecoration(hintText: 'Enter language', border: OutlineInputBorder()), autofocus: true),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(context), child: const Text('Cancel')),
+          AppButton.tertiary(label: 'Cancel', onPressed: () => Navigator.pop(context)),
           FilledButton(onPressed: () { if (controller.text.isNotEmpty) { setState(() => _languages.add(controller.text)); Navigator.pop(context); } }, child: const Text('Add')),
         ],
       ),
