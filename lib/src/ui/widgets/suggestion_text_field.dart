@@ -452,9 +452,9 @@ void showSuggestionBottomSheet({
                   ),
                 ),
                 const Spacer(),
-                TextButton(
+                AppButton.tertiary(
+                  label: 'Done',
                   onPressed: () => Navigator.pop(context),
-                  child: const Text('Done'),
                 ),
               ],
             ),

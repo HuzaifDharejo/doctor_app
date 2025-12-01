@@ -212,18 +212,18 @@ class _QuickVitalsEntryState extends State<QuickVitalsEntry> {
               Row(
                 mainAxisAlignment: MainAxisAlignment.end,
                 children: [
-                  TextButton(
+                  AppButton.tertiary(
+                    label: 'Cancel',
                     onPressed: () => Navigator.pop(context),
-                    child: const Text('Cancel'),
                   ),
                   const SizedBox(width: 8),
-                  ElevatedButton.icon(
+                  AppButton.primary(
+                    label: 'Save Vitals',
+                    icon: Icons.save,
                     onPressed: () {
                       widget.onSave(_buildVital());
                       Navigator.pop(context);
                     },
-                    icon: const Icon(Icons.save),
-                    label: const Text('Save Vitals'),
                   ),
                 ],
               ),
