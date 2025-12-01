@@ -3,7 +3,8 @@ import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../core/core.dart';
-import '../../providers/db_provider.dart';
+import '../../core/theme/design_tokens.dart';
+import '../../providers/db_provider.dart;
 import '../../services/doctor_settings_service.dart';
 import '../../theme/app_theme.dart';
 import '../widgets/signature_pad.dart';
@@ -252,7 +253,7 @@ class _DoctorProfileScreenState extends ConsumerState<DoctorProfileScreen>
             backgroundColor: AppColors.success,
             behavior: SnackBarBehavior.floating,
             shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-            margin: const EdgeInsets.all(16),
+            margin: const EdgeInsets.all(AppSpacing.lg),
           ),
         );
       }
@@ -353,7 +354,7 @@ class _DoctorProfileScreenState extends ConsumerState<DoctorProfileScreen>
                   onTap: _saveProfile,
                   borderRadius: BorderRadius.circular(16),
                   child: const Padding(
-                    padding: EdgeInsets.symmetric(horizontal: 24, vertical: 14),
+                    padding: EdgeInsets.symmetric(horizontal: AppSpacing.xxl, vertical: AppSpacing.lg),
                     child: Row(
                       mainAxisSize: MainAxisSize.min,
                       children: [
@@ -398,7 +399,7 @@ class _DoctorProfileScreenState extends ConsumerState<DoctorProfileScreen>
       backgroundColor: AppColors.primary,
       leading: IconButton(
         icon: Container(
-          padding: const EdgeInsets.all(8),
+          padding: const EdgeInsets.all(AppSpacing.sm),
           decoration: BoxDecoration(
             color: Colors.white.withValues(alpha: 0.2),
             borderRadius: BorderRadius.circular(12),
@@ -426,7 +427,7 @@ class _DoctorProfileScreenState extends ConsumerState<DoctorProfileScreen>
                   child: Stack(
                     children: [
                       Container(
-                        padding: const EdgeInsets.all(4),
+                        padding: const EdgeInsets.all(AppSpacing.xs),
                         decoration: BoxDecoration(
                           shape: BoxShape.circle,
                           border: Border.all(color: Colors.white, width: 3),
@@ -460,7 +461,7 @@ class _DoctorProfileScreenState extends ConsumerState<DoctorProfileScreen>
                         bottom: 0,
                         right: 0,
                         child: Container(
-                          padding: const EdgeInsets.all(10),
+                          padding: const EdgeInsets.all(AppSpacing.md),
                           decoration: BoxDecoration(
                             color: AppColors.accent,
                             shape: BoxShape.circle,
@@ -525,7 +526,7 @@ class _DoctorProfileScreenState extends ConsumerState<DoctorProfileScreen>
     return Container(
       height: 12,
       width: 1,
-      margin: const EdgeInsets.symmetric(horizontal: 12),
+      margin: const EdgeInsets.symmetric(horizontal: AppSpacing.md),
       color: Colors.white.withValues(alpha: 0.3),
     );
   }
@@ -683,7 +684,7 @@ class _DoctorProfileScreenState extends ConsumerState<DoctorProfileScreen>
             title: 'Signature Preview',
             icon: Icons.preview_outlined,
             child: Container(
-              padding: const EdgeInsets.all(20),
+              padding: const EdgeInsets.all(AppSpacing.xl),
               decoration: BoxDecoration(
                 color: isDark ? AppColors.darkBackground : Colors.grey.shade50,
                 borderRadius: BorderRadius.circular(12),
@@ -762,14 +763,14 @@ class _DoctorProfileScreenState extends ConsumerState<DoctorProfileScreen>
       borderRadius: BorderRadius.circular(20),
       boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.05), blurRadius: 20, offset: const Offset(0, 4))],
       hasBorder: false,
-      padding: const EdgeInsets.all(20),
+      padding: const EdgeInsets.all(AppSpacing.xl),
       child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Row(
               children: [
                 Container(
-                  padding: const EdgeInsets.all(10),
+                  padding: const EdgeInsets.all(AppSpacing.md),
                   decoration: BoxDecoration(gradient: const LinearGradient(colors: [AppColors.primary, AppColors.primaryLight]), borderRadius: BorderRadius.circular(12)),
                   child: Icon(icon, color: Colors.white, size: 20),
                 ),
@@ -806,11 +807,11 @@ class _DoctorProfileScreenState extends ConsumerState<DoctorProfileScreen>
 
   Widget _buildFeeField({required String label, required TextEditingController controller, required bool isDark, required IconData icon, required Color color}) {
     return Container(
-      padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.all(AppSpacing.lg),
       decoration: BoxDecoration(color: color.withValues(alpha: 0.05), borderRadius: BorderRadius.circular(16), border: Border.all(color: color.withValues(alpha: 0.2))),
       child: Row(
         children: [
-          Container(padding: const EdgeInsets.all(10), decoration: BoxDecoration(color: color.withValues(alpha: 0.1), borderRadius: BorderRadius.circular(12)), child: Icon(icon, color: color, size: 20)),
+          Container(padding: const EdgeInsets.all(AppSpacing.md), decoration: BoxDecoration(color: color.withValues(alpha: 0.1), borderRadius: BorderRadius.circular(12)), child: Icon(icon, color: color, size: 20)),
           const SizedBox(width: 16),
           Expanded(
             child: Text(label, style: TextStyle(fontSize: 12, color: isDark ? AppColors.darkTextSecondary : AppColors.textSecondary)),
@@ -830,7 +831,7 @@ class _DoctorProfileScreenState extends ConsumerState<DoctorProfileScreen>
     final isEnabled = hours['enabled'] as bool;
     return Container(
       margin: const EdgeInsets.only(bottom: 12),
-      padding: const EdgeInsets.all(14),
+      padding: const EdgeInsets.all(AppSpacing.lg),
       decoration: BoxDecoration(
         color: isEnabled ? AppColors.success.withValues(alpha: 0.05) : (isDark ? AppColors.darkBackground : Colors.grey.shade50),
         borderRadius: BorderRadius.circular(14),
@@ -863,7 +864,7 @@ class _DoctorProfileScreenState extends ConsumerState<DoctorProfileScreen>
 
   Widget _buildLanguageChip(String language, int index, bool isDark) {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+      padding: const EdgeInsets.symmetric(horizontal: AppSpacing.lg, vertical: AppSpacing.sm),
       decoration: BoxDecoration(
         gradient: LinearGradient(colors: [AppColors.primary.withValues(alpha: 0.1), AppColors.primaryLight.withValues(alpha: 0.1)]),
         borderRadius: BorderRadius.circular(20),

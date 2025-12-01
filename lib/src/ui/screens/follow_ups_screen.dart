@@ -2,6 +2,7 @@ import 'package:drift/drift.dart' show Value;
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
+import '../../core/theme/design_tokens.dart';
 import '../../db/doctor_db.dart';
 import '../../providers/db_provider.dart';
 
@@ -168,7 +169,7 @@ class _FollowUpsScreenState extends ConsumerState<FollowUpsScreen> with SingleTi
     followUps.sort((a, b) => a.scheduledDate.compareTo(b.scheduledDate));
 
     return ListView.builder(
-      padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.all(AppSpacing.lg),
       itemCount: followUps.length,
       itemBuilder: (context, index) {
         final followUp = followUps[index];
@@ -216,7 +217,7 @@ class _FollowUpsScreenState extends ConsumerState<FollowUpsScreen> with SingleTi
         onTap: () => _showFollowUpActions(followUp, patient),
         borderRadius: BorderRadius.circular(12),
         child: Padding(
-          padding: const EdgeInsets.all(16),
+          padding: const EdgeInsets.all(AppSpacing.lg),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
@@ -250,7 +251,7 @@ class _FollowUpsScreenState extends ConsumerState<FollowUpsScreen> with SingleTi
                     ),
                   ),
                   Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                    padding: const EdgeInsets.symmetric(horizontal: AppSpacing.sm, vertical: AppSpacing.xs),
                     decoration: BoxDecoration(
                       color: urgencyColor.withOpacity(0.1),
                       borderRadius: BorderRadius.circular(12),
@@ -308,7 +309,7 @@ class _FollowUpsScreenState extends ConsumerState<FollowUpsScreen> with SingleTi
     showModalBottomSheet(
       context: context,
       builder: (context) => Padding(
-        padding: const EdgeInsets.all(24),
+        padding: const EdgeInsets.all(AppSpacing.xxl),
         child: Column(
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
