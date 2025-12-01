@@ -1027,27 +1027,38 @@ class _PsychiatricAssessmentScreenState
     TextInputType keyboardType = TextInputType.text,
     bool required = false,
   }) {
-    return TextFormField(
-      controller: controller,
-      maxLines: maxLines,
-      keyboardType: keyboardType,
-      decoration: InputDecoration(
-        labelText: required ? '$label *' : label,
-        hintText: hint,
-        prefixIcon: icon != null ? Icon(icon) : null,
-        border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
-        filled: true,
-        alignLabelWithHint: maxLines > 1,
-      ),
-      validator: required
-          ? (value) {
-              if (value == null || value.isEmpty) {
-                return '$label is required';
-              }
-              return null;
-            }
-          : null,
-    );
+    return maxLines > 1
+        ? AppInput.multiline(
+            controller: controller,
+            label: required ? '$label *' : label,
+            hint: hint,
+            prefixIcon: icon,
+            maxLines: maxLines,
+            keyboardType: keyboardType,
+            validator: required
+                ? (value) {
+                    if (value == null || value.isEmpty) {
+                      return '$label is required';
+                    }
+                    return null;
+                  }
+                : null,
+          )
+        : AppInput.text(
+            controller: controller,
+            label: required ? '$label *' : label,
+            hint: hint,
+            prefixIcon: icon,
+            keyboardType: keyboardType,
+            validator: required
+                ? (value) {
+                    if (value == null || value.isEmpty) {
+                      return '$label is required';
+                    }
+                    return null;
+                  }
+                : null,
+          );
   }
 
   Widget _buildMaritalStatusRadio(ColorScheme colorScheme) {
@@ -1174,16 +1185,9 @@ class _PsychiatricAssessmentScreenState
         appendMode: false,
       );
     }
-    return TextFormField(
+    return AppInput.text(
       controller: controller,
-      decoration: InputDecoration(
-        labelText: label,
-        isDense: true,
-        contentPadding:
-            const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
-        border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
-        filled: true,
-      ),
+      label: label,
     );
   }
 
