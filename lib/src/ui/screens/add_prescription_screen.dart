@@ -1209,9 +1209,9 @@ class _AddPrescriptionScreenState extends ConsumerState<AddPrescriptionScreen> {
                 ),
               ),
               const Spacer(),
-              TextButton(
+              AppButton.tertiary(
+                label: 'View Details',
                 onPressed: _checkSafetyAlerts,
-                child: const Text('View Details'),
               ),
             ],
           ),

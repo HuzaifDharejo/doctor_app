@@ -77,11 +77,11 @@ class _CommunicationsScreenState extends ConsumerState<CommunicationsScreen>
                       fontWeight: FontWeight.bold,
                     ),
                   ),
-                  TextButton(
+                  AppButton.tertiary(
+                    label: 'New',
                     onPressed: () {
                       // Show new conversation dialog
                     },
-                    child: const Text('New'),
                   ),
                 ],
               ),

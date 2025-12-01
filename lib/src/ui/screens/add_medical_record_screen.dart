@@ -2028,57 +2028,13 @@ class _AddMedicalRecordScreenState extends ConsumerState<AddMedicalRecordScreen>
   Widget _buildSaveButton(DoctorDatabase db) {
     return Builder(
       builder: (context) {
-        final isDark = Theme.of(context).brightness == Brightness.dark;
-        return SizedBox(
-          width: double.infinity,
-          child: DecoratedBox(
-            decoration: BoxDecoration(
-              gradient: _isSaving ? null : AppColors.primaryGradient,
-              color: _isSaving ? (isDark ? AppColors.darkTextSecondary : AppColors.textHint) : null,
-              borderRadius: BorderRadius.circular(16),
-              boxShadow: _isSaving ? null : [
-                BoxShadow(
-                  color: AppColors.primary.withValues(alpha: 0.4),
-                  blurRadius: 20,
-                  offset: const Offset(0, 8),
-                ),
-              ],
-            ),
-            child: ElevatedButton(
-              onPressed: _isSaving ? null : () => _saveMedicalRecord(db),
-              style: ElevatedButton.styleFrom(
-                backgroundColor: Colors.transparent,
-                shadowColor: Colors.transparent,
-                padding: const EdgeInsets.symmetric(vertical: 18),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(16),
-                ),
-              ),
-              child: _isSaving
-                  ? const SizedBox(
-                      height: 20,
-                      width: 20,
-                      child: CircularProgressIndicator(
-                        strokeWidth: 2,
-                        color: Colors.white,
-                      ),
-                    )
-                  : const Row(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Icon(Icons.save_outlined, size: 22),
-                        SizedBox(width: 10),
-                        Text(
-                          'Save Medical Record',
-                          style: TextStyle(
-                            fontSize: 16,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                      ],
-                    ),
-            ),
-          ),
+        return AppButton.gradient(
+          label: 'Save Medical Record',
+          icon: Icons.save_outlined,
+          onPressed: _isSaving ? null : () => _saveMedicalRecord(db),
+          isLoading: _isSaving,
+          fullWidth: true,
+          gradientColors: [AppColors.primary, AppColors.accent],
         );
       },
     );

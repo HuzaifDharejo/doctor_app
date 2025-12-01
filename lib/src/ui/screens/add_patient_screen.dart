@@ -841,21 +841,10 @@ class _AddPatientScreenState extends ConsumerState<AddPatientScreen> {
               const SizedBox(height: 20),
               SizedBox(
                 width: double.infinity,
-                child: TextButton(
+                child: AppButton.tertiary(
+                  label: 'Cancel',
                   onPressed: () => Navigator.pop(context),
-                  style: TextButton.styleFrom(
-                    padding: const EdgeInsets.symmetric(vertical: 14),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                  ),
-                  child: Text(
-                    'Cancel',
-                    style: TextStyle(
-                      fontSize: 16,
-                      color: isDark ? AppColors.darkTextSecondary : AppColors.textSecondary,
-                    ),
-                  ),
+                  fullWidth: true,
                 ),
               ),
               SizedBox(height: MediaQuery.of(context).padding.bottom),
