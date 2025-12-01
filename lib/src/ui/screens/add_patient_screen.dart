@@ -269,11 +269,11 @@ class _AddPatientScreenState extends ConsumerState<AddPatientScreen> {
                       Row(
                         children: [
                           Expanded(
-                            child: _buildTextField(
+                            child: AppInput.text(
                               controller: _first,
                               label: 'First Name',
                               hint: 'John',
-                              icon: Icons.badge_outlined,
+                              prefixIcon: Icons.badge_outlined,
                               validator: (v) {
                                 final result = InputValidators.validateName(v, fieldName: 'First name');
                                 return result.isValid ? null : result.errorMessage;
@@ -282,11 +282,11 @@ class _AddPatientScreenState extends ConsumerState<AddPatientScreen> {
                           ),
                           const SizedBox(width: 12),
                           Expanded(
-                            child: _buildTextField(
+                            child: AppInput.text(
                               controller: _last,
                               label: 'Last Name',
                               hint: 'Doe',
-                              icon: Icons.badge_outlined,
+                              prefixIcon: Icons.badge_outlined,
                               validator: (v) {
                                 if (v == null || v.isEmpty) return null; // Optional
                                 final result = InputValidators.validateName(v, fieldName: 'Last name');
@@ -307,35 +307,31 @@ class _AddPatientScreenState extends ConsumerState<AddPatientScreen> {
                     icon: Icons.contact_phone_outlined,
                     iconColor: AppColors.teal,
                     children: [
-                      _buildTextField(
+                      AppInput.phone(
                         controller: _phone,
                         label: 'Phone Number',
                         hint: '+1 (555) 123-4567',
-                        icon: Icons.phone_outlined,
-                        keyboardType: TextInputType.phone,
                         validator: (v) {
                           final result = InputValidators.validatePhone(v);
                           return result.isValid ? null : result.errorMessage;
                         },
                       ),
                       const SizedBox(height: 12),
-                      _buildTextField(
+                      AppInput.email(
                         controller: _email,
                         label: 'Email Address',
                         hint: 'john.doe@email.com',
-                        icon: Icons.email_outlined,
-                        keyboardType: TextInputType.emailAddress,
                         validator: (v) {
                           final result = InputValidators.validateEmail(v);
                           return result.isValid ? null : result.errorMessage;
                         },
                       ),
                       const SizedBox(height: 12),
-                      _buildTextField(
+                      AppInput.text(
                         controller: _address,
                         label: 'Address',
                         hint: '123 Medical Ave, City, State',
-                        icon: Icons.location_on_outlined,
+                        prefixIcon: Icons.location_on_outlined,
                         maxLines: 2,
                       ),
                     ],
