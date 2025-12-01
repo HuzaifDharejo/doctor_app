@@ -17,6 +17,7 @@ import 'package:url_launcher/url_launcher.dart';
 import '../../db/doctor_db.dart';
 import '../../providers/db_provider.dart';
 import '../../services/whatsapp_service.dart';
+import '../../core/components/app_button.dart';
 import '../../theme/app_theme.dart';
 import '../widgets/patient_avatar.dart';
 import 'add_appointment_screen.dart';
@@ -1919,14 +1920,13 @@ class _PatientViewScreenModernState
             title: const Text('Delete Document'),
             content: Text('Are you sure you want to delete "${doc.name}"?'),
             actions: [
-              TextButton(
+              AppButton.tertiary(
+                label: 'Cancel',
                 onPressed: () => Navigator.pop(context, false),
-                child: const Text('Cancel'),
               ),
-              ElevatedButton(
+              AppButton.danger(
+                label: 'Delete',
                 onPressed: () => Navigator.pop(context, true),
-                style: ElevatedButton.styleFrom(backgroundColor: AppColors.error),
-                child: const Text('Delete'),
               ),
             ],
           ),
@@ -2039,10 +2039,10 @@ class _PatientViewScreenModernState
             ),
             if (actionLabel != null && onAction != null) ...[
               const SizedBox(height: 20),
-              ElevatedButton.icon(
+              AppButton.primary(
+                label: actionLabel,
+                icon: Icons.add,
                 onPressed: onAction,
-                icon: const Icon(Icons.add),
-                label: Text(actionLabel),
               ),
             ],
           ],
@@ -2173,17 +2173,16 @@ Allergies: ${patient.allergies.isNotEmpty ? patient.allergies : 'None'}''';
         title: const Text('Delete Patient'),
         content: Text('Are you sure you want to delete ${patient.firstName} ${patient.lastName}? This action cannot be undone.'),
         actions: [
-          TextButton(
+          AppButton.tertiary(
+            label: 'Cancel',
             onPressed: () => Navigator.pop(dialogContext),
-            child: const Text('Cancel'),
           ),
-          TextButton(
+          AppButton.danger(
+            label: 'Delete',
             onPressed: () async {
               Navigator.pop(dialogContext);
               await _deletePatient(patient);
             },
-            style: TextButton.styleFrom(foregroundColor: AppColors.error),
-            child: const Text('Delete'),
           ),
         ],
       ),
