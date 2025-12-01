@@ -147,44 +147,18 @@ class _DoctorLoginScreenState extends ConsumerState<DoctorLoginScreen> {
                         ],
 
                         // Email field
-                        TextField(
+                        AppInput.email(
+                          label: 'Email',
+                          hint: 'doctor@clinic.com',
                           controller: _emailController,
-                          decoration: InputDecoration(
-                            labelText: 'Email',
-                            prefixIcon: Icon(Icons.email),
-                            border: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(8),
-                            ),
-                            hintText: 'doctor@clinic.com',
-                          ),
-                          keyboardType: TextInputType.emailAddress,
                           enabled: !_isLoading,
                         ),
                         const SizedBox(height: 16),
 
                         // Password field
-                        TextField(
+                        AppInput.password(
+                          label: 'Password',
                           controller: _passwordController,
-                          decoration: InputDecoration(
-                            labelText: 'Password',
-                            prefixIcon: Icon(Icons.lock),
-                            suffixIcon: IconButton(
-                              icon: Icon(
-                                _obscurePassword
-                                    ? Icons.visibility_off
-                                    : Icons.visibility,
-                              ),
-                              onPressed: () {
-                                setState(() {
-                                  _obscurePassword = !_obscurePassword;
-                                });
-                              },
-                            ),
-                            border: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(8),
-                            ),
-                          ),
-                          obscureText: _obscurePassword,
                           enabled: !_isLoading,
                         ),
                         const SizedBox(height: 24),
