@@ -16,7 +16,6 @@ import 'ui/screens/follow_ups_screen.dart';
 import 'ui/screens/medical_records_list_screen.dart';
 import 'ui/screens/onboarding_screen.dart';
 import 'ui/screens/patients_screen.dart';
-import 'ui/screens/prescriptions_screen.dart';
 
 class DoctorApp extends ConsumerWidget {
   const DoctorApp({super.key});

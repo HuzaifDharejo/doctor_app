@@ -386,7 +386,7 @@ class ComprehensiveRiskAssessmentService {
 
     final noShowCount = appointments.where((a) => a.status == 'no-show').length;
     final cancelledCount = appointments.where((a) => a.status == 'cancelled').length;
-    const late Count = appointments.where((a) => a.status == 'late').length;
+    final lateCount = appointments.where((a) => a.status == 'late').length;
 
     if (noShowCount >= 2) {
       risks.add(

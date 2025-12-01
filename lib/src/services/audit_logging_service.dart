@@ -2,7 +2,6 @@ import 'dart:convert';
 import 'package:drift/drift.dart';
 import 'package:flutter/foundation.dart';
 import '../db/doctor_db.dart';
-import '../providers/db_provider.dart';
 
 /// Audit Logging Service for HIPAA Compliance
 /// Tracks all data access and modifications with doctor name, timestamp, and action details

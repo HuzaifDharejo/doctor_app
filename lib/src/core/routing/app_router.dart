@@ -3,10 +3,8 @@ library;
 
 import 'package:flutter/material.dart';
 import '../../db/doctor_db.dart';
-import '../../services/doctor_auth_service.dart';
 import '../../ui/screens/add_appointment_screen.dart';
 import '../../ui/screens/add_invoice_screen.dart';
-import '../../ui/screens/add_medical_record_screen.dart';
 import '../../ui/screens/add_patient_screen.dart';
 import '../../ui/screens/add_prescription_screen.dart';
 import '../../ui/screens/allergy_management_screen.dart';
