@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../../db/doctor_db.dart';
 import '../../theme/app_theme.dart';
+import '../../core/theme/design_tokens.dart';
 
 /// Clinical Overview Card for Doctor Workflow
 /// Displays critical patient information prominently for quick clinical assessment
@@ -95,7 +96,7 @@ class ClinicalOverviewCard extends StatelessWidget {
         ],
       ),
       child: Padding(
-        padding: const EdgeInsets.all(20),
+        padding: const EdgeInsets.all(AppSpacing.xl),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -127,7 +128,7 @@ class ClinicalOverviewCard extends StatelessWidget {
                 ),
                 // Risk Level Badge
                 Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                  padding: const EdgeInsets.symmetric(horizontal: AppSpacing.md, vertical: AppSpacing.sm),
                   decoration: BoxDecoration(
                     color: riskColor.withOpacity(0.1),
                     borderRadius: BorderRadius.circular(12),
@@ -161,7 +162,7 @@ class ClinicalOverviewCard extends StatelessWidget {
             if (allergies.isNotEmpty) ...[
               Container(
                 width: double.infinity,
-                padding: const EdgeInsets.all(12),
+                padding: const EdgeInsets.all(AppSpacing.md),
                 decoration: BoxDecoration(
                   color: AppColors.error.withOpacity(0.1),
                   borderRadius: BorderRadius.circular(12),
@@ -242,7 +243,7 @@ class ClinicalOverviewCard extends StatelessWidget {
                             if (latestBP != null) ...[
                               Expanded(
                                 child: Container(
-                                  padding: const EdgeInsets.all(10),
+                                  padding: const EdgeInsets.all(AppSpacing.md),
                                   decoration: BoxDecoration(
                                     color: Colors.blue.withOpacity(0.05),
                                     borderRadius: BorderRadius.circular(8),
@@ -277,7 +278,7 @@ class ClinicalOverviewCard extends StatelessWidget {
                             if (latestTemperature != null) ...[
                               Expanded(
                                 child: Container(
-                                  padding: const EdgeInsets.all(10),
+                                  padding: const EdgeInsets.all(AppSpacing.md),
                                   decoration: BoxDecoration(
                                     color: Colors.orange.withOpacity(0.05),
                                     borderRadius: BorderRadius.circular(8),
@@ -361,3 +362,4 @@ class ClinicalOverviewCard extends StatelessWidget {
     );
   }
 }
+

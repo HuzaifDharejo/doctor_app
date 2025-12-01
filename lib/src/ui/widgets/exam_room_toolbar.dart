@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../db/doctor_db.dart';
 import '../../theme/app_theme.dart';
+import '../../core/theme/design_tokens.dart';
 import '../screens/add_appointment_screen.dart';
 import '../screens/add_patient_screen.dart';
 import '../screens/add_prescription_screen.dart';
@@ -37,7 +38,7 @@ class ExamRoomToolbar extends ConsumerWidget {
         children: [
           // Header
           Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+            padding: const EdgeInsets.symmetric(horizontal: AppSpacing.lg, vertical: AppSpacing.md),
             child: Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
@@ -48,7 +49,7 @@ class ExamRoomToolbar extends ConsumerWidget {
                   ),
                 ),
                 Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                  padding: const EdgeInsets.symmetric(horizontal: AppSpacing.sm, vertical: AppSpacing.xs),
                   decoration: BoxDecoration(
                     color: AppColors.primary.withValues(alpha: 0.1),
                     borderRadius: BorderRadius.circular(12),
@@ -67,7 +68,7 @@ class ExamRoomToolbar extends ConsumerWidget {
           ),
           // Grid of quick action buttons
           Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
+            padding: const EdgeInsets.symmetric(horizontal: AppSpacing.sm, vertical: AppSpacing.sm),
             child: GridView.count(
               crossAxisCount: crossAxisCount,
               mainAxisSpacing: 8,
@@ -239,7 +240,7 @@ class _ExamActionButton extends StatelessWidget {
               const SizedBox(height: 8),
               // Label
               Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 4),
+                padding: const EdgeInsets.symmetric(horizontal: AppSpacing.xs),
                 child: Text(
                   label,
                   textAlign: TextAlign.center,
@@ -259,3 +260,4 @@ class _ExamActionButton extends StatelessWidget {
     );
   }
 }
+

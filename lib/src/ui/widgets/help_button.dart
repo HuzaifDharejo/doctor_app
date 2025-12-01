@@ -86,7 +86,7 @@ class HelpCard extends StatelessWidget {
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
     return Container(
-      padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.all(AppSpacing.lg),
       decoration: BoxDecoration(
         color: backgroundColor ??
             (isDark
@@ -101,7 +101,7 @@ class HelpCard extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Container(
-            padding: const EdgeInsets.all(8),
+            padding: const EdgeInsets.all(AppSpacing.sm),
             decoration: BoxDecoration(
               color: Colors.blue.withValues(alpha: 0.2),
               borderRadius: BorderRadius.circular(8),
@@ -197,8 +197,8 @@ class _ContextualHelpState extends State<ContextualHelp> {
               child: ScaleTransition(
                 scale: AlwaysStoppedAnimation<double>(1.0),
                 child: Container(
-                  margin: const EdgeInsets.symmetric(horizontal: 24),
-                  padding: const EdgeInsets.all(24),
+                  margin: const EdgeInsets.symmetric(horizontal: AppSpacing.xxl),
+                  padding: const EdgeInsets.all(AppSpacing.xxl),
                   decoration: BoxDecoration(
                     color: Theme.of(context).cardColor,
                     borderRadius: BorderRadius.circular(16),
@@ -291,3 +291,4 @@ class _ContextualHelpState extends State<ContextualHelp> {
     );
   }
 }
+

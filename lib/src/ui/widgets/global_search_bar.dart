@@ -205,12 +205,12 @@ class _GlobalSearchBarState extends ConsumerState<GlobalSearchBar> {
               ),
               child: _isSearching
                   ? const Padding(
-                      padding: EdgeInsets.all(16),
+                      padding: EdgeInsets.all(AppSpacing.lg),
                       child: Center(child: CircularProgressIndicator()),
                     )
                   : _results.isEmpty
                       ? const Padding(
-                          padding: EdgeInsets.all(16),
+                          padding: EdgeInsets.all(AppSpacing.lg),
                           child: Text('No results found'),
                         )
                       : ListView.builder(
@@ -270,9 +270,10 @@ class _GlobalSearchBarState extends ConsumerState<GlobalSearchBar> {
             borderRadius: BorderRadius.circular(12),
             borderSide: BorderSide.none,
           ),
-          contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+          contentPadding: const EdgeInsets.symmetric(horizontal: AppSpacing.lg, vertical: AppSpacing.md),
         ),
       ),
     );
   }
 }
+

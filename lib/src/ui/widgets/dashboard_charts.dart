@@ -1,6 +1,7 @@
 import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/material.dart';
 import '../../theme/app_theme.dart';
+import '../../core/theme/design_tokens.dart';
 import '../../utils/pkr_currency.dart';
 
 class RevenueChart extends StatelessWidget {
@@ -17,7 +18,7 @@ class RevenueChart extends StatelessWidget {
     final days = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
     
     return Container(
-      padding: const EdgeInsets.all(20),
+      padding: const EdgeInsets.all(AppSpacing.xl),
       decoration: BoxDecoration(
         color: isDark ? AppColors.darkSurface : Colors.white,
         borderRadius: BorderRadius.circular(20),
@@ -62,7 +63,7 @@ class RevenueChart extends StatelessWidget {
                 ],
               ),
               Container(
-                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                padding: const EdgeInsets.symmetric(horizontal: AppSpacing.md, vertical: AppSpacing.xs),
                 decoration: BoxDecoration(
                   color: AppColors.success.withValues(alpha: 0.1),
                   borderRadius: BorderRadius.circular(20),
@@ -96,7 +97,7 @@ class RevenueChart extends StatelessWidget {
                   enabled: true,
                   touchTooltipData: BarTouchTooltipData(
                     getTooltipColor: (_) => isDark ? AppColors.darkSurface : Colors.white,
-                    tooltipPadding: const EdgeInsets.all(8),
+                    tooltipPadding: const EdgeInsets.all(AppSpacing.sm),
                     tooltipMargin: 8,
                     getTooltipItem: (group, groupIndex, rod, rodIndex) {
                       return BarTooltipItem(
@@ -200,7 +201,7 @@ class AppointmentsPieChart extends StatelessWidget {
     
     if (total == 0) {
       return Container(
-        padding: const EdgeInsets.all(20),
+        padding: const EdgeInsets.all(AppSpacing.xl),
         decoration: BoxDecoration(
           color: isDark ? AppColors.darkSurface : Colors.white,
           borderRadius: BorderRadius.circular(20),
@@ -224,7 +225,7 @@ class AppointmentsPieChart extends StatelessWidget {
     }
     
     return Container(
-      padding: const EdgeInsets.all(20),
+      padding: const EdgeInsets.all(AppSpacing.xl),
       decoration: BoxDecoration(
         color: isDark ? AppColors.darkSurface : Colors.white,
         borderRadius: BorderRadius.circular(20),
@@ -358,7 +359,7 @@ class MonthlyStatsCard extends StatelessWidget {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     
     return Container(
-      padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.all(AppSpacing.lg),
       decoration: BoxDecoration(
         color: isDark ? AppColors.darkSurface : Colors.white,
         borderRadius: BorderRadius.circular(16),
@@ -377,7 +378,7 @@ class MonthlyStatsCard extends StatelessWidget {
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               Container(
-                padding: const EdgeInsets.all(10),
+                padding: const EdgeInsets.all(AppSpacing.md),
                 decoration: BoxDecoration(
                   color: color.withValues(alpha: 0.1),
                   borderRadius: BorderRadius.circular(12),
@@ -386,7 +387,7 @@ class MonthlyStatsCard extends StatelessWidget {
               ),
               if (trend != null)
                 Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                  padding: const EdgeInsets.symmetric(horizontal: AppSpacing.sm, vertical: AppSpacing.xs),
                   decoration: BoxDecoration(
                     color: (isPositive ? AppColors.success : AppColors.error).withValues(alpha: 0.1),
                     borderRadius: BorderRadius.circular(12),
@@ -443,3 +444,4 @@ class MonthlyStatsCard extends StatelessWidget {
     );
   }
 }
+

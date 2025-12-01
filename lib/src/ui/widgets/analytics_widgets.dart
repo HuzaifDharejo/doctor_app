@@ -78,7 +78,7 @@ class TrendChart extends ConsumerWidget {
     return Card(
       elevation: 4,
       child: Padding(
-        padding: const EdgeInsets.all(16),
+        padding: const EdgeInsets.all(AppSpacing.lg),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -208,7 +208,7 @@ class SuccessRateCard extends StatelessWidget {
     return Card(
       elevation: 4,
       child: Padding(
-        padding: const EdgeInsets.all(16),
+        padding: const EdgeInsets.all(AppSpacing.lg),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -329,7 +329,7 @@ class SpecialtyComparisonChart extends ConsumerWidget {
     return Card(
       elevation: 4,
       child: Padding(
-        padding: const EdgeInsets.all(16),
+        padding: const EdgeInsets.all(AppSpacing.lg),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -488,7 +488,7 @@ class DemographicsVisualization extends ConsumerWidget {
     return Card(
       elevation: 4,
       child: Padding(
-        padding: const EdgeInsets.all(16),
+        padding: const EdgeInsets.all(AppSpacing.lg),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -581,7 +581,7 @@ class _FilterPanelState extends State<FilterPanel> {
     return Card(
       elevation: 2,
       child: Padding(
-        padding: const EdgeInsets.all(16),
+        padding: const EdgeInsets.all(AppSpacing.lg),
         child: Column(
           children: [
             // Date range picker
@@ -598,7 +598,7 @@ class _FilterPanelState extends State<FilterPanel> {
             const Divider(),
             // Diagnosis dropdown
             Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 16),
+              padding: const EdgeInsets.symmetric(horizontal: AppSpacing.lg),
               child: DropdownButton<String>(
                 isExpanded: true,
                 hint: const Text('All Diagnoses'),
@@ -642,3 +642,4 @@ class _FilterPanelState extends State<FilterPanel> {
     );
   }
 }
+
