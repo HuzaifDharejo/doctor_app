@@ -7,6 +7,7 @@ import '../../providers/db_provider.dart';
 import '../../services/pdf_service.dart';
 import '../../core/components/app_button.dart';
 import '../../theme/app_theme.dart';
+import '../../core/theme/design_tokens.dart';
 import '../widgets/medical_record_widgets.dart';
 import 'records/records.dart';
 
@@ -229,7 +230,7 @@ class _Header extends StatelessWidget {
 
   Widget _buildTypeBadge() {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+      padding: const EdgeInsets.symmetric(horizontal: AppSpacing.md, vertical: AppSpacing.xs),
       decoration: BoxDecoration(
         color: Colors.white.withValues(alpha: 0.2),
         borderRadius: BorderRadius.circular(MedicalRecordConstants.radiusXLarge),
@@ -602,7 +603,7 @@ class _LabResultContent extends StatelessWidget {
     return Row(
       children: [
         Container(
-          padding: const EdgeInsets.all(10),
+          padding: const EdgeInsets.all(AppSpacing.md),
           decoration: BoxDecoration(
             color: AppColors.warning.withValues(alpha: 0.1),
             borderRadius: BorderRadius.circular(10),
@@ -861,7 +862,7 @@ class _VitalsSection extends StatelessWidget {
     return Row(
       children: [
         Container(
-          padding: const EdgeInsets.all(10),
+          padding: const EdgeInsets.all(AppSpacing.md),
           decoration: BoxDecoration(
             color: AppColors.error.withValues(alpha: 0.1),
             borderRadius: BorderRadius.circular(10),
@@ -947,7 +948,7 @@ class _MseSection extends StatelessWidget {
     return Row(
       children: [
         Container(
-          padding: const EdgeInsets.all(10),
+          padding: const EdgeInsets.all(AppSpacing.md),
           decoration: BoxDecoration(
             color: AppColors.primary.withValues(alpha: 0.1),
             borderRadius: BorderRadius.circular(10),
@@ -1000,7 +1001,7 @@ class _MseGridItem extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.all(10),
+      padding: const EdgeInsets.all(AppSpacing.md),
       decoration: BoxDecoration(
         color: isDark ? AppColors.darkBackground : AppColors.background,
         borderRadius: BorderRadius.circular(10),
@@ -1090,7 +1091,7 @@ class _RiskAssessmentSection extends StatelessWidget {
     return Row(
       children: [
         Container(
-          padding: const EdgeInsets.all(10),
+          padding: const EdgeInsets.all(AppSpacing.md),
           decoration: BoxDecoration(
             color: AppColors.warning.withValues(alpha: 0.2),
             borderRadius: BorderRadius.circular(10),
@@ -1156,7 +1157,7 @@ class _ChestAuscultationSection extends StatelessWidget {
     return Row(
       children: [
         Container(
-          padding: const EdgeInsets.all(10),
+          padding: const EdgeInsets.all(AppSpacing.md),
           decoration: BoxDecoration(
             color: MedicalRecordConstants.pulmonaryColor.withValues(alpha: 0.1),
             borderRadius: BorderRadius.circular(10),
@@ -1221,7 +1222,7 @@ class _ChestAuscultationSection extends StatelessWidget {
           spacing: MedicalRecordConstants.paddingSmall,
           runSpacing: MedicalRecordConstants.paddingSmall,
           children: sounds.map((sound) => Container(
-            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+            padding: const EdgeInsets.symmetric(horizontal: AppSpacing.md, vertical: AppSpacing.xs),
             decoration: BoxDecoration(
               color: AppColors.accent.withValues(alpha: 0.1),
               borderRadius: BorderRadius.circular(MedicalRecordConstants.radiusXLarge),
@@ -1397,7 +1398,7 @@ class _ActionButtons extends StatelessWidget {
               style: ElevatedButton.styleFrom(
                 backgroundColor: Colors.transparent,
                 shadowColor: Colors.transparent,
-                padding: const EdgeInsets.symmetric(vertical: 14),
+                padding: const EdgeInsets.symmetric(vertical: AppSpacing.lg),
                 shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
               ),
             ),
@@ -1510,3 +1511,4 @@ class _ActionButtons extends StatelessWidget {
     );
   }
 }
+

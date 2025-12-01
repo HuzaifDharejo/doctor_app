@@ -3,6 +3,7 @@ import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import '../../services/photo_service.dart';
 import '../../theme/app_theme.dart';
+import '../../core/theme/design_tokens.dart';
 
 /// A widget that displays a patient's photo or initials
 /// With optional ability to pick a new photo
@@ -284,7 +285,7 @@ class _PatientAvatarState extends State<PatientAvatar> {
       context: context,
       backgroundColor: Colors.transparent,
       builder: (context) => Container(
-        padding: const EdgeInsets.all(20),
+        padding: const EdgeInsets.all(AppSpacing.xl),
         decoration: BoxDecoration(
           color: Theme.of(context).colorScheme.surface,
           borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
@@ -356,7 +357,7 @@ class _PatientAvatarState extends State<PatientAvatar> {
         onTap: onTap,
         borderRadius: BorderRadius.circular(12),
         child: Container(
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+          padding: const EdgeInsets.symmetric(horizontal: AppSpacing.lg, vertical: AppSpacing.lg),
           decoration: BoxDecoration(
             border: Border.all(color: color.withValues(alpha: 0.3)),
             borderRadius: BorderRadius.circular(12),
@@ -364,7 +365,7 @@ class _PatientAvatarState extends State<PatientAvatar> {
           child: Row(
             children: [
               Container(
-                padding: const EdgeInsets.all(10),
+                padding: const EdgeInsets.all(AppSpacing.md),
                 decoration: BoxDecoration(
                   color: color.withValues(alpha: 0.1),
                   borderRadius: BorderRadius.circular(10),
@@ -421,3 +422,4 @@ class PatientAvatarCircle extends StatelessWidget {
     );
   }
 }
+

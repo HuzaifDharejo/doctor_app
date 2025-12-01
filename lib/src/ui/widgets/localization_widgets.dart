@@ -42,7 +42,7 @@ class LanguageSelector extends ConsumerWidget {
         );
       }).toList(),
       child: const Padding(
-        padding: EdgeInsets.all(8),
+        padding: EdgeInsets.all(AppSpacing.sm),
         child: Icon(Icons.language_outlined),
       ),
     );
@@ -70,7 +70,7 @@ class LanguageSettingsCard extends ConsumerWidget {
     return Card(
       elevation: 2,
       child: Padding(
-        padding: const EdgeInsets.all(16),
+        padding: const EdgeInsets.all(AppSpacing.lg),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -239,7 +239,7 @@ class LocaleInfoWidget extends ConsumerWidget {
     final isDarkMode = Theme.of(context).brightness == Brightness.dark;
 
     return Container(
-      padding: const EdgeInsets.all(12),
+      padding: const EdgeInsets.all(AppSpacing.md),
       decoration: BoxDecoration(
         color: isDarkMode ? Colors.grey[900] : Colors.grey[100],
         borderRadius: BorderRadius.circular(8),
@@ -271,7 +271,7 @@ class LocaleInfoWidget extends ConsumerWidget {
 
   Widget _buildInfoRow(String label, String value) {
     return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 4),
+      padding: const EdgeInsets.symmetric(vertical: AppSpacing.xs),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
@@ -282,3 +282,4 @@ class LocaleInfoWidget extends ConsumerWidget {
     );
   }
 }
+
