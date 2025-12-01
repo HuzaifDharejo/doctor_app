@@ -865,7 +865,7 @@ class _AppointmentsScreenState extends ConsumerState<AppointmentsScreen> {
                                 child: Row(
                                   children: [
                                     Container(
-                                      padding: const EdgeInsets.all(10),
+                                      padding: const EdgeInsets.all(AppSpacing.md),
                                       decoration: BoxDecoration(
                                         color: (isUpcoming ? AppColors.primary : statusColor).withValues(alpha: 0.15),
                                         borderRadius: BorderRadius.circular(10),
@@ -1105,3 +1105,4 @@ class _AppointmentsScreenState extends ConsumerState<AppointmentsScreen> {
   }
 
 }
+

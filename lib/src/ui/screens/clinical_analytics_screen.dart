@@ -83,7 +83,7 @@ class _ClinicalAnalyticsScreenState extends ConsumerState<ClinicalAnalyticsScree
   Widget _buildTrendsTab(BuildContext context, ClinicalAnalyticsService analyticsService) {
     return SingleChildScrollView(
       child: Padding(
-        padding: const EdgeInsets.all(16),
+        padding: const EdgeInsets.all(AppSpacing.lg),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -141,7 +141,7 @@ class _ClinicalAnalyticsScreenState extends ConsumerState<ClinicalAnalyticsScree
         return Card(
           elevation: 4,
           child: Padding(
-            padding: const EdgeInsets.all(16),
+            padding: const EdgeInsets.all(AppSpacing.lg),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
@@ -205,7 +205,7 @@ class _ClinicalAnalyticsScreenState extends ConsumerState<ClinicalAnalyticsScree
   Widget _buildSuccessRatesTab(BuildContext context, ClinicalAnalyticsService analyticsService) {
     return SingleChildScrollView(
       child: Padding(
-        padding: const EdgeInsets.all(16),
+        padding: const EdgeInsets.all(AppSpacing.lg),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -250,7 +250,7 @@ class _ClinicalAnalyticsScreenState extends ConsumerState<ClinicalAnalyticsScree
                 child: Card(
                   elevation: 2,
                   child: Padding(
-                    padding: const EdgeInsets.all(16),
+                    padding: const EdgeInsets.all(AppSpacing.lg),
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
@@ -303,7 +303,7 @@ class _ClinicalAnalyticsScreenState extends ConsumerState<ClinicalAnalyticsScree
 
   Widget _buildMetricItem(String label, String value, Color color) {
     return AppCard.interactive(
-      padding: const EdgeInsets.all(12),
+      padding: const EdgeInsets.all(AppSpacing.md),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         mainAxisAlignment: MainAxisAlignment.center,
@@ -333,7 +333,7 @@ class _ClinicalAnalyticsScreenState extends ConsumerState<ClinicalAnalyticsScree
   Widget _buildOutcomesTab(BuildContext context, ClinicalAnalyticsService analyticsService) {
     return SingleChildScrollView(
       child: Padding(
-        padding: const EdgeInsets.all(16),
+        padding: const EdgeInsets.all(AppSpacing.lg),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -394,7 +394,7 @@ class _ClinicalAnalyticsScreenState extends ConsumerState<ClinicalAnalyticsScree
         const SizedBox(height: 24),
         AppCard(
           child: Padding(
-            padding: const EdgeInsets.all(16),
+            padding: const EdgeInsets.all(AppSpacing.lg),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
@@ -459,7 +459,7 @@ class _ClinicalAnalyticsScreenState extends ConsumerState<ClinicalAnalyticsScree
             const SizedBox(height: 16),
             AppCard(
               child: Padding(
-                padding: const EdgeInsets.all(16),
+                padding: const EdgeInsets.all(AppSpacing.lg),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
@@ -533,7 +533,7 @@ class _ClinicalAnalyticsScreenState extends ConsumerState<ClinicalAnalyticsScree
   Widget _buildDemographicsTab(BuildContext context, ClinicalAnalyticsService analyticsService) {
     return SingleChildScrollView(
       child: Padding(
-        padding: const EdgeInsets.all(16),
+        padding: const EdgeInsets.all(AppSpacing.lg),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -570,7 +570,7 @@ class _ClinicalAnalyticsScreenState extends ConsumerState<ClinicalAnalyticsScree
                 return Card(
                   elevation: 2,
                   child: Padding(
-                    padding: const EdgeInsets.all(16),
+                    padding: const EdgeInsets.all(AppSpacing.lg),
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
@@ -603,3 +603,4 @@ class _ClinicalAnalyticsScreenState extends ConsumerState<ClinicalAnalyticsScree
     );
   }
 }
+

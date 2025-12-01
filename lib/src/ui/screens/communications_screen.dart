@@ -63,7 +63,7 @@ class _CommunicationsScreenState extends ConsumerState<CommunicationsScreen>
       children: [
         // Active conversations
         Padding(
-          padding: const EdgeInsets.all(16),
+          padding: const EdgeInsets.all(AppSpacing.lg),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
@@ -141,7 +141,7 @@ class _CommunicationsScreenState extends ConsumerState<CommunicationsScreen>
               borderRadius: BorderRadius.circular(12),
               border: Border.all(color: Colors.grey[800]!),
             ),
-            padding: const EdgeInsets.all(12),
+            padding: const EdgeInsets.all(AppSpacing.md),
             child: Row(
               children: [
                 Stack(
@@ -211,7 +211,7 @@ class _CommunicationsScreenState extends ConsumerState<CommunicationsScreen>
                     const SizedBox(height: 4),
                     if ((conv['unread'] as int) > 0)
                       Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                        padding: const EdgeInsets.symmetric(horizontal: AppSpacing.xs, vertical: AppSpacing.xxs),
                         decoration: BoxDecoration(
                           color: const Color(0xFF6366F1),
                           borderRadius: BorderRadius.circular(10),
@@ -241,7 +241,7 @@ class _CommunicationsScreenState extends ConsumerState<CommunicationsScreen>
 
   Widget _buildHistoryTab(BuildContext context) {
     return SingleChildScrollView(
-      padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.all(AppSpacing.lg),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -252,7 +252,7 @@ class _CommunicationsScreenState extends ConsumerState<CommunicationsScreen>
               borderRadius: BorderRadius.circular(12),
               border: Border.all(color: Colors.grey[800]!),
             ),
-            padding: const EdgeInsets.all(16),
+            padding: const EdgeInsets.all(AppSpacing.lg),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
@@ -426,3 +426,4 @@ class _CommunicationsScreenState extends ConsumerState<CommunicationsScreen>
     }).toList();
   }
 }
+
