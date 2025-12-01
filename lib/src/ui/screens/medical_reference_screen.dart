@@ -107,7 +107,7 @@ class _MedicalReferenceScreenState
 
   Widget _buildDrugsTab() {
     return SingleChildScrollView(
-      padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.all(AppSpacing.lg),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -213,7 +213,7 @@ class _MedicalReferenceScreenState
         ),
         children: [
           Padding(
-            padding: const EdgeInsets.all(16),
+            padding: const EdgeInsets.all(AppSpacing.lg),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
@@ -235,7 +235,7 @@ class _MedicalReferenceScreenState
                   const SizedBox(height: 8),
                   ...drug.contraindications.map(
                     (contra) => Container(
-                      padding: const EdgeInsets.all(8),
+                      padding: const EdgeInsets.all(AppSpacing.sm),
                       margin: const EdgeInsets.only(bottom: 8),
                       decoration: BoxDecoration(
                         color: Colors.red.withValues(alpha: 0.05),
@@ -347,13 +347,13 @@ class _MedicalReferenceScreenState
 
   Widget _buildInteractionsTab() {
     return SingleChildScrollView(
-      padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.all(AppSpacing.lg),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           // Info card
           Container(
-            padding: const EdgeInsets.all(12),
+            padding: const EdgeInsets.all(AppSpacing.md),
             decoration: BoxDecoration(
               color: const Color(0xFF6366F1).withValues(alpha: 0.1),
               border: Border.all(
@@ -421,7 +421,7 @@ class _MedicalReferenceScreenState
                     icon: const Icon(Icons.check_circle_outline),
                     label: const Text('Check Interactions'),
                     style: ElevatedButton.styleFrom(
-                      padding: const EdgeInsets.symmetric(vertical: 12),
+                      padding: const EdgeInsets.symmetric(vertical: AppSpacing.md),
                       backgroundColor: const Color(0xFF6366F1),
                     ),
                   ),
@@ -431,7 +431,7 @@ class _MedicalReferenceScreenState
           else
             Center(
               child: Padding(
-                padding: const EdgeInsets.symmetric(vertical: 32),
+                padding: const EdgeInsets.symmetric(vertical: AppSpacing.xxxl),
                 child: Column(
                   children: [
                     Icon(
@@ -462,14 +462,14 @@ class _MedicalReferenceScreenState
 
   Widget _buildWarningsTab() {
     return SingleChildScrollView(
-      padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.all(AppSpacing.lg),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           if (_selectedDrugs.isEmpty)
             Center(
               child: Padding(
-                padding: const EdgeInsets.symmetric(vertical: 32),
+                padding: const EdgeInsets.symmetric(vertical: AppSpacing.xxxl),
                 child: Column(
                   children: [
                     Icon(
@@ -520,3 +520,4 @@ class _MedicalReferenceScreenState
     );
   }
 }
+
