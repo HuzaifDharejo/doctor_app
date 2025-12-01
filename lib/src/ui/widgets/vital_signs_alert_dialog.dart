@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../core/theme/design_tokens.dart';
 import '../../services/vital_thresholds_service.dart';
 
 class VitalSignsAlertDialog extends StatelessWidget {

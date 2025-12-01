@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../../core/theme/design_tokens.dart';
 
 /// Panel for displaying patient communication history and initiating messages
 class CommunicationPanel extends ConsumerStatefulWidget {

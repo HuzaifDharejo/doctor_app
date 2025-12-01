@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../core/theme/design_tokens.dart';
 
 class AllergyBadges extends StatelessWidget {
   const AllergyBadges({

@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import '../../core/components/app_button.dart';
+import '../../core/theme/design_tokens.dart';
 
 /// Tutorial step definition
 class TutorialStep {

@@ -1,4 +1,7 @@
 import 'package:flutter/material.dart';
+import '../../core/components/app_button.dart';
+import '../../core/components/app_input.dart';
+import '../../core/theme/design_tokens.dart';
 import '../../services/drug_interaction_service.dart';
 
 class DrugInteractionDialog extends StatefulWidget {

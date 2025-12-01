@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import '../../core/components/app_button.dart';
+import '../../core/theme/design_tokens.dart';
 
 /// Floating help button that appears on screens
 class HelpButton extends StatefulWidget {

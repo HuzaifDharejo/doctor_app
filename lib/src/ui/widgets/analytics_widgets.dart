@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:fl_chart/fl_chart.dart';
+import '../../core/theme/design_tokens.dart';
 import '../../services/clinical_analytics_service.dart';
 
 // ============================================================================
