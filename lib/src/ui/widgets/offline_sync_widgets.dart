@@ -73,7 +73,7 @@ class _SyncProgressDialogState extends State<SyncProgressDialog> {
 
     return Dialog(
       child: Padding(
-        padding: const EdgeInsets.all(24),
+        padding: const EdgeInsets.all(AppSpacing.xxl),
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
@@ -91,7 +91,7 @@ class _SyncProgressDialogState extends State<SyncProgressDialog> {
             const SizedBox(height: 24),
             // Progress info
             Container(
-              padding: const EdgeInsets.all(12),
+              padding: const EdgeInsets.all(AppSpacing.md),
               decoration: BoxDecoration(
                 color: isDarkMode ? Colors.grey[900] : Colors.grey[100],
                 borderRadius: BorderRadius.circular(8),
@@ -126,7 +126,7 @@ class _SyncProgressDialogState extends State<SyncProgressDialog> {
 
   Widget _buildInfoRow(String label, String value) {
     return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 4),
+      padding: const EdgeInsets.symmetric(vertical: AppSpacing.xs),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
@@ -158,7 +158,7 @@ class OfflineIndicator extends ConsumerWidget {
 
     return Container(
       width: double.infinity,
-      padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
+      padding: const EdgeInsets.symmetric(vertical: AppSpacing.md, horizontal: AppSpacing.lg),
       color: Colors.orange.withValues(alpha: 0.9),
       child: Row(
         children: [
@@ -207,7 +207,7 @@ class _ConflictResolutionDialogState extends State<ConflictResolutionDialog> {
 
     return Dialog(
       child: Padding(
-        padding: const EdgeInsets.all(24),
+        padding: const EdgeInsets.all(AppSpacing.xxl),
         child: Column(
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -302,7 +302,7 @@ class _ConflictResolutionDialogState extends State<ConflictResolutionDialog> {
     bool isDarkMode,
   ) {
     return Container(
-      padding: const EdgeInsets.all(12),
+      padding: const EdgeInsets.all(AppSpacing.md),
       decoration: BoxDecoration(
         color: isDarkMode ? Colors.grey[900] : Colors.grey[100],
         borderRadius: BorderRadius.circular(8),
@@ -339,7 +339,7 @@ class _ConflictResolutionDialogState extends State<ConflictResolutionDialog> {
         onTap: () => setState(() => _selectedResolution = resolution),
         borderRadius: BorderRadius.circular(8),
         child: Padding(
-          padding: const EdgeInsets.all(12),
+          padding: const EdgeInsets.all(AppSpacing.md),
           child: Row(
             children: [
               Radio<ConflictResolution>(
@@ -404,13 +404,13 @@ class SyncQueueItemWidget extends StatelessWidget {
 
     return Card(
       elevation: 2,
-      margin: const EdgeInsets.symmetric(vertical: 8),
+      margin: const EdgeInsets.symmetric(vertical: AppSpacing.sm),
       child: Padding(
-        padding: const EdgeInsets.all(12),
+        padding: const EdgeInsets.all(AppSpacing.md),
         child: Row(
           children: [
             Container(
-              padding: const EdgeInsets.all(8),
+              padding: const EdgeInsets.all(AppSpacing.sm),
               decoration: BoxDecoration(
                 color: color.withValues(alpha: 0.2),
                 shape: BoxShape.circle,
@@ -481,3 +481,4 @@ class SyncQueueItemWidget extends StatelessWidget {
     }
   }
 }
+

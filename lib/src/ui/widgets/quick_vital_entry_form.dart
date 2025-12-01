@@ -288,7 +288,7 @@ class _QuickVitalEntryFormState extends ConsumerState<QuickVitalEntryForm> {
     final isDark = theme.brightness == Brightness.dark;
 
     return SingleChildScrollView(
-      padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.all(AppSpacing.lg),
       child: Column(
         spacing: 20,
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -527,7 +527,7 @@ class _QuickVitalEntryFormState extends ConsumerState<QuickVitalEntryForm> {
                   label: const Text('Save Vitals'),
                   onPressed: _isSaving ? null : _autoSaveVitals,
                   style: ElevatedButton.styleFrom(
-                    padding: const EdgeInsets.symmetric(vertical: 16),
+                    padding: const EdgeInsets.symmetric(vertical: AppSpacing.lg),
                   ),
                 ),
               ),
@@ -537,7 +537,7 @@ class _QuickVitalEntryFormState extends ConsumerState<QuickVitalEntryForm> {
                   label: const Text('Set Normal'),
                   onPressed: _setNormalPresets,
                   style: OutlinedButton.styleFrom(
-                    padding: const EdgeInsets.symmetric(vertical: 16),
+                    padding: const EdgeInsets.symmetric(vertical: AppSpacing.lg),
                   ),
                 ),
               ),
@@ -583,7 +583,7 @@ class _QuickVitalEntryFormState extends ConsumerState<QuickVitalEntryForm> {
         ),
         borderRadius: BorderRadius.circular(12),
       ),
-      padding: const EdgeInsets.all(14),
+      padding: const EdgeInsets.all(AppSpacing.lg),
       child: Column(
         spacing: 12,
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -592,7 +592,7 @@ class _QuickVitalEntryFormState extends ConsumerState<QuickVitalEntryForm> {
             spacing: 8,
             children: [
               Container(
-                padding: const EdgeInsets.all(6),
+                padding: const EdgeInsets.all(AppSpacing.xs),
                 decoration: BoxDecoration(
                   color: color.withValues(alpha: 0.15),
                   borderRadius: BorderRadius.circular(8),
@@ -634,7 +634,7 @@ class _QuickVitalEntryFormState extends ConsumerState<QuickVitalEntryForm> {
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(8),
         ),
-        contentPadding: const EdgeInsets.symmetric(vertical: 16, horizontal: 12),
+        contentPadding: const EdgeInsets.symmetric(vertical: AppSpacing.lg, horizontal: AppSpacing.md),
       ),
     );
   }
@@ -647,7 +647,7 @@ class _QuickVitalEntryFormState extends ConsumerState<QuickVitalEntryForm> {
         style: ElevatedButton.styleFrom(
           backgroundColor: Colors.blue.shade100,
           foregroundColor: Colors.blue.shade900,
-          padding: const EdgeInsets.symmetric(vertical: 10),
+          padding: const EdgeInsets.symmetric(vertical: AppSpacing.md),
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(8),
           ),
@@ -661,3 +661,4 @@ class _QuickVitalEntryFormState extends ConsumerState<QuickVitalEntryForm> {
     );
   }
 }
+

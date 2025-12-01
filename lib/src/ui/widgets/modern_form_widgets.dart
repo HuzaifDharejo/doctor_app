@@ -3,6 +3,7 @@ import 'package:flutter/services.dart';
 import 'package:intl/intl.dart';
 import '../../db/doctor_db.dart';
 import '../../theme/app_theme.dart';
+import '../../core/theme/design_tokens.dart';
 
 /// Modern UI widgets for medical forms with animations, glass-morphism, and quick actions
 class ModernFormWidgets {
@@ -66,13 +67,13 @@ class ModernFormWidgets {
               },
               borderRadius: BorderRadius.circular(20),
               child: Padding(
-                padding: const EdgeInsets.all(16),
+                padding: const EdgeInsets.all(AppSpacing.lg),
                 child: Row(
                   children: [
                     // Icon with animated background
                     AnimatedContainer(
                       duration: const Duration(milliseconds: 300),
-                      padding: const EdgeInsets.all(12),
+                      padding: const EdgeInsets.all(AppSpacing.md),
                       decoration: BoxDecoration(
                         gradient: isExpanded 
                             ? LinearGradient(
@@ -107,7 +108,7 @@ class ModernFormWidgets {
                           if (badge != null) ...[
                             const SizedBox(height: 4),
                             Container(
-                              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                              padding: const EdgeInsets.symmetric(horizontal: AppSpacing.sm, vertical: AppSpacing.xxs),
                               decoration: BoxDecoration(
                                 color: color.withValues(alpha: 0.1),
                                 borderRadius: BorderRadius.circular(8),
@@ -132,7 +133,7 @@ class ModernFormWidgets {
                       duration: const Duration(milliseconds: 300),
                       turns: isExpanded ? 0.5 : 0,
                       child: Container(
-                        padding: const EdgeInsets.all(8),
+                        padding: const EdgeInsets.all(AppSpacing.sm),
                         decoration: BoxDecoration(
                           color: isDark 
                               ? Colors.white.withValues(alpha: 0.05)
@@ -220,7 +221,7 @@ class ModernFormWidgets {
                     },
                     borderRadius: BorderRadius.circular(20),
                     child: Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+                      padding: const EdgeInsets.symmetric(horizontal: AppSpacing.lg, vertical: AppSpacing.sm),
                       decoration: BoxDecoration(
                         color: controller.text == option 
                             ? chipColor 
@@ -380,7 +381,7 @@ class ModernFormWidgets {
     ];
     
     return Container(
-      padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.all(AppSpacing.lg),
       decoration: BoxDecoration(
         gradient: LinearGradient(
           colors: isDark 
@@ -400,7 +401,7 @@ class ModernFormWidgets {
           Row(
             children: [
               Container(
-                padding: const EdgeInsets.all(10),
+                padding: const EdgeInsets.all(AppSpacing.md),
                 decoration: BoxDecoration(
                   gradient: AppColors.primaryGradient,
                   borderRadius: BorderRadius.circular(12),
@@ -427,7 +428,7 @@ class ModernFormWidgets {
                 label: const Text('Clear'),
                 style: TextButton.styleFrom(
                   foregroundColor: AppColors.textSecondary,
-                  padding: const EdgeInsets.symmetric(horizontal: 8),
+                  padding: const EdgeInsets.symmetric(horizontal: AppSpacing.sm),
                 ),
               ),
             ],
@@ -471,7 +472,7 @@ class ModernFormWidgets {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     
     return Container(
-      padding: const EdgeInsets.all(12),
+      padding: const EdgeInsets.all(AppSpacing.md),
       decoration: BoxDecoration(
         color: color.withValues(alpha: 0.08),
         borderRadius: BorderRadius.circular(16),
@@ -537,7 +538,7 @@ class ModernFormWidgets {
       child: SafeArea(
         bottom: false,
         child: Padding(
-          padding: const EdgeInsets.all(20),
+          padding: const EdgeInsets.all(AppSpacing.xl),
           child: Column(
             children: [
               // App bar row
@@ -554,7 +555,7 @@ class ModernFormWidgets {
               const SizedBox(height: 24),
               // Icon
               Container(
-                padding: const EdgeInsets.all(20),
+                padding: const EdgeInsets.all(AppSpacing.xl),
                 decoration: BoxDecoration(
                   color: Colors.white.withValues(alpha: 0.2),
                   shape: BoxShape.circle,
@@ -611,7 +612,7 @@ class ModernFormWidgets {
         onTap();
       },
       child: Container(
-        padding: const EdgeInsets.all(12),
+        padding: const EdgeInsets.all(AppSpacing.md),
         decoration: BoxDecoration(
           color: Colors.white.withValues(alpha: 0.2),
           borderRadius: BorderRadius.circular(14),
@@ -626,7 +627,7 @@ class ModernFormWidgets {
 
   static Widget _buildPatientInfoCard(BuildContext context, Patient patient) {
     return Container(
-      padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.all(AppSpacing.lg),
       decoration: BoxDecoration(
         color: Colors.white.withValues(alpha: 0.15),
         borderRadius: BorderRadius.circular(20),
@@ -721,8 +722,8 @@ class ModernFormWidgets {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     
     return Container(
-      margin: const EdgeInsets.all(16),
-      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 12),
+      margin: const EdgeInsets.all(AppSpacing.lg),
+      padding: const EdgeInsets.symmetric(horizontal: AppSpacing.sm, vertical: AppSpacing.md),
       decoration: BoxDecoration(
         color: isDark 
             ? AppColors.darkSurface.withValues(alpha: 0.95)
@@ -740,7 +741,7 @@ class ModernFormWidgets {
         mainAxisSize: MainAxisSize.min,
         children: actions.map((action) {
           return Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 4),
+            padding: const EdgeInsets.symmetric(horizontal: AppSpacing.xs),
             child: action.isPrimary
                 ? _buildPrimaryActionButton(context, action)
                 : _buildSecondaryActionButton(context, action, isDark),
@@ -774,7 +775,7 @@ class ModernFormWidgets {
           onTap: action.onTap,
           borderRadius: BorderRadius.circular(16),
           child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
+            padding: const EdgeInsets.symmetric(horizontal: AppSpacing.xl, vertical: AppSpacing.lg),
             child: Row(
               children: [
                 Icon(action.icon, color: Colors.white, size: 22),
@@ -808,7 +809,7 @@ class ModernFormWidgets {
         onTap: action.onTap,
         borderRadius: BorderRadius.circular(14),
         child: Container(
-          padding: const EdgeInsets.all(12),
+          padding: const EdgeInsets.all(AppSpacing.md),
           decoration: BoxDecoration(
             color: isDark 
                 ? Colors.white.withValues(alpha: 0.08)
@@ -861,7 +862,7 @@ class ModernFormWidgets {
                 child: AnimatedContainer(
                   duration: const Duration(milliseconds: 200),
                   margin: EdgeInsets.only(right: option == options.last ? 0 : 8),
-                  padding: const EdgeInsets.symmetric(vertical: 14),
+                  padding: const EdgeInsets.symmetric(vertical: AppSpacing.lg),
                   decoration: BoxDecoration(
                     color: isSelected 
                         ? option.color.withValues(alpha: 0.15)
@@ -957,7 +958,7 @@ class ModernFormWidgets {
             }
           },
           child: Container(
-            padding: const EdgeInsets.all(16),
+            padding: const EdgeInsets.all(AppSpacing.lg),
             decoration: BoxDecoration(
               color: isDark 
                   ? Colors.white.withValues(alpha: 0.05)
@@ -972,7 +973,7 @@ class ModernFormWidgets {
             child: Row(
               children: [
                 Container(
-                  padding: const EdgeInsets.all(10),
+                  padding: const EdgeInsets.all(AppSpacing.md),
                   decoration: BoxDecoration(
                     color: AppColors.primary.withValues(alpha: 0.1),
                     borderRadius: BorderRadius.circular(10),
@@ -1043,7 +1044,7 @@ class ModernFormWidgets {
           ? null 
           : () => _showPatientPicker(context, patients, onChanged),
       child: Container(
-        padding: const EdgeInsets.all(16),
+        padding: const EdgeInsets.all(AppSpacing.lg),
         decoration: BoxDecoration(
           gradient: selectedPatient != null 
               ? LinearGradient(
@@ -1234,7 +1235,7 @@ class _PatientPickerSheetState extends State<PatientPickerSheet> {
         children: [
           // Handle
           Container(
-            margin: const EdgeInsets.symmetric(vertical: 12),
+            margin: const EdgeInsets.symmetric(vertical: AppSpacing.md),
             width: 40,
             height: 4,
             decoration: BoxDecoration(
@@ -1244,7 +1245,7 @@ class _PatientPickerSheetState extends State<PatientPickerSheet> {
           ),
           // Title
           Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 20),
+            padding: const EdgeInsets.symmetric(horizontal: AppSpacing.xl),
             child: Row(
               children: [
                 const Text(
@@ -1264,7 +1265,7 @@ class _PatientPickerSheetState extends State<PatientPickerSheet> {
           ),
           // Search
           Padding(
-            padding: const EdgeInsets.all(16),
+            padding: const EdgeInsets.all(AppSpacing.lg),
             child: TextField(
               controller: _searchController,
               decoration: InputDecoration(
@@ -1282,7 +1283,7 @@ class _PatientPickerSheetState extends State<PatientPickerSheet> {
           // List
           Expanded(
             child: ListView.builder(
-              padding: const EdgeInsets.symmetric(horizontal: 16),
+              padding: const EdgeInsets.symmetric(horizontal: AppSpacing.lg),
               itemCount: _filteredPatients.length,
               itemBuilder: (context, index) {
                 final patient = _filteredPatients[index];
@@ -1316,3 +1317,4 @@ class _PatientPickerSheetState extends State<PatientPickerSheet> {
     super.dispose();
   }
 }
+
