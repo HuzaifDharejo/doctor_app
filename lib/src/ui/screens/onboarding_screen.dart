@@ -835,54 +835,45 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen>
           ),
           const SizedBox(height: 28),
           
-          _buildTextField(
+          AppInput.text(
             controller: _nameController,
             label: 'Full Name *',
             hint: 'Dr. Ahmed Khan',
-            icon: Icons.person_outline,
-            isDark: isDark,
-            readOnly: _isSignedIn && _googleUserInfo?.displayName != null,
+            prefixIcon: Icons.person_outline,
+            enabled: !(_isSignedIn && _googleUserInfo?.displayName != null),
+            onChanged: (_) => setState(() {}),
           ),
           const SizedBox(height: 16),
-          _buildTextField(
+          AppInput.email(
             controller: _emailController,
             label: 'Email',
             hint: 'doctor@clinic.com',
-            icon: Icons.email_outlined,
-            keyboardType: TextInputType.emailAddress,
-            isDark: isDark,
-            readOnly: _isSignedIn,
-            suffixIcon: _isSignedIn
-                ? const Tooltip(
-                    message: 'Email from Google account',
-                    child: Icon(Icons.lock_outline, size: 18, color: AppColors.primary),
-                  )
-                : null,
+            enabled: !_isSignedIn,
+            suffixIcon: _isSignedIn ? Icons.lock_outline : null,
+            onChanged: (_) => setState(() {}),
           ),
           const SizedBox(height: 16),
-          _buildTextField(
+          AppInput.text(
             controller: _specializationController,
             label: 'Specialization',
             hint: 'General Physician, Cardiologist, etc.',
-            icon: Icons.medical_services_outlined,
-            isDark: isDark,
+            prefixIcon: Icons.medical_services_outlined,
+            onChanged: (_) => setState(() {}),
           ),
           const SizedBox(height: 16),
-          _buildTextField(
+          AppInput.text(
             controller: _clinicController,
             label: 'Clinic/Hospital Name',
             hint: 'City Medical Center',
-            icon: Icons.local_hospital_outlined,
-            isDark: isDark,
+            prefixIcon: Icons.local_hospital_outlined,
+            onChanged: (_) => setState(() {}),
           ),
           const SizedBox(height: 16),
-          _buildTextField(
+          AppInput.phone(
             controller: _phoneController,
             label: 'Phone Number',
             hint: '+92 300 1234567',
-            icon: Icons.phone_outlined,
-            keyboardType: TextInputType.phone,
-            isDark: isDark,
+            onChanged: (_) => setState(() {}),
           ),
         ],
       ),

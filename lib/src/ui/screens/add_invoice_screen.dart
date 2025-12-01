@@ -593,14 +593,9 @@ class _AddInvoiceScreenState extends ConsumerState<AddInvoiceScreen> {
 
     return Column(
       children: [
-        TextField(
+        AppInput.search(
           controller: _searchController,
-          decoration: InputDecoration(
-            hintText: 'Search patient...',
-            prefixIcon: const Icon(Icons.search),
-            border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
-            filled: true,
-          ),
+          hint: 'Search patient...',
           onChanged: (_) => setState(() {}),
         ),
         const SizedBox(height: 8),
