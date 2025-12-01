@@ -244,7 +244,7 @@ class _ExamModeButtonTileState extends State<_ExamModeButtonTile> {
               ),
               const SizedBox(height: 8),
               Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 4),
+                padding: const EdgeInsets.symmetric(horizontal: AppSpacing.xs),
                 child: Text(
                   widget.button.label,
                   textAlign: TextAlign.center,
@@ -264,3 +264,4 @@ class _ExamModeButtonTileState extends State<_ExamModeButtonTile> {
     );
   }
 }
+

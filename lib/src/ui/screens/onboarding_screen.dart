@@ -9,6 +9,7 @@ import '../../providers/google_calendar_provider.dart';
 import '../../services/google_calendar_service.dart';
 import '../../core/components/app_button.dart';
 import '../../theme/app_theme.dart';
+import '../../core/theme/design_tokens.dart';
 
 /// Onboarding screen shown when the app is first launched
 /// Uses Google SSO for authentication and auto-fills profile from Google account
@@ -289,7 +290,7 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen>
           children: [
             // Animated progress indicator
             Padding(
-              padding: const EdgeInsets.all(20),
+              padding: const EdgeInsets.all(AppSpacing.xl),
               child: Row(
                 children: List.generate(3, (index) {
                   final isActive = index <= _currentPage;
@@ -298,7 +299,7 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen>
                     child: AnimatedContainer(
                       duration: const Duration(milliseconds: 300),
                       curve: Curves.easeOutCubic,
-                      margin: const EdgeInsets.symmetric(horizontal: 4),
+                      margin: const EdgeInsets.symmetric(horizontal: AppSpacing.xs),
                       height: isCurrent ? 6 : 4,
                       decoration: BoxDecoration(
                         gradient: isActive 
@@ -342,7 +343,7 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen>
             
             // Navigation buttons
             Padding(
-              padding: const EdgeInsets.all(20),
+              padding: const EdgeInsets.all(AppSpacing.xl),
               child: Row(
                 children: [
                   if (_currentPage > 0)
@@ -379,7 +380,7 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen>
     return FadeTransition(
       opacity: _fadeInAnimation,
       child: SingleChildScrollView(
-        padding: const EdgeInsets.all(24),
+        padding: const EdgeInsets.all(AppSpacing.xxl),
         child: Column(
           children: [
             const SizedBox(height: 30),
@@ -392,7 +393,7 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen>
                   child: Transform.rotate(
                     angle: _logoRotationAnimation.value,
                     child: Container(
-                      padding: const EdgeInsets.all(24),
+                      padding: const EdgeInsets.all(AppSpacing.xxl),
                       decoration: BoxDecoration(
                         gradient: AppColors.primaryGradient,
                         shape: BoxShape.circle,
@@ -466,7 +467,7 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen>
           
           // Google Sign-In Card
           Container(
-            padding: const EdgeInsets.all(24),
+            padding: const EdgeInsets.all(AppSpacing.xxl),
             decoration: BoxDecoration(
               color: isDark ? AppColors.darkSurface : Colors.white,
               borderRadius: BorderRadius.circular(20),
@@ -540,7 +541,7 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen>
                   ),
                   const SizedBox(height: 8),
                   Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                    padding: const EdgeInsets.symmetric(horizontal: AppSpacing.md, vertical: AppSpacing.xs),
                     decoration: BoxDecoration(
                       color: AppColors.appointments.withValues(alpha: 0.1),
                       borderRadius: BorderRadius.circular(20),
@@ -602,7 +603,7 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen>
                       style: ElevatedButton.styleFrom(
                         backgroundColor: Colors.white,
                         foregroundColor: Colors.black87,
-                        padding: const EdgeInsets.symmetric(vertical: 14),
+                        padding: const EdgeInsets.symmetric(vertical: AppSpacing.lg),
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(12),
                           side: BorderSide(color: Colors.grey.shade300),
@@ -648,7 +649,7 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen>
                   ),
                 ),
                 Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 16),
+                  padding: const EdgeInsets.symmetric(horizontal: AppSpacing.lg),
                   child: Text(
                     'OR',
                     style: TextStyle(
@@ -742,7 +743,7 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen>
     return Column(
       children: [
         Container(
-          padding: const EdgeInsets.all(12),
+          padding: const EdgeInsets.all(AppSpacing.md),
           decoration: BoxDecoration(
             color: color.withValues(alpha: 0.1),
             borderRadius: BorderRadius.circular(12),
@@ -764,7 +765,7 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen>
 
   Widget _buildProfilePage(bool isDark) {
     return SingleChildScrollView(
-      padding: const EdgeInsets.all(24),
+      padding: const EdgeInsets.all(AppSpacing.xxl),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -781,7 +782,7 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen>
                   )
                 else
                   Container(
-                    padding: const EdgeInsets.all(20),
+                    padding: const EdgeInsets.all(AppSpacing.xl),
                     decoration: BoxDecoration(
                       color: AppColors.primary.withValues(alpha: 0.1),
                       shape: BoxShape.circle,
@@ -822,7 +823,7 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen>
                     style: OutlinedButton.styleFrom(
                       foregroundColor: AppColors.primary,
                       side: BorderSide(color: AppColors.primary.withValues(alpha: 0.5)),
-                      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+                      padding: const EdgeInsets.symmetric(horizontal: AppSpacing.xl, vertical: AppSpacing.md),
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(20),
                       ),
@@ -917,7 +918,7 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen>
 
   Widget _buildCompletionPage(bool isDark, GoogleCalendarState calendarState) {
     return SingleChildScrollView(
-      padding: const EdgeInsets.all(24),
+      padding: const EdgeInsets.all(AppSpacing.xxl),
       child: Column(
         children: [
           const SizedBox(height: 40),
@@ -930,7 +931,7 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen>
               return Transform.scale(
                 scale: value,
                 child: Container(
-                  padding: const EdgeInsets.all(32),
+                  padding: const EdgeInsets.all(AppSpacing.xxxl),
                   decoration: BoxDecoration(
                     color: AppColors.success.withValues(alpha: 0.1),
                     shape: BoxShape.circle,
@@ -1022,7 +1023,7 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen>
           
           // Summary card
           Container(
-            padding: const EdgeInsets.all(20),
+            padding: const EdgeInsets.all(AppSpacing.xl),
             decoration: BoxDecoration(
               color: isDark ? AppColors.darkSurface : Colors.white,
               borderRadius: BorderRadius.circular(16),
@@ -1159,7 +1160,7 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen>
   Widget _buildTipItem(String number, String text, Color color, bool isDark) {
     return AppCard(
       margin: const EdgeInsets.only(bottom: 12),
-      padding: const EdgeInsets.all(14),
+      padding: const EdgeInsets.all(AppSpacing.lg),
       color: isDark ? AppColors.darkSurface : Colors.white,
       borderRadius: BorderRadius.circular(12),
       borderColor: isDark ? AppColors.darkDivider : AppColors.divider,
@@ -1198,3 +1199,4 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen>
     );
   }
 }
+

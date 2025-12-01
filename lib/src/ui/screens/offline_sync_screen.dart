@@ -81,7 +81,7 @@ class _OfflineSyncScreenState extends ConsumerState<OfflineSyncScreen>
 
     return SingleChildScrollView(
       child: Padding(
-        padding: const EdgeInsets.all(16),
+        padding: const EdgeInsets.all(AppSpacing.lg),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -106,7 +106,7 @@ class _OfflineSyncScreenState extends ConsumerState<OfflineSyncScreen>
             // Last sync time
             AppCard(
               child: Padding(
-                padding: const EdgeInsets.all(16),
+                padding: const EdgeInsets.all(AppSpacing.lg),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
@@ -225,7 +225,7 @@ class _OfflineSyncScreenState extends ConsumerState<OfflineSyncScreen>
     }
 
     return ListView.builder(
-      padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.all(AppSpacing.lg),
       itemCount: queue.length,
       itemBuilder: (context, index) {
         final item = queue[index];
@@ -273,15 +273,15 @@ class _OfflineSyncScreenState extends ConsumerState<OfflineSyncScreen>
     }
 
     return ListView.builder(
-      padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.all(AppSpacing.lg),
       itemCount: conflicts.length,
       itemBuilder: (context, index) {
         final conflict = conflicts[index];
         return Card(
           elevation: 2,
-          margin: const EdgeInsets.symmetric(vertical: 8),
+          margin: const EdgeInsets.symmetric(vertical: AppSpacing.sm),
           child: Padding(
-            padding: const EdgeInsets.all(12),
+            padding: const EdgeInsets.all(AppSpacing.md),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
@@ -353,7 +353,7 @@ class _OfflineSyncScreenState extends ConsumerState<OfflineSyncScreen>
     }
 
     return ListView.builder(
-      padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.all(AppSpacing.lg),
       itemCount: history.length,
       itemBuilder: (context, index) {
         final entry = history[index];
@@ -363,9 +363,9 @@ class _OfflineSyncScreenState extends ConsumerState<OfflineSyncScreen>
 
         return Card(
           elevation: 1,
-          margin: const EdgeInsets.symmetric(vertical: 6),
+          margin: const EdgeInsets.symmetric(vertical: AppSpacing.xs),
           child: Padding(
-            padding: const EdgeInsets.all(12),
+            padding: const EdgeInsets.all(AppSpacing.md),
             child: Row(
               children: [
                 Icon(icon, color: color, size: 20),
@@ -415,11 +415,11 @@ class _OfflineSyncScreenState extends ConsumerState<OfflineSyncScreen>
     return Card(
       elevation: 2,
       child: Padding(
-        padding: const EdgeInsets.all(16),
+        padding: const EdgeInsets.all(AppSpacing.lg),
         child: Row(
           children: [
             Container(
-              padding: const EdgeInsets.all(12),
+              padding: const EdgeInsets.all(AppSpacing.md),
               decoration: BoxDecoration(
                 color: color.withValues(alpha: 0.2),
                 shape: BoxShape.circle,
@@ -452,7 +452,7 @@ class _OfflineSyncScreenState extends ConsumerState<OfflineSyncScreen>
 
   Widget _buildStatCard(String label, String value, Color color) {
     return AppCard(
-      padding: const EdgeInsets.all(12),
+      padding: const EdgeInsets.all(AppSpacing.md),
       child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
@@ -606,3 +606,4 @@ class _OfflineSyncScreenState extends ConsumerState<OfflineSyncScreen>
     }
   }
 }
+
