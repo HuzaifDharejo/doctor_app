@@ -247,9 +247,9 @@ class _ContextualHelpState extends State<ContextualHelp> {
                       const SizedBox(height: 16),
                       Align(
                         alignment: Alignment.centerRight,
-                        child: ElevatedButton(
+                        child: AppButton.primary(
+                          label: 'Got it',
                           onPressed: _hideHelp,
-                          child: const Text('Got it'),
                         ),
                       ),
                     ],

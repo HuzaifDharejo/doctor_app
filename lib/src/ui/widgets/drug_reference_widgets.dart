@@ -472,12 +472,12 @@ class _InteractionCheckerDialogState
             child: Row(
               mainAxisAlignment: MainAxisAlignment.end,
               children: [
-                TextButton(
+                AppButton.tertiary(
+                  label: 'Close',
                   onPressed: () {
                     Navigator.of(context).pop();
                     widget.onClose?.call();
                   },
-                  child: const Text('Close'),
                 ),
               ],
             ),

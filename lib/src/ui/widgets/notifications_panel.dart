@@ -397,11 +397,12 @@ class _NotificationPreferencesDialogState
         ),
       ),
       actions: [
-        TextButton(
+        AppButton.tertiary(
+          label: 'Cancel',
           onPressed: () => Navigator.pop(context),
-          child: const Text('Cancel'),
         ),
-        ElevatedButton(
+        AppButton.primary(
+          label: 'Save',
           onPressed: () {
             Navigator.pop(context, {
               'appointmentReminders': appointmentReminders,
@@ -415,7 +416,6 @@ class _NotificationPreferencesDialogState
               'quietHourEnd': quietHourEnd,
             });
           },
-          child: const Text('Save'),
         ),
       ],
     );

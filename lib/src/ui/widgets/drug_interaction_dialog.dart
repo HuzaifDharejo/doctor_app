@@ -280,9 +280,9 @@ class _DrugInteractionDialogState extends State<DrugInteractionDialog> {
         ),
       ),
       actions: [
-        OutlinedButton(
+        AppButton.tertiary(
+          label: 'Cancel',
           onPressed: widget.onCancel,
-          child: const Text('Cancel'),
         ),
         if (_hasCritical)
           FilledButton.tonalIcon(

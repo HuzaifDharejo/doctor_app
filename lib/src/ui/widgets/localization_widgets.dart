@@ -185,16 +185,16 @@ class _LanguageSwitcherDialogState extends State<LanguageSwitcherDialog> {
         ),
       ),
       actions: [
-        TextButton(
+        AppButton.tertiary(
+          label: 'Cancel',
           onPressed: Navigator.of(context).pop,
-          child: const Text('Cancel'),
         ),
-        ElevatedButton(
+        AppButton.primary(
+          label: 'Confirm',
           onPressed: () {
             widget.onLanguageSelected(_selectedLocale);
             Navigator.of(context).pop();
           },
-          child: const Text('Confirm'),
         ),
       ],
     );

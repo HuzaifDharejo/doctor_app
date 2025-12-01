@@ -187,9 +187,9 @@ class _AllergyCheckDialogState extends State<AllergyCheckDialog> {
         ),
       ),
       actions: [
-        OutlinedButton(
+        AppButton.tertiary(
+          label: 'Cancel',
           onPressed: widget.onCancel,
-          child: const Text('Cancel'),
         ),
         if (isSevere)
           FilledButton.tonalIcon(
