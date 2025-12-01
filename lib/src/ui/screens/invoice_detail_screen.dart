@@ -9,6 +9,7 @@ import '../../services/pdf_service.dart';
 import '../../services/whatsapp_service.dart';
 import '../../core/components/app_button.dart';
 import '../../theme/app_theme.dart';
+import '../../core/theme/design_tokens.dart';
 
 class InvoiceDetailScreen extends ConsumerStatefulWidget {
   const InvoiceDetailScreen({
@@ -148,13 +149,13 @@ class _InvoiceDetailScreenState extends ConsumerState<InvoiceDetailScreen> {
       body: _isLoading
           ? const Center(child: CircularProgressIndicator())
           : SingleChildScrollView(
-              padding: const EdgeInsets.all(16),
+              padding: const EdgeInsets.all(AppSpacing.lg),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
                   // Status Card
                   Container(
-                    padding: const EdgeInsets.all(20),
+                    padding: const EdgeInsets.all(AppSpacing.xl),
                     decoration: BoxDecoration(
                       gradient: LinearGradient(
                         colors: [statusColor, statusColor.withValues(alpha: 0.8)],
@@ -166,7 +167,7 @@ class _InvoiceDetailScreenState extends ConsumerState<InvoiceDetailScreen> {
                     child: Row(
                       children: [
                         Container(
-                          padding: const EdgeInsets.all(12),
+                          padding: const EdgeInsets.all(AppSpacing.md),
                           decoration: BoxDecoration(
                             color: Colors.white.withValues(alpha: 0.2),
                             borderRadius: BorderRadius.circular(12),
@@ -222,7 +223,7 @@ class _InvoiceDetailScreenState extends ConsumerState<InvoiceDetailScreen> {
                   // Patient Info Card
                   if (_patient != null)
                     Container(
-                      padding: const EdgeInsets.all(16),
+                      padding: const EdgeInsets.all(AppSpacing.lg),
                       decoration: BoxDecoration(
                         color: surfaceColor,
                         borderRadius: BorderRadius.circular(12),
@@ -279,7 +280,7 @@ class _InvoiceDetailScreenState extends ConsumerState<InvoiceDetailScreen> {
                       crossAxisAlignment: CrossAxisAlignment.stretch,
                       children: [
                         Padding(
-                          padding: const EdgeInsets.all(16),
+                          padding: const EdgeInsets.all(AppSpacing.lg),
                           child: Text(
                             'Items',
                             style: TextStyle(
@@ -300,7 +301,7 @@ class _InvoiceDetailScreenState extends ConsumerState<InvoiceDetailScreen> {
                         const Divider(height: 1),
                         // Subtotal
                         Padding(
-                          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                          padding: const EdgeInsets.symmetric(horizontal: AppSpacing.lg, vertical: AppSpacing.md),
                           child: Row(
                             mainAxisAlignment: MainAxisAlignment.spaceBetween,
                             children: [
@@ -315,7 +316,7 @@ class _InvoiceDetailScreenState extends ConsumerState<InvoiceDetailScreen> {
                         // Discount
                         if (_invoice.discountAmount > 0)
                           Padding(
-                            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+                            padding: const EdgeInsets.symmetric(horizontal: AppSpacing.lg, vertical: AppSpacing.xs),
                             child: Row(
                               mainAxisAlignment: MainAxisAlignment.spaceBetween,
                               children: [
@@ -333,7 +334,7 @@ class _InvoiceDetailScreenState extends ConsumerState<InvoiceDetailScreen> {
                         // Tax
                         if (_invoice.taxAmount > 0)
                           Padding(
-                            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+                            padding: const EdgeInsets.symmetric(horizontal: AppSpacing.lg, vertical: AppSpacing.xs),
                             child: Row(
                               mainAxisAlignment: MainAxisAlignment.spaceBetween,
                               children: [
@@ -351,7 +352,7 @@ class _InvoiceDetailScreenState extends ConsumerState<InvoiceDetailScreen> {
                         const Divider(height: 1),
                         // Grand Total
                         Padding(
-                          padding: const EdgeInsets.all(16),
+                          padding: const EdgeInsets.all(AppSpacing.lg),
                           child: Row(
                             mainAxisAlignment: MainAxisAlignment.spaceBetween,
                             children: [
@@ -381,7 +382,7 @@ class _InvoiceDetailScreenState extends ConsumerState<InvoiceDetailScreen> {
 
                   // Payment Info
                   Container(
-                    padding: const EdgeInsets.all(16),
+                    padding: const EdgeInsets.all(AppSpacing.lg),
                     decoration: BoxDecoration(
                       color: surfaceColor,
                       borderRadius: BorderRadius.circular(12),
@@ -442,7 +443,7 @@ class _InvoiceDetailScreenState extends ConsumerState<InvoiceDetailScreen> {
     final secondaryColor = isDark ? AppColors.darkTextSecondary : AppColors.textSecondary;
 
     return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+      padding: const EdgeInsets.symmetric(horizontal: AppSpacing.lg, vertical: AppSpacing.md),
       child: Row(
         children: [
           Expanded(
@@ -718,3 +719,4 @@ class _InvoiceDetailScreenState extends ConsumerState<InvoiceDetailScreen> {
     }
   }
 }
+
