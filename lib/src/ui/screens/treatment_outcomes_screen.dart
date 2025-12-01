@@ -120,7 +120,7 @@ class _TreatmentOutcomesScreenState extends ConsumerState<TreatmentOutcomesScree
     final completed = _filteredOutcomes.where((o) => o.outcome != 'ongoing').toList();
 
     return ListView(
-      padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.all(AppSpacing.lg),
       children: [
         if (ongoing.isNotEmpty && _filterStatus != 'completed') ...[
           _buildSectionHeader('Ongoing Treatments', Icons.hourglass_top, Colors.orange, ongoing.length),
@@ -145,7 +145,7 @@ class _TreatmentOutcomesScreenState extends ConsumerState<TreatmentOutcomesScree
         Text(title, style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
         const SizedBox(width: 8),
         Container(
-          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+          padding: const EdgeInsets.symmetric(horizontal: AppSpacing.sm, vertical: AppSpacing.xxs),
           decoration: BoxDecoration(
             color: color.withOpacity(0.1),
             borderRadius: BorderRadius.circular(12),
@@ -166,14 +166,14 @@ class _TreatmentOutcomesScreenState extends ConsumerState<TreatmentOutcomesScree
         onTap: () => _showOutcomeDetails(outcome),
         borderRadius: BorderRadius.circular(12),
         child: Padding(
-          padding: const EdgeInsets.all(16),
+          padding: const EdgeInsets.all(AppSpacing.lg),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Row(
                 children: [
                   Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                    padding: const EdgeInsets.symmetric(horizontal: AppSpacing.sm, vertical: AppSpacing.xs),
                     decoration: BoxDecoration(
                       color: _getTypeColor(outcome.treatmentType).withOpacity(0.1),
                       borderRadius: BorderRadius.circular(8),
@@ -189,7 +189,7 @@ class _TreatmentOutcomesScreenState extends ConsumerState<TreatmentOutcomesScree
                   ),
                   const Spacer(),
                   Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                    padding: const EdgeInsets.symmetric(horizontal: AppSpacing.sm, vertical: AppSpacing.xs),
                     decoration: BoxDecoration(
                       color: outcomeInfo.color.withOpacity(0.1),
                       borderRadius: BorderRadius.circular(8),
@@ -329,7 +329,7 @@ class _TreatmentOutcomesScreenState extends ConsumerState<TreatmentOutcomesScree
         minChildSize: 0.5,
         expand: false,
         builder: (context, scrollController) => Padding(
-          padding: const EdgeInsets.all(24),
+          padding: const EdgeInsets.all(AppSpacing.xxl),
           child: ListView(
             controller: scrollController,
             children: [
@@ -347,7 +347,7 @@ class _TreatmentOutcomesScreenState extends ConsumerState<TreatmentOutcomesScree
                         ),
                         const SizedBox(height: 4),
                         Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                          padding: const EdgeInsets.symmetric(horizontal: AppSpacing.sm, vertical: AppSpacing.xs),
                           decoration: BoxDecoration(
                             color: _getTypeColor(outcome.treatmentType).withOpacity(0.1),
                             borderRadius: BorderRadius.circular(8),
@@ -414,7 +414,7 @@ class _TreatmentOutcomesScreenState extends ConsumerState<TreatmentOutcomesScree
 
   Widget _buildDetailRow(String label, String value, {IconData? icon, Color? color}) {
     return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 8),
+      padding: const EdgeInsets.symmetric(vertical: AppSpacing.sm),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -728,3 +728,4 @@ class _TreatmentOutcomesScreenState extends ConsumerState<TreatmentOutcomesScree
     );
   }
 }
+

@@ -7,6 +7,7 @@ import 'package:intl/intl.dart';
 import '../../db/doctor_db.dart';
 import '../../providers/db_provider.dart';
 import '../../theme/app_theme.dart';
+import '../../core/theme/design_tokens.dart';
 
 /// Comprehensive Treatment Progress Screen
 /// Shows treatment sessions, medication responses, goals progress, and side effect monitoring
@@ -133,7 +134,7 @@ class _TreatmentProgressScreenState extends ConsumerState<TreatmentProgressScree
     final isDark = Theme.of(context).brightness == Brightness.dark;
     
     return Container(
-      padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.all(AppSpacing.lg),
       child: SingleChildScrollView(
         scrollDirection: Axis.horizontal,
         child: Row(
@@ -185,7 +186,7 @@ class _TreatmentProgressScreenState extends ConsumerState<TreatmentProgressScree
     final isDark = Theme.of(context).brightness == Brightness.dark;
     
     return AppCard(
-      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+      padding: const EdgeInsets.symmetric(horizontal: AppSpacing.xl, vertical: AppSpacing.lg),
       color: isDark ? AppColors.darkSurface : Colors.white,
       borderRadius: BorderRadius.circular(16),
       borderColor: color.withOpacity(0.3),
@@ -200,7 +201,7 @@ class _TreatmentProgressScreenState extends ConsumerState<TreatmentProgressScree
       child: Row(
         children: [
           Container(
-            padding: const EdgeInsets.all(10),
+            padding: const EdgeInsets.all(AppSpacing.md),
             decoration: BoxDecoration(
               color: color.withOpacity(0.1),
               borderRadius: BorderRadius.circular(10),
@@ -244,7 +245,7 @@ class _TreatmentProgressScreenState extends ConsumerState<TreatmentProgressScree
     }
 
     return ListView.builder(
-      padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.all(AppSpacing.lg),
       itemCount: _sessions.length,
       itemBuilder: (context, index) => _buildSessionCard(context, _sessions[index]),
     );
@@ -297,14 +298,14 @@ class _TreatmentProgressScreenState extends ConsumerState<TreatmentProgressScree
           onTap: () => _showSessionDetails(context, session),
           borderRadius: BorderRadius.circular(16),
           child: Padding(
-            padding: const EdgeInsets.all(16),
+            padding: const EdgeInsets.all(AppSpacing.lg),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Row(
                   children: [
                     Container(
-                      padding: const EdgeInsets.all(10),
+                      padding: const EdgeInsets.all(AppSpacing.md),
                       decoration: BoxDecoration(
                         color: providerColor.withOpacity(0.1),
                         borderRadius: BorderRadius.circular(10),
@@ -340,7 +341,7 @@ class _TreatmentProgressScreenState extends ConsumerState<TreatmentProgressScree
                     // Mood indicator
                     if (session.moodRating != null)
                       Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                        padding: const EdgeInsets.symmetric(horizontal: AppSpacing.md, vertical: AppSpacing.xs),
                         decoration: BoxDecoration(
                           color: _getMoodColor(session.moodRating!).withOpacity(0.1),
                           borderRadius: BorderRadius.circular(12),
@@ -403,7 +404,7 @@ class _TreatmentProgressScreenState extends ConsumerState<TreatmentProgressScree
                 if (session.riskAssessment.isNotEmpty && session.riskAssessment != 'none') ...[
                   const SizedBox(height: 8),
                   Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                    padding: const EdgeInsets.symmetric(horizontal: AppSpacing.sm, vertical: AppSpacing.xs),
                     decoration: BoxDecoration(
                       color: _getRiskColor(session.riskAssessment).withOpacity(0.1),
                       borderRadius: BorderRadius.circular(8),
@@ -444,7 +445,7 @@ class _TreatmentProgressScreenState extends ConsumerState<TreatmentProgressScree
     }
 
     return ListView.builder(
-      padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.all(AppSpacing.lg),
       itemCount: _medications.length,
       itemBuilder: (context, index) => _buildMedicationCard(context, _medications[index]),
     );
@@ -502,14 +503,14 @@ class _TreatmentProgressScreenState extends ConsumerState<TreatmentProgressScree
           onTap: () => _showMedicationDetails(context, med),
           borderRadius: BorderRadius.circular(16),
           child: Padding(
-            padding: const EdgeInsets.all(16),
+            padding: const EdgeInsets.all(AppSpacing.lg),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Row(
                   children: [
                     Container(
-                      padding: const EdgeInsets.all(10),
+                      padding: const EdgeInsets.all(AppSpacing.md),
                       decoration: BoxDecoration(
                         color: statusColor.withOpacity(0.1),
                         borderRadius: BorderRadius.circular(10),
@@ -541,7 +542,7 @@ class _TreatmentProgressScreenState extends ConsumerState<TreatmentProgressScree
                       ),
                     ),
                     Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                      padding: const EdgeInsets.symmetric(horizontal: AppSpacing.md, vertical: AppSpacing.xs),
                       decoration: BoxDecoration(
                         color: statusColor.withOpacity(0.1),
                         borderRadius: BorderRadius.circular(12),
@@ -600,7 +601,7 @@ class _TreatmentProgressScreenState extends ConsumerState<TreatmentProgressScree
                 if (med.sideEffectSeverity != 'none' && med.sideEffectSeverity.isNotEmpty) ...[
                   const SizedBox(height: 8),
                   Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                    padding: const EdgeInsets.symmetric(horizontal: AppSpacing.sm, vertical: AppSpacing.xs),
                     decoration: BoxDecoration(
                       color: _getSeverityColor(med.sideEffectSeverity).withOpacity(0.1),
                       borderRadius: BorderRadius.circular(8),
@@ -630,7 +631,7 @@ class _TreatmentProgressScreenState extends ConsumerState<TreatmentProgressScree
                 if (!med.adherent) ...[
                   const SizedBox(height: 8),
                   Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                    padding: const EdgeInsets.symmetric(horizontal: AppSpacing.sm, vertical: AppSpacing.xs),
                     decoration: BoxDecoration(
                       color: AppColors.error.withOpacity(0.1),
                       borderRadius: BorderRadius.circular(8),
@@ -671,7 +672,7 @@ class _TreatmentProgressScreenState extends ConsumerState<TreatmentProgressScree
     }
 
     return ListView.builder(
-      padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.all(AppSpacing.lg),
       itemCount: _goals.length,
       itemBuilder: (context, index) => _buildGoalCard(context, _goals[index]),
     );
@@ -736,14 +737,14 @@ class _TreatmentProgressScreenState extends ConsumerState<TreatmentProgressScree
           onTap: () => _showGoalDetails(context, goal),
           borderRadius: BorderRadius.circular(16),
           child: Padding(
-            padding: const EdgeInsets.all(16),
+            padding: const EdgeInsets.all(AppSpacing.lg),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Row(
                   children: [
                     Container(
-                      padding: const EdgeInsets.all(10),
+                      padding: const EdgeInsets.all(AppSpacing.md),
                       decoration: BoxDecoration(
                         color: statusColor.withOpacity(0.1),
                         borderRadius: BorderRadius.circular(10),
@@ -758,7 +759,7 @@ class _TreatmentProgressScreenState extends ConsumerState<TreatmentProgressScree
                           Row(
                             children: [
                               Container(
-                                padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                                padding: const EdgeInsets.symmetric(horizontal: AppSpacing.xs, vertical: AppSpacing.xxs),
                                 decoration: BoxDecoration(
                                   color: priorityColor.withOpacity(0.1),
                                   borderRadius: BorderRadius.circular(4),
@@ -887,7 +888,7 @@ class _TreatmentProgressScreenState extends ConsumerState<TreatmentProgressScree
           style: TextStyle(fontSize: 9, color: color),
         ),
         Container(
-          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+          padding: const EdgeInsets.symmetric(horizontal: AppSpacing.sm, vertical: AppSpacing.xs),
           decoration: BoxDecoration(
             color: color.withOpacity(0.1),
             borderRadius: BorderRadius.circular(8),
@@ -921,7 +922,7 @@ class _TreatmentProgressScreenState extends ConsumerState<TreatmentProgressScree
     }
 
     return ListView.builder(
-      padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.all(AppSpacing.lg),
       itemCount: medsWithSideEffects.length,
       itemBuilder: (context, index) => _buildSideEffectCard(context, medsWithSideEffects[index]),
     );
@@ -960,14 +961,14 @@ class _TreatmentProgressScreenState extends ConsumerState<TreatmentProgressScree
         ],
       ),
       child: Padding(
-        padding: const EdgeInsets.all(16),
+        padding: const EdgeInsets.all(AppSpacing.lg),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Row(
               children: [
                 Container(
-                  padding: const EdgeInsets.all(10),
+                  padding: const EdgeInsets.all(AppSpacing.md),
                   decoration: BoxDecoration(
                     color: severityColor.withOpacity(0.1),
                     borderRadius: BorderRadius.circular(10),
@@ -998,7 +999,7 @@ class _TreatmentProgressScreenState extends ConsumerState<TreatmentProgressScree
                   ),
                 ),
                 Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                  padding: const EdgeInsets.symmetric(horizontal: AppSpacing.md, vertical: AppSpacing.xs),
                   decoration: BoxDecoration(
                     color: severityColor.withOpacity(0.1),
                     borderRadius: BorderRadius.circular(12),
@@ -1020,7 +1021,7 @@ class _TreatmentProgressScreenState extends ConsumerState<TreatmentProgressScree
                 spacing: 8,
                 runSpacing: 8,
                 children: sideEffectsList.map((effect) => Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                  padding: const EdgeInsets.symmetric(horizontal: AppSpacing.md, vertical: AppSpacing.xs),
                   decoration: BoxDecoration(
                     color: severityColor.withOpacity(0.05),
                     borderRadius: BorderRadius.circular(16),
@@ -1039,7 +1040,7 @@ class _TreatmentProgressScreenState extends ConsumerState<TreatmentProgressScree
             if (med.providerNotes.isNotEmpty) ...[
               const SizedBox(height: 12),
               Container(
-                padding: const EdgeInsets.all(12),
+                padding: const EdgeInsets.all(AppSpacing.md),
                 decoration: BoxDecoration(
                   color: isDark ? AppColors.darkBackground : AppColors.background,
                   borderRadius: BorderRadius.circular(8),
@@ -1080,12 +1081,12 @@ class _TreatmentProgressScreenState extends ConsumerState<TreatmentProgressScree
     
     return Center(
       child: Padding(
-        padding: const EdgeInsets.all(32),
+        padding: const EdgeInsets.all(AppSpacing.xxxl),
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
             Container(
-              padding: const EdgeInsets.all(24),
+              padding: const EdgeInsets.all(AppSpacing.xxl),
               decoration: BoxDecoration(
                 color: color.withOpacity(0.1),
                 shape: BoxShape.circle,
@@ -1167,7 +1168,7 @@ class _TreatmentProgressScreenState extends ConsumerState<TreatmentProgressScree
           children: [
             ListTile(
               leading: Container(
-                padding: const EdgeInsets.all(8),
+                padding: const EdgeInsets.all(AppSpacing.sm),
                 decoration: BoxDecoration(
                   color: AppColors.primary.withOpacity(0.1),
                   borderRadius: BorderRadius.circular(8),
@@ -1183,7 +1184,7 @@ class _TreatmentProgressScreenState extends ConsumerState<TreatmentProgressScree
             ),
             ListTile(
               leading: Container(
-                padding: const EdgeInsets.all(8),
+                padding: const EdgeInsets.all(AppSpacing.sm),
                 decoration: BoxDecoration(
                   color: AppColors.success.withOpacity(0.1),
                   borderRadius: BorderRadius.circular(8),
@@ -1199,7 +1200,7 @@ class _TreatmentProgressScreenState extends ConsumerState<TreatmentProgressScree
             ),
             ListTile(
               leading: Container(
-                padding: const EdgeInsets.all(8),
+                padding: const EdgeInsets.all(AppSpacing.sm),
                 decoration: BoxDecoration(
                   color: AppColors.info.withOpacity(0.1),
                   borderRadius: BorderRadius.circular(8),
@@ -1237,7 +1238,7 @@ class _TreatmentProgressScreenState extends ConsumerState<TreatmentProgressScree
         expand: false,
         builder: (context, scrollController) => ListView(
           controller: scrollController,
-          padding: const EdgeInsets.all(24),
+          padding: const EdgeInsets.all(AppSpacing.xxl),
           children: [
             Center(
               child: Container(
@@ -1360,3 +1361,4 @@ class _TreatmentProgressScreenState extends ConsumerState<TreatmentProgressScree
     );
   }
 }
+

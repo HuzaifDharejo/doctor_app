@@ -7,6 +7,7 @@ import 'package:intl/intl.dart';
 import '../../db/doctor_db.dart';
 import '../../providers/db_provider.dart';
 import '../../theme/app_theme.dart';
+import '../../core/theme/design_tokens.dart';
 
 /// Comprehensive Treatment Dashboard
 /// Displays all treatments, progress tracking, medication effectiveness,
@@ -160,7 +161,7 @@ class _TreatmentDashboardState extends ConsumerState<TreatmentDashboard>
   /// Tab 1: Overview with key metrics and quick stats
   Widget _buildOverviewTab(BuildContext context, ColorScheme colorScheme, bool isDark) {
     return SingleChildScrollView(
-      padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.all(AppSpacing.lg),
       child: Column(
         spacing: 16,
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -291,7 +292,7 @@ class _TreatmentDashboardState extends ConsumerState<TreatmentDashboard>
       borderRadius: BorderRadius.circular(12),
       borderColor: color.withValues(alpha: 0.3),
       borderWidth: 1,
-      padding: const EdgeInsets.all(12),
+      padding: const EdgeInsets.all(AppSpacing.md),
       child: Column(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -344,7 +345,7 @@ class _TreatmentDashboardState extends ConsumerState<TreatmentDashboard>
     }
 
     return ListView.builder(
-      padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.all(AppSpacing.lg),
       itemCount: activeTreatments.length,
       itemBuilder: (context, index) => _buildActiveTreatmentCard(
         activeTreatments[index],
@@ -367,7 +368,7 @@ class _TreatmentDashboardState extends ConsumerState<TreatmentDashboard>
       margin: const EdgeInsets.only(bottom: 12),
       color: isDark ? Colors.grey[900] : Colors.white,
       child: Padding(
-        padding: const EdgeInsets.all(16),
+        padding: const EdgeInsets.all(AppSpacing.lg),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           spacing: 12,
@@ -400,7 +401,7 @@ class _TreatmentDashboardState extends ConsumerState<TreatmentDashboard>
                   ),
                 ),
                 Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                  padding: const EdgeInsets.symmetric(horizontal: AppSpacing.sm, vertical: AppSpacing.xs),
                   decoration: BoxDecoration(
                     color: _getTreatmentStatusColor(treatment.outcome).withValues(alpha: 0.2),
                     borderRadius: BorderRadius.circular(6),
@@ -434,7 +435,7 @@ class _TreatmentDashboardState extends ConsumerState<TreatmentDashboard>
               ),
             if (treatment.sideEffects.isNotEmpty)
               Container(
-                padding: const EdgeInsets.all(8),
+                padding: const EdgeInsets.all(AppSpacing.sm),
                 decoration: BoxDecoration(
                   color: Colors.red.withValues(alpha: 0.1),
                   borderRadius: BorderRadius.circular(6),
@@ -495,7 +496,7 @@ class _TreatmentDashboardState extends ConsumerState<TreatmentDashboard>
     }
 
     return ListView.builder(
-      padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.all(AppSpacing.lg),
       itemCount: _medications.length,
       itemBuilder: (context, index) => _buildMedicationCard(
         _medications[index],
@@ -518,7 +519,7 @@ class _TreatmentDashboardState extends ConsumerState<TreatmentDashboard>
       margin: const EdgeInsets.only(bottom: 12),
       color: isDark ? Colors.grey[900] : Colors.white,
       child: Padding(
-        padding: const EdgeInsets.all(16),
+        padding: const EdgeInsets.all(AppSpacing.lg),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           spacing: 12,
@@ -557,7 +558,7 @@ class _TreatmentDashboardState extends ConsumerState<TreatmentDashboard>
                   ),
                 ),
                 Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                  padding: const EdgeInsets.symmetric(horizontal: AppSpacing.sm, vertical: AppSpacing.xs),
                   decoration: BoxDecoration(
                     color: isActive
                         ? Colors.green.withValues(alpha: 0.2)
@@ -583,7 +584,7 @@ class _TreatmentDashboardState extends ConsumerState<TreatmentDashboard>
                 children: [
                   const Text('Response:', style: TextStyle(fontWeight: FontWeight.w500)),
                   Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                    padding: const EdgeInsets.symmetric(horizontal: AppSpacing.sm, vertical: AppSpacing.xs),
                     decoration: BoxDecoration(
                       color: _getMedicationResponseColor(medication.responseStatus).withValues(alpha: 0.2),
                       borderRadius: BorderRadius.circular(4),
@@ -627,7 +628,7 @@ class _TreatmentDashboardState extends ConsumerState<TreatmentDashboard>
             // Side Effects
             if (medication.sideEffects.isNotEmpty && medication.sideEffects != '[]')
               Container(
-                padding: const EdgeInsets.all(8),
+                padding: const EdgeInsets.all(AppSpacing.sm),
                 decoration: BoxDecoration(
                   color: Colors.orange.withValues(alpha: 0.1),
                   borderRadius: BorderRadius.circular(6),
@@ -697,7 +698,7 @@ class _TreatmentDashboardState extends ConsumerState<TreatmentDashboard>
     }
 
     return ListView.builder(
-      padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.all(AppSpacing.lg),
       itemCount: _goals.length,
       itemBuilder: (context, index) => _buildGoalCard(
         _goals[index],
@@ -720,7 +721,7 @@ class _TreatmentDashboardState extends ConsumerState<TreatmentDashboard>
       margin: const EdgeInsets.only(bottom: 12),
       color: isDark ? Colors.grey[900] : Colors.white,
       child: Padding(
-        padding: const EdgeInsets.all(16),
+        padding: const EdgeInsets.all(AppSpacing.lg),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           spacing: 12,
@@ -740,7 +741,7 @@ class _TreatmentDashboardState extends ConsumerState<TreatmentDashboard>
                   ),
                 ),
                 Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                  padding: const EdgeInsets.symmetric(horizontal: AppSpacing.sm, vertical: AppSpacing.xs),
                   decoration: BoxDecoration(
                     color: statusColor.withValues(alpha: 0.2),
                     borderRadius: BorderRadius.circular(6),
@@ -813,7 +814,7 @@ class _TreatmentDashboardState extends ConsumerState<TreatmentDashboard>
 
             if (goal.barriers.isNotEmpty)
               Container(
-                padding: const EdgeInsets.all(8),
+                padding: const EdgeInsets.all(AppSpacing.sm),
                 decoration: BoxDecoration(
                   color: Colors.amber.withValues(alpha: 0.1),
                   borderRadius: BorderRadius.circular(6),
@@ -882,7 +883,7 @@ class _TreatmentDashboardState extends ConsumerState<TreatmentDashboard>
     }
 
     return ListView.builder(
-      padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.all(AppSpacing.lg),
       itemCount: _sessions.length,
       itemBuilder: (context, index) => _buildSessionCard(
         _sessions[index],
@@ -904,7 +905,7 @@ class _TreatmentDashboardState extends ConsumerState<TreatmentDashboard>
       margin: const EdgeInsets.only(bottom: 12),
       color: isDark ? Colors.grey[900] : Colors.white,
       child: Padding(
-        padding: const EdgeInsets.all(16),
+        padding: const EdgeInsets.all(AppSpacing.lg),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           spacing: 12,
@@ -933,7 +934,7 @@ class _TreatmentDashboardState extends ConsumerState<TreatmentDashboard>
                   ],
                 ),
                 Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                  padding: const EdgeInsets.symmetric(horizontal: AppSpacing.sm, vertical: AppSpacing.xs),
                   decoration: BoxDecoration(
                     color: colorScheme.primary.withValues(alpha: 0.2),
                     borderRadius: BorderRadius.circular(6),
@@ -1011,7 +1012,7 @@ class _TreatmentDashboardState extends ConsumerState<TreatmentDashboard>
 
             if (session.riskAssessment.isNotEmpty && session.riskAssessment != 'none')
               Container(
-                padding: const EdgeInsets.all(8),
+                padding: const EdgeInsets.all(AppSpacing.sm),
                 decoration: BoxDecoration(
                   color: _getRiskColor(session.riskAssessment).withValues(alpha: 0.1),
                   borderRadius: BorderRadius.circular(6),
@@ -1110,7 +1111,7 @@ class _TreatmentDashboardState extends ConsumerState<TreatmentDashboard>
     }
 
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+      padding: const EdgeInsets.symmetric(horizontal: AppSpacing.sm, vertical: AppSpacing.xs),
       decoration: BoxDecoration(
         color: scoreColor.withValues(alpha: 0.2),
         borderRadius: BorderRadius.circular(4),
@@ -1126,3 +1127,4 @@ class _TreatmentDashboardState extends ConsumerState<TreatmentDashboard>
     );
   }
 }
+
