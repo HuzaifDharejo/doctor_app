@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
+import '../../../core/components/app_input.dart';
 import '../../../db/doctor_db.dart';
 import '../../../theme/app_theme.dart';
 
@@ -282,28 +283,20 @@ class RecordFormWidgets {
     TextInputType? keyboardType,
     String? Function(String?)? validator,
   }) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-    
-    return DecoratedBox(
-      decoration: BoxDecoration(
-        color: Theme.of(context).colorScheme.surface,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(
-          color: isDark ? AppColors.darkDivider : AppColors.divider,
-        ),
-      ),
-      child: TextFormField(
-        controller: controller,
-        maxLines: maxLines,
-        keyboardType: keyboardType,
-        validator: validator,
-        decoration: InputDecoration(
-          hintText: hint,
-          border: InputBorder.none,
-          contentPadding: const EdgeInsets.all(16),
-        ),
-      ),
-    );
+    return maxLines > 1
+        ? AppInput.multiline(
+            controller: controller,
+            hint: hint,
+            maxLines: maxLines,
+            keyboardType: keyboardType,
+            validator: validator,
+          )
+        : AppInput.text(
+            controller: controller,
+            hint: hint,
+            keyboardType: keyboardType,
+            validator: validator,
+          );
   }
 
   /// Vital sign field with label and unit
@@ -341,23 +334,10 @@ class RecordFormWidgets {
           ),
           const SizedBox(width: 8),
           Expanded(
-            child: TextField(
+            child: AppInput.text(
               controller: controller,
+              hint: hint ?? '---',
               keyboardType: TextInputType.text,
-              style: TextStyle(
-                fontSize: 16,
-                fontWeight: FontWeight.w600,
-                color: isDark ? Colors.white : AppColors.textPrimary,
-              ),
-              decoration: InputDecoration(
-                hintText: hint ?? '---',
-                hintStyle: TextStyle(
-                  color: isDark ? AppColors.darkTextHint : AppColors.textHint,
-                ),
-                border: InputBorder.none,
-                isDense: true,
-                contentPadding: EdgeInsets.zero,
-              ),
             ),
           ),
           Text(
