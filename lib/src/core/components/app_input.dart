@@ -311,7 +311,7 @@ class _AppInputState extends State<AppInput> {
           decoration: InputDecoration(
             hintText: widget.hint,
             hintStyle: TextStyle(
-              color: colorScheme.outline.withOpacity(0.7),
+              color: colorScheme.outline.withValues(alpha: 0.7),
               fontSize: AppFontSize.bodyMedium,
             ),
             prefixIcon: widget.prefixIcon != null
@@ -344,8 +344,8 @@ class _AppInputState extends State<AppInput> {
             filled: true,
             fillColor: widget.backgroundColor ??
                 (isDarkMode
-                    ? colorScheme.surface.withOpacity(0.5)
-                    : colorScheme.surfaceVariant.withOpacity(0.3)),
+                    ? colorScheme.surface.withValues(alpha: 0.5)
+                    : colorScheme.surfaceVariant.withValues(alpha: 0.3)),
             border: OutlineInputBorder(
               borderRadius: BorderRadius.circular(AppRadius.input),
               borderSide: BorderSide(
@@ -384,7 +384,7 @@ class _AppInputState extends State<AppInput> {
             disabledBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(AppRadius.input),
               borderSide: BorderSide(
-                color: colorScheme.outline.withOpacity(0.38),
+                color: colorScheme.outline.withValues(alpha: 0.38),
                 width: 1.5,
               ),
             ),

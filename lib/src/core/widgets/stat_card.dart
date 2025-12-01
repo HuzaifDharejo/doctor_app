@@ -85,7 +85,7 @@ class StatCard extends StatelessWidget {
                     Container(
                       padding: const EdgeInsets.all(8),
                       decoration: BoxDecoration(
-                        color: effectiveIconColor.withOpacity(0.1),
+                        color: effectiveIconColor.withValues(alpha: 0.1),
                         borderRadius: BorderRadius.circular(8),
                       ),
                       child: Icon(
@@ -100,7 +100,7 @@ class StatCard extends StatelessWidget {
                     child: Text(
                       title,
                       style: theme.textTheme.bodyMedium?.copyWith(
-                        color: theme.colorScheme.onSurface.withOpacity(0.7),
+                        color: theme.colorScheme.onSurface.withValues(alpha: 0.7),
                       ),
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
@@ -129,7 +129,7 @@ class StatCard extends StatelessWidget {
                           Text(
                             subtitle!,
                             style: theme.textTheme.bodySmall?.copyWith(
-                              color: theme.colorScheme.onSurface.withOpacity(0.6),
+                              color: theme.colorScheme.onSurface.withValues(alpha: 0.6),
                             ),
                             maxLines: 1,
                             overflow: TextOverflow.ellipsis,
@@ -212,7 +212,7 @@ class StatCardCompact extends StatelessWidget {
                     Text(
                       title,
                       style: theme.textTheme.bodySmall?.copyWith(
-                        color: theme.colorScheme.onSurface.withOpacity(0.7),
+                        color: theme.colorScheme.onSurface.withValues(alpha: 0.7),
                       ),
                     ),
                     const SizedBox(height: 2),
@@ -228,7 +228,7 @@ class StatCardCompact extends StatelessWidget {
               if (onTap != null)
                 Icon(
                   Icons.chevron_right,
-                  color: theme.colorScheme.onSurface.withOpacity(0.5),
+                  color: theme.colorScheme.onSurface.withValues(alpha: 0.5),
                 ),
             ],
           ),
@@ -285,7 +285,7 @@ class StatCardHero extends StatelessWidget {
       end: Alignment.bottomRight,
       colors: [
         theme.colorScheme.primary,
-        theme.colorScheme.primary.withOpacity(0.8),
+        theme.colorScheme.primary.withValues(alpha: 0.8),
       ],
     );
 
@@ -307,7 +307,7 @@ class StatCardHero extends StatelessWidget {
                     Container(
                       padding: const EdgeInsets.all(10),
                       decoration: BoxDecoration(
-                        color: Colors.white.withOpacity(0.2),
+                        color: Colors.white.withValues(alpha: 0.2),
                         borderRadius: BorderRadius.circular(10),
                       ),
                       child: Icon(
@@ -322,7 +322,7 @@ class StatCardHero extends StatelessWidget {
                     child: Text(
                       title,
                       style: theme.textTheme.titleMedium?.copyWith(
-                        color: Colors.white.withOpacity(0.9),
+                        color: Colors.white.withValues(alpha: 0.9),
                       ),
                     ),
                   ),
@@ -349,7 +349,7 @@ class StatCardHero extends StatelessWidget {
                 Text(
                   description!,
                   style: theme.textTheme.bodySmall?.copyWith(
-                    color: Colors.white.withOpacity(0.8),
+                    color: Colors.white.withValues(alpha: 0.8),
                   ),
                 ),
               ],
@@ -401,15 +401,15 @@ class _TrendIndicator extends StatelessWidget {
         icon = Icons.trending_down;
       case StatTrend.neutral:
         color = lightMode
-            ? Colors.white.withOpacity(0.7)
-            : theme.colorScheme.onSurface.withOpacity(0.6);
+            ? Colors.white.withValues(alpha: 0.7)
+            : theme.colorScheme.onSurface.withValues(alpha: 0.6);
         icon = Icons.trending_flat;
     }
 
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
       decoration: BoxDecoration(
-        color: color.withOpacity(lightMode ? 0.2 : 0.1),
+        color: color.withValues(alpha: lightMode ? 0.2 : 0.1),
         borderRadius: BorderRadius.circular(12),
       ),
       child: Row(

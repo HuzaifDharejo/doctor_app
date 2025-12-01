@@ -6,12 +6,14 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 
+import '../../core/theme/design_tokens.dart';
+import '../../core/widgets/loading_state.dart';
+import '../../core/widgets/error_state.dart';
 import '../../db/doctor_db.dart';
 import '../../providers/db_provider.dart';
 import '../../services/allergy_checking_service.dart';
 import '../../services/drug_interaction_service.dart';
 import '../../theme/app_theme.dart';
-import '../../core/theme/dart';
 import 'follow_ups_screen.dart';
 import 'patients_screen.dart';
 import 'vital_signs_screen.dart';

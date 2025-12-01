@@ -195,7 +195,7 @@ class AppHeader extends StatelessWidget {
                       fontSize: isCompact ? AppFontSize.smCompact : AppFontSize.md,
                       color: variant == AppHeaderVariant.standard
                           ? (isDark ? AppColors.darkTextSecondary : AppColors.textSecondary)
-                          : textColor?.withOpacity(0.9) ?? Colors.white.withOpacity(0.9),
+                          : textColor?.withValues(alpha: 0.9) ?? Colors.white.withValues(alpha: 0.9),
                     ),
                   ),
                 ],

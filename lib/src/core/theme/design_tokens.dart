@@ -138,7 +138,7 @@ class AppShadow {
   // BoxShadow presets (non-const for use in runtime)
   static final List<BoxShadow> small = [
     BoxShadow(
-      color: Colors.black.withOpacity(0.08),
+      color: Colors.black.withValues(alpha: 0.08),
       blurRadius: shadowBlurSmall,
       offset: const Offset(0, 1),
     ),
@@ -146,7 +146,7 @@ class AppShadow {
 
   static final List<BoxShadow> medium = [
     BoxShadow(
-      color: Colors.black.withOpacity(0.1),
+      color: Colors.black.withValues(alpha: 0.1),
       blurRadius: shadowBlurMedium,
       offset: const Offset(0, 2),
     ),
@@ -154,7 +154,7 @@ class AppShadow {
 
   static final List<BoxShadow> large = [
     BoxShadow(
-      color: Colors.black.withOpacity(0.12),
+      color: Colors.black.withValues(alpha: 0.12),
       blurRadius: shadowBlurLarge,
       offset: const Offset(0, 4),
     ),

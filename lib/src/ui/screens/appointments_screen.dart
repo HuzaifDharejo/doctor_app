@@ -12,7 +12,7 @@ import '../../core/widgets/gradient_fab.dart';
 import '../../core/widgets/loading_state.dart';
 import '../../core/widgets/error_state.dart';
 import '../../core/widgets/empty_state.dart';
-import '../../core/components/app_card.dart';
+import '../../core/widgets/app_card.dart';
 import '../../core/constants/app_constants.dart';
 import '../../db/doctor_db.dart';
 import '../../providers/db_provider.dart';
