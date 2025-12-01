@@ -198,7 +198,7 @@ class _TutorialOverlayState extends State<TutorialOverlay>
         borderRadius: BorderRadius.circular(16),
         elevation: 8,
         child: Padding(
-          padding: const EdgeInsets.all(20),
+          padding: const EdgeInsets.all(AppSpacing.xl),
           child: Column(
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -208,7 +208,7 @@ class _TutorialOverlayState extends State<TutorialOverlay>
                 children: [
                   if (step.icon != null) ...[
                     Container(
-                      padding: const EdgeInsets.all(12),
+                      padding: const EdgeInsets.all(AppSpacing.md),
                       decoration: BoxDecoration(
                         color: widget.highlightColor.withValues(alpha: 0.1),
                         borderRadius: BorderRadius.circular(12),
@@ -372,3 +372,4 @@ class TutorialManager {
     _tutorialCompleted = false;
   }
 }
+

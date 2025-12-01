@@ -5,6 +5,7 @@ import '../../db/doctor_db.dart';
 import '../../providers/db_provider.dart';
 import '../../services/treatment_efficacy_service.dart';
 import '../../theme/app_theme.dart';
+import '../../core/theme/design_tokens.dart';
 
 /// Dashboard card showing treatment efficacy overview for a specific patient
 class TreatmentEfficacyCard extends ConsumerWidget {
@@ -39,16 +40,16 @@ class TreatmentEfficacyCard extends ConsumerWidget {
             final recentTreatment = metrics.isNotEmpty ? metrics.last : null;
 
             return Card(
-              margin: const EdgeInsets.symmetric(vertical: 12),
+              margin: const EdgeInsets.symmetric(vertical: AppSpacing.md),
               child: Padding(
-                padding: const EdgeInsets.all(16),
+                padding: const EdgeInsets.all(AppSpacing.lg),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Row(
                       children: [
                         Container(
-                          padding: const EdgeInsets.all(10),
+                          padding: const EdgeInsets.all(AppSpacing.md),
                           decoration: BoxDecoration(
                             color: AppColors.primary.withValues(alpha: 0.1),
                             borderRadius: BorderRadius.circular(10),
@@ -111,9 +112,9 @@ class TreatmentEfficacyCard extends ConsumerWidget {
 
   Widget _buildLoadingCard(BuildContext context) {
     return Card(
-      margin: const EdgeInsets.symmetric(vertical: 12),
+      margin: const EdgeInsets.symmetric(vertical: AppSpacing.md),
       child: Padding(
-        padding: const EdgeInsets.all(16),
+        padding: const EdgeInsets.all(AppSpacing.lg),
         child: Center(
           child: SizedBox(
             height: 120,
@@ -133,9 +134,9 @@ class TreatmentEfficacyCard extends ConsumerWidget {
 
   Widget _buildEmptyCard(BuildContext context) {
     return Card(
-      margin: const EdgeInsets.symmetric(vertical: 12),
+      margin: const EdgeInsets.symmetric(vertical: AppSpacing.md),
       child: Padding(
-        padding: const EdgeInsets.all(16),
+        padding: const EdgeInsets.all(AppSpacing.lg),
         child: Center(
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
@@ -159,9 +160,9 @@ class TreatmentEfficacyCard extends ConsumerWidget {
 
   Widget _buildErrorCard(BuildContext context, String error) {
     return Card(
-      margin: const EdgeInsets.symmetric(vertical: 12),
+      margin: const EdgeInsets.symmetric(vertical: AppSpacing.md),
       child: Padding(
-        padding: const EdgeInsets.all(16),
+        padding: const EdgeInsets.all(AppSpacing.lg),
         child: Center(
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
@@ -223,7 +224,7 @@ class TreatmentEfficacyCard extends ConsumerWidget {
     required Color color,
   }) {
     return Container(
-      padding: const EdgeInsets.all(12),
+      padding: const EdgeInsets.all(AppSpacing.md),
       decoration: BoxDecoration(
         color: color.withValues(alpha: 0.1),
         border: Border.all(color: color.withValues(alpha: 0.3)),
@@ -437,7 +438,7 @@ class VitalSignTrendingWidget extends ConsumerWidget {
 
             return Card(
               child: Padding(
-                padding: const EdgeInsets.all(16),
+                padding: const EdgeInsets.all(AppSpacing.lg),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
@@ -559,3 +560,4 @@ class VitalSignTrendingWidget extends ConsumerWidget {
     }
   }
 }
+

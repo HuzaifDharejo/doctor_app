@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../theme/app_theme.dart';
+import '../../core/theme/design_tokens.dart';
 
 /// A text field that shows suggestion chips when focused (inline below the field)
 class SuggestionTextField extends StatefulWidget {
@@ -128,7 +129,7 @@ class _SuggestionTextFieldState extends State<SuggestionTextField> {
           child: _isFocused
               ? Container(
                   margin: const EdgeInsets.only(top: 8),
-                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
+                  padding: const EdgeInsets.symmetric(horizontal: AppSpacing.sm, vertical: AppSpacing.xs),
                   decoration: BoxDecoration(
                     color: isDark ? AppColors.darkSurface : AppColors.surface,
                     borderRadius: BorderRadius.circular(10),
@@ -157,7 +158,7 @@ class _SuggestionTextFieldState extends State<SuggestionTextField> {
                               behavior: HitTestBehavior.opaque,
                               onTap: () => _onSuggestionTap(suggestion),
                               child: Container(
-                                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                                padding: const EdgeInsets.symmetric(horizontal: AppSpacing.md, vertical: AppSpacing.xs),
                                 decoration: BoxDecoration(
                                   color: isSelected ? AppColors.primary.withValues(alpha: 0.15) : (isDark ? AppColors.darkBackground : Colors.white),
                                   borderRadius: BorderRadius.circular(16),
@@ -288,7 +289,7 @@ class _VitalTextFieldState extends State<VitalTextField> {
             elevation: 4,
             borderRadius: BorderRadius.circular(10),
             child: Container(
-              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
+              padding: const EdgeInsets.symmetric(horizontal: AppSpacing.sm, vertical: AppSpacing.xs),
               decoration: BoxDecoration(
                 color: Theme.of(context).colorScheme.surface,
                 borderRadius: BorderRadius.circular(10),
@@ -382,7 +383,7 @@ class _VitalTextFieldState extends State<VitalTextField> {
         widget.onUnitChanged?.call(unit == widget.alternateUnit);
       },
       child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
+        padding: const EdgeInsets.symmetric(horizontal: AppSpacing.sm, vertical: AppSpacing.xs),
         decoration: BoxDecoration(
           color: isSelected ? AppColors.primary : Colors.transparent,
           borderRadius: BorderRadius.circular(6),
@@ -439,7 +440,7 @@ void showSuggestionBottomSheet({
           ),
           // Title
           Padding(
-            padding: const EdgeInsets.all(16),
+            padding: const EdgeInsets.all(AppSpacing.lg),
             child: Row(
               children: [
                 const Icon(Icons.lightbulb_outline, color: AppColors.warning, size: 20),
@@ -463,7 +464,7 @@ void showSuggestionBottomSheet({
           // Suggestions
           Flexible(
             child: SingleChildScrollView(
-              padding: const EdgeInsets.all(16),
+              padding: const EdgeInsets.all(AppSpacing.lg),
               child: Wrap(
                 spacing: 8,
                 runSpacing: 8,
@@ -506,3 +507,4 @@ void showSuggestionBottomSheet({
     ),
   );
 }
+

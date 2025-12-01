@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../theme/app_theme.dart';
+import '../../core/theme/design_tokens.dart';
 
 class StatCard extends StatelessWidget {
 
@@ -152,3 +153,4 @@ class StatCard extends StatelessWidget {
     );
   }
 }
+

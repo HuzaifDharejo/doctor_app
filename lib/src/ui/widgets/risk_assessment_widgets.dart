@@ -103,7 +103,7 @@ class CriticalAlertsWidget extends StatelessWidget {
     return InkWell(
       onTap: () => onTap?.call(factor),
       child: Padding(
-        padding: const EdgeInsets.symmetric(vertical: 4.0),
+        padding: const EdgeInsets.symmetric(vertical: AppSpacing.xs),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -202,7 +202,7 @@ class RiskSummaryCard extends StatelessWidget {
               const SizedBox(height: 12),
               if (assessment.followUpRequired)
                 Container(
-                  padding: const EdgeInsets.all(8),
+                  padding: const EdgeInsets.all(AppSpacing.sm),
                   decoration: BoxDecoration(
                     color: color.withOpacity(0.15),
                     borderRadius: BorderRadius.circular(8),
@@ -265,7 +265,7 @@ class RiskAssessmentDetail extends StatelessWidget {
             Row(
               children: [
                 Container(
-                  padding: const EdgeInsets.all(8),
+                  padding: const EdgeInsets.all(AppSpacing.sm),
                   decoration: BoxDecoration(
                     color: Color(assessment.overallRiskLevel.colorValue).withOpacity(0.2),
                     borderRadius: BorderRadius.circular(8),
@@ -335,7 +335,7 @@ class RiskAssessmentDetail extends StatelessWidget {
         if (assessment.followUpRequired) ...[
           const SizedBox(height: 12),
           Container(
-            padding: const EdgeInsets.all(12),
+            padding: const EdgeInsets.all(AppSpacing.md),
             decoration: BoxDecoration(
               color: Colors.orange.withOpacity(0.1),
               borderRadius: BorderRadius.circular(8),
@@ -365,7 +365,7 @@ class RiskAssessmentDetail extends StatelessWidget {
   Widget _buildCountBox(BuildContext context, String label, int count) {
     return Expanded(
       child: Container(
-        padding: const EdgeInsets.all(8),
+        padding: const EdgeInsets.all(AppSpacing.sm),
         decoration: BoxDecoration(
           color: Colors.grey.withOpacity(0.1),
           borderRadius: BorderRadius.circular(8),
@@ -428,7 +428,7 @@ class RiskAssessmentDetail extends StatelessWidget {
     final color = Color(factor.riskLevel.colorValue);
 
     return Container(
-      padding: const EdgeInsets.all(12),
+      padding: const EdgeInsets.all(AppSpacing.md),
       decoration: BoxDecoration(
         border: Border.all(color: color, width: 1),
         borderRadius: BorderRadius.circular(8),
@@ -440,7 +440,7 @@ class RiskAssessmentDetail extends StatelessWidget {
           Row(
             children: [
               Container(
-                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                padding: const EdgeInsets.symmetric(horizontal: AppSpacing.sm, vertical: AppSpacing.xs),
                 decoration: BoxDecoration(
                   color: color,
                   borderRadius: BorderRadius.circular(4),
@@ -512,3 +512,4 @@ class RiskAssessmentDetail extends StatelessWidget {
     }
   }
 }
+

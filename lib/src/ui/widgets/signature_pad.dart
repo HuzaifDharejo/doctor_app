@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:image_picker/image_picker.dart';
 import '../../theme/app_theme.dart';
+import '../../core/theme/design_tokens.dart';
 
 /// A signature pad widget for capturing handwritten signatures
 class SignaturePad extends StatefulWidget {
@@ -304,7 +305,7 @@ class _SignaturePadState extends State<SignaturePad> {
                     child: GestureDetector(
                       onTap: _clearSignature,
                       child: Container(
-                        padding: const EdgeInsets.all(8),
+                        padding: const EdgeInsets.all(AppSpacing.sm),
                         decoration: BoxDecoration(color: AppColors.error.withValues(alpha: 0.1), borderRadius: BorderRadius.circular(20)),
                         child: const Icon(Icons.clear, size: 20, color: AppColors.error),
                       ),
@@ -376,7 +377,7 @@ class _ActionButton extends StatelessWidget {
         onTap: onTap,
         borderRadius: BorderRadius.circular(12),
         child: Container(
-          padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
+          padding: const EdgeInsets.symmetric(vertical: AppSpacing.md, horizontal: AppSpacing.lg),
           decoration: BoxDecoration(
             borderRadius: BorderRadius.circular(12),
             border: Border.all(
@@ -501,3 +502,4 @@ class SignaturePreview extends StatelessWidget {
     return const SizedBox();
   }
 }
+

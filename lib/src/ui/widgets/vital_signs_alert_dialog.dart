@@ -39,7 +39,7 @@ class VitalSignsAlertDialog extends StatelessWidget {
             if (_isEmergency) ...[
               Container(
                 width: double.infinity,
-                padding: const EdgeInsets.all(12),
+                padding: const EdgeInsets.all(AppSpacing.md),
                 decoration: BoxDecoration(
                   color: Colors.red[50],
                   border: Border.all(color: Colors.red, width: 2),
@@ -80,7 +80,7 @@ class VitalSignsAlertDialog extends StatelessWidget {
                 abnormalVitals.where((v) => !v.isCritical).isNotEmpty) ...[
               Container(
                 width: double.infinity,
-                padding: const EdgeInsets.all(12),
+                padding: const EdgeInsets.all(AppSpacing.md),
                 decoration: BoxDecoration(
                   color: Colors.orange[50],
                   border: Border.all(color: Colors.orange, width: 1),
@@ -132,7 +132,7 @@ class VitalSignsAlertDialog extends StatelessWidget {
               return Padding(
                 padding: const EdgeInsets.only(bottom: 8),
                 child: Container(
-                  padding: const EdgeInsets.all(10),
+                  padding: const EdgeInsets.all(AppSpacing.md),
                   decoration: BoxDecoration(
                     color: Colors.blue[50],
                     border: Border.all(color: Colors.blue[200]!),
@@ -196,7 +196,7 @@ class VitalSignsAlertDialog extends StatelessWidget {
   Widget _buildVitalAlert(VitalSign vital, Color color) {
     final colorValue = color == Colors.red ? Colors.red[700]! : Colors.orange[700]!;
     return Container(
-      padding: const EdgeInsets.all(8),
+      padding: const EdgeInsets.all(AppSpacing.sm),
       decoration: BoxDecoration(
         color: color.withOpacity(0.05),
         border: Border.all(color: color.withOpacity(0.3)),
@@ -256,3 +256,4 @@ class VitalSignsAlertDialog extends StatelessWidget {
     );
   }
 }
+
