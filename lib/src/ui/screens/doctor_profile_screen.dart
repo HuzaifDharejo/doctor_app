@@ -786,22 +786,22 @@ class _DoctorProfileScreenState extends ConsumerState<DoctorProfileScreen>
   }
 
   Widget _buildEditableField({required String label, required TextEditingController controller, required bool isDark, IconData? icon, int maxLines = 1, String? hint, TextInputType keyboardType = TextInputType.text}) {
-    return TextFormField(
-      controller: controller,
-      maxLines: maxLines,
-      keyboardType: keyboardType,
-      style: TextStyle(color: isDark ? AppColors.darkTextPrimary : AppColors.textPrimary),
-      decoration: InputDecoration(
-        labelText: label,
-        hintText: hint,
-        prefixIcon: icon != null ? Icon(icon, color: AppColors.primary) : null,
-        filled: true,
-        fillColor: isDark ? AppColors.darkBackground : Colors.grey.shade50,
-        border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide.none),
-        enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide(color: isDark ? AppColors.darkDivider : AppColors.divider)),
-        focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: const BorderSide(color: AppColors.primary, width: 2)),
-      ),
-    );
+    return maxLines > 1
+        ? AppInput.multiline(
+            controller: controller,
+            label: label,
+            hint: hint,
+            prefixIcon: icon,
+            maxLines: maxLines,
+            keyboardType: keyboardType,
+          )
+        : AppInput.text(
+            controller: controller,
+            label: label,
+            hint: hint,
+            prefixIcon: icon,
+            keyboardType: keyboardType,
+          );
   }
 
   Widget _buildFeeField({required String label, required TextEditingController controller, required bool isDark, required IconData icon, required Color color}) {
@@ -817,21 +817,8 @@ class _DoctorProfileScreenState extends ConsumerState<DoctorProfileScreen>
           ),
           SizedBox(
             width: 120,
-            child: TextFormField(
+            child: AppInput.number(
               controller: controller,
-              keyboardType: TextInputType.number,
-              textAlign: TextAlign.center,
-              style: TextStyle(fontWeight: FontWeight.bold, color: color),
-              decoration: InputDecoration(
-                prefixText: 'Rs. ',
-                prefixStyle: TextStyle(color: color, fontWeight: FontWeight.w500),
-                isDense: true,
-                filled: true,
-                fillColor: isDark ? AppColors.darkBackground : Colors.white,
-                border: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: BorderSide(color: color.withValues(alpha: 0.3))),
-                enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: BorderSide(color: color.withValues(alpha: 0.3))),
-                focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: BorderSide(color: color, width: 2)),
-              ),
             ),
           ),
         ],
@@ -901,7 +888,7 @@ class _DoctorProfileScreenState extends ConsumerState<DoctorProfileScreen>
       context: context,
       builder: (context) => AlertDialog(
         title: const Text('Add Language'),
-        content: TextField(controller: controller, decoration: const InputDecoration(hintText: 'Enter language', border: OutlineInputBorder()), autofocus: true),
+        content: AppInput.text(controller: controller, hint: 'Enter language', autofocus: true),
         actions: [
           AppButton.tertiary(label: 'Cancel', onPressed: () => Navigator.pop(context)),
           FilledButton(onPressed: () { if (controller.text.isNotEmpty) { setState(() => _languages.add(controller.text)); Navigator.pop(context); } }, child: const Text('Add')),
