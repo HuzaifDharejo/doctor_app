@@ -273,9 +273,9 @@ class _QuickVitalEntryFormState extends ConsumerState<QuickVitalEntryForm> {
         title: const Text('Vital Sign Alert'),
         content: Text(alertMessage),
         actions: [
-          TextButton(
+          AppButton.primary(
+            label: 'Acknowledge',
             onPressed: () => Navigator.pop(context),
-            child: const Text('Acknowledge'),
           ),
         ],
       ),
@@ -546,7 +546,8 @@ class _QuickVitalEntryFormState extends ConsumerState<QuickVitalEntryForm> {
 
           // View History Link
           Center(
-            child: TextButton(
+            child: AppButton.tertiary(
+              label: 'View History & Charts',
               onPressed: () {
                 Navigator.push(
                   context,
@@ -558,7 +559,6 @@ class _QuickVitalEntryFormState extends ConsumerState<QuickVitalEntryForm> {
                   ),
                 );
               },
-              child: const Text('View History & Charts'),
             ),
           ),
         ],

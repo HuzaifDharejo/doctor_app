@@ -149,14 +149,13 @@ class _PatientAvatarState extends State<PatientAvatar> {
         title: const Text('Remove Photo'),
         content: const Text('Are you sure you want to remove this photo?'),
         actions: [
-          TextButton(
+          AppButton.tertiary(
+            label: 'Cancel',
             onPressed: () => Navigator.pop(context, false),
-            child: const Text('Cancel'),
           ),
-          ElevatedButton(
+          AppButton.danger(
+            label: 'Remove',
             onPressed: () => Navigator.pop(context, true),
-            style: ElevatedButton.styleFrom(backgroundColor: AppColors.error),
-            child: const Text('Remove'),
           ),
         ],
       ),
@@ -333,9 +332,10 @@ class _PatientAvatarState extends State<PatientAvatar> {
             const SizedBox(height: 16),
             SizedBox(
               width: double.infinity,
-              child: TextButton(
+              child: AppButton.tertiary(
+                label: 'Cancel',
                 onPressed: () => Navigator.pop(context),
-                child: const Text('Cancel'),
+                fullWidth: true,
               ),
             ),
           ],

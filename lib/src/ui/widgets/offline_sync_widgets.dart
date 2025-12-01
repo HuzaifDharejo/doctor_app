@@ -114,9 +114,9 @@ class _SyncProgressDialogState extends State<SyncProgressDialog> {
             ),
             const SizedBox(height: 24),
             // Cancel button
-            ElevatedButton(
+            AppButton.tertiary(
+              label: 'Close',
               onPressed: Navigator.of(context).pop,
-              child: const Text('Close'),
             ),
           ],
         ),
@@ -273,19 +273,19 @@ class _ConflictResolutionDialogState extends State<ConflictResolutionDialog> {
             Row(
               mainAxisAlignment: MainAxisAlignment.end,
               children: [
-                TextButton(
+                AppButton.tertiary(
+                  label: 'Cancel',
                   onPressed: Navigator.of(context).pop,
-                  child: const Text('Cancel'),
                 ),
                 const SizedBox(width: 12),
-                ElevatedButton(
+                AppButton.primary(
+                  label: 'Resolve',
                   onPressed: _selectedResolution != null
                       ? () {
                           widget.onResolved(_selectedResolution!);
                           Navigator.of(context).pop();
                         }
                       : null,
-                  child: const Text('Resolve'),
                 ),
               ],
             ),

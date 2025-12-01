@@ -261,27 +261,22 @@ class _TutorialOverlayState extends State<TutorialOverlay>
               Row(
                 children: [
                   if (_currentStep > 0)
-                    TextButton(
+                    AppButton.tertiary(
+                      label: '← Back',
                       onPressed: _previousStep,
-                      child: const Text('← Back'),
                     ),
                   const Spacer(),
-                  TextButton(
+                  AppButton.tertiary(
+                    label: 'Skip',
                     onPressed: _skip,
-                    child: const Text('Skip'),
                   ),
                   const SizedBox(width: 8),
-                  ElevatedButton(
+                  AppButton.primary(
+                    label: _currentStep == widget.steps.length - 1
+                        ? 'Done'
+                        : 'Next →',
                     onPressed: _nextStep,
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: widget.highlightColor,
-                      foregroundColor: Colors.white,
-                    ),
-                    child: Text(
-                      _currentStep == widget.steps.length - 1
-                          ? 'Done'
-                          : 'Next →',
-                    ),
+                    backgroundColor: widget.highlightColor,
                   ),
                 ],
               ),
