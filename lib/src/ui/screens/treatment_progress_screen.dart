@@ -184,20 +184,19 @@ class _TreatmentProgressScreenState extends ConsumerState<TreatmentProgressScree
   }) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     
-    return Container(
+    return AppCard(
       padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
-      decoration: BoxDecoration(
-        color: isDark ? AppColors.darkSurface : Colors.white,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: color.withOpacity(0.3)),
-        boxShadow: [
-          BoxShadow(
-            color: color.withOpacity(0.1),
-            blurRadius: 10,
-            offset: const Offset(0, 4),
-          ),
-        ],
-      ),
+      color: isDark ? AppColors.darkSurface : Colors.white,
+      borderRadius: BorderRadius.circular(16),
+      borderColor: color.withOpacity(0.3),
+      borderWidth: 1,
+      boxShadow: [
+        BoxShadow(
+          color: color.withOpacity(0.1),
+          blurRadius: 10,
+          offset: const Offset(0, 4),
+        ),
+      ],
       child: Row(
         children: [
           Container(

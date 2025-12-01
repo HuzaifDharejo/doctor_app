@@ -1112,13 +1112,12 @@ class _AddPrescriptionScreenState extends ConsumerState<AddPrescriptionScreen> {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final hasValue = value.isNotEmpty && value != '-' && value != 'null';
     
-    return Container(
+    return AppCard(
       padding: const EdgeInsets.all(12),
-      decoration: BoxDecoration(
-        color: isDark ? colorScheme.surfaceContainerHighest : Colors.white,
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: colorScheme.outline.withValues(alpha: 0.1)),
-      ),
+      color: isDark ? colorScheme.surfaceContainerHighest : Colors.white,
+      borderRadius: BorderRadius.circular(12),
+      borderColor: colorScheme.outline.withValues(alpha: 0.1),
+      borderWidth: 1,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -1632,15 +1631,12 @@ class _AddPrescriptionScreenState extends ConsumerState<AddPrescriptionScreen> {
     required Widget child,
     Widget? trailing,
   }) {
-    return Card(
-      elevation: 0,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(16),
-        side: BorderSide(color: colorScheme.outlineVariant),
-      ),
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(
+    return AppCard(
+      borderRadius: BorderRadius.circular(16),
+      borderColor: colorScheme.outlineVariant,
+      borderWidth: 1,
+      padding: const EdgeInsets.all(16),
+      child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Row(
@@ -1671,7 +1667,6 @@ class _AddPrescriptionScreenState extends ConsumerState<AddPrescriptionScreen> {
             child,
           ],
         ),
-      ),
     );
   }
 }

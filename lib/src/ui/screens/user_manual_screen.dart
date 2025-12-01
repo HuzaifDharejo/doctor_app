@@ -216,27 +216,24 @@ class _UserManualScreenState extends ConsumerState<UserManualScreen>
   }
 
   Widget _buildFeatureCard(String emoji, String title, String desc) {
-    return Container(
+    return AppCard(
       padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: context.isDarkMode
-            ? Colors.white.withValues(alpha: 0.05)
-            : Colors.white,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(
-          color: context.isDarkMode
-              ? Colors.white.withValues(alpha: 0.08)
-              : Colors.grey.withValues(alpha: 0.12),
-        ),
-        boxShadow: context.isDarkMode
-            ? null
-            : [
-                BoxShadow(
-                  color: Colors.black.withValues(alpha: 0.04),
-                  blurRadius: 8,
-                )
-              ],
-      ),
+      color: context.isDarkMode
+          ? Colors.white.withValues(alpha: 0.05)
+          : Colors.white,
+      borderRadius: BorderRadius.circular(16),
+      borderColor: context.isDarkMode
+          ? Colors.white.withValues(alpha: 0.08)
+          : Colors.grey.withValues(alpha: 0.12),
+      borderWidth: 1,
+      boxShadow: context.isDarkMode
+          ? null
+          : [
+              BoxShadow(
+                color: Colors.black.withValues(alpha: 0.04),
+                blurRadius: 8,
+              )
+            ],
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
