@@ -515,7 +515,6 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> with SingleTick
               Navigator.pop(context);
               Navigator.push(context, MaterialPageRoute<void>(builder: (_) => const DebugConsole()));
             },
-            child: const Text('View Details'),
           ),
         ],
       ),
