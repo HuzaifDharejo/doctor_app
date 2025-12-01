@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
+import '../../core/theme/design_tokens.dart';
 import '../../db/doctor_db.dart';
 import '../../providers/db_provider.dart';
 import '../../services/allergy_checking_service.dart';
@@ -512,7 +513,7 @@ class _AddPrescriptionScreenState extends ConsumerState<AddPrescriptionScreen> {
                             GestureDetector(
                               onTap: () => Navigator.pop(context),
                               child: Container(
-                                padding: const EdgeInsets.all(10),
+                                padding: const EdgeInsets.all(AppSpacing.md),
                                 decoration: BoxDecoration(
                                   color: Colors.white.withValues(alpha: 0.2),
                                   borderRadius: BorderRadius.circular(12),
@@ -534,7 +535,7 @@ class _AddPrescriptionScreenState extends ConsumerState<AddPrescriptionScreen> {
                             GestureDetector(
                               onTap: _printPrescription,
                               child: Container(
-                                padding: const EdgeInsets.all(10),
+                                padding: const EdgeInsets.all(AppSpacing.md),
                                 decoration: BoxDecoration(
                                   color: Colors.white.withValues(alpha: 0.2),
                                   borderRadius: BorderRadius.circular(12),
@@ -547,7 +548,7 @@ class _AddPrescriptionScreenState extends ConsumerState<AddPrescriptionScreen> {
                         const SizedBox(height: 20),
                         // Prescription Icon
                         Container(
-                          padding: const EdgeInsets.all(16),
+                          padding: const EdgeInsets.all(AppSpacing.lg),
                           decoration: BoxDecoration(
                             color: Colors.white.withValues(alpha: 0.2),
                             shape: BoxShape.circle,
@@ -651,7 +652,7 @@ class _AddPrescriptionScreenState extends ConsumerState<AddPrescriptionScreen> {
                       style: FilledButton.styleFrom(
                         backgroundColor: Colors.green,
                         visualDensity: VisualDensity.compact,
-                        padding: const EdgeInsets.symmetric(horizontal: 12),
+                        padding: const EdgeInsets.symmetric(horizontal: AppSpacing.md),
                       ),
                     ),
                     const SizedBox(width: 8),
@@ -661,7 +662,7 @@ class _AddPrescriptionScreenState extends ConsumerState<AddPrescriptionScreen> {
                       label: const Text('Templates'),
                       style: OutlinedButton.styleFrom(
                         visualDensity: VisualDensity.compact,
-                        padding: const EdgeInsets.symmetric(horizontal: 12),
+                        padding: const EdgeInsets.symmetric(horizontal: AppSpacing.md),
                       ),
                     ),
                     const SizedBox(width: 8),
@@ -745,7 +746,7 @@ class _AddPrescriptionScreenState extends ConsumerState<AddPrescriptionScreen> {
                       icon: const Icon(Icons.print),
                       label: const Text('Print'),
                       style: OutlinedButton.styleFrom(
-                        padding: const EdgeInsets.symmetric(vertical: 14),
+                        padding: const EdgeInsets.symmetric(vertical: AppSpacing.lg),
                       ),
                     ),
                   ),
@@ -757,7 +758,7 @@ class _AddPrescriptionScreenState extends ConsumerState<AddPrescriptionScreen> {
                       icon: const Icon(Icons.save),
                       label: const Text('Save Prescription'),
                       style: FilledButton.styleFrom(
-                        padding: const EdgeInsets.symmetric(vertical: 14),
+                        padding: const EdgeInsets.symmetric(vertical: AppSpacing.lg),
                       ),
                     ),
                   ),
@@ -775,7 +776,7 @@ class _AddPrescriptionScreenState extends ConsumerState<AddPrescriptionScreen> {
 
   Widget _buildDoctorHeader(ColorScheme colorScheme) {
     return Container(
-      padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.all(AppSpacing.lg),
       decoration: BoxDecoration(
         gradient: LinearGradient(
           colors: [colorScheme.primary, colorScheme.primary.withBlue(200)],
@@ -831,7 +832,7 @@ class _AddPrescriptionScreenState extends ConsumerState<AddPrescriptionScreen> {
       final patientName = _getPatientName(patient);
       final age = _calculateAge(patient.dateOfBirth);
       return Container(
-        padding: const EdgeInsets.all(12),
+        padding: const EdgeInsets.all(AppSpacing.md),
         decoration: BoxDecoration(
           color: colorScheme.primaryContainer,
           borderRadius: BorderRadius.circular(12),
@@ -891,12 +892,12 @@ class _AddPrescriptionScreenState extends ConsumerState<AddPrescriptionScreen> {
         const SizedBox(height: 8),
         if (_patients.isEmpty)
           Container(
-            padding: const EdgeInsets.all(16),
+            padding: const EdgeInsets.all(AppSpacing.lg),
             child: const Text('Loading patients...'),
           )
         else if (filteredPatients.isEmpty)
           Container(
-            padding: const EdgeInsets.all(16),
+            padding: const EdgeInsets.all(AppSpacing.lg),
             child: const Text('No patients found'),
           )
         else
@@ -941,7 +942,7 @@ class _AddPrescriptionScreenState extends ConsumerState<AddPrescriptionScreen> {
     
     if (_loadingVitals) {
       return Container(
-        padding: const EdgeInsets.all(20),
+        padding: const EdgeInsets.all(AppSpacing.xl),
         decoration: BoxDecoration(
           color: isDark ? colorScheme.surface : Colors.grey.shade50,
           borderRadius: BorderRadius.circular(16),
@@ -955,7 +956,7 @@ class _AddPrescriptionScreenState extends ConsumerState<AddPrescriptionScreen> {
     
     if (_selectedPatient == null) {
       return Container(
-        padding: const EdgeInsets.all(20),
+        padding: const EdgeInsets.all(AppSpacing.xl),
         decoration: BoxDecoration(
           color: isDark ? colorScheme.surface : Colors.grey.shade50,
           borderRadius: BorderRadius.circular(16),
@@ -978,7 +979,7 @@ class _AddPrescriptionScreenState extends ConsumerState<AddPrescriptionScreen> {
     
     if (_lastVisitVitals == null) {
       return Container(
-        padding: const EdgeInsets.all(20),
+        padding: const EdgeInsets.all(AppSpacing.xl),
         decoration: BoxDecoration(
           color: isDark ? colorScheme.surface : Colors.grey.shade50,
           borderRadius: BorderRadius.circular(16),
@@ -1005,7 +1006,7 @@ class _AddPrescriptionScreenState extends ConsumerState<AddPrescriptionScreen> {
     final weight = _lastVisitVitals!['weight'] ?? '-';
     
     return Container(
-      padding: const EdgeInsets.all(12),
+      padding: const EdgeInsets.all(AppSpacing.md),
       decoration: BoxDecoration(
         color: isDark ? colorScheme.surface : Colors.grey.shade50,
         borderRadius: BorderRadius.circular(16),
@@ -1102,7 +1103,7 @@ class _AddPrescriptionScreenState extends ConsumerState<AddPrescriptionScreen> {
     final hasValue = value.isNotEmpty && value != '-' && value != 'null';
     
     return AppCard(
-      padding: const EdgeInsets.all(12),
+      padding: const EdgeInsets.all(AppSpacing.md),
       color: isDark ? colorScheme.surfaceContainerHighest : Colors.white,
       borderRadius: BorderRadius.circular(12),
       borderColor: colorScheme.outline.withValues(alpha: 0.1),
@@ -1113,7 +1114,7 @@ class _AddPrescriptionScreenState extends ConsumerState<AddPrescriptionScreen> {
           Row(
             children: [
               Container(
-                padding: const EdgeInsets.all(6),
+                padding: const EdgeInsets.all(AppSpacing.xs),
                 decoration: BoxDecoration(
                   color: iconColor.withValues(alpha: 0.1),
                   borderRadius: BorderRadius.circular(8),
@@ -1170,7 +1171,7 @@ class _AddPrescriptionScreenState extends ConsumerState<AddPrescriptionScreen> {
     
     return Container(
       margin: const EdgeInsets.only(bottom: 16),
-      padding: const EdgeInsets.all(12),
+      padding: const EdgeInsets.all(AppSpacing.md),
       decoration: BoxDecoration(
         color: hasSevere ? Colors.red.shade50 : Colors.orange.shade50,
         borderRadius: BorderRadius.circular(12),
@@ -1223,7 +1224,7 @@ class _AddPrescriptionScreenState extends ConsumerState<AddPrescriptionScreen> {
   Widget _buildPatientAllergiesChip(ColorScheme colorScheme) {
     return Container(
       margin: const EdgeInsets.only(bottom: 12),
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+      padding: const EdgeInsets.symmetric(horizontal: AppSpacing.md, vertical: AppSpacing.sm),
       decoration: BoxDecoration(
         color: Colors.red.shade50,
         borderRadius: BorderRadius.circular(20),
@@ -1255,7 +1256,7 @@ class _AddPrescriptionScreenState extends ConsumerState<AddPrescriptionScreen> {
         for (int i = 0; i < _medications.length; i++)
           Container(
             margin: const EdgeInsets.only(bottom: 12),
-            padding: const EdgeInsets.all(12),
+            padding: const EdgeInsets.all(AppSpacing.md),
             decoration: BoxDecoration(
               color: colorScheme.surfaceContainerHighest.withValues(alpha: 0.5),
               borderRadius: BorderRadius.circular(12),
@@ -1266,7 +1267,7 @@ class _AddPrescriptionScreenState extends ConsumerState<AddPrescriptionScreen> {
                 Row(
                   children: [
                     Container(
-                      padding: const EdgeInsets.all(8),
+                      padding: const EdgeInsets.all(AppSpacing.sm),
                       decoration: BoxDecoration(
                         color: colorScheme.primaryContainer,
                         borderRadius: BorderRadius.circular(8),
@@ -1368,7 +1369,7 @@ class _AddPrescriptionScreenState extends ConsumerState<AddPrescriptionScreen> {
                                         });
                                       },
                                       child: Container(
-                                        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                                        padding: const EdgeInsets.symmetric(horizontal: AppSpacing.md, vertical: AppSpacing.xs),
                                         decoration: BoxDecoration(
                                           color: colorScheme.primary.withValues(alpha: 0.05),
                                           borderRadius: BorderRadius.circular(16),
@@ -1409,7 +1410,7 @@ class _AddPrescriptionScreenState extends ConsumerState<AddPrescriptionScreen> {
                                         });
                                       },
                                       child: Container(
-                                        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                                        padding: const EdgeInsets.symmetric(horizontal: AppSpacing.md, vertical: AppSpacing.xs),
                                         decoration: BoxDecoration(
                                           color: colorScheme.primary.withValues(alpha: 0.05),
                                           borderRadius: BorderRadius.circular(16),
@@ -1491,7 +1492,7 @@ class _AddPrescriptionScreenState extends ConsumerState<AddPrescriptionScreen> {
         if (_selectedLabTests.isNotEmpty) ...[
           const SizedBox(height: 12),
           Container(
-            padding: const EdgeInsets.all(12),
+            padding: const EdgeInsets.all(AppSpacing.md),
             decoration: BoxDecoration(
               color: colorScheme.tertiaryContainer.withValues(alpha: 0.3),
               borderRadius: BorderRadius.circular(8),
@@ -1600,14 +1601,14 @@ class _AddPrescriptionScreenState extends ConsumerState<AddPrescriptionScreen> {
       borderRadius: BorderRadius.circular(16),
       borderColor: colorScheme.outlineVariant,
       borderWidth: 1,
-      padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.all(AppSpacing.lg),
       child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Row(
               children: [
                 Container(
-                  padding: const EdgeInsets.all(8),
+                  padding: const EdgeInsets.all(AppSpacing.sm),
                   decoration: BoxDecoration(
                     color: colorScheme.primaryContainer,
                     borderRadius: BorderRadius.circular(8),
