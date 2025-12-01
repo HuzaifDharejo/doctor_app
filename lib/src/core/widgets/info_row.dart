@@ -77,7 +77,7 @@ class InfoRow extends StatelessWidget {
             Icon(
               icon,
               size: 20,
-              color: iconColor ?? theme.colorScheme.onSurface.withOpacity(0.6),
+              color: iconColor ?? theme.colorScheme.onSurface.withValues(alpha: 0.6),
             ),
             const SizedBox(width: 12),
           ],
@@ -88,7 +88,7 @@ class InfoRow extends StatelessWidget {
                 Text(
                   label,
                   style: theme.textTheme.bodySmall?.copyWith(
-                    color: theme.colorScheme.onSurface.withOpacity(0.6),
+                    color: theme.colorScheme.onSurface.withValues(alpha: 0.6),
                   ),
                 ),
                 const SizedBox(height: 2),
@@ -167,7 +167,7 @@ class InfoRowCompact extends StatelessWidget {
             TextSpan(
               text: '$label$separator ',
               style: TextStyle(
-                color: theme.colorScheme.onSurface.withOpacity(0.6),
+                color: theme.colorScheme.onSurface.withValues(alpha: 0.6),
               ),
             ),
             TextSpan(text: value),
@@ -235,7 +235,7 @@ class InfoColumn extends StatelessWidget {
         Text(
           label,
           style: theme.textTheme.bodySmall?.copyWith(
-            color: theme.colorScheme.onSurface.withOpacity(0.6),
+            color: theme.colorScheme.onSurface.withValues(alpha: 0.6),
           ),
         ),
       ],
@@ -330,7 +330,7 @@ class InfoGrid extends StatelessWidget {
               Text(
                 entry.key,
                 style: theme.textTheme.bodySmall?.copyWith(
-                  color: theme.colorScheme.onSurface.withOpacity(0.6),
+                  color: theme.colorScheme.onSurface.withValues(alpha: 0.6),
                 ),
               ),
               const SizedBox(height: 4),

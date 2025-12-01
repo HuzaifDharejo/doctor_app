@@ -186,25 +186,25 @@ class AppButton extends StatelessWidget {
 
     switch (variant) {
       case AppButtonVariant.primary:
-        bgColor = isDisabled ? colorScheme.primary.withOpacity(0.38) : colorScheme.primary;
-        fgColor = isDisabled ? colorScheme.onPrimary.withOpacity(0.38) : colorScheme.onPrimary;
+        bgColor = isDisabled ? colorScheme.primary.withValues(alpha: 0.38) : colorScheme.primary;
+        fgColor = isDisabled ? colorScheme.onPrimary.withValues(alpha: 0.38) : colorScheme.onPrimary;
         break;
       case AppButtonVariant.secondary:
         bgColor = isDisabled
-            ? colorScheme.secondary.withOpacity(0.38)
+            ? colorScheme.secondary.withValues(alpha: 0.38)
             : colorScheme.secondary;
         fgColor = isDisabled
-            ? colorScheme.onSecondary.withOpacity(0.38)
+            ? colorScheme.onSecondary.withValues(alpha: 0.38)
             : colorScheme.onSecondary;
         break;
       case AppButtonVariant.tertiary:
         bgColor = Colors.transparent;
-        fgColor = isDisabled ? colorScheme.primary.withOpacity(0.38) : colorScheme.primary;
-        bdrColor = isDisabled ? colorScheme.outline.withOpacity(0.38) : colorScheme.outline;
+        fgColor = isDisabled ? colorScheme.primary.withValues(alpha: 0.38) : colorScheme.primary;
+        bdrColor = isDisabled ? colorScheme.outline.withValues(alpha: 0.38) : colorScheme.outline;
         break;
       case AppButtonVariant.danger:
-        bgColor = isDisabled ? colorScheme.error.withOpacity(0.38) : colorScheme.error;
-        fgColor = isDisabled ? colorScheme.onError.withOpacity(0.38) : colorScheme.onError;
+        bgColor = isDisabled ? colorScheme.error.withValues(alpha: 0.38) : colorScheme.error;
+        fgColor = isDisabled ? colorScheme.onError.withValues(alpha: 0.38) : colorScheme.onError;
         break;
       case AppButtonVariant.gradient:
         bgColor = null; // Gradient will be applied separately
@@ -252,7 +252,7 @@ class AppButton extends StatelessWidget {
         height: buttonHeight,
         decoration: BoxDecoration(
           gradient: isDisabled ? null : gradient,
-          color: isDisabled ? colorScheme.primary.withOpacity(0.38) : null,
+          color: isDisabled ? colorScheme.primary.withValues(alpha: 0.38) : null,
           borderRadius: BorderRadius.circular(AppRadius.button),
         ),
         child: Material(
