@@ -7,6 +7,7 @@ import '../../data/demo_data.dart';
 import '../../providers/db_provider.dart';
 import '../../providers/google_calendar_provider.dart';
 import '../../services/google_calendar_service.dart';
+import '../../core/components/app_button.dart';
 import '../../theme/app_theme.dart';
 
 /// Onboarding screen shown when the app is first launched
@@ -352,53 +353,18 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen>
                     ),
                   const Spacer(),
                   if (_currentPage == 1)
-                    ElevatedButton(
+                    AppButton.primary(
+                      label: 'Continue',
+                      icon: Icons.arrow_forward,
                       onPressed: _nameController.text.isEmpty ? null : _nextPage,
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: AppColors.primary,
-                        foregroundColor: Colors.white,
-                        padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 16),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                      ),
-                      child: const Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Text('Continue'),
-                          SizedBox(width: 8),
-                          Icon(Icons.arrow_forward, size: 20),
-                        ],
-                      ),
                     )
                   else if (_currentPage == 2)
-                    ElevatedButton(
+                    AppButton.primary(
+                      label: 'Start Using App',
+                      icon: Icons.check,
+                      backgroundColor: AppColors.success,
+                      isLoading: _isLoading,
                       onPressed: _isLoading ? null : _completeSetup,
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: AppColors.success,
-                        foregroundColor: Colors.white,
-                        padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 16),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                      ),
-                      child: _isLoading
-                          ? const SizedBox(
-                              width: 20,
-                              height: 20,
-                              child: CircularProgressIndicator(
-                                strokeWidth: 2,
-                                color: Colors.white,
-                              ),
-                            )
-                          : const Row(
-                              mainAxisSize: MainAxisSize.min,
-                              children: [
-                                Text('Start Using App'),
-                                SizedBox(width: 8),
-                                Icon(Icons.check, size: 20),
-                              ],
-                            ),
                     ),
                 ],
               ),
@@ -596,27 +562,11 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen>
                     ),
                   ),
                   const SizedBox(height: 20),
-                  SizedBox(
-                    width: double.infinity,
-                    child: ElevatedButton(
-                      onPressed: _nextPage,
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: AppColors.primary,
-                        foregroundColor: Colors.white,
-                        padding: const EdgeInsets.symmetric(vertical: 16),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                      ),
-                      child: const Row(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          Text('Continue Setup', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600)),
-                          SizedBox(width: 8),
-                          Icon(Icons.arrow_forward, size: 20),
-                        ],
-                      ),
-                    ),
+                  AppButton.primary(
+                    label: 'Continue Setup',
+                    icon: Icons.arrow_forward,
+                    fullWidth: true,
+                    onPressed: _nextPage,
                   ),
                 ] else ...[
                   // Not signed in state
@@ -715,15 +665,9 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen>
               ],
             ),
             const SizedBox(height: 24),
-            TextButton(
+            AppButton.tertiary(
+              label: 'Continue without Google',
               onPressed: _continueWithoutGoogle,
-              child: Text(
-                'Continue without Google',
-                style: TextStyle(
-                  fontSize: 15,
-                  color: isDark ? AppColors.darkTextSecondary : AppColors.textSecondary,
-                ),
-              ),
             ),
             const SizedBox(height: 8),
             Text(

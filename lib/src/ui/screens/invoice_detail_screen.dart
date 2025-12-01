@@ -7,6 +7,7 @@ import '../../providers/db_provider.dart';
 import '../../services/doctor_settings_service.dart';
 import '../../services/pdf_service.dart';
 import '../../services/whatsapp_service.dart';
+import '../../core/components/app_button.dart';
 import '../../theme/app_theme.dart';
 
 class InvoiceDetailScreen extends ConsumerStatefulWidget {
@@ -494,14 +495,14 @@ class _InvoiceDetailScreenState extends ConsumerState<InvoiceDetailScreen> {
         title: const Text('Mark as Paid'),
         content: const Text('Are you sure you want to mark this invoice as paid?'),
         actions: [
-          TextButton(
+          AppButton.tertiary(
+            label: 'Cancel',
             onPressed: () => Navigator.pop(context, false),
-            child: const Text('Cancel'),
           ),
-          ElevatedButton(
+          AppButton.primary(
+            label: 'Mark as Paid',
+            backgroundColor: AppColors.success,
             onPressed: () => Navigator.pop(context, true),
-            style: ElevatedButton.styleFrom(backgroundColor: AppColors.success),
-            child: const Text('Mark as Paid'),
           ),
         ],
       ),
@@ -671,14 +672,13 @@ class _InvoiceDetailScreenState extends ConsumerState<InvoiceDetailScreen> {
         ),
         content: Text('Are you sure you want to delete invoice ${_invoice.invoiceNumber}? This action cannot be undone.'),
         actions: [
-          TextButton(
+          AppButton.tertiary(
+            label: 'Cancel',
             onPressed: () => Navigator.pop(context, false),
-            child: const Text('Cancel'),
           ),
-          ElevatedButton(
+          AppButton.danger(
+            label: 'Delete',
             onPressed: () => Navigator.pop(context, true),
-            style: ElevatedButton.styleFrom(backgroundColor: AppColors.error),
-            child: const Text('Delete'),
           ),
         ],
       ),

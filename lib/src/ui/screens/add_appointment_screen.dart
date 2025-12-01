@@ -6,6 +6,7 @@ import '../../db/doctor_db.dart';
 import '../../providers/db_provider.dart';
 import '../../providers/google_calendar_provider.dart';
 import '../../services/suggestions_service.dart';
+import '../../core/components/app_button.dart';
 import '../../theme/app_theme.dart';
 import '../widgets/suggestion_text_field.dart';
 
@@ -610,39 +611,13 @@ class _AddAppointmentScreenState extends ConsumerState<AddAppointmentScreen> {
             ),
           ],
         ),
-        child: ElevatedButton(
+        child: AppButton.gradient(
+          label: 'Schedule Appointment',
+          icon: Icons.check_circle_outline,
+          gradient: AppColors.primaryGradient,
+          isLoading: _isSaving,
           onPressed: _isSaving ? null : () => _saveAppointment(context, db),
-          style: ElevatedButton.styleFrom(
-            backgroundColor: Colors.transparent,
-            shadowColor: Colors.transparent,
-            padding: const EdgeInsets.symmetric(vertical: 18),
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(16),
-            ),
-          ),
-          child: _isSaving
-              ? const SizedBox(
-                  height: 20,
-                  width: 20,
-                  child: CircularProgressIndicator(
-                    strokeWidth: 2,
-                    color: Colors.white,
-                  ),
-                )
-              : const Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    Icon(Icons.check_circle_outline, size: 22),
-                    SizedBox(width: 10),
-                    Text(
-                      'Schedule Appointment',
-                      style: TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                  ],
-                ),
+          fullWidth: true,
         ),
       ),
     );

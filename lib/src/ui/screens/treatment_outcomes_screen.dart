@@ -2,6 +2,7 @@ import 'package:drift/drift.dart' show Value;
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
+import '../../core/components/app_button.dart';
 import '../../db/doctor_db.dart';
 import '../../providers/db_provider.dart';
 
@@ -440,13 +441,13 @@ class _TreatmentOutcomesScreenState extends ConsumerState<TreatmentOutcomesScree
         title: const Text('Delete Treatment'),
         content: const Text('Are you sure you want to delete this treatment record?'),
         actions: [
-          TextButton(
+          AppButton.tertiary(
+            label: 'Cancel',
             onPressed: () => Navigator.pop(context, false),
-            child: const Text('Cancel'),
           ),
-          TextButton(
+          AppButton.danger(
+            label: 'Delete',
             onPressed: () => Navigator.pop(context, true),
-            child: const Text('Delete', style: TextStyle(color: Colors.red)),
           ),
         ],
       ),
@@ -668,9 +669,9 @@ class _TreatmentOutcomesScreenState extends ConsumerState<TreatmentOutcomesScree
             ),
           ),
           actions: [
-            TextButton(
+            AppButton.tertiary(
+              label: 'Cancel',
               onPressed: () => Navigator.pop(context),
-              child: const Text('Cancel'),
             ),
             FilledButton(
               onPressed: () async {
