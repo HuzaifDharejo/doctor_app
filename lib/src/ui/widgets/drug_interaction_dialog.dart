@@ -164,7 +164,7 @@ class _DrugInteractionDialogState extends State<DrugInteractionDialog> {
                 child: Container(
                   padding: const EdgeInsets.all(AppSpacing.md),
                   decoration: BoxDecoration(
-                    color: color.withOpacity(0.05),
+                    color: color.withValues(alpha: 0.05),
                     border: Border.all(color: color, width: 1),
                     borderRadius: BorderRadius.circular(8),
                   ),
@@ -313,7 +313,7 @@ class _DrugInteractionDialogState extends State<DrugInteractionDialog> {
             '$count interaction(s)',
             style: const TextStyle(fontSize: 11, fontWeight: FontWeight.bold),
           ),
-          backgroundColor: color.withOpacity(0.2),
+          backgroundColor: color.withValues(alpha: 0.2),
           side: BorderSide(color: color),
           visualDensity: VisualDensity.compact,
         ),
@@ -321,4 +321,5 @@ class _DrugInteractionDialogState extends State<DrugInteractionDialog> {
     );
   }
 }
+
 

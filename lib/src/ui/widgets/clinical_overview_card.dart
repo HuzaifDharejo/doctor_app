@@ -75,7 +75,7 @@ class ClinicalOverviewCard extends StatelessWidget {
           colors: isDark
               ? [
                   Theme.of(context).colorScheme.surface,
-                  Theme.of(context).colorScheme.surface.withOpacity(0.9),
+                  Theme.of(context).colorScheme.surface.withValues(alpha: 0.9),
                 ]
               : [
                   Colors.white,
@@ -89,7 +89,7 @@ class ClinicalOverviewCard extends StatelessWidget {
         ),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.08),
+            color: Colors.black.withValues(alpha: 0.08),
             blurRadius: 12,
             offset: const Offset(0, 4),
           ),
@@ -130,9 +130,9 @@ class ClinicalOverviewCard extends StatelessWidget {
                 Container(
                   padding: const EdgeInsets.symmetric(horizontal: AppSpacing.md, vertical: AppSpacing.sm),
                   decoration: BoxDecoration(
-                    color: riskColor.withOpacity(0.1),
+                    color: riskColor.withValues(alpha: 0.1),
                     borderRadius: BorderRadius.circular(12),
-                    border: Border.all(color: riskColor.withOpacity(0.3)),
+                    border: Border.all(color: riskColor.withValues(alpha: 0.3)),
                   ),
                   child: Row(
                     mainAxisSize: MainAxisSize.min,
@@ -164,10 +164,10 @@ class ClinicalOverviewCard extends StatelessWidget {
                 width: double.infinity,
                 padding: const EdgeInsets.all(AppSpacing.md),
                 decoration: BoxDecoration(
-                  color: AppColors.error.withOpacity(0.1),
+                  color: AppColors.error.withValues(alpha: 0.1),
                   borderRadius: BorderRadius.circular(12),
                   border: Border.all(
-                    color: AppColors.error.withOpacity(0.3),
+                    color: AppColors.error.withValues(alpha: 0.3),
                     width: 2,
                   ),
                 ),
@@ -203,7 +203,7 @@ class ClinicalOverviewCard extends StatelessWidget {
                             vertical: 6,
                           ),
                           decoration: BoxDecoration(
-                            color: AppColors.error.withOpacity(0.15),
+                            color: AppColors.error.withValues(alpha: 0.15),
                             borderRadius: BorderRadius.circular(8),
                           ),
                           child: Text(
@@ -245,9 +245,9 @@ class ClinicalOverviewCard extends StatelessWidget {
                                 child: Container(
                                   padding: const EdgeInsets.all(AppSpacing.md),
                                   decoration: BoxDecoration(
-                                    color: Colors.blue.withOpacity(0.05),
+                                    color: Colors.blue.withValues(alpha: 0.05),
                                     borderRadius: BorderRadius.circular(8),
-                              border: Border.all(color: Colors.blue.withOpacity(0.2)),
+                              border: Border.all(color: Colors.blue.withValues(alpha: 0.2)),
                                   ),
                                   child: Column(
                                     crossAxisAlignment: CrossAxisAlignment.start,
@@ -280,9 +280,9 @@ class ClinicalOverviewCard extends StatelessWidget {
                                 child: Container(
                                   padding: const EdgeInsets.all(AppSpacing.md),
                                   decoration: BoxDecoration(
-                                    color: Colors.orange.withOpacity(0.05),
+                                    color: Colors.orange.withValues(alpha: 0.05),
                                     borderRadius: BorderRadius.circular(8),
-                                    border: Border.all(color: Colors.orange.withOpacity(0.2)),
+                                    border: Border.all(color: Colors.orange.withValues(alpha: 0.2)),
                                   ),
                                   child: Column(
                                     crossAxisAlignment: CrossAxisAlignment.start,
@@ -362,4 +362,5 @@ class ClinicalOverviewCard extends StatelessWidget {
     );
   }
 }
+
 

@@ -158,7 +158,7 @@ class RiskSummaryCard extends StatelessWidget {
     return GestureDetector(
       onTap: onTap,
       child: Card(
-        color: color.withOpacity(0.1),
+        color: color.withValues(alpha: 0.1),
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(12),
           side: BorderSide(color: color, width: 1.5),
@@ -204,7 +204,7 @@ class RiskSummaryCard extends StatelessWidget {
                 Container(
                   padding: const EdgeInsets.all(AppSpacing.sm),
                   decoration: BoxDecoration(
-                    color: color.withOpacity(0.15),
+                    color: color.withValues(alpha: 0.15),
                     borderRadius: BorderRadius.circular(8),
                   ),
                   child: Row(
@@ -267,7 +267,7 @@ class RiskAssessmentDetail extends StatelessWidget {
                 Container(
                   padding: const EdgeInsets.all(AppSpacing.sm),
                   decoration: BoxDecoration(
-                    color: Color(assessment.overallRiskLevel.colorValue).withOpacity(0.2),
+                    color: Color(assessment.overallRiskLevel.colorValue).withValues(alpha: 0.2),
                     borderRadius: BorderRadius.circular(8),
                   ),
                   child: Icon(
@@ -337,7 +337,7 @@ class RiskAssessmentDetail extends StatelessWidget {
           Container(
             padding: const EdgeInsets.all(AppSpacing.md),
             decoration: BoxDecoration(
-              color: Colors.orange.withOpacity(0.1),
+              color: Colors.orange.withValues(alpha: 0.1),
               borderRadius: BorderRadius.circular(8),
               border: Border.all(color: Colors.orange, width: 1),
             ),
@@ -367,7 +367,7 @@ class RiskAssessmentDetail extends StatelessWidget {
       child: Container(
         padding: const EdgeInsets.all(AppSpacing.sm),
         decoration: BoxDecoration(
-          color: Colors.grey.withOpacity(0.1),
+          color: Colors.grey.withValues(alpha: 0.1),
           borderRadius: BorderRadius.circular(8),
         ),
         child: Column(
@@ -432,7 +432,7 @@ class RiskAssessmentDetail extends StatelessWidget {
       decoration: BoxDecoration(
         border: Border.all(color: color, width: 1),
         borderRadius: BorderRadius.circular(8),
-        color: color.withOpacity(0.05),
+        color: color.withValues(alpha: 0.05),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -512,4 +512,5 @@ class RiskAssessmentDetail extends StatelessWidget {
     }
   }
 }
+
 

@@ -198,8 +198,8 @@ class VitalSignsAlertDialog extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.all(AppSpacing.sm),
       decoration: BoxDecoration(
-        color: color.withOpacity(0.05),
-        border: Border.all(color: color.withOpacity(0.3)),
+        color: color.withValues(alpha: 0.05),
+        border: Border.all(color: color.withValues(alpha: 0.3)),
         borderRadius: BorderRadius.circular(6),
       ),
       child: Row(
@@ -256,4 +256,5 @@ class VitalSignsAlertDialog extends StatelessWidget {
     );
   }
 }
+
 

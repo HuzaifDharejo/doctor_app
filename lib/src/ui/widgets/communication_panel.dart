@@ -285,7 +285,7 @@ class _CommunicationPanelState extends ConsumerState<CommunicationPanel> {
       child: ListTile(
         contentPadding: const EdgeInsets.symmetric(horizontal: AppSpacing.lg, vertical: AppSpacing.xs),
         leading: CircleAvatar(
-          backgroundColor: const Color(0xFF10B981).withOpacity(0.2),
+          backgroundColor: const Color(0xFF10B981).withValues(alpha: 0.2),
           child: const Icon(Icons.phone_in_talk_rounded, color: Color(0xFF10B981), size: 20),
         ),
         title: Row(
@@ -555,8 +555,8 @@ class CallLogsWidget extends ConsumerWidget {
                   children: [
                     CircleAvatar(
                       backgroundColor: isCompleted
-                          ? const Color(0xFF10B981).withOpacity(0.2)
-                          : const Color(0xFFDC2626).withOpacity(0.2),
+                          ? const Color(0xFF10B981).withValues(alpha: 0.2)
+                          : const Color(0xFFDC2626).withValues(alpha: 0.2),
                       child: Icon(
                         isCompleted ? Icons.phone_in_talk_rounded : Icons.call_missed_rounded,
                         color: isCompleted ? const Color(0xFF10B981) : const Color(0xFFDC2626),
@@ -594,4 +594,5 @@ class CallLogsWidget extends ConsumerWidget {
     );
   }
 }
+
 
