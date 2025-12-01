@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import '../../services/logger_service.dart';
 import '../../theme/app_theme.dart';
+import '../../core/theme/design_tokens.dart';
 
 /// Debug console widget for viewing logs in-app
 /// Only visible in debug mode
@@ -146,7 +147,7 @@ class _DebugConsoleState extends State<DebugConsole> with SingleTickerProviderSt
 
   Widget _buildFilterBar(bool isDark) {
     return Container(
-      padding: const EdgeInsets.all(8),
+      padding: const EdgeInsets.all(AppSpacing.sm),
       color: isDark ? const Color(0xFF2D2D2D) : Colors.white,
       child: Column(
         children: [
@@ -189,7 +190,7 @@ class _DebugConsoleState extends State<DebugConsole> with SingleTickerProviderSt
       selectedColor: color,
       backgroundColor: isDark ? const Color(0xFF3D3D3D) : Colors.grey[300],
       checkmarkColor: Colors.white,
-      padding: const EdgeInsets.symmetric(horizontal: 4),
+      padding: const EdgeInsets.symmetric(horizontal: AppSpacing.xs),
       visualDensity: VisualDensity.compact,
     );
   }
@@ -213,7 +214,7 @@ class _DebugConsoleState extends State<DebugConsole> with SingleTickerProviderSt
     return ListView.builder(
       controller: _scrollController,
       itemCount: logs.length,
-      padding: const EdgeInsets.all(8),
+      padding: const EdgeInsets.all(AppSpacing.sm),
       itemBuilder: (context, index) {
         final entry = logs[index];
         return _buildLogEntry(entry, isDark);
@@ -242,14 +243,14 @@ class _DebugConsoleState extends State<DebugConsole> with SingleTickerProviderSt
         onTap: () => _showLogDetails(entry),
         borderRadius: BorderRadius.circular(6),
         child: Padding(
-          padding: const EdgeInsets.all(10),
+          padding: const EdgeInsets.all(AppSpacing.md),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Row(
                 children: [
                   Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                    padding: const EdgeInsets.symmetric(horizontal: AppSpacing.xs, vertical: AppSpacing.xxs),
                     decoration: BoxDecoration(
                       color: color.withValues(alpha: 0.15),
                       borderRadius: BorderRadius.circular(4),
@@ -275,7 +276,7 @@ class _DebugConsoleState extends State<DebugConsole> with SingleTickerProviderSt
                   ),
                   const SizedBox(width: 8),
                   Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                    padding: const EdgeInsets.symmetric(horizontal: AppSpacing.xs, vertical: AppSpacing.xxs),
                     decoration: BoxDecoration(
                       color: AppColors.primary.withValues(alpha: 0.1),
                       borderRadius: BorderRadius.circular(4),
@@ -340,7 +341,7 @@ class _DebugConsoleState extends State<DebugConsole> with SingleTickerProviderSt
 
     return ListView.builder(
       itemCount: errors.length,
-      padding: const EdgeInsets.all(8),
+      padding: const EdgeInsets.all(AppSpacing.sm),
       itemBuilder: (context, index) {
         return _buildLogEntry(errors[errors.length - 1 - index], isDark);
       },
@@ -365,7 +366,7 @@ class _DebugConsoleState extends State<DebugConsole> with SingleTickerProviderSt
 
     return ListView.builder(
       itemCount: metrics.length,
-      padding: const EdgeInsets.all(8),
+      padding: const EdgeInsets.all(AppSpacing.sm),
       itemBuilder: (context, index) {
         final metric = metrics[metrics.length - 1 - index];
         final durationMs = metric.duration?.inMilliseconds ?? 0;
@@ -373,7 +374,7 @@ class _DebugConsoleState extends State<DebugConsole> with SingleTickerProviderSt
         
         return Container(
           margin: const EdgeInsets.only(bottom: 8),
-          padding: const EdgeInsets.all(12),
+          padding: const EdgeInsets.all(AppSpacing.md),
           decoration: BoxDecoration(
             color: isDark ? const Color(0xFF2D2D2D) : Colors.white,
             borderRadius: BorderRadius.circular(8),
@@ -433,7 +434,7 @@ class _DebugConsoleState extends State<DebugConsole> with SingleTickerProviderSt
     final errorsByTag = log.errorsByTag;
 
     return SingleChildScrollView(
-      padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.all(AppSpacing.lg),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -455,7 +456,7 @@ class _DebugConsoleState extends State<DebugConsole> with SingleTickerProviderSt
           ],
           if (summary['lastError'] != null)
             Container(
-              padding: const EdgeInsets.all(12),
+              padding: const EdgeInsets.all(AppSpacing.md),
               decoration: BoxDecoration(
                 color: AppColors.error.withValues(alpha: 0.1),
                 borderRadius: BorderRadius.circular(8),
@@ -485,7 +486,7 @@ class _DebugConsoleState extends State<DebugConsole> with SingleTickerProviderSt
   Widget _buildStatCard(String title, List<Widget> children, bool isDark) {
     return Container(
       width: double.infinity,
-      padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.all(AppSpacing.lg),
       decoration: BoxDecoration(
         color: isDark ? const Color(0xFF2D2D2D) : Colors.white,
         borderRadius: BorderRadius.circular(12),
@@ -510,7 +511,7 @@ class _DebugConsoleState extends State<DebugConsole> with SingleTickerProviderSt
 
   Widget _buildStatRow(String label, String value, bool isDark, {Color? color}) {
     return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 4),
+      padding: const EdgeInsets.symmetric(vertical: AppSpacing.xs),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
@@ -585,14 +586,14 @@ class _LogDetailsSheet extends StatelessWidget {
           Container(
             width: 40,
             height: 4,
-            margin: const EdgeInsets.symmetric(vertical: 12),
+            margin: const EdgeInsets.symmetric(vertical: AppSpacing.md),
             decoration: BoxDecoration(
               color: Colors.grey[400],
               borderRadius: BorderRadius.circular(2),
             ),
           ),
           Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 16),
+            padding: const EdgeInsets.symmetric(horizontal: AppSpacing.lg),
             child: Row(
               children: [
                 Text(
@@ -620,7 +621,7 @@ class _LogDetailsSheet extends StatelessWidget {
           const Divider(),
           Flexible(
             child: SingleChildScrollView(
-              padding: const EdgeInsets.all(16),
+              padding: const EdgeInsets.all(AppSpacing.lg),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
@@ -635,7 +636,7 @@ class _LogDetailsSheet extends StatelessWidget {
                     Text('Stack Trace', style: TextStyle(fontWeight: FontWeight.bold, color: Colors.grey[500])),
                     const SizedBox(height: 8),
                     Container(
-                      padding: const EdgeInsets.all(12),
+                      padding: const EdgeInsets.all(AppSpacing.md),
                       decoration: BoxDecoration(
                         color: isDark ? const Color(0xFF1E1E1E) : Colors.grey[100],
                         borderRadius: BorderRadius.circular(8),
@@ -655,7 +656,7 @@ class _LogDetailsSheet extends StatelessWidget {
                     Text('Extra Data', style: TextStyle(fontWeight: FontWeight.bold, color: Colors.grey[500])),
                     const SizedBox(height: 8),
                     Container(
-                      padding: const EdgeInsets.all(12),
+                      padding: const EdgeInsets.all(AppSpacing.md),
                       decoration: BoxDecoration(
                         color: isDark ? const Color(0xFF1E1E1E) : Colors.grey[100],
                         borderRadius: BorderRadius.circular(8),
@@ -719,3 +720,4 @@ class DebugButton extends StatelessWidget {
     );
   }
 }
+

@@ -6,6 +6,7 @@ import 'package:intl/intl.dart';
 import 'package:url_launcher/url_launcher.dart';
 import '../../db/doctor_db.dart';
 import '../../theme/app_theme.dart';
+import '../../core/theme/design_tokens.dart';
 import '../screens/patient_view_screen_modern.dart';
 import 'patient_avatar.dart';
 
@@ -190,7 +191,7 @@ class _PatientCardState extends State<PatientCard>
                         Hero(
                           tag: '${widget.heroTagPrefix ?? "card"}-patient-avatar-${patient.id}',
                           child: Container(
-                            padding: const EdgeInsets.all(2),
+                            padding: const EdgeInsets.all(AppSpacing.xxs),
                             decoration: BoxDecoration(
                               shape: BoxShape.circle,
                               gradient: LinearGradient(
@@ -203,7 +204,7 @@ class _PatientCardState extends State<PatientCard>
                               ),
                             ),
                             child: Container(
-                              padding: const EdgeInsets.all(2),
+                              padding: const EdgeInsets.all(AppSpacing.xxs),
                               decoration: BoxDecoration(
                                 shape: BoxShape.circle,
                                 color: Theme.of(context).colorScheme.surface,
@@ -305,7 +306,7 @@ class _PatientCardState extends State<PatientCard>
                                     ],
                                     if (widget.lastVisit != null && widget.nextAppointment != null)
                                       Container(
-                                        margin: const EdgeInsets.symmetric(horizontal: 8),
+                                        margin: const EdgeInsets.symmetric(horizontal: AppSpacing.sm),
                                         width: 1,
                                         height: 12,
                                         color: isDark ? AppColors.darkDivider : AppColors.divider,
@@ -335,7 +336,7 @@ class _PatientCardState extends State<PatientCard>
                                 Row(
                                   children: [
                                     Container(
-                                      padding: const EdgeInsets.all(4),
+                                      padding: const EdgeInsets.all(AppSpacing.xs),
                                       decoration: BoxDecoration(
                                         color: AppColors.accent.withValues(alpha: 0.1),
                                         borderRadius: BorderRadius.circular(6),
@@ -423,7 +424,7 @@ class _PatientCardState extends State<PatientCard>
                         ] else ...[
                           const SizedBox(width: 8),
                           Container(
-                            padding: const EdgeInsets.all(8),
+                            padding: const EdgeInsets.all(AppSpacing.sm),
                             decoration: BoxDecoration(
                               color: (isDark ? AppColors.darkDivider : AppColors.divider).withValues(alpha: 0.3),
                               borderRadius: BorderRadius.circular(10),
@@ -486,3 +487,4 @@ class _QuickActionButton extends StatelessWidget {
     );
   }
 }
+

@@ -58,7 +58,7 @@ class _AllergyCheckDialogState extends State<AllergyCheckDialog> {
             // Severity Banner
             Container(
               width: double.infinity,
-              padding: const EdgeInsets.all(12),
+              padding: const EdgeInsets.all(AppSpacing.md),
               decoration: BoxDecoration(
                 color: isSevere
                     ? Colors.red[50]
@@ -106,7 +106,7 @@ class _AllergyCheckDialogState extends State<AllergyCheckDialog> {
             // Allergy Details
             Container(
               width: double.infinity,
-              padding: const EdgeInsets.all(12),
+              padding: const EdgeInsets.all(AppSpacing.md),
               decoration: BoxDecoration(
                 color: Colors.grey[100],
                 borderRadius: BorderRadius.circular(8),
@@ -202,4 +202,5 @@ class _AllergyCheckDialogState extends State<AllergyCheckDialog> {
     );
   }
 }
+
 

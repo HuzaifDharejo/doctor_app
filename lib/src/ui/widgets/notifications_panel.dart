@@ -5,6 +5,7 @@ import '../../db/doctor_db.dart';
 import '../../providers/db_provider.dart';
 import '../../services/notification_service.dart';
 import '../../theme/app_theme.dart';
+import '../../core/theme/design_tokens.dart';
 
 /// Widget showing pending notifications
 class NotificationsPanel extends ConsumerWidget {
@@ -112,16 +113,16 @@ class NotificationsPanel extends ConsumerWidget {
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
     return Card(
-      margin: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+      margin: const EdgeInsets.symmetric(horizontal: AppSpacing.md, vertical: AppSpacing.xs),
       child: Padding(
-        padding: const EdgeInsets.all(12),
+        padding: const EdgeInsets.all(AppSpacing.md),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Row(
               children: [
                 Container(
-                  padding: const EdgeInsets.all(8),
+                  padding: const EdgeInsets.all(AppSpacing.sm),
                   decoration: BoxDecoration(
                     color: notification.priorityColor.withValues(alpha: 0.1),
                     borderRadius: BorderRadius.circular(8),
@@ -157,7 +158,7 @@ class NotificationsPanel extends ConsumerWidget {
                   ),
                 ),
                 Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                  padding: const EdgeInsets.symmetric(horizontal: AppSpacing.sm, vertical: AppSpacing.xs),
                   decoration: BoxDecoration(
                     color: notification.priorityColor.withValues(alpha: 0.15),
                     borderRadius: BorderRadius.circular(6),
@@ -427,7 +428,7 @@ class _NotificationPreferencesDialogState
     ValueChanged<bool> onChanged,
   ) {
     return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 8),
+      padding: const EdgeInsets.symmetric(vertical: AppSpacing.sm),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
@@ -491,7 +492,7 @@ class NotificationBadge extends ConsumerWidget {
     if (count == 0) return const SizedBox();
 
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+      padding: const EdgeInsets.symmetric(horizontal: AppSpacing.sm, vertical: AppSpacing.xs),
       decoration: BoxDecoration(
         color: const Color(0xFFDC2626),
         borderRadius: BorderRadius.circular(10),
@@ -507,3 +508,4 @@ class NotificationBadge extends ConsumerWidget {
     );
   }
 }
+

@@ -116,7 +116,7 @@ class _QuickVitalsEntryState extends State<QuickVitalsEntry> {
     return Dialog(
       child: SingleChildScrollView(
         child: Padding(
-          padding: const EdgeInsets.all(16),
+          padding: const EdgeInsets.all(AppSpacing.lg),
           child: Column(
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -149,7 +149,7 @@ class _QuickVitalsEntryState extends State<QuickVitalsEntry> {
                       decoration: const InputDecoration(hintText: 'Systolic'),
                     ),
                   ),
-                  const Padding(padding: EdgeInsets.symmetric(horizontal: 8), child: Text('/')),
+                  const Padding(padding: EdgeInsets.symmetric(horizontal: AppSpacing.sm), child: Text('/')),
                   Expanded(
                     child: TextField(
                       controller: _diastolicController,
@@ -228,3 +228,4 @@ class _QuickVitalsEntryState extends State<QuickVitalsEntry> {
     );
   }
 }
+
