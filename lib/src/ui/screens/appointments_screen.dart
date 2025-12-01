@@ -6,6 +6,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 import 'package:url_launcher/url_launcher.dart';
 import '../../core/core.dart';
+import '../../core/theme/design_tokens.dart';
 import '../../db/doctor_db.dart';
 import '../../providers/db_provider.dart';
 import '../../theme/app_theme.dart';
@@ -591,7 +592,7 @@ class _AppointmentsScreenState extends ConsumerState<AppointmentsScreen> {
       onTap: onTap,
       borderRadius: BorderRadius.circular(8),
       child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+        padding: const EdgeInsets.symmetric(horizontal: AppSpacing.md, vertical: AppSpacing.xs),
         decoration: BoxDecoration(
           color: color.withValues(alpha: 0.1),
           borderRadius: BorderRadius.circular(8),
@@ -671,7 +672,7 @@ class _AppointmentsScreenState extends ConsumerState<AppointmentsScreen> {
         maxChildSize: 0.9,
         expand: false,
         builder: (context, scrollController) => Container(
-          padding: const EdgeInsets.all(24),
+          padding: const EdgeInsets.all(AppSpacing.xxl),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
@@ -693,7 +694,7 @@ class _AppointmentsScreenState extends ConsumerState<AppointmentsScreen> {
                   GestureDetector(
                     onTap: () => Navigator.pop(context),
                     child: Container(
-                      padding: const EdgeInsets.all(8),
+                      padding: const EdgeInsets.all(AppSpacing.sm),
                       decoration: BoxDecoration(
                         color: (isDark ? AppColors.darkDivider : AppColors.divider).withValues(alpha: 0.5),
                         borderRadius: BorderRadius.circular(8),
@@ -707,7 +708,7 @@ class _AppointmentsScreenState extends ConsumerState<AppointmentsScreen> {
                   ),
                   const SizedBox(width: 12),
                   Container(
-                    padding: const EdgeInsets.all(12),
+                    padding: const EdgeInsets.all(AppSpacing.md),
                     decoration: BoxDecoration(
                       color: (isUpcoming ? AppColors.primary : statusColor).withValues(alpha: 0.1),
                       borderRadius: BorderRadius.circular(12),
@@ -731,7 +732,7 @@ class _AppointmentsScreenState extends ConsumerState<AppointmentsScreen> {
                         ),
                         const SizedBox(height: 4),
                         Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                          padding: const EdgeInsets.symmetric(horizontal: AppSpacing.md, vertical: AppSpacing.xs),
                           decoration: BoxDecoration(
                             color: statusColor.withValues(alpha: 0.1),
                             borderRadius: BorderRadius.circular(12),
@@ -767,7 +768,7 @@ class _AppointmentsScreenState extends ConsumerState<AppointmentsScreen> {
                       // Patient info
                       if (patient != null)
                         Container(
-                        padding: const EdgeInsets.all(16),
+                        padding: const EdgeInsets.all(AppSpacing.lg),
                         decoration: BoxDecoration(
                           color: isDark ? AppColors.darkBackground : AppColors.background,
                           borderRadius: BorderRadius.circular(12),
@@ -809,7 +810,7 @@ class _AppointmentsScreenState extends ConsumerState<AppointmentsScreen> {
                     const SizedBox(height: 16),
                     // Date & Time Card
                     Container(
-                      padding: const EdgeInsets.all(16),
+                      padding: const EdgeInsets.all(AppSpacing.lg),
                       decoration: BoxDecoration(
                         gradient: LinearGradient(
                           colors: [
@@ -827,7 +828,7 @@ class _AppointmentsScreenState extends ConsumerState<AppointmentsScreen> {
                           Row(
                             children: [
                               Container(
-                                padding: const EdgeInsets.all(10),
+                                padding: const EdgeInsets.all(AppSpacing.md),
                                 decoration: BoxDecoration(
                                   color: (isUpcoming ? AppColors.primary : statusColor).withValues(alpha: 0.15),
                                   borderRadius: BorderRadius.circular(10),
@@ -899,7 +900,7 @@ class _AppointmentsScreenState extends ConsumerState<AppointmentsScreen> {
                                 child: Row(
                                   children: [
                                     Container(
-                                      padding: const EdgeInsets.all(10),
+                                      padding: const EdgeInsets.all(AppSpacing.md),
                                       decoration: BoxDecoration(
                                         color: (isUpcoming ? AppColors.primary : statusColor).withValues(alpha: 0.15),
                                         borderRadius: BorderRadius.circular(10),
@@ -939,7 +940,7 @@ class _AppointmentsScreenState extends ConsumerState<AppointmentsScreen> {
                     // Reason for visit
                     if (appointment.reason.isNotEmpty)
                       Container(
-                        padding: const EdgeInsets.all(16),
+                        padding: const EdgeInsets.all(AppSpacing.lg),
                         decoration: BoxDecoration(
                           color: isDark ? AppColors.darkBackground : AppColors.background,
                           borderRadius: BorderRadius.circular(12),
@@ -977,7 +978,7 @@ class _AppointmentsScreenState extends ConsumerState<AppointmentsScreen> {
                     // Notes
                     if (appointment.notes.isNotEmpty)
                       Container(
-                        padding: const EdgeInsets.all(16),
+                        padding: const EdgeInsets.all(AppSpacing.lg),
                         decoration: BoxDecoration(
                           color: isDark ? AppColors.darkBackground : AppColors.background,
                           borderRadius: BorderRadius.circular(12),
@@ -1030,7 +1031,7 @@ class _AppointmentsScreenState extends ConsumerState<AppointmentsScreen> {
                               icon: const Icon(Icons.edit_calendar),
                               label: const Text('Reschedule'),
                               style: OutlinedButton.styleFrom(
-                                padding: const EdgeInsets.symmetric(vertical: 12),
+                                padding: const EdgeInsets.symmetric(vertical: AppSpacing.md),
                               ),
                             ),
                           ),
@@ -1050,7 +1051,7 @@ class _AppointmentsScreenState extends ConsumerState<AppointmentsScreen> {
                               label: const Text('Cancel'),
                               style: OutlinedButton.styleFrom(
                                 foregroundColor: AppColors.error,
-                                padding: const EdgeInsets.symmetric(vertical: 12),
+                                padding: const EdgeInsets.symmetric(vertical: AppSpacing.md),
                               ),
                             ),
                           ),
@@ -1074,7 +1075,7 @@ class _AppointmentsScreenState extends ConsumerState<AppointmentsScreen> {
                           label: const Text('Mark as Completed'),
                           style: ElevatedButton.styleFrom(
                             backgroundColor: AppColors.success,
-                            padding: const EdgeInsets.symmetric(vertical: 14),
+                            padding: const EdgeInsets.symmetric(vertical: AppSpacing.lg),
                           ),
                         ),
                       ),
