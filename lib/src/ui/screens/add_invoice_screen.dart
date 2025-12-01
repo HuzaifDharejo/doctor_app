@@ -8,7 +8,11 @@ import 'package:intl/intl.dart';
 import '../../db/doctor_db.dart';
 import '../../providers/db_provider.dart';
 import '../../services/suggestions_service.dart';
+import '../../core/components/app_input.dart';
+import '../../core/widgets/app_card.dart';
 import '../../theme/app_theme.dart';
+import '../../core/components/app_input.dart';
+import '../../core/widgets/app_card.dart';
 import '../../core/theme/design_tokens.dart';
 import '../widgets/suggestion_text_field.dart';
 

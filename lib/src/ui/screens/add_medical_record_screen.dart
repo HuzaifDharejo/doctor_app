@@ -6,6 +6,7 @@ import 'package:intl/intl.dart';
 import '../../db/doctor_db.dart';
 import '../../providers/db_provider.dart';
 import '../../services/suggestions_service.dart';
+import '../../core/components/app_input.dart';
 import '../../theme/app_theme.dart';
 import '../../core/theme/design_tokens.dart';
 import '../widgets/document_data_extractor.dart';
