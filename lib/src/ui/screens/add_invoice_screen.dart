@@ -776,7 +776,7 @@ class _AddInvoiceScreenState extends ConsumerState<AddInvoiceScreen> {
                 SizedBox(
                   width: 80,
                   child: Container(
-                    padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 8),
+                    padding: const EdgeInsets.symmetric(vertical: AppSpacing.md, horizontal: AppSpacing.sm),
                     decoration: BoxDecoration(
                       color: colorScheme.primaryContainer,
                       borderRadius: BorderRadius.circular(8),
@@ -1100,4 +1100,5 @@ class InvoiceItem {
     };
   }
 }
+
 

@@ -419,7 +419,7 @@ class _InvoiceDetailScreenState extends ConsumerState<InvoiceDetailScreen> {
                       style: ElevatedButton.styleFrom(
                         backgroundColor: AppColors.success,
                         foregroundColor: Colors.white,
-                        padding: const EdgeInsets.symmetric(vertical: 14),
+                        padding: const EdgeInsets.symmetric(vertical: AppSpacing.lg),
                       ),
                     ),
                   const SizedBox(height: 12),
@@ -428,7 +428,7 @@ class _InvoiceDetailScreenState extends ConsumerState<InvoiceDetailScreen> {
                     icon: const Icon(Icons.picture_as_pdf),
                     label: const Text('Export PDF'),
                     style: OutlinedButton.styleFrom(
-                      padding: const EdgeInsets.symmetric(vertical: 14),
+                      padding: const EdgeInsets.symmetric(vertical: AppSpacing.lg),
                     ),
                   ),
                 ],
@@ -719,4 +719,5 @@ class _InvoiceDetailScreenState extends ConsumerState<InvoiceDetailScreen> {
     }
   }
 }
+
 

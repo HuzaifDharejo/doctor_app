@@ -4758,7 +4758,7 @@ class _PatientViewScreenState extends ConsumerState<PatientViewScreen>
                           icon: const Icon(Icons.check_circle),
                           label: const Text('Confirm Appointment'),
                           style: ElevatedButton.styleFrom(
-                            padding: const EdgeInsets.symmetric(vertical: 14),
+                            padding: const EdgeInsets.symmetric(vertical: AppSpacing.lg),
                           ),
                         ),
                       ),
@@ -4774,7 +4774,7 @@ class _PatientViewScreenState extends ConsumerState<PatientViewScreen>
                           label: const Text('Mark as Completed'),
                           style: ElevatedButton.styleFrom(
                             backgroundColor: AppColors.success,
-                            padding: const EdgeInsets.symmetric(vertical: 14),
+                            padding: const EdgeInsets.symmetric(vertical: AppSpacing.lg),
                           ),
                         ),
                       ),
@@ -5240,4 +5240,5 @@ class _HeaderPatternPainter extends CustomPainter {
   @override
   bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
 }
+
 
