@@ -6,6 +6,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../core/core.dart';
+import '../../core/components/app_button.dart';
 import '../../providers/db_provider.dart';
 import '../../providers/google_calendar_provider.dart';
 import '../../services/backup_service.dart';
@@ -504,11 +505,12 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> with SingleTick
           ),
         ),
         actions: [
-          TextButton(
+          AppButton.tertiary(
+            label: 'Close',
             onPressed: () => Navigator.pop(context),
-            child: const Text('Close'),
           ),
-          TextButton(
+          AppButton.tertiary(
+            label: 'View Details',
             onPressed: () {
               Navigator.pop(context);
               Navigator.push(context, MaterialPageRoute<void>(builder: (_) => const DebugConsole()));
@@ -626,9 +628,9 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> with SingleTick
           ],
         ),
         actions: [
-          TextButton(
+          AppButton.tertiary(
+            label: 'Close',
             onPressed: () => Navigator.pop(context),
-            child: const Text('Close'),
           ),
         ],
       ),
@@ -727,9 +729,9 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> with SingleTick
           ),
         ),
         actions: [
-          TextButton(
+          AppButton.tertiary(
+            label: 'Cancel',
             onPressed: () => Navigator.pop(context),
-            child: const Text('Cancel'),
           ),
         ],
       ),
@@ -805,18 +807,18 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> with SingleTick
           ],
         ),
         actions: [
-          TextButton(
+          AppButton.tertiary(
+            label: 'Cancel',
             onPressed: () => Navigator.pop(context),
-            child: const Text('Cancel'),
           ),
-          ElevatedButton.icon(
+          AppButton.primary(
+            label: 'Restore',
+            icon: Icons.restore,
+            backgroundColor: AppColors.info,
             onPressed: () async {
               Navigator.pop(context);
               await _performRestore(context, ref, backup);
             },
-            icon: const Icon(Icons.restore),
-            label: const Text('Restore'),
-            style: ElevatedButton.styleFrom(backgroundColor: AppColors.info),
           ),
         ],
       ),
@@ -895,11 +897,13 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> with SingleTick
           'This will add sample patients, appointments, and prescriptions to your database. This is useful for testing or demonstration purposes.\n\nExisting data will NOT be affected.',
         ),
         actions: [
-          TextButton(
+          AppButton.tertiary(
+            label: 'Cancel',
             onPressed: () => Navigator.pop(context),
-            child: const Text('Cancel'),
           ),
-          ElevatedButton.icon(
+          AppButton.primary(
+            label: 'Load Data',
+            icon: Icons.add,
             onPressed: () async {
               Navigator.pop(context);
               try {
@@ -938,8 +942,6 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> with SingleTick
                 }
               }
             },
-            icon: const Icon(Icons.add),
-            label: const Text('Load Data'),
           ),
         ],
       ),
@@ -961,11 +963,12 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> with SingleTick
           'This will permanently delete all your data including patients, appointments, prescriptions, and invoices. This action cannot be undone.',
         ),
         actions: [
-          TextButton(
+          AppButton.tertiary(
+            label: 'Cancel',
             onPressed: () => Navigator.pop(context),
-            child: const Text('Cancel'),
           ),
-          ElevatedButton(
+          AppButton.danger(
+            label: 'Delete All',
             onPressed: () async {
               Navigator.pop(context);
               // Clear settings
@@ -988,8 +991,6 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> with SingleTick
                 );
               }
             },
-            style: ElevatedButton.styleFrom(backgroundColor: AppColors.error),
-            child: const Text('Delete All', style: TextStyle(color: Colors.white)),
           ),
         ],
       ),
@@ -1018,9 +1019,9 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> with SingleTick
           ),
         ),
         actions: [
-          TextButton(
+          AppButton.tertiary(
+            label: 'Close',
             onPressed: () => Navigator.pop(context),
-            child: const Text('Close'),
           ),
         ],
       ),
@@ -1049,9 +1050,9 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> with SingleTick
           ],
         ),
         actions: [
-          TextButton(
+          AppButton.tertiary(
+            label: 'Close',
             onPressed: () => Navigator.pop(context),
-            child: const Text('Close'),
           ),
         ],
       ),
@@ -1107,9 +1108,9 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> with SingleTick
           ],
         ),
         actions: [
-          TextButton(
+          AppButton.tertiary(
+            label: 'Close',
             onPressed: () => Navigator.pop(context),
-            child: const Text('Close'),
           ),
         ],
       ),
@@ -1158,9 +1159,9 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> with SingleTick
           ],
         ),
         actions: [
-          TextButton(
+          AppButton.tertiary(
+            label: 'Close',
             onPressed: () => Navigator.pop(context),
-            child: const Text('Close'),
           ),
         ],
       ),
@@ -1195,11 +1196,12 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> with SingleTick
           'This will reset your doctor profile to default values. Your patients and other data will not be affected.',
         ),
         actions: [
-          TextButton(
+          AppButton.tertiary(
+            label: 'Cancel',
             onPressed: () => Navigator.pop(context),
-            child: const Text('Cancel'),
           ),
-          ElevatedButton(
+          AppButton.danger(
+            label: 'Reset',
             onPressed: () async {
               Navigator.pop(context);
               await ref.read(doctorSettingsProvider).clearProfile();
@@ -1220,8 +1222,6 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> with SingleTick
                 );
               }
             },
-            style: ElevatedButton.styleFrom(backgroundColor: AppColors.error),
-            child: const Text('Reset', style: TextStyle(color: Colors.white)),
           ),
         ],
       ),
@@ -1413,9 +1413,10 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> with SingleTick
                       ],
                     ),
                   ),
-                  TextButton(
+                  AppButton.tertiary(
+                    label: 'Sign Out',
+                    foregroundColor: AppColors.error,
                     onPressed: () => _showDisconnectCalendarDialog(context, ref),
-                    child: const Text('Sign Out', style: TextStyle(color: AppColors.error)),
                   ),
                 ],
               ),
@@ -1594,7 +1595,10 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> with SingleTick
                     ],
                   ),
                 ),
-                TextButton(
+                AppButton.tertiary(
+                  label: enabledTypes.length == AppSettings.allMedicalRecordTypes.length 
+                      ? 'Disable All' 
+                      : 'Enable All',
                   onPressed: () {
                     // Toggle all on/off
                     final allEnabled = enabledTypes.length == AppSettings.allMedicalRecordTypes.length;
@@ -1607,12 +1611,6 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> with SingleTick
                       );
                     }
                   },
-                  child: Text(
-                    enabledTypes.length == AppSettings.allMedicalRecordTypes.length 
-                        ? 'Disable All' 
-                        : 'Enable All',
-                    style: const TextStyle(fontSize: 12),
-                  ),
                 ),
               ],
             ),
@@ -1818,11 +1816,12 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> with SingleTick
           'Appointments will no longer sync automatically.',
         ),
         actions: [
-          TextButton(
+          AppButton.tertiary(
+            label: 'Cancel',
             onPressed: () => Navigator.pop(context),
-            child: const Text('Cancel'),
           ),
-          ElevatedButton(
+          AppButton.danger(
+            label: 'Disconnect',
             onPressed: () async {
               Navigator.pop(context);
               await ref.read(googleCalendarProvider.notifier).signOut();
@@ -1836,8 +1835,6 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> with SingleTick
                 );
               }
             },
-            style: ElevatedButton.styleFrom(backgroundColor: AppColors.error),
-            child: const Text('Disconnect', style: TextStyle(color: Colors.white)),
           ),
         ],
       ),
@@ -1883,9 +1880,9 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> with SingleTick
                 ),
         ),
         actions: [
-          TextButton(
+          AppButton.tertiary(
+            label: 'Close',
             onPressed: () => Navigator.pop(context),
-            child: const Text('Close'),
           ),
         ],
       ),
@@ -1960,9 +1957,9 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> with SingleTick
             ],
           ),
           actions: [
-            TextButton(
+            AppButton.tertiary(
+              label: 'Close',
               onPressed: () => Navigator.pop(dialogContext),
-              child: const Text('Close'),
             ),
           ],
         ),
