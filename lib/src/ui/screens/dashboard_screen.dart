@@ -968,7 +968,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
             Container(
               padding: const EdgeInsets.all(AppSpacing.xs),
               decoration: BoxDecoration(
-                color: accentColor.withOpacity(0.1),
+                color: accentColor.withValues(alpha: 0.1),
                 borderRadius: BorderRadius.circular(8),
               ),
               child: Icon(
@@ -1010,19 +1010,19 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                 margin: const EdgeInsets.only(bottom: 10),
                 padding: EdgeInsets.all(isCompact ? 12 : 14),
                 color: isDark 
-                    ? Colors.white.withOpacity(0.06)
-                    : accentColor.withOpacity(0.03),
+                    ? Colors.white.withValues(alpha: 0.06)
+                    : accentColor.withValues(alpha: 0.03),
                 borderRadius: BorderRadius.circular(14),
                 borderColor: isDark 
-                    ? Colors.white.withOpacity(0.1)
-                    : accentColor.withOpacity(0.2),
+                    ? Colors.white.withValues(alpha: 0.1)
+                    : accentColor.withValues(alpha: 0.2),
                 borderWidth: 1,
                 child: Row(
                   children: [
                     Container(
                       padding: const EdgeInsets.all(AppSpacing.md),
                       decoration: BoxDecoration(
-                        color: accentColor.withOpacity(0.1),
+                        color: accentColor.withValues(alpha: 0.1),
                         borderRadius: BorderRadius.circular(10),
                       ),
                       child: Icon(Icons.person_outline_rounded, color: accentColor, size: 22),
@@ -1056,7 +1056,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                     Container(
                       padding: const EdgeInsets.symmetric(horizontal: AppSpacing.md, vertical: AppSpacing.xs),
                       decoration: BoxDecoration(
-                        color: accentColor.withOpacity(0.1),
+                        color: accentColor.withValues(alpha: 0.1),
                         borderRadius: BorderRadius.circular(20),
                       ),
                       child: Text(
@@ -1236,3 +1236,4 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
     };
   }
 }
+

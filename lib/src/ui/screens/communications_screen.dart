@@ -374,7 +374,7 @@ class _CommunicationsScreenState extends ConsumerState<CommunicationsScreen>
             Column(
               children: [
                 CircleAvatar(
-                  backgroundColor: (activity['color'] as Color).withOpacity(0.2),
+                  backgroundColor: (activity['color'] as Color).withValues(alpha: 0.2),
                   child: Icon(
                     activity['icon'] as IconData,
                     color: activity['color'] as Color,
@@ -426,4 +426,5 @@ class _CommunicationsScreenState extends ConsumerState<CommunicationsScreen>
     }).toList();
   }
 }
+
 

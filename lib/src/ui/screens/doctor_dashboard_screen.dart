@@ -156,7 +156,7 @@ class _DoctorDashboardScreenState extends ConsumerState<DoctorDashboardScreen> {
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
       child: Container(
         decoration: BoxDecoration(
-          color: color.withOpacity(0.1),
+          color: color.withValues(alpha: 0.1),
           border: Border.all(color: color, width: 2),
           borderRadius: BorderRadius.circular(12),
         ),
@@ -340,7 +340,7 @@ class _DoctorDashboardScreenState extends ConsumerState<DoctorDashboardScreen> {
         child: Container(
           decoration: BoxDecoration(
             borderRadius: BorderRadius.circular(12),
-            color: color.withOpacity(0.1),
+            color: color.withValues(alpha: 0.1),
             border: Border.all(color: color, width: 1),
           ),
           child: Column(
@@ -448,4 +448,5 @@ class _DoctorDashboardScreenState extends ConsumerState<DoctorDashboardScreen> {
     return age;
   }
 }
+
 

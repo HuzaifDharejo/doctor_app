@@ -255,7 +255,7 @@ class _VitalSignsScreenState extends ConsumerState<VitalSignsScreen> with Single
             Container(
               padding: const EdgeInsets.symmetric(horizontal: AppSpacing.sm, vertical: AppSpacing.xxs),
               decoration: BoxDecoration(
-                color: statusColor.withOpacity(0.1),
+                color: statusColor.withValues(alpha: 0.1),
                 borderRadius: BorderRadius.circular(12),
               ),
               child: Text(
@@ -379,7 +379,7 @@ class _VitalSignsScreenState extends ConsumerState<VitalSignsScreen> with Single
                   horizontalInterval: 20,
                   getDrawingHorizontalLine: (value) {
                     return FlLine(
-                      color: colorScheme.outlineVariant.withOpacity(0.3),
+                      color: colorScheme.outlineVariant.withValues(alpha: 0.3),
                       strokeWidth: 1,
                     );
                   },
@@ -501,7 +501,7 @@ class _VitalSignsScreenState extends ConsumerState<VitalSignsScreen> with Single
                   drawVerticalLine: true,
                   getDrawingHorizontalLine: (value) {
                     return FlLine(
-                      color: colorScheme.outlineVariant.withOpacity(0.3),
+                      color: colorScheme.outlineVariant.withValues(alpha: 0.3),
                       strokeWidth: 1,
                     );
                   },
@@ -550,7 +550,7 @@ class _VitalSignsScreenState extends ConsumerState<VitalSignsScreen> with Single
                     dotData: const FlDotData(show: true),
                     belowBarData: BarAreaData(
                       show: true,
-                      color: colorScheme.primary.withOpacity(0.1),
+                      color: colorScheme.primary.withValues(alpha: 0.1),
                     ),
                   ),
                 ],
@@ -996,4 +996,5 @@ class _VitalSignsScreenState extends ConsumerState<VitalSignsScreen> with Single
     );
   }
 }
+
 

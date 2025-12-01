@@ -212,7 +212,7 @@ class _FollowUpsScreenState extends ConsumerState<FollowUpsScreen> with SingleTi
 
     return Card(
       margin: const EdgeInsets.only(bottom: 12),
-      color: isOverdue ? Colors.red.withOpacity(0.05) : null,
+      color: isOverdue ? Colors.red.withValues(alpha: 0.05) : null,
       child: InkWell(
         onTap: () => _showFollowUpActions(followUp, patient),
         borderRadius: BorderRadius.circular(12),
@@ -224,7 +224,7 @@ class _FollowUpsScreenState extends ConsumerState<FollowUpsScreen> with SingleTi
               Row(
                 children: [
                   CircleAvatar(
-                    backgroundColor: urgencyColor.withOpacity(0.1),
+                    backgroundColor: urgencyColor.withValues(alpha: 0.1),
                     child: Icon(
                       followUp.status == 'completed' 
                         ? Icons.check 
@@ -253,7 +253,7 @@ class _FollowUpsScreenState extends ConsumerState<FollowUpsScreen> with SingleTi
                   Container(
                     padding: const EdgeInsets.symmetric(horizontal: AppSpacing.sm, vertical: AppSpacing.xs),
                     decoration: BoxDecoration(
-                      color: urgencyColor.withOpacity(0.1),
+                      color: urgencyColor.withValues(alpha: 0.1),
                       borderRadius: BorderRadius.circular(12),
                     ),
                     child: Text(
@@ -719,3 +719,4 @@ class _FollowUpsScreenState extends ConsumerState<FollowUpsScreen> with SingleTi
     );
   }
 }
+

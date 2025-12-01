@@ -189,11 +189,11 @@ class _TreatmentProgressScreenState extends ConsumerState<TreatmentProgressScree
       padding: const EdgeInsets.symmetric(horizontal: AppSpacing.xl, vertical: AppSpacing.lg),
       color: isDark ? AppColors.darkSurface : Colors.white,
       borderRadius: BorderRadius.circular(16),
-      borderColor: color.withOpacity(0.3),
+      borderColor: color.withValues(alpha: 0.3),
       borderWidth: 1,
       boxShadow: [
         BoxShadow(
-          color: color.withOpacity(0.1),
+          color: color.withValues(alpha: 0.1),
           blurRadius: 10,
           offset: const Offset(0, 4),
         ),
@@ -203,7 +203,7 @@ class _TreatmentProgressScreenState extends ConsumerState<TreatmentProgressScree
           Container(
             padding: const EdgeInsets.all(AppSpacing.md),
             decoration: BoxDecoration(
-              color: color.withOpacity(0.1),
+              color: color.withValues(alpha: 0.1),
               borderRadius: BorderRadius.circular(10),
             ),
             child: Icon(icon, color: color, size: 24),
@@ -282,11 +282,11 @@ class _TreatmentProgressScreenState extends ConsumerState<TreatmentProgressScree
         color: isDark ? AppColors.darkSurface : Colors.white,
         borderRadius: BorderRadius.circular(16),
         border: Border.all(
-          color: (isDark ? AppColors.darkDivider : AppColors.divider).withOpacity(0.5),
+          color: (isDark ? AppColors.darkDivider : AppColors.divider).withValues(alpha: 0.5),
         ),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.05),
+            color: Colors.black.withValues(alpha: 0.05),
             blurRadius: 10,
             offset: const Offset(0, 4),
           ),
@@ -307,7 +307,7 @@ class _TreatmentProgressScreenState extends ConsumerState<TreatmentProgressScree
                     Container(
                       padding: const EdgeInsets.all(AppSpacing.md),
                       decoration: BoxDecoration(
-                        color: providerColor.withOpacity(0.1),
+                        color: providerColor.withValues(alpha: 0.1),
                         borderRadius: BorderRadius.circular(10),
                       ),
                       child: Icon(providerIcon, color: providerColor, size: 24),
@@ -343,7 +343,7 @@ class _TreatmentProgressScreenState extends ConsumerState<TreatmentProgressScree
                       Container(
                         padding: const EdgeInsets.symmetric(horizontal: AppSpacing.md, vertical: AppSpacing.xs),
                         decoration: BoxDecoration(
-                          color: _getMoodColor(session.moodRating!).withOpacity(0.1),
+                          color: _getMoodColor(session.moodRating!).withValues(alpha: 0.1),
                           borderRadius: BorderRadius.circular(12),
                         ),
                         child: Row(
@@ -406,7 +406,7 @@ class _TreatmentProgressScreenState extends ConsumerState<TreatmentProgressScree
                   Container(
                     padding: const EdgeInsets.symmetric(horizontal: AppSpacing.sm, vertical: AppSpacing.xs),
                     decoration: BoxDecoration(
-                      color: _getRiskColor(session.riskAssessment).withOpacity(0.1),
+                      color: _getRiskColor(session.riskAssessment).withValues(alpha: 0.1),
                       borderRadius: BorderRadius.circular(8),
                     ),
                     child: Row(
@@ -487,11 +487,11 @@ class _TreatmentProgressScreenState extends ConsumerState<TreatmentProgressScree
         border: Border.all(
           color: med.endDate != null
               ? (isDark ? AppColors.darkDivider : AppColors.divider)
-              : statusColor.withOpacity(0.3),
+              : statusColor.withValues(alpha: 0.3),
         ),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.05),
+            color: Colors.black.withValues(alpha: 0.05),
             blurRadius: 10,
             offset: const Offset(0, 4),
           ),
@@ -512,7 +512,7 @@ class _TreatmentProgressScreenState extends ConsumerState<TreatmentProgressScree
                     Container(
                       padding: const EdgeInsets.all(AppSpacing.md),
                       decoration: BoxDecoration(
-                        color: statusColor.withOpacity(0.1),
+                        color: statusColor.withValues(alpha: 0.1),
                         borderRadius: BorderRadius.circular(10),
                       ),
                       child: Icon(Icons.medication, color: statusColor, size: 24),
@@ -544,7 +544,7 @@ class _TreatmentProgressScreenState extends ConsumerState<TreatmentProgressScree
                     Container(
                       padding: const EdgeInsets.symmetric(horizontal: AppSpacing.md, vertical: AppSpacing.xs),
                       decoration: BoxDecoration(
-                        color: statusColor.withOpacity(0.1),
+                        color: statusColor.withValues(alpha: 0.1),
                         borderRadius: BorderRadius.circular(12),
                       ),
                       child: Row(
@@ -603,7 +603,7 @@ class _TreatmentProgressScreenState extends ConsumerState<TreatmentProgressScree
                   Container(
                     padding: const EdgeInsets.symmetric(horizontal: AppSpacing.sm, vertical: AppSpacing.xs),
                     decoration: BoxDecoration(
-                      color: _getSeverityColor(med.sideEffectSeverity).withOpacity(0.1),
+                      color: _getSeverityColor(med.sideEffectSeverity).withValues(alpha: 0.1),
                       borderRadius: BorderRadius.circular(8),
                     ),
                     child: Row(
@@ -633,7 +633,7 @@ class _TreatmentProgressScreenState extends ConsumerState<TreatmentProgressScree
                   Container(
                     padding: const EdgeInsets.symmetric(horizontal: AppSpacing.sm, vertical: AppSpacing.xs),
                     decoration: BoxDecoration(
-                      color: AppColors.error.withOpacity(0.1),
+                      color: AppColors.error.withValues(alpha: 0.1),
                       borderRadius: BorderRadius.circular(8),
                     ),
                     child: Row(
@@ -720,12 +720,12 @@ class _TreatmentProgressScreenState extends ConsumerState<TreatmentProgressScree
         borderRadius: BorderRadius.circular(16),
         border: Border.all(
           color: goal.status == 'achieved'
-              ? AppColors.success.withOpacity(0.3)
-              : (isDark ? AppColors.darkDivider : AppColors.divider).withOpacity(0.5),
+              ? AppColors.success.withValues(alpha: 0.3)
+              : (isDark ? AppColors.darkDivider : AppColors.divider).withValues(alpha: 0.5),
         ),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.05),
+            color: Colors.black.withValues(alpha: 0.05),
             blurRadius: 10,
             offset: const Offset(0, 4),
           ),
@@ -746,7 +746,7 @@ class _TreatmentProgressScreenState extends ConsumerState<TreatmentProgressScree
                     Container(
                       padding: const EdgeInsets.all(AppSpacing.md),
                       decoration: BoxDecoration(
-                        color: statusColor.withOpacity(0.1),
+                        color: statusColor.withValues(alpha: 0.1),
                         borderRadius: BorderRadius.circular(10),
                       ),
                       child: Icon(statusIcon, color: statusColor, size: 24),
@@ -761,7 +761,7 @@ class _TreatmentProgressScreenState extends ConsumerState<TreatmentProgressScree
                               Container(
                                 padding: const EdgeInsets.symmetric(horizontal: AppSpacing.xs, vertical: AppSpacing.xxs),
                                 decoration: BoxDecoration(
-                                  color: priorityColor.withOpacity(0.1),
+                                  color: priorityColor.withValues(alpha: 0.1),
                                   borderRadius: BorderRadius.circular(4),
                                 ),
                                 child: Text(
@@ -890,7 +890,7 @@ class _TreatmentProgressScreenState extends ConsumerState<TreatmentProgressScree
         Container(
           padding: const EdgeInsets.symmetric(horizontal: AppSpacing.sm, vertical: AppSpacing.xs),
           decoration: BoxDecoration(
-            color: color.withOpacity(0.1),
+            color: color.withValues(alpha: 0.1),
             borderRadius: BorderRadius.circular(8),
           ),
           child: Text(
@@ -951,10 +951,10 @@ class _TreatmentProgressScreenState extends ConsumerState<TreatmentProgressScree
       decoration: BoxDecoration(
         color: isDark ? AppColors.darkSurface : Colors.white,
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: severityColor.withOpacity(0.3)),
+        border: Border.all(color: severityColor.withValues(alpha: 0.3)),
         boxShadow: [
           BoxShadow(
-            color: severityColor.withOpacity(0.1),
+            color: severityColor.withValues(alpha: 0.1),
             blurRadius: 10,
             offset: const Offset(0, 4),
           ),
@@ -970,7 +970,7 @@ class _TreatmentProgressScreenState extends ConsumerState<TreatmentProgressScree
                 Container(
                   padding: const EdgeInsets.all(AppSpacing.md),
                   decoration: BoxDecoration(
-                    color: severityColor.withOpacity(0.1),
+                    color: severityColor.withValues(alpha: 0.1),
                     borderRadius: BorderRadius.circular(10),
                   ),
                   child: Icon(Icons.warning_amber, color: severityColor, size: 24),
@@ -1001,7 +1001,7 @@ class _TreatmentProgressScreenState extends ConsumerState<TreatmentProgressScree
                 Container(
                   padding: const EdgeInsets.symmetric(horizontal: AppSpacing.md, vertical: AppSpacing.xs),
                   decoration: BoxDecoration(
-                    color: severityColor.withOpacity(0.1),
+                    color: severityColor.withValues(alpha: 0.1),
                     borderRadius: BorderRadius.circular(12),
                   ),
                   child: Text(
@@ -1023,9 +1023,9 @@ class _TreatmentProgressScreenState extends ConsumerState<TreatmentProgressScree
                 children: sideEffectsList.map((effect) => Container(
                   padding: const EdgeInsets.symmetric(horizontal: AppSpacing.md, vertical: AppSpacing.xs),
                   decoration: BoxDecoration(
-                    color: severityColor.withOpacity(0.05),
+                    color: severityColor.withValues(alpha: 0.05),
                     borderRadius: BorderRadius.circular(16),
-                    border: Border.all(color: severityColor.withOpacity(0.3)),
+                    border: Border.all(color: severityColor.withValues(alpha: 0.3)),
                   ),
                   child: Text(
                     effect,
@@ -1088,7 +1088,7 @@ class _TreatmentProgressScreenState extends ConsumerState<TreatmentProgressScree
             Container(
               padding: const EdgeInsets.all(AppSpacing.xxl),
               decoration: BoxDecoration(
-                color: color.withOpacity(0.1),
+                color: color.withValues(alpha: 0.1),
                 shape: BoxShape.circle,
               ),
               child: Icon(icon, size: 48, color: color),
@@ -1170,7 +1170,7 @@ class _TreatmentProgressScreenState extends ConsumerState<TreatmentProgressScree
               leading: Container(
                 padding: const EdgeInsets.all(AppSpacing.sm),
                 decoration: BoxDecoration(
-                  color: AppColors.primary.withOpacity(0.1),
+                  color: AppColors.primary.withValues(alpha: 0.1),
                   borderRadius: BorderRadius.circular(8),
                 ),
                 child: Icon(Icons.event_note, color: AppColors.primary),
@@ -1186,7 +1186,7 @@ class _TreatmentProgressScreenState extends ConsumerState<TreatmentProgressScree
               leading: Container(
                 padding: const EdgeInsets.all(AppSpacing.sm),
                 decoration: BoxDecoration(
-                  color: AppColors.success.withOpacity(0.1),
+                  color: AppColors.success.withValues(alpha: 0.1),
                   borderRadius: BorderRadius.circular(8),
                 ),
                 child: Icon(Icons.medication, color: AppColors.success),
@@ -1202,7 +1202,7 @@ class _TreatmentProgressScreenState extends ConsumerState<TreatmentProgressScree
               leading: Container(
                 padding: const EdgeInsets.all(AppSpacing.sm),
                 decoration: BoxDecoration(
-                  color: AppColors.info.withOpacity(0.1),
+                  color: AppColors.info.withValues(alpha: 0.1),
                   borderRadius: BorderRadius.circular(8),
                 ),
                 child: Icon(Icons.track_changes, color: AppColors.info),
@@ -1361,4 +1361,5 @@ class _TreatmentProgressScreenState extends ConsumerState<TreatmentProgressScree
     );
   }
 }
+
 

@@ -147,7 +147,7 @@ class _TreatmentOutcomesScreenState extends ConsumerState<TreatmentOutcomesScree
         Container(
           padding: const EdgeInsets.symmetric(horizontal: AppSpacing.sm, vertical: AppSpacing.xxs),
           decoration: BoxDecoration(
-            color: color.withOpacity(0.1),
+            color: color.withValues(alpha: 0.1),
             borderRadius: BorderRadius.circular(12),
           ),
           child: Text('$count', style: TextStyle(color: color, fontWeight: FontWeight.bold)),
@@ -175,7 +175,7 @@ class _TreatmentOutcomesScreenState extends ConsumerState<TreatmentOutcomesScree
                   Container(
                     padding: const EdgeInsets.symmetric(horizontal: AppSpacing.sm, vertical: AppSpacing.xs),
                     decoration: BoxDecoration(
-                      color: _getTypeColor(outcome.treatmentType).withOpacity(0.1),
+                      color: _getTypeColor(outcome.treatmentType).withValues(alpha: 0.1),
                       borderRadius: BorderRadius.circular(8),
                     ),
                     child: Text(
@@ -191,7 +191,7 @@ class _TreatmentOutcomesScreenState extends ConsumerState<TreatmentOutcomesScree
                   Container(
                     padding: const EdgeInsets.symmetric(horizontal: AppSpacing.sm, vertical: AppSpacing.xs),
                     decoration: BoxDecoration(
-                      color: outcomeInfo.color.withOpacity(0.1),
+                      color: outcomeInfo.color.withValues(alpha: 0.1),
                       borderRadius: BorderRadius.circular(8),
                     ),
                     child: Row(
@@ -349,7 +349,7 @@ class _TreatmentOutcomesScreenState extends ConsumerState<TreatmentOutcomesScree
                         Container(
                           padding: const EdgeInsets.symmetric(horizontal: AppSpacing.sm, vertical: AppSpacing.xs),
                           decoration: BoxDecoration(
-                            color: _getTypeColor(outcome.treatmentType).withOpacity(0.1),
+                            color: _getTypeColor(outcome.treatmentType).withValues(alpha: 0.1),
                             borderRadius: BorderRadius.circular(8),
                           ),
                           child: Text(
@@ -728,4 +728,5 @@ class _TreatmentOutcomesScreenState extends ConsumerState<TreatmentOutcomesScree
     );
   }
 }
+
 
