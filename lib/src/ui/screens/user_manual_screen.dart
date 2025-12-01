@@ -133,7 +133,7 @@ class _UserManualScreenState extends ConsumerState<UserManualScreen>
             .animate(_scaleController),
         child: SingleChildScrollView(
           child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: AppSpacing.xxl, vertical: AppSpacing.xxxxxl),
+            padding: const EdgeInsets.symmetric(horizontal: AppSpacing.xxl, vertical: AppSpacing.xxxxl),
             child: Column(
               children: [
                 // Animated icon
@@ -497,7 +497,7 @@ class _UserManualScreenState extends ConsumerState<UserManualScreen>
       opacity: _fadeController,
       child: SingleChildScrollView(
         child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: AppSpacing.xxl, vertical: AppSpacing.xxxxxl),
+          padding: const EdgeInsets.symmetric(horizontal: AppSpacing.xxl, vertical: AppSpacing.xxxxl),
           child: Column(
             children: [
               Container(
@@ -607,7 +607,7 @@ class _UserManualScreenState extends ConsumerState<UserManualScreen>
   }) {
     return SingleChildScrollView(
       child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: AppSpacing.xxl, vertical: AppSpacing.xxxxxl),
+        padding: const EdgeInsets.symmetric(horizontal: AppSpacing.xxl, vertical: AppSpacing.xxxxl),
         child: Column(
           children: [
             Container(

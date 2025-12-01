@@ -142,7 +142,7 @@ class TreatmentEfficacyCard extends ConsumerWidget {
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
               Icon(
-                Icons.checkmark_rounded,
+                Icons.check_circle,
                 size: 48,
                 color: Colors.grey[300],
               ),
