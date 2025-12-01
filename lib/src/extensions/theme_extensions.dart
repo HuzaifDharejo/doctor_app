@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import '../theme/design_tokens.dart';
+import '../core/theme/design_tokens.dart';
 
 /// Extensions on BuildContext for convenient access to theme and design tokens
 extension ThemeExtensions on BuildContext {

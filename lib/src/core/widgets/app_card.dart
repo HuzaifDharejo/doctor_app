@@ -83,7 +83,7 @@ class AppCard extends StatelessWidget {
         gradient = null;
 
   /// Creates an interactive card with hover effects
-  const AppCard.interactive({
+  AppCard.interactive({
     required this.child, super.key,
     this.padding,
     this.margin,

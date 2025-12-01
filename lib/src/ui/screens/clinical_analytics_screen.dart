@@ -302,11 +302,7 @@ class _ClinicalAnalyticsScreenState extends ConsumerState<ClinicalAnalyticsScree
   }
 
   Widget _buildMetricItem(String label, String value, Color color) {
-    return Container(
-      decoration: BoxDecoration(
-        border: Border.all(color: color.withValues(alpha: 0.3)),
-        borderRadius: BorderRadius.circular(8),
-      ),
+    return AppCard.interactive(
       padding: const EdgeInsets.all(12),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,

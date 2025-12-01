@@ -18,16 +18,25 @@ import 'follow_ups_screen.dart';
 import 'patients_screen.dart';
 
 class DashboardScreen extends ConsumerStatefulWidget {
-    return SizedBox(
-      width: isCompact ? 155 : 175,
-      child: AppCard.gradient(
-        gradient: LinearGradient(
-          colors: gradient,
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-        ),
-        padding: EdgeInsets.all(isCompact ? 14 : 18),
-        child: Column(
+  
+  const DashboardScreen({super.key, this.onMenuTap});
+  final VoidCallback? onMenuTap;
+
+  @override
+  ConsumerState<DashboardScreen> createState() => _DashboardScreenState();
+}
+
+class _DashboardScreenState extends ConsumerState<DashboardScreen> {
+  final _refreshKey = GlobalKey<RefreshIndicatorState>();
+
+  Future<void> _onRefresh() async {
+    unawaited(HapticFeedback.mediumImpact());
+    ref.invalidate(doctorDbProvider);
+    await Future<void>.delayed(const Duration(milliseconds: 500));
+  }
+
+  @override
+  Widget build(BuildContext context) {
     final dbAsync = ref.watch(doctorDbProvider);
     
     return Scaffold(
@@ -87,8 +96,7 @@ class DashboardScreen extends ConsumerStatefulWidget {
                   SliverToBoxAdapter(
                     child: Padding(
                       padding: EdgeInsets.symmetric(horizontal: padding),
-        ),
-      ),
+                      child: const GlobalSearchBar(),
                     ),
                   ),
                   
@@ -652,13 +660,36 @@ class DashboardScreen extends ConsumerStatefulWidget {
     required bool isCompact,
     required bool isDark,
   }) {
-    return AppCard.interactive(
-      onTap: onTap,
-      padding: EdgeInsets.symmetric(
-        horizontal: isCompact ? 14 : 18,
-        vertical: isCompact ? 14 : 18,
-      ),
-      child: Row(
+    return Material(
+      color: Colors.transparent,
+      borderRadius: BorderRadius.circular(16),
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(16),
+        child: Container(
+          padding: EdgeInsets.symmetric(
+            horizontal: isCompact ? 14 : 18,
+            vertical: isCompact ? 14 : 18,
+          ),
+          decoration: BoxDecoration(
+            color: isDark 
+                ? Colors.white.withValues(alpha: 0.06)
+                : Colors.white,
+            borderRadius: BorderRadius.circular(16),
+            border: Border.all(
+              color: isDark 
+                  ? Colors.white.withValues(alpha: 0.1)
+                  : color.withValues(alpha: 0.15),
+            ),
+            boxShadow: isDark ? null : [
+              BoxShadow(
+                color: color.withValues(alpha: 0.08),
+                blurRadius: 12,
+                offset: const Offset(0, 4),
+              ),
+            ],
+          ),
+          child: Row(
             children: [
               Container(
                 padding: EdgeInsets.all(isCompact ? 10 : 12),
@@ -694,6 +725,8 @@ class DashboardScreen extends ConsumerStatefulWidget {
                     : AppColors.textHint,
               ),
             ],
+          ),
+        ),
       ),
     );
   }
@@ -708,8 +741,19 @@ class DashboardScreen extends ConsumerStatefulWidget {
         _buildSectionHeader(context, "Today's Schedule", () {}, isCompact),
         SizedBox(height: isCompact ? 12 : 16),
         if (upcomingAppts.isEmpty)
-          AppCard(
+          Container(
             padding: EdgeInsets.all(isCompact ? 20 : 28),
+            decoration: BoxDecoration(
+              color: isDark 
+                  ? Colors.white.withValues(alpha: 0.06)
+                  : Colors.white,
+              borderRadius: BorderRadius.circular(20),
+              border: Border.all(
+                color: isDark 
+                    ? Colors.white.withValues(alpha: 0.1)
+                    : Colors.grey.withValues(alpha: 0.15),
+              ),
+            ),
             child: Row(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
@@ -769,10 +813,28 @@ class DashboardScreen extends ConsumerStatefulWidget {
                   tween: Tween(begin: 0, end: 1),
                   duration: Duration(milliseconds: 400 + (index * 100)),
                   curve: Curves.easeOutCubic,
-                  child: AppCard.interactive(
+                  builder: (context, value, child) {
+                    return Opacity(
+                      opacity: value,
+                      child: Transform.translate(
+                        offset: Offset(0, 20 * (1 - value)),
+                        child: child,
+                      ),
+                    );
+                  },
+                  child: Container(
                     margin: EdgeInsets.only(bottom: isLast ? 0 : 10),
                     padding: EdgeInsets.all(isCompact ? 14 : 16),
-                    child: Row(
+                    decoration: BoxDecoration(
+                      color: isDark 
+                          ? Colors.white.withValues(alpha: 0.06)
+                          : Colors.white,
+                      borderRadius: BorderRadius.circular(16),
+                      border: Border.all(
+                        color: isDark 
+                            ? Colors.white.withValues(alpha: 0.1)
+                            : AppColors.primary.withValues(alpha: 0.15),
+                      ),
                       boxShadow: isDark ? null : [
                         BoxShadow(
                           color: Colors.black.withValues(alpha: 0.04),
@@ -819,7 +881,7 @@ class DashboardScreen extends ConsumerStatefulWidget {
                               const SizedBox(height: 2),
                               Text(
                                 appt.reason.isNotEmpty ? appt.reason : 'Consultation',
-                    ),
+                                style: TextStyle(
                                   fontSize: isCompact ? 12 : 13,
                                   color: isDark ? AppColors.darkTextSecondary : AppColors.textSecondary,
                                 ),

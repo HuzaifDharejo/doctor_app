@@ -1,6 +1,8 @@
 /// Design tokens for the Doctor App
 /// Centralized source of truth for spacing, sizing, typography, and animation values
 
+import 'package:flutter/material.dart';
+
 class AppSpacing {
   AppSpacing._(); // Private constructor to prevent instantiation
 
@@ -65,6 +67,24 @@ class AppDuration {
 class AppFontSize {
   AppFontSize._();
 
+  // Base sizes (from app_constants.dart for compatibility)
+  static const double xxs = 10;
+  static const double xs = 11;
+  static const double sm = 12;
+  static const double md = 13;
+  static const double lg = 14;
+  static const double xl = 16;
+  static const double xxl = 18;
+  static const double xxxl = 22;
+  static const double display = 26;
+
+  // Compact mode sizes
+  static const double smCompact = 10;
+  static const double mdCompact = 11;
+  static const double lgCompact = 13;
+  static const double xlCompact = 15;
+  static const double xxlCompact = 18;
+
   // Display sizes
   static const double displayLarge = 26;
   static const double displayMedium = 22;
@@ -114,6 +134,31 @@ class AppShadow {
   // Shadow spread radius
   static const double spreadSmall = 0;
   static const double spreadMedium = 1;
+
+  // BoxShadow presets (non-const for use in runtime)
+  static final List<BoxShadow> small = [
+    BoxShadow(
+      color: Colors.black.withOpacity(0.08),
+      blurRadius: shadowBlurSmall,
+      offset: const Offset(0, 1),
+    ),
+  ];
+
+  static final List<BoxShadow> medium = [
+    BoxShadow(
+      color: Colors.black.withOpacity(0.1),
+      blurRadius: shadowBlurMedium,
+      offset: const Offset(0, 2),
+    ),
+  ];
+
+  static final List<BoxShadow> large = [
+    BoxShadow(
+      color: Colors.black.withOpacity(0.12),
+      blurRadius: shadowBlurLarge,
+      offset: const Offset(0, 4),
+    ),
+  ];
 }
 
 class AppOpacity {
@@ -140,6 +185,11 @@ class AppIconSize {
   static const double lg = 28;
   static const double xl = 32;
   static const double xxl = 48;
+
+  // Compact mode sizes
+  static const double smCompact = 18;
+  static const double mdCompact = 22;
+  static const double lgCompact = 26;
 
   // Semantic sizes
   static const double compact = 18;

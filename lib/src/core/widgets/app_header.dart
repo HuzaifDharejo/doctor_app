@@ -3,8 +3,7 @@ library;
 
 import 'package:flutter/material.dart';
 import '../../theme/app_theme.dart';
-import '../../theme/design_tokens.dart';
-import '../constants/app_constants.dart';
+import '../theme/design_tokens.dart';
 import '../extensions/context_extensions.dart';
 
 class AppHeader extends StatelessWidget {
@@ -34,7 +33,7 @@ class AppHeader extends StatelessWidget {
     bool showBackButton = false,
     VoidCallback? onBackPressed,
     List<Widget>? actions,
-    super.key,
+    Key? key,
   })  : this(
     title: title,
     subtitle: subtitle,
@@ -43,6 +42,7 @@ class AppHeader extends StatelessWidget {
     onBackPressed: onBackPressed,
     actions: actions,
     variant: AppHeaderVariant.standard,
+    key: key,
   );
 
   /// Creates a header with gradient background
@@ -54,7 +54,7 @@ class AppHeader extends StatelessWidget {
     bool showBackButton = false,
     VoidCallback? onBackPressed,
     List<Widget>? actions,
-    super.key,
+    Key? key,
   })  : this(
     title: title,
     subtitle: subtitle,
@@ -64,6 +64,7 @@ class AppHeader extends StatelessWidget {
     actions: actions,
     variant: AppHeaderVariant.gradient,
     gradient: gradient,
+    key: key,
   );
 
   /// Creates a header with custom background color
@@ -75,7 +76,7 @@ class AppHeader extends StatelessWidget {
     bool showBackButton = false,
     VoidCallback? onBackPressed,
     List<Widget>? actions,
-    super.key,
+    Key? key,
   })  : this(
     title: title,
     subtitle: subtitle,
@@ -85,6 +86,7 @@ class AppHeader extends StatelessWidget {
     actions: actions,
     variant: AppHeaderVariant.colored,
     backgroundColor: backgroundColor,
+    key: key,
   );
 
   /// Creates a minimal header with just title
@@ -92,12 +94,13 @@ class AppHeader extends StatelessWidget {
     required String title,
     bool showBackButton = false,
     VoidCallback? onBackPressed,
-    super.key,
+    Key? key,
   })  : this(
     title: title,
     showBackButton: showBackButton,
     onBackPressed: onBackPressed,
     variant: AppHeaderVariant.minimal,
+    key: key,
   );
 
   final String title;
@@ -231,6 +234,7 @@ class AppHeader extends StatelessWidget {
     }
 
     return headerContent;
+  }
 }
 
 /// Header variants for different styling approaches
