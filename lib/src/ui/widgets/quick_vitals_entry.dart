@@ -161,52 +161,46 @@ class _QuickVitalsEntryState extends State<QuickVitalsEntry> {
               ),
               const SizedBox(height: 12),
               const Text('Heart Rate (bpm)', style: TextStyle(fontWeight: FontWeight.w600)),
-              TextField(
+              AppInput.number(
                 controller: _hrController,
-                keyboardType: TextInputType.number,
-                decoration: const InputDecoration(hintText: 'Heart Rate'),
+                hint: 'Heart Rate',
               ),
               const SizedBox(height: 12),
               const Text('Respiratory Rate (/min)', style: TextStyle(fontWeight: FontWeight.w600)),
-              TextField(
+              AppInput.number(
                 controller: _rrController,
-                keyboardType: TextInputType.number,
-                decoration: const InputDecoration(hintText: 'RR'),
+                hint: 'RR',
               ),
               const SizedBox(height: 12),
               const Text('Temperature (°C)', style: TextStyle(fontWeight: FontWeight.w600)),
-              TextField(
+              AppInput.number(
                 controller: _tempController,
-                keyboardType: TextInputType.number,
-                decoration: const InputDecoration(hintText: 'Temperature'),
+                hint: 'Temperature',
               ),
               const SizedBox(height: 12),
               const Text('SpO₂ (%)', style: TextStyle(fontWeight: FontWeight.w600)),
-              TextField(
+              AppInput.number(
                 controller: _o2Controller,
-                keyboardType: TextInputType.number,
-                decoration: const InputDecoration(hintText: 'SpO₂'),
+                hint: 'SpO₂',
               ),
               const SizedBox(height: 12),
               const Text('Weight (kg)', style: TextStyle(fontWeight: FontWeight.w600)),
-              TextField(
+              AppInput.number(
                 controller: _weightController,
-                keyboardType: TextInputType.number,
-                decoration: const InputDecoration(hintText: 'Weight'),
+                hint: 'Weight',
               ),
               const SizedBox(height: 12),
               const Text('Height (cm)', style: TextStyle(fontWeight: FontWeight.w600)),
-              TextField(
+              AppInput.number(
                 controller: _heightController,
-                keyboardType: TextInputType.number,
-                decoration: const InputDecoration(hintText: 'Height'),
+                hint: 'Height',
               ),
               const SizedBox(height: 12),
               const Text('Notes', style: TextStyle(fontWeight: FontWeight.w600)),
-              TextField(
+              AppInput.multiline(
                 controller: _notesController,
+                hint: 'Additional notes...',
                 maxLines: 3,
-                decoration: const InputDecoration(hintText: 'Additional notes...'),
               ),
               const SizedBox(height: 20),
               Row(
