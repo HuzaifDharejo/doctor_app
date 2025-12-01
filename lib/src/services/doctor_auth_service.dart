@@ -68,8 +68,8 @@ class DoctorAuthService extends StateNotifier<DoctorAuthState> {
         if (doctorData['password'] == password) {
           state = state.copyWith(
             doctorEmail: email,
-            doctorName: doctorData['name'],
-            role: doctorData['role'],
+            doctorName: doctorData['name'] as String?,
+            role: doctorData['role'] as DoctorRole?,
             loginTime: DateTime.now(),
             isAuthenticated: true,
           );

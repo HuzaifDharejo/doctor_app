@@ -262,9 +262,9 @@ class DatabaseSeedingService {
             AppointmentsCompanion(
               id: drift.Value(appointmentIds[i]),
               medicalRecordId: drift.Value(recordIds[i]),
-              patientId: const drift.Value(0), // Will be set from original
-              appointmentDateTime: const drift.Value(DateTime(2024, 1, 1)),
-              durationMinutes: const drift.Value(45),
+              patientId: drift.Value(0), // Will be set from original
+              appointmentDateTime: drift.Value(DateTime(2024, 1, 1)),
+              durationMinutes: drift.Value(45),
             ),
           );
     }
