@@ -39,7 +39,7 @@ class _DataExportScreenState extends ConsumerState<DataExportScreen> {
       ),
       body: SingleChildScrollView(
         child: Padding(
-          padding: const EdgeInsets.all(16),
+          padding: const EdgeInsets.all(AppSpacing.lg),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
@@ -112,7 +112,7 @@ class _DataExportScreenState extends ConsumerState<DataExportScreen> {
                       icon: const Icon(Icons.download),
                       label: const Text('Export Data'),
                       style: ElevatedButton.styleFrom(
-                        padding: const EdgeInsets.symmetric(vertical: 12),
+                        padding: const EdgeInsets.symmetric(vertical: AppSpacing.md),
                       ),
                     ),
                   ),
@@ -123,7 +123,7 @@ class _DataExportScreenState extends ConsumerState<DataExportScreen> {
                     label: const Text('Preview'),
                     style: ElevatedButton.styleFrom(
                       backgroundColor: Colors.grey[600],
-                      padding: const EdgeInsets.symmetric(vertical: 12),
+                      padding: const EdgeInsets.symmetric(vertical: AppSpacing.md),
                     ),
                   ),
                 ],
@@ -133,7 +133,7 @@ class _DataExportScreenState extends ConsumerState<DataExportScreen> {
               // Information Section
               AppCard(
                 child: Padding(
-                  padding: const EdgeInsets.all(16),
+                  padding: const EdgeInsets.all(AppSpacing.lg),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
@@ -258,7 +258,7 @@ class _DataExportScreenState extends ConsumerState<DataExportScreen> {
   /// Build info item
   Widget _buildInfoItem(String title, String description) {
     return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 8),
+      padding: const EdgeInsets.symmetric(vertical: AppSpacing.sm),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -285,7 +285,7 @@ class _DataExportScreenState extends ConsumerState<DataExportScreen> {
   /// Build security note
   Widget _buildSecurityNote() {
     return Container(
-      padding: const EdgeInsets.all(12),
+      padding: const EdgeInsets.all(AppSpacing.md),
       decoration: BoxDecoration(
         color: Colors.orange.withValues(alpha: 0.1),
         borderRadius: BorderRadius.circular(8),
@@ -311,7 +311,7 @@ class _DataExportScreenState extends ConsumerState<DataExportScreen> {
   /// Build preview row
   Widget _buildPreviewRow(String label, String value) {
     return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 6),
+      padding: const EdgeInsets.symmetric(vertical: AppSpacing.xs),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
@@ -345,3 +345,4 @@ class _DataExportScreenState extends ConsumerState<DataExportScreen> {
     }
   }
 }
+

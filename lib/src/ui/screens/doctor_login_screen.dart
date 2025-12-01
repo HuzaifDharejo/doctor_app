@@ -82,7 +82,7 @@ class _DoctorLoginScreenState extends ConsumerState<DoctorLoginScreen> {
               children: [
                 // Logo/Icon
                 Container(
-                  padding: const EdgeInsets.all(16),
+                  padding: const EdgeInsets.all(AppSpacing.lg),
                   decoration: BoxDecoration(
                     shape: BoxShape.circle,
                     color: Colors.white,
@@ -124,7 +124,7 @@ class _DoctorLoginScreenState extends ConsumerState<DoctorLoginScreen> {
                         // Error message
                         if (_errorMessage != null) ...[
                           Container(
-                            padding: const EdgeInsets.all(12),
+                            padding: const EdgeInsets.all(AppSpacing.md),
                             decoration: BoxDecoration(
                               color: Colors.red[50],
                               border: Border.all(color: Colors.red),
@@ -175,7 +175,7 @@ class _DoctorLoginScreenState extends ConsumerState<DoctorLoginScreen> {
 
                         // Demo credentials
                         Container(
-                          padding: const EdgeInsets.all(12),
+                          padding: const EdgeInsets.all(AppSpacing.md),
                           decoration: BoxDecoration(
                             color: Colors.grey[100],
                             borderRadius: BorderRadius.circular(8),
@@ -246,3 +246,4 @@ class _DemoCredential extends StatelessWidget {
     );
   }
 }
+

@@ -5,6 +5,7 @@ import 'package:intl/intl.dart';
 import '../../db/doctor_db.dart';
 import '../../providers/db_provider.dart';
 import '../../theme/app_theme.dart';
+import '../../core/theme/design_tokens.dart';
 import 'records/add_lab_result_screen.dart';
 
 /// Screen to display lab results history with normal range indicators
@@ -177,10 +178,10 @@ class _LabResultsScreenState extends ConsumerState<LabResultsScreen> with Single
   Widget _buildCategoryFilter(bool isDark) {
     return Container(
       height: 50,
-      padding: const EdgeInsets.symmetric(vertical: 8),
+      padding: const EdgeInsets.symmetric(vertical: AppSpacing.sm),
       child: ListView.builder(
         scrollDirection: Axis.horizontal,
-        padding: const EdgeInsets.symmetric(horizontal: 16),
+        padding: const EdgeInsets.symmetric(horizontal: AppSpacing.lg),
         itemCount: _categories.length,
         itemBuilder: (context, index) {
           final category = _categories[index];
@@ -247,7 +248,7 @@ class _LabResultsScreenState extends ConsumerState<LabResultsScreen> with Single
     return RefreshIndicator(
       onRefresh: _loadLabResults,
       child: ListView.builder(
-        padding: const EdgeInsets.all(16),
+        padding: const EdgeInsets.all(AppSpacing.lg),
         itemCount: results.length,
         itemBuilder: (context, index) {
           final result = results[index];
@@ -320,7 +321,7 @@ class _LabResultsScreenState extends ConsumerState<LabResultsScreen> with Single
       ],
       onTap: () => _showResultDetails(record, data, isDark),
         child: Padding(
-          padding: const EdgeInsets.all(16),
+          padding: const EdgeInsets.all(AppSpacing.lg),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
@@ -328,7 +329,7 @@ class _LabResultsScreenState extends ConsumerState<LabResultsScreen> with Single
               Row(
                 children: [
                   Container(
-                    padding: const EdgeInsets.all(8),
+                    padding: const EdgeInsets.all(AppSpacing.sm),
                     decoration: BoxDecoration(
                       color: statusColor.withValues(alpha: 0.1),
                       borderRadius: BorderRadius.circular(8),
@@ -360,7 +361,7 @@ class _LabResultsScreenState extends ConsumerState<LabResultsScreen> with Single
                   ),
                   // Status Badge
                   Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                    padding: const EdgeInsets.symmetric(horizontal: AppSpacing.md, vertical: AppSpacing.xs),
                     decoration: BoxDecoration(
                       color: statusColor.withValues(alpha: 0.1),
                       borderRadius: BorderRadius.circular(12),
@@ -684,7 +685,7 @@ class _LabResultsScreenState extends ConsumerState<LabResultsScreen> with Single
     }
 
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+      padding: const EdgeInsets.symmetric(horizontal: AppSpacing.sm, vertical: AppSpacing.xs),
       decoration: BoxDecoration(
         color: trendColor.withValues(alpha: 0.1),
         borderRadius: BorderRadius.circular(8),
@@ -735,7 +736,7 @@ class _LabResultsScreenState extends ConsumerState<LabResultsScreen> with Single
               Container(
                 width: 40,
                 height: 4,
-                margin: const EdgeInsets.symmetric(vertical: 12),
+                margin: const EdgeInsets.symmetric(vertical: AppSpacing.md),
                 decoration: BoxDecoration(
                   color: isDark ? Colors.grey.shade700 : Colors.grey.shade300,
                   borderRadius: BorderRadius.circular(2),
@@ -745,7 +746,7 @@ class _LabResultsScreenState extends ConsumerState<LabResultsScreen> with Single
               Expanded(
                 child: ListView(
                   controller: scrollController,
-                  padding: const EdgeInsets.all(20),
+                  padding: const EdgeInsets.all(AppSpacing.xl),
                   children: [
                     // Title
                     Text(
@@ -790,7 +791,7 @@ class _LabResultsScreenState extends ConsumerState<LabResultsScreen> with Single
                       ),
                       const SizedBox(height: 8),
                       Container(
-                        padding: const EdgeInsets.all(12),
+                        padding: const EdgeInsets.all(AppSpacing.md),
                         decoration: BoxDecoration(
                           color: isDark ? AppColors.darkBackground : AppColors.background,
                           borderRadius: BorderRadius.circular(8),
@@ -810,7 +811,7 @@ class _LabResultsScreenState extends ConsumerState<LabResultsScreen> with Single
                       ),
                       const SizedBox(height: 8),
                       Container(
-                        padding: const EdgeInsets.all(12),
+                        padding: const EdgeInsets.all(AppSpacing.md),
                         decoration: BoxDecoration(
                           color: isDark ? AppColors.darkBackground : AppColors.background,
                           borderRadius: BorderRadius.circular(8),
@@ -830,7 +831,7 @@ class _LabResultsScreenState extends ConsumerState<LabResultsScreen> with Single
 
   Widget _buildDetailRow(String label, String value, bool isDark) {
     return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 8),
+      padding: const EdgeInsets.symmetric(vertical: AppSpacing.sm),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -854,3 +855,4 @@ class _LabResultsScreenState extends ConsumerState<LabResultsScreen> with Single
     );
   }
 }
+

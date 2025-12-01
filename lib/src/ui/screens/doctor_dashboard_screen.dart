@@ -75,7 +75,7 @@ class _DoctorDashboardScreenState extends ConsumerState<DoctorDashboardScreen> {
           ),
           borderRadius: BorderRadius.circular(12),
         ),
-        padding: const EdgeInsets.all(20),
+        padding: const EdgeInsets.all(AppSpacing.xl),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -160,7 +160,7 @@ class _DoctorDashboardScreenState extends ConsumerState<DoctorDashboardScreen> {
           border: Border.all(color: color, width: 2),
           borderRadius: BorderRadius.circular(12),
         ),
-        padding: const EdgeInsets.all(16),
+        padding: const EdgeInsets.all(AppSpacing.lg),
         child: Column(
           children: [
             Icon(icon, color: color, size: 32),
@@ -448,3 +448,4 @@ class _DoctorDashboardScreenState extends ConsumerState<DoctorDashboardScreen> {
     return age;
   }
 }
+

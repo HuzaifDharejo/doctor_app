@@ -55,7 +55,7 @@ class _NotificationsScreenState extends ConsumerState<NotificationsScreen>
 
   Widget _buildPreferencesTab() {
     return SingleChildScrollView(
-      padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.all(AppSpacing.lg),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -118,11 +118,11 @@ class _NotificationsScreenState extends ConsumerState<NotificationsScreen>
     return Card(
       margin: const EdgeInsets.only(bottom: 12),
       child: Padding(
-        padding: const EdgeInsets.all(12),
+        padding: const EdgeInsets.all(AppSpacing.md),
         child: Row(
           children: [
             Container(
-              padding: const EdgeInsets.all(10),
+              padding: const EdgeInsets.all(AppSpacing.md),
               decoration: BoxDecoration(
                 color: const Color(0xFF6366F1).withValues(alpha: 0.1),
                 borderRadius: BorderRadius.circular(10),
@@ -182,3 +182,4 @@ class _NotificationsScreenState extends ConsumerState<NotificationsScreen>
     }
   }
 }
+
