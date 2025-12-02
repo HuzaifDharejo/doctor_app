@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 
+import '../components/app_button.dart';
+
 /// A confirmation dialog for dangerous or important actions.
 ///
 /// This widget provides a consistent confirmation UX with:
@@ -100,23 +102,19 @@ class ConfirmationDialog extends StatelessWidget {
       ),
       actionsAlignment: MainAxisAlignment.center,
       actions: [
-        TextButton(
+        AppButton.tertiary(
+          label: cancelText,
           onPressed: () => Navigator.of(context).pop(false),
-          child: Text(cancelText),
         ),
         if (isDestructive)
-          FilledButton(
+          AppButton.danger(
+            label: confirmText,
             onPressed: () => Navigator.of(context).pop(true),
-            style: FilledButton.styleFrom(
-              backgroundColor: theme.colorScheme.error,
-              foregroundColor: theme.colorScheme.onError,
-            ),
-            child: Text(confirmText),
           )
         else
-          FilledButton(
+          AppButton.primary(
+            label: confirmText,
             onPressed: () => Navigator.of(context).pop(true),
-            child: Text(confirmText),
           ),
       ],
     );
@@ -205,17 +203,13 @@ class DeleteConfirmationDialog extends StatelessWidget {
       ),
       actionsAlignment: MainAxisAlignment.center,
       actions: [
-        TextButton(
+        AppButton.tertiary(
+          label: 'Cancel',
           onPressed: () => Navigator.of(context).pop(false),
-          child: const Text('Cancel'),
         ),
-        FilledButton(
+        AppButton.danger(
+          label: 'Delete',
           onPressed: () => Navigator.of(context).pop(true),
-          style: FilledButton.styleFrom(
-            backgroundColor: theme.colorScheme.error,
-            foregroundColor: theme.colorScheme.onError,
-          ),
-          child: const Text('Delete'),
         ),
       ],
     );
@@ -283,17 +277,13 @@ class DiscardChangesDialog extends StatelessWidget {
       ),
       actionsAlignment: MainAxisAlignment.center,
       actions: [
-        TextButton(
+        AppButton.tertiary(
+          label: 'Keep Editing',
           onPressed: () => Navigator.of(context).pop(false),
-          child: const Text('Keep Editing'),
         ),
-        FilledButton(
+        AppButton.danger(
+          label: 'Discard',
           onPressed: () => Navigator.of(context).pop(true),
-          style: FilledButton.styleFrom(
-            backgroundColor: theme.colorScheme.error,
-            foregroundColor: theme.colorScheme.onError,
-          ),
-          child: const Text('Discard'),
         ),
       ],
     );
@@ -353,13 +343,13 @@ class SendConfirmationDialog extends StatelessWidget {
       ),
       actionsAlignment: MainAxisAlignment.center,
       actions: [
-        TextButton(
+        AppButton.tertiary(
+          label: 'Cancel',
           onPressed: () => Navigator.of(context).pop(false),
-          child: const Text('Cancel'),
         ),
-        FilledButton(
+        AppButton.primary(
+          label: 'Send',
           onPressed: () => Navigator.of(context).pop(true),
-          child: const Text('Send'),
         ),
       ],
     );

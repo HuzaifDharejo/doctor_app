@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../core/components/app_button.dart';
 import '../../core/theme/design_tokens.dart';
 import '../../services/vital_thresholds_service.dart';
 
@@ -178,17 +179,17 @@ class VitalSignsAlertDialog extends StatelessWidget {
       ),
       actions: [
         if (_isEmergency)
-          FilledButton.tonalIcon(
+          AppButton.danger(
+            label: 'Emergency',
+            icon: Icons.local_hospital,
             onPressed: () {
               Navigator.pop(context);
               // Emergency protocol placeholder
             },
-            icon: const Icon(Icons.local_hospital),
-            label: const Text('Emergency'),
           ),
-        FilledButton(
+        AppButton.primary(
+          label: 'Acknowledged',
           onPressed: onAcknowledge,
-          child: const Text('Acknowledged'),
         ),
       ],
     );

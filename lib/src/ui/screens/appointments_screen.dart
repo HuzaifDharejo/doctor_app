@@ -13,7 +13,9 @@ import '../../core/widgets/loading_state.dart';
 import '../../core/widgets/error_state.dart';
 import '../../core/widgets/empty_state.dart';
 import '../../core/widgets/app_card.dart';
+import '../../core/components/app_button.dart';
 import '../../core/constants/app_constants.dart';
+import '../../core/constants/app_strings.dart';
 import '../../db/doctor_db.dart';
 import '../../providers/db_provider.dart';
 import '../../theme/app_theme.dart';
@@ -1025,7 +1027,9 @@ class _AppointmentsScreenState extends ConsumerState<AppointmentsScreen> {
                       Row(
                         children: [
                           Expanded(
-                            child: OutlinedButton.icon(
+                            child: AppButton.tertiary(
+                              label: 'Reschedule',
+                              icon: Icons.edit_calendar,
                               onPressed: () {
                                 Navigator.pop(context);
                                 ScaffoldMessenger.of(context).showSnackBar(
@@ -1035,16 +1039,13 @@ class _AppointmentsScreenState extends ConsumerState<AppointmentsScreen> {
                                   ),
                                 );
                               },
-                              icon: const Icon(Icons.edit_calendar),
-                              label: const Text('Reschedule'),
-                              style: OutlinedButton.styleFrom(
-                                padding: const EdgeInsets.symmetric(vertical: AppSpacing.md),
-                              ),
                             ),
                           ),
                           const SizedBox(width: 12),
                           Expanded(
-                            child: OutlinedButton.icon(
+                            child: AppButton.danger(
+                              label: 'Cancel',
+                              icon: Icons.cancel_outlined,
                               onPressed: () {
                                 Navigator.pop(context);
                                 ScaffoldMessenger.of(context).showSnackBar(
@@ -1054,37 +1055,27 @@ class _AppointmentsScreenState extends ConsumerState<AppointmentsScreen> {
                                   ),
                                 );
                               },
-                              icon: const Icon(Icons.cancel_outlined),
-                              label: const Text('Cancel'),
-                              style: OutlinedButton.styleFrom(
-                                foregroundColor: AppColors.error,
-                                padding: const EdgeInsets.symmetric(vertical: AppSpacing.md),
-                              ),
                             ),
                           ),
                         ],
                       ),
                     ],
                     if (isPast && appointment.status.toLowerCase() != 'completed')
-                      SizedBox(
-                        width: double.infinity,
-                        child: ElevatedButton.icon(
-                          onPressed: () {
-                            Navigator.pop(context);
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              const SnackBar(
-                                content: Text('Mark as completed feature coming soon'),
-                                behavior: SnackBarBehavior.floating,
-                              ),
-                            );
-                          },
-                          icon: const Icon(Icons.check),
-                          label: const Text('Mark as Completed'),
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: AppColors.success,
-                            padding: const EdgeInsets.symmetric(vertical: AppSpacing.lg),
-                          ),
-                        ),
+                      AppButton(
+                        label: 'Mark as Completed',
+                        icon: Icons.check,
+                        fullWidth: true,
+                        backgroundColor: AppColors.success,
+                        foregroundColor: Colors.white,
+                        onPressed: () {
+                          Navigator.pop(context);
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(
+                              content: Text('Mark as completed feature coming soon'),
+                              behavior: SnackBarBehavior.floating,
+                            ),
+                          );
+                        },
                       ),
                     const SizedBox(height: 24),
                   ],

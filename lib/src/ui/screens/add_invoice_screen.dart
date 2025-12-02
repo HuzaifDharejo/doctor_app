@@ -13,6 +13,7 @@ import '../../core/widgets/app_card.dart';
 import '../../theme/app_theme.dart';
 import '../../core/components/app_input.dart';
 import '../../core/widgets/app_card.dart';
+import '../../core/components/app_button.dart';
 import '../../core/theme/design_tokens.dart';
 import '../widgets/suggestion_text_field.dart';
 
@@ -507,25 +508,19 @@ class _AddInvoiceScreenState extends ConsumerState<AddInvoiceScreen> {
               Row(
                 children: [
                   Expanded(
-                    child: OutlinedButton.icon(
+                    child: AppButton.tertiary(
+                      label: 'Print',
+                      icon: Icons.print,
                       onPressed: _printInvoice,
-                      icon: const Icon(Icons.print),
-                      label: const Text('Print'),
-                      style: OutlinedButton.styleFrom(
-                        padding: const EdgeInsets.symmetric(vertical: AppSpacing.lg),
-                      ),
                     ),
                   ),
                   const SizedBox(width: 12),
                   Expanded(
                     flex: 2,
-                    child: FilledButton.icon(
+                    child: AppButton.primary(
+                      label: 'Save Invoice',
+                      icon: Icons.save,
                       onPressed: _saveInvoice,
-                      icon: const Icon(Icons.save),
-                      label: const Text('Save Invoice'),
-                      style: FilledButton.styleFrom(
-                        padding: const EdgeInsets.symmetric(vertical: AppSpacing.lg),
-                      ),
                     ),
                   ),
                 ],

@@ -349,10 +349,10 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen>
               child: Row(
                 children: [
                   if (_currentPage > 0)
-                    TextButton.icon(
+                    AppButton.tertiary(
+                      label: 'Back',
+                      icon: Icons.arrow_back,
                       onPressed: _previousPage,
-                      icon: const Icon(Icons.arrow_back),
-                      label: const Text('Back'),
                     ),
                   const Spacer(),
                   if (_currentPage == 1)
@@ -822,18 +822,10 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen>
                 const SizedBox(height: 16),
                 // Demo profile button
                 if (!_isSignedIn)
-                  OutlinedButton.icon(
+                  AppButton.tertiary(
+                    label: 'Use Demo Profile',
+                    icon: Icons.auto_awesome,
                     onPressed: _loadDemoProfile,
-                    style: OutlinedButton.styleFrom(
-                      foregroundColor: AppColors.primary,
-                      side: BorderSide(color: AppColors.primary.withValues(alpha: 0.5)),
-                      padding: const EdgeInsets.symmetric(horizontal: AppSpacing.xl, vertical: AppSpacing.md),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(20),
-                      ),
-                    ),
-                    icon: const Icon(Icons.auto_awesome, size: 18),
-                    label: const Text('Use Demo Profile'),
                   ),
               ],
             ),
@@ -854,7 +846,6 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen>
             label: 'Email',
             hint: 'doctor@clinic.com',
             enabled: !_isSignedIn,
-            suffixIcon: _isSignedIn ? Icons.lock_outline : null,
             onChanged: (_) => setState(() {}),
           ),
           const SizedBox(height: 16),
@@ -893,7 +884,7 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen>
     required bool isDark,
     TextInputType? keyboardType,
     bool readOnly = false,
-    Widget? suffixIcon,
+    IconData? suffixIcon,
   }) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -907,12 +898,12 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen>
           ),
         ),
         const SizedBox(height: 8),
-        AppInput.text(
+        AppInput(
           controller: controller,
           hint: hint,
           prefixIcon: icon,
           suffixIcon: suffixIcon,
-          keyboardType: keyboardType,
+          keyboardType: keyboardType ?? TextInputType.text,
           enabled: !readOnly,
           onChanged: (_) => setState(() {}),
         ),

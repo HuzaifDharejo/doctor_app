@@ -159,33 +159,26 @@ class _OfflineSyncScreenState extends ConsumerState<OfflineSyncScreen>
             const SizedBox(height: 24),
 
             // Action buttons
-            SizedBox(
-              width: double.infinity,
-              child: ElevatedButton.icon(
-                onPressed: _syncService.isOnline && !_syncService.isSyncing
-                    ? _handleManualSync
-                    : null,
-                icon: const Icon(Icons.sync_outlined),
-                label: _syncService.isSyncing ? const Text('Syncing...') : const Text('Manual Sync'),
-              ),
+            AppButton.primary(
+              label: _syncService.isSyncing ? 'Syncing...' : 'Manual Sync',
+              icon: Icons.sync_outlined,
+              fullWidth: true,
+              isDisabled: !_syncService.isOnline || _syncService.isSyncing,
+              onPressed: _handleManualSync,
             ),
             const SizedBox(height: 8),
-            SizedBox(
-              width: double.infinity,
-              child: OutlinedButton.icon(
-                onPressed: _handleClearCache,
-                icon: const Icon(Icons.delete_outline),
-                label: const Text('Clear Cache'),
-              ),
+            AppButton.tertiary(
+              label: 'Clear Cache',
+              icon: Icons.delete_outline,
+              fullWidth: true,
+              onPressed: _handleClearCache,
             ),
             const SizedBox(height: 8),
-            SizedBox(
-              width: double.infinity,
-              child: OutlinedButton.icon(
-                onPressed: _handleClearQueue,
-                icon: const Icon(Icons.clear_all_outlined),
-                label: const Text('Clear Queue'),
-              ),
+            AppButton.tertiary(
+              label: 'Clear Queue',
+              icon: Icons.clear_all_outlined,
+              fullWidth: true,
+              onPressed: _handleClearQueue,
             ),
           ],
         ),

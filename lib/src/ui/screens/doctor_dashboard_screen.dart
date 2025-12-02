@@ -4,6 +4,7 @@ import 'package:intl/intl.dart';
 import '../../db/doctor_db.dart';
 import '../../providers/db_provider.dart';
 import '../widgets/patient_card.dart';
+import '../../core/theme/design_tokens.dart';
 
 class DoctorDashboardScreen extends ConsumerStatefulWidget {
   const DoctorDashboardScreen({Key? key}) : super(key: key);

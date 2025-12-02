@@ -2851,16 +2851,16 @@ class _PatientViewScreenState extends ConsumerState<PatientViewScreen>
                     ),
                     const SizedBox(height: 4),
                     maxLines > 1
-                        ? AppInput.multiline(
+                        ? AppInput(
                             controller: controller,
                             hint: hint ?? 'Enter $label',
-                            keyboardType: keyboardType,
+                            keyboardType: keyboardType ?? TextInputType.text,
                             maxLines: maxLines,
                           )
-                        : AppInput.text(
+                        : AppInput(
                             controller: controller,
                             hint: hint ?? 'Enter $label',
-                            keyboardType: keyboardType,
+                            keyboardType: keyboardType ?? TextInputType.text,
                           ),
                   ],
                 ),

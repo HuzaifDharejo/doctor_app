@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../../core/theme/design_tokens.dart';
 import '../../core/widgets/app_card.dart';
 import '../../services/clinical_analytics_service.dart';
 import '../widgets/analytics_widgets.dart';
@@ -265,6 +266,7 @@ class _ClinicalAnalyticsScreenState extends ConsumerState<ClinicalAnalyticsScree
                         GridView.count(
                           crossAxisCount: 2,
                           childAspectRatio: 2,
+                          shrinkWrap: true,
                           physics: const NeverScrollableScrollPhysics(),
                           children: [
                             _buildMetricItem(
@@ -375,6 +377,7 @@ class _ClinicalAnalyticsScreenState extends ConsumerState<ClinicalAnalyticsScree
         GridView.count(
           crossAxisCount: 2,
           childAspectRatio: 1.5,
+          shrinkWrap: true,
           physics: const NeverScrollableScrollPhysics(),
           children: [
             SuccessRateCard(

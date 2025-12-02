@@ -416,24 +416,20 @@ class _InvoiceDetailScreenState extends ConsumerState<InvoiceDetailScreen> {
 
                   // Action Buttons
                   if (_invoice.paymentStatus.toLowerCase() != 'paid')
-                    ElevatedButton.icon(
+                    AppButton(
+                      label: 'Mark as Paid',
+                      icon: Icons.check_circle,
+                      fullWidth: true,
+                      backgroundColor: AppColors.success,
+                      foregroundColor: Colors.white,
                       onPressed: _markAsPaid,
-                      icon: const Icon(Icons.check_circle),
-                      label: const Text('Mark as Paid'),
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: AppColors.success,
-                        foregroundColor: Colors.white,
-                        padding: const EdgeInsets.symmetric(vertical: AppSpacing.lg),
-                      ),
                     ),
                   const SizedBox(height: 12),
-                  OutlinedButton.icon(
+                  AppButton.tertiary(
+                    label: 'Export PDF',
+                    icon: Icons.picture_as_pdf,
+                    fullWidth: true,
                     onPressed: () => _handleMenuAction('pdf'),
-                    icon: const Icon(Icons.picture_as_pdf),
-                    label: const Text('Export PDF'),
-                    style: OutlinedButton.styleFrom(
-                      padding: const EdgeInsets.symmetric(vertical: AppSpacing.lg),
-                    ),
                   ),
                 ],
               ),

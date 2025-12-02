@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import '../../db/doctor_db.dart';
 import '../../theme/app_theme.dart';
 import '../../core/theme/design_tokens.dart';
+import '../../core/components/app_button.dart';
 
 /// Clinical Overview Card for Doctor Workflow
 /// Displays critical patient information prominently for quick clinical assessment
@@ -37,12 +38,11 @@ class ClinicalOverviewCard extends StatelessWidget {
 
   Color _getRiskLevelColor() {
     switch (patient.riskLevel) {
-      case 'Critical':
+      case 2:
         return AppColors.error;
-      case 'High':
+      case 1:
         return AppColors.warning;
-      case 'Medium':
-        return AppColors.info;
+      case 0:
       default:
         return AppColors.success;
     }
@@ -50,14 +50,25 @@ class ClinicalOverviewCard extends StatelessWidget {
 
   IconData _getRiskLevelIcon() {
     switch (patient.riskLevel) {
-      case 'Critical':
+      case 2:
         return Icons.priority_high;
-      case 'High':
+      case 1:
         return Icons.warning_amber;
-      case 'Medium':
-        return Icons.info;
+      case 0:
       default:
         return Icons.check_circle;
+    }
+  }
+  
+  String _getRiskLevelLabel(int level) {
+    switch (level) {
+      case 2:
+        return 'High Risk';
+      case 1:
+        return 'Medium Risk';
+      case 0:
+      default:
+        return 'Low Risk';
     }
   }
 
@@ -144,7 +155,7 @@ class ClinicalOverviewCard extends StatelessWidget {
                       ),
                       const SizedBox(width: 6),
                       Text(
-                        patient.riskLevel,
+                        _getRiskLevelLabel(patient.riskLevel),
                         style: TextStyle(
                           color: riskColor,
                           fontWeight: FontWeight.w600,
@@ -332,26 +343,22 @@ class ClinicalOverviewCard extends StatelessWidget {
             Row(
               children: [
                 Expanded(
-                  child: OutlinedButton.icon(
+                  child: AppButton.tertiary(
+                    label: 'Full History',
+                    icon: Icons.history,
+                    size: AppButtonSize.small,
                     onPressed: onViewFullHistory,
-                    icon: const Icon(Icons.history, size: 18),
-                    label: const Text('Full History'),
-                    style: OutlinedButton.styleFrom(
-                      visualDensity: VisualDensity.compact,
-                    ),
                   ),
                 ),
                 const SizedBox(width: 12),
                 Expanded(
-                  child: FilledButton.icon(
+                  child: AppButton.primary(
+                    label: 'Prescribe',
+                    icon: Icons.medication,
+                    size: AppButtonSize.small,
                     onPressed: () {
                       // Trigger prescription workflow
                     },
-                    icon: const Icon(Icons.medication, size: 18),
-                    label: const Text('Prescribe'),
-                    style: FilledButton.styleFrom(
-                      visualDensity: VisualDensity.compact,
-                    ),
                   ),
                 ),
               ],

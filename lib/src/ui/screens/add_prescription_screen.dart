@@ -648,34 +648,27 @@ class _AddPrescriptionScreenState extends ConsumerState<AddPrescriptionScreen> {
                   mainAxisSize: MainAxisSize.min,
                   children: [
                     // Check Safety Button
-                    FilledButton.icon(
+                    AppButton(
+                      label: 'Check',
+                      icon: Icons.health_and_safety,
                       onPressed: _checkSafetyAlerts,
-                      icon: const Icon(Icons.health_and_safety, size: 16),
-                      label: const Text('Check'),
-                      style: FilledButton.styleFrom(
-                        backgroundColor: Colors.green,
-                        visualDensity: VisualDensity.compact,
-                        padding: const EdgeInsets.symmetric(horizontal: AppSpacing.md),
-                      ),
+                      backgroundColor: Colors.green,
+                      foregroundColor: Colors.white,
+                      size: AppButtonSize.small,
                     ),
                     const SizedBox(width: 8),
-                    OutlinedButton.icon(
+                    AppButton.tertiary(
+                      label: 'Templates',
+                      icon: Icons.library_books,
                       onPressed: _showMedicationTemplates,
-                      icon: const Icon(Icons.library_books, size: 16),
-                      label: const Text('Templates'),
-                      style: OutlinedButton.styleFrom(
-                        visualDensity: VisualDensity.compact,
-                        padding: const EdgeInsets.symmetric(horizontal: AppSpacing.md),
-                      ),
+                      size: AppButtonSize.small,
                     ),
                     const SizedBox(width: 8),
-                    FilledButton.tonalIcon(
+                    AppButton.secondary(
+                      label: 'Add',
+                      icon: Icons.add,
                       onPressed: _addMedication,
-                      icon: const Icon(Icons.add, size: 18),
-                      label: const Text('Add'),
-                      style: FilledButton.styleFrom(
-                        visualDensity: VisualDensity.compact,
-                      ),
+                      size: AppButtonSize.small,
                     ),
                   ],
                 ),
@@ -719,12 +712,13 @@ class _AddPrescriptionScreenState extends ConsumerState<AddPrescriptionScreen> {
                       suggestions: PrescriptionSuggestions.instructions,
                     ),
                     const SizedBox(height: 16),
-                    AppInput.multiline(
+                    AppInput(
                       controller: _notesController,
                       label: 'Additional Notes',
                       hint: 'Any additional notes...',
                       prefixIcon: Icons.note_outlined,
                       maxLines: 2,
+                      keyboardType: TextInputType.multiline,
                     ),
                   ],
                 ),
@@ -744,25 +738,19 @@ class _AddPrescriptionScreenState extends ConsumerState<AddPrescriptionScreen> {
               Row(
                 children: [
                   Expanded(
-                    child: OutlinedButton.icon(
+                    child: AppButton.tertiary(
+                      label: 'Print',
+                      icon: Icons.print,
                       onPressed: _printPrescription,
-                      icon: const Icon(Icons.print),
-                      label: const Text('Print'),
-                      style: OutlinedButton.styleFrom(
-                        padding: const EdgeInsets.symmetric(vertical: AppSpacing.lg),
-                      ),
                     ),
                   ),
                   const SizedBox(width: 12),
                   Expanded(
                     flex: 2,
-                    child: FilledButton.icon(
+                    child: AppButton.primary(
+                      label: 'Save Prescription',
+                      icon: Icons.save,
                       onPressed: _savePrescription,
-                      icon: const Icon(Icons.save),
-                      label: const Text('Save Prescription'),
-                      style: FilledButton.styleFrom(
-                        padding: const EdgeInsets.symmetric(vertical: AppSpacing.lg),
-                      ),
                     ),
                   ),
                 ],
@@ -1310,7 +1298,7 @@ class _AddPrescriptionScreenState extends ConsumerState<AddPrescriptionScreen> {
                     Expanded(
                       child: Focus(
                         onFocusChange: (f) => setState(() => _medications[i].dosageFocused = f),
-                        child: AppInput.text(
+                        child: AppInput(
                           controller: _medications[i].dosageController,
                           focusNode: _medications[i].dosageFocus,
                           label: 'Dosage',
@@ -1338,7 +1326,7 @@ class _AddPrescriptionScreenState extends ConsumerState<AddPrescriptionScreen> {
                     Expanded(
                       child: Focus(
                         onFocusChange: (f) => setState(() => _medications[i].durationFocused = f),
-                        child: AppInput.text(
+                        child: AppInput(
                           controller: _medications[i].durationController,
                           focusNode: _medications[i].durationFocus,
                           label: 'Duration',
@@ -1560,11 +1548,13 @@ class _AddPrescriptionScreenState extends ConsumerState<AddPrescriptionScreen> {
           ),
         ),
         const SizedBox(height: 12),
-        AppInput.multiline(
+        AppInput(
           controller: _followUpNotesController,
           label: 'Follow-up Notes',
           hint: 'What to check on follow-up...',
           prefixIcon: Icons.note_outlined,
+          maxLines: 3,
+          keyboardType: TextInputType.multiline,
         ),
       ],
     );

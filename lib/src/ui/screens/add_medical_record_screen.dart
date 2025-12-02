@@ -2014,7 +2014,7 @@ class _AddMedicalRecordScreenState extends ConsumerState<AddMedicalRecordScreen>
           onPressed: _isSaving ? null : () => _saveMedicalRecord(db),
           isLoading: _isSaving,
           fullWidth: true,
-          gradientColors: [AppColors.primary, AppColors.accent],
+          gradient: LinearGradient(colors: [AppColors.primary, AppColors.accent]),
         );
       },
     );

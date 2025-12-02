@@ -794,21 +794,23 @@ class PrescriptionsScreen extends ConsumerWidget {
                     Row(
                       children: [
                         Expanded(
-                          child: OutlinedButton.icon(
+                          child: AppButton.tertiary(
+                            label: 'Refill',
+                            icon: Icons.refresh,
                             onPressed: () {
                               Navigator.pop(context);
                               _handleRefill(context, ref, prescription, patient);
                             },
-                            icon: const Icon(Icons.refresh),
-                            label: const Text('Refill'),
-                            style: OutlinedButton.styleFrom(
-                              padding: const EdgeInsets.symmetric(vertical: AppSpacing.md),
-                            ),
                           ),
                         ),
                         const SizedBox(width: 8),
                         Expanded(
-                          child: OutlinedButton.icon(
+                          child: AppButton(
+                            label: 'WhatsApp',
+                            icon: Icons.chat,
+                            variant: AppButtonVariant.tertiary,
+                            foregroundColor: const Color(0xFF25D366),
+                            borderColor: const Color(0xFF25D366),
                             onPressed: () async {
                               Navigator.pop(context);
                               if (patient != null) {
@@ -830,17 +832,13 @@ class PrescriptionsScreen extends ConsumerWidget {
                                 );
                               }
                             },
-                            icon: const Icon(Icons.chat, color: Color(0xFF25D366)),
-                            label: const Text('WhatsApp'),
-                            style: OutlinedButton.styleFrom(
-                              padding: const EdgeInsets.symmetric(vertical: AppSpacing.md),
-                              foregroundColor: const Color(0xFF25D366),
-                            ),
                           ),
                         ),
                         const SizedBox(width: 8),
                         Expanded(
-                          child: ElevatedButton.icon(
+                          child: AppButton.primary(
+                            label: 'PDF',
+                            icon: Icons.picture_as_pdf,
                             onPressed: () async {
                               Navigator.pop(context);
                               if (patient != null) {
@@ -857,11 +855,6 @@ class PrescriptionsScreen extends ConsumerWidget {
                                 );
                               }
                             },
-                            icon: const Icon(Icons.picture_as_pdf),
-                            label: const Text('PDF'),
-                            style: ElevatedButton.styleFrom(
-                              padding: const EdgeInsets.symmetric(vertical: AppSpacing.md),
-                            ),
                           ),
                         ),
                       ],

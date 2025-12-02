@@ -849,7 +849,8 @@ class _VitalSignsScreenState extends ConsumerState<VitalSignsScreen> with Single
             label: 'Cancel',
             onPressed: () => Navigator.pop(context),
           ),
-          FilledButton(
+          AppButton.primary(
+            label: 'Save',
             onPressed: () async {
               final systolic = double.tryParse(systolicController.text);
               final diastolic = double.tryParse(diastolicController.text);
@@ -992,7 +993,6 @@ class _VitalSignsScreenState extends ConsumerState<VitalSignsScreen> with Single
                 }
               });
             },
-            child: const Text('Save'),
           ),
         ],
       ),

@@ -7,6 +7,7 @@ import '../../providers/db_provider.dart';
 import '../../theme/app_theme.dart';
 import '../../core/theme/design_tokens.dart';
 import '../../core/widgets/app_card.dart';
+import '../../core/components/app_button.dart';
 import '../widgets/medical_record_widgets.dart';
 import 'medical_record_detail_screen.dart';
 import 'records/records.dart';
@@ -823,15 +824,10 @@ class _ErrorState extends StatelessWidget {
               overflow: TextOverflow.ellipsis,
             ),
             const SizedBox(height: 24),
-            ElevatedButton.icon(
+            AppButton.primary(
+              label: 'Retry',
+              icon: Icons.refresh,
               onPressed: onRetry,
-              icon: const Icon(Icons.refresh),
-              label: const Text('Retry'),
-              style: ElevatedButton.styleFrom(
-                backgroundColor: AppColors.primary,
-                foregroundColor: Colors.white,
-                padding: const EdgeInsets.symmetric(horizontal: AppSpacing.xxl, vertical: AppSpacing.md),
-              ),
             ),
           ],
         ),

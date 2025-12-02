@@ -24,6 +24,11 @@ class AppSpacing {
   static const double cardPadding = lg;
   static const double buttonPadding = md;
   static const double itemSpacing = sm;
+  
+  // Screen and card padding
+  static const double screenPadding = lg;
+  static const double screenPaddingCompact = md;
+  static const double cardPaddingCompact = md;
 }
 
 class AppRadius {
@@ -45,6 +50,14 @@ class AppRadius {
   static const double fab = full;
   static const double chip = full;
   static const double avatar = full;
+  
+  // BorderRadius presets for direct use in widgets
+  static final BorderRadius mediumRadius = BorderRadius.circular(md);
+  static final BorderRadius largeRadius = BorderRadius.circular(lg);
+  static final BorderRadius smallRadius = BorderRadius.circular(sm);
+  static final BorderRadius cardRadius = BorderRadius.circular(card);
+  static final BorderRadius buttonRadius = BorderRadius.circular(button);
+  static final BorderRadius inputRadius = BorderRadius.circular(input);
 }
 
 class AppDuration {
@@ -57,6 +70,10 @@ class AppDuration {
   static const Duration slow = Duration(milliseconds: 500);
   static const Duration slower = Duration(milliseconds: 700);
   static const Duration slowest = Duration(milliseconds: 1000);
+  
+  // Aliases for legacy usage
+  static const Duration short = quick;
+  static const Duration fast = quick;
 
   // Semantic durations
   static const Duration itemAnimation = normal;
@@ -159,6 +176,18 @@ class AppShadow {
       offset: const Offset(0, 4),
     ),
   ];
+  
+  // Colored shadow factory
+  static List<BoxShadow> coloredShadow(Color color, {double elevation = 4}) {
+    return [
+      BoxShadow(
+        color: color.withValues(alpha: 0.3),
+        blurRadius: elevation * 2,
+        spreadRadius: elevation / 4,
+        offset: Offset(0, elevation),
+      ),
+    ];
+  }
 }
 
 class AppOpacity {

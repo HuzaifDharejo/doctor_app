@@ -5,6 +5,8 @@ import 'package:flutter/material.dart';
 import '../../theme/app_theme.dart';
 import '../constants/app_constants.dart';
 import '../constants/app_strings.dart';
+import '../theme/design_tokens.dart';
+import '../components/app_button.dart';
 
 class ErrorState extends StatelessWidget {
 
@@ -112,16 +114,10 @@ class ErrorState extends StatelessWidget {
             if (action != null)
               action!
             else if (onRetry != null)
-              ElevatedButton.icon(
+              AppButton.primary(
+                label: retryLabel ?? AppStrings.retry,
+                icon: Icons.refresh_rounded,
                 onPressed: onRetry,
-                icon: const Icon(Icons.refresh_rounded),
-                label: Text(retryLabel ?? AppStrings.retry),
-                style: ElevatedButton.styleFrom(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: AppSpacing.xl,
-                    vertical: AppSpacing.md,
-                  ),
-                ),
               ),
           ],
         ),

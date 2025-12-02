@@ -717,15 +717,12 @@ class _PsychiatricAssessmentScreenState
             label: 'Cancel',
             onPressed: () => Navigator.pop(context),
           ),
-          FilledButton(
+          AppButton.danger(
+            label: 'Clear All',
             onPressed: () {
               Navigator.pop(context);
               _clearAllControllers();
             },
-            style: FilledButton.styleFrom(
-              backgroundColor: Colors.red.shade400,
-            ),
-            child: const Text('Clear All'),
           ),
         ],
       ),
@@ -1030,38 +1027,22 @@ class _PsychiatricAssessmentScreenState
     TextInputType keyboardType = TextInputType.text,
     bool required = false,
   }) {
-    return maxLines > 1
-        ? AppInput.multiline(
-            controller: controller,
-            label: required ? '$label *' : label,
-            hint: hint,
-            prefixIcon: icon,
-            maxLines: maxLines,
-            keyboardType: keyboardType,
-            validator: required
-                ? (value) {
-                    if (value == null || value.isEmpty) {
-                      return '$label is required';
-                    }
-                    return null;
-                  }
-                : null,
-          )
-        : AppInput.text(
-            controller: controller,
-            label: required ? '$label *' : label,
-            hint: hint,
-            prefixIcon: icon,
-            keyboardType: keyboardType,
-            validator: required
-                ? (value) {
-                    if (value == null || value.isEmpty) {
-                      return '$label is required';
-                    }
-                    return null;
-                  }
-                : null,
-          );
+    return AppInput(
+      controller: controller,
+      label: required ? '$label *' : label,
+      hint: hint,
+      prefixIcon: icon,
+      maxLines: maxLines,
+      keyboardType: keyboardType,
+      validator: required
+          ? (value) {
+              if (value == null || value.isEmpty) {
+                return '$label is required';
+              }
+              return null;
+            }
+          : null,
+    );
   }
 
   Widget _buildMaritalStatusRadio(ColorScheme colorScheme) {

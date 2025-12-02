@@ -6,7 +6,9 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 
+import '../../core/extensions/context_extensions.dart';
 import '../../core/theme/design_tokens.dart';
+import '../../core/widgets/app_card.dart';
 import '../../core/widgets/loading_state.dart';
 import '../../core/widgets/error_state.dart';
 import '../../db/doctor_db.dart';

@@ -1391,15 +1391,12 @@ class _ActionButtons extends StatelessWidget {
                 ),
               ],
             ),
-            child: ElevatedButton.icon(
+            child: AppButton.gradient(
+              label: 'Edit',
+              icon: Icons.edit_outlined,
               onPressed: () => _handleEdit(context),
-              icon: const Icon(Icons.edit_outlined, size: MedicalRecordConstants.iconLarge),
-              label: const Text('Edit'),
-              style: ElevatedButton.styleFrom(
-                backgroundColor: Colors.transparent,
-                shadowColor: Colors.transparent,
-                padding: const EdgeInsets.symmetric(vertical: AppSpacing.lg),
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+              gradient: LinearGradient(
+                colors: [AppColors.primary, AppColors.primary.withBlue(200)],
               ),
             ),
           ),

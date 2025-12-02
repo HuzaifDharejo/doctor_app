@@ -763,28 +763,17 @@ class _PulmonaryEvaluationScreenModernState
     bool required = false,
     ValueChanged<String>? onChanged,
   }) {
-    return maxLines > 1
-        ? AppInput.multiline(
-            controller: controller,
-            label: label,
-            hint: hint,
-            maxLines: maxLines,
-            keyboardType: keyboardType,
-            onChanged: onChanged,
-            validator: required && controller.text.isEmpty
-                ? (value) => '$label is required'
-                : null,
-          )
-        : AppInput.text(
-            controller: controller,
-            label: label,
-            hint: hint,
-            keyboardType: keyboardType,
-            onChanged: onChanged,
-            validator: required && controller.text.isEmpty
-                ? (value) => '$label is required'
-                : null,
-          );
+    return AppInput(
+      controller: controller,
+      label: label,
+      hint: hint,
+      maxLines: maxLines,
+      keyboardType: keyboardType,
+      onChanged: onChanged,
+      validator: required && controller.text.isEmpty
+          ? (value) => '$label is required'
+          : null,
+    );
   }
 }
 

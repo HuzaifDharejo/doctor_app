@@ -895,34 +895,31 @@ class _PatientViewScreenModernState
         AppInput.phone(
           controller: _phoneController,
           label: 'Phone',
-          prefixIcon: Icons.phone,
         ),
         const SizedBox(height: 12),
         AppInput.email(
           controller: _emailController,
           label: 'Email',
-          prefixIcon: Icons.email,
         ),
         const SizedBox(height: 12),
-        AppInput.multiline(
+        AppInput(
           controller: _addressController,
           label: 'Address',
           prefixIcon: Icons.location_on,
           maxLines: 3,
         ),
         const SizedBox(height: 12),
-        AppInput.multiline(
+        AppInput(
           controller: _medicalHistoryController,
           label: 'Medical History',
           prefixIcon: Icons.note_alt,
           maxLines: 4,
         ),
         const SizedBox(height: 12),
-        AppInput.text(
+        AppInput(
           controller: _tagsController,
           label: 'Tags (comma-separated)',
           prefixIcon: Icons.label,
-        ),
         ),
         const SizedBox(height: 16),
         Row(

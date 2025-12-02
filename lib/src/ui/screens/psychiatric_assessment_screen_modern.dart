@@ -814,26 +814,16 @@ class _PsychiatricAssessmentScreenModernState
     bool required = false,
     bool isDark = false,
   }) {
-    return maxLines > 1
-        ? AppInput.multiline(
-            controller: controller,
-            label: label,
-            hint: hint,
-            maxLines: maxLines,
-            keyboardType: keyboardType,
-            validator: required && controller.text.isEmpty
-                ? (value) => '$label is required'
-                : null,
-          )
-        : AppInput.text(
-            controller: controller,
-            label: label,
-            hint: hint,
-            keyboardType: keyboardType,
-            validator: required && controller.text.isEmpty
-                ? (value) => '$label is required'
-                : null,
-          );
+    return AppInput(
+      controller: controller,
+      label: label,
+      hint: hint,
+      maxLines: maxLines,
+      keyboardType: keyboardType,
+      validator: required && controller.text.isEmpty
+          ? (value) => '$label is required'
+          : null,
+    );
   }
 
   Widget _buildMaritalStatusField(bool isDark) {

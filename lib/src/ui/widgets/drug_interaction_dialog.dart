@@ -281,18 +281,17 @@ class _DrugInteractionDialogState extends State<DrugInteractionDialog> {
           onPressed: widget.onCancel,
         ),
         if (_hasCritical)
-          FilledButton.tonalIcon(
-            onPressed: null,
-            icon: const Icon(Icons.block),
-            label: const Text('Cannot Prescribe'),
+          AppButton.secondary(
+            label: 'Cannot Prescribe',
+            icon: Icons.block,
+            isDisabled: true,
+            onPressed: () {},
           )
         else
-          FilledButton(
-            onPressed: _acknowledgeRisk ? widget.onConfirm : null,
-            style: FilledButton.styleFrom(
-              backgroundColor: Colors.orange,
-            ),
-            child: const Text('Prescribe Anyway'),
+          AppButton.primary(
+            label: 'Prescribe Anyway',
+            isDisabled: !_acknowledgeRisk,
+            onPressed: _acknowledgeRisk ? widget.onConfirm : () {},
           ),
       ],
     );

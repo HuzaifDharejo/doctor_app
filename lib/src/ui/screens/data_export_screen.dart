@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../core/widgets/app_card.dart';
+import '../../core/theme/design_tokens.dart';
+import '../../core/components/app_button.dart';
 
 import '../../services/data_export_service.dart';
 import '../widgets/report_widgets.dart';
@@ -107,24 +109,17 @@ class _DataExportScreenState extends ConsumerState<DataExportScreen> {
               Row(
                 children: [
                   Expanded(
-                    child: ElevatedButton.icon(
+                    child: AppButton.primary(
+                      label: 'Export Data',
+                      icon: Icons.download,
                       onPressed: _handleExport,
-                      icon: const Icon(Icons.download),
-                      label: const Text('Export Data'),
-                      style: ElevatedButton.styleFrom(
-                        padding: const EdgeInsets.symmetric(vertical: AppSpacing.md),
-                      ),
                     ),
                   ),
                   const SizedBox(width: 12),
-                  ElevatedButton.icon(
+                  AppButton.secondary(
+                    label: 'Preview',
+                    icon: Icons.preview,
                     onPressed: _handlePreview,
-                    icon: const Icon(Icons.preview),
-                    label: const Text('Preview'),
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: Colors.grey[600],
-                      padding: const EdgeInsets.symmetric(vertical: AppSpacing.md),
-                    ),
                   ),
                 ],
               ),

@@ -663,7 +663,8 @@ class _TreatmentOutcomesScreenState extends ConsumerState<TreatmentOutcomesScree
               label: 'Cancel',
               onPressed: () => Navigator.pop(context),
             ),
-            FilledButton(
+            AppButton.primary(
+              label: 'Save',
               onPressed: () async {
                 if (descController.text.isEmpty) {
                   ScaffoldMessenger.of(context).showSnackBar(
@@ -722,7 +723,6 @@ class _TreatmentOutcomesScreenState extends ConsumerState<TreatmentOutcomesScree
                   }
                 });
               },
-              child: Text(isEditing ? 'Update' : 'Add'),
             ),
           ],
         ),

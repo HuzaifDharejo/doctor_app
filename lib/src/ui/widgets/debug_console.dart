@@ -152,14 +152,11 @@ class _DebugConsoleState extends State<DebugConsole> with SingleTickerProviderSt
       color: isDark ? const Color(0xFF2D2D2D) : Colors.white,
       child: Column(
         children: [
-          AppInput.search(
+          AppInput(
             hint: 'Search logs...',
-            suffixIcon: _searchQuery.isNotEmpty
-                ? IconButton(
-                    icon: const Icon(Icons.clear, size: 20),
-                    onPressed: () => setState(() => _searchQuery = ''),
-                  )
-                : null,
+            prefixIcon: Icons.search,
+            suffixIcon: _searchQuery.isNotEmpty ? Icons.clear : null,
+            onSuffixIconPressed: () => setState(() => _searchQuery = ''),
             onChanged: (value) => setState(() => _searchQuery = value),
           ),
           const SizedBox(height: 8),

@@ -285,17 +285,17 @@ class RecordFormWidgets {
     String? Function(String?)? validator,
   }) {
     return maxLines > 1
-        ? AppInput.multiline(
+        ? AppInput(
             controller: controller,
             hint: hint,
             maxLines: maxLines,
-            keyboardType: keyboardType,
+            keyboardType: keyboardType ?? TextInputType.text,
             validator: validator,
           )
-        : AppInput.text(
+        : AppInput(
             controller: controller,
             hint: hint,
-            keyboardType: keyboardType,
+            keyboardType: keyboardType ?? TextInputType.text,
             validator: validator,
           );
   }
@@ -335,7 +335,7 @@ class RecordFormWidgets {
           ),
           const SizedBox(width: 8),
           Expanded(
-            child: AppInput.text(
+            child: AppInput(
               controller: controller,
               hint: hint ?? '---',
               keyboardType: TextInputType.text,

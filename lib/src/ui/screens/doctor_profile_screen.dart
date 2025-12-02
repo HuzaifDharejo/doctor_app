@@ -900,14 +900,14 @@ class _DoctorProfileScreenState extends ConsumerState<DoctorProfileScreen>
         ),
         actions: [
           AppButton.tertiary(label: 'Cancel', onPressed: () => Navigator.pop(context)),
-          FilledButton(
+          AppButton.primary(
+            label: 'Add',
             onPressed: () {
               if (controller.text.isNotEmpty) {
                 setState(() => _languages.add(controller.text));
                 Navigator.pop(context);
               }
             },
-            child: const Text('Add'),
           ),
         ],
       ),

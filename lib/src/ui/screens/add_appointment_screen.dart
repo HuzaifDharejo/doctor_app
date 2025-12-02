@@ -209,10 +209,11 @@ class _AddAppointmentScreenState extends ConsumerState<AddAppointmentScreen> {
   Widget _buildDateTimeCard(BuildContext context) {
     return Column(
       children: [
-        AppCard.gradient(
+        AppCard(
           padding: const EdgeInsets.all(AppSpacing.xl),
           gradient: AppColors.primaryGradient,
           borderRadius: BorderRadius.circular(20),
+          hasBorder: false,
           child: Row(
             children: [
               Expanded(

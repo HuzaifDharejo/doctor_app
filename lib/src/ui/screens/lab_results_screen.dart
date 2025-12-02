@@ -513,7 +513,6 @@ class _LabResultsScreenState extends ConsumerState<LabResultsScreen> with Single
             ],
           ),
         ),
-      ),
     );
   }
 

@@ -4,6 +4,8 @@ library;
 import 'package:flutter/material.dart';
 import '../../theme/app_theme.dart';
 import '../constants/app_constants.dart';
+import '../theme/design_tokens.dart';
+import '../components/app_button.dart';
 
 class EmptyState extends StatefulWidget {
 
@@ -253,23 +255,12 @@ class _EmptyStateState extends State<EmptyState> with TickerProviderStateMixin {
                         child: child,
                       );
                     },
-                    child: ElevatedButton.icon(
+                    child: AppButton(
+                      label: widget.actionLabel!,
+                      icon: Icons.add_rounded,
                       onPressed: widget.onAction,
-                      icon: const Icon(Icons.add_rounded),
-                      label: Text(widget.actionLabel!),
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: effectiveIconColor,
-                        foregroundColor: Colors.white,
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: AppSpacing.xl,
-                          vertical: AppSpacing.md,
-                        ),
-                        elevation: 4,
-                        shadowColor: effectiveIconColor.withValues(alpha: 0.4),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                      ),
+                      backgroundColor: effectiveIconColor,
+                      foregroundColor: Colors.white,
                     ),
                   ),
               ],

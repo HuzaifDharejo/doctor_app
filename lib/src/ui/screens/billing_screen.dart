@@ -3,6 +3,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 import '../../core/theme/design_tokens.dart';
+import '../../core/widgets/app_card.dart';
+import '../../core/components/app_button.dart';
 import '../../core/widgets/loading_state.dart';
 import '../../core/widgets/error_state.dart';
 import '../../core/widgets/app_header.dart';
@@ -356,7 +358,6 @@ class _BillingScreenState extends ConsumerState<BillingScreen> {
           onTap: () => _showInvoiceDetails(context, db, invoice, patient),
           padding: EdgeInsets.all(isCompact ? 14 : 18),
           child: Row(
-                child: Row(
                   children: [
                     // Invoice icon with gradient
                     Container(
@@ -769,7 +770,9 @@ class _BillingScreenState extends ConsumerState<BillingScreen> {
                 Row(
                   children: [
                     Expanded(
-                      child: OutlinedButton.icon(
+                      child: AppButton.tertiary(
+                        label: 'PDF',
+                        icon: Icons.picture_as_pdf,
                         onPressed: () async {
                           Navigator.pop(context);
                           if (patient != null) {
@@ -786,13 +789,16 @@ class _BillingScreenState extends ConsumerState<BillingScreen> {
                             );
                           }
                         },
-                        icon: const Icon(Icons.picture_as_pdf),
-                        label: const Text('PDF'),
                       ),
                     ),
                     const SizedBox(width: 8),
                     Expanded(
-                      child: OutlinedButton.icon(
+                      child: AppButton(
+                        label: 'WhatsApp',
+                        icon: Icons.chat,
+                        variant: AppButtonVariant.tertiary,
+                        foregroundColor: const Color(0xFF25D366),
+                        borderColor: const Color(0xFF25D366),
                         onPressed: () async {
                           Navigator.pop(context);
                           if (patient != null) {
@@ -813,17 +819,14 @@ class _BillingScreenState extends ConsumerState<BillingScreen> {
                             );
                           }
                         },
-                        icon: const Icon(Icons.chat, color: Color(0xFF25D366)),
-                        label: const Text('WhatsApp'),
-                        style: OutlinedButton.styleFrom(
-                          foregroundColor: const Color(0xFF25D366),
-                        ),
                       ),
                     ),
                     const SizedBox(width: 8),
                     if (invoice.paymentStatus != 'Paid')
                       Expanded(
-                        child: ElevatedButton.icon(
+                        child: AppButton.primary(
+                          label: 'Mark Paid',
+                          icon: Icons.check_circle,
                           onPressed: () async {
                             await db.updateInvoice(invoice.copyWith(paymentStatus: 'Paid'));
                             if (context.mounted) {
@@ -831,8 +834,6 @@ class _BillingScreenState extends ConsumerState<BillingScreen> {
                             }
                             setState(() {});
                           },
-                          icon: const Icon(Icons.check_circle),
-                          label: const Text('Mark Paid'),
                         ),
                       ),
                   ],

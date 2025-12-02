@@ -5,6 +5,8 @@ import 'package:intl/intl.dart';
 import '../../core/theme/design_tokens.dart';
 import '../../db/doctor_db.dart';
 import '../../providers/db_provider.dart';
+import '../../core/components/app_input.dart';
+import '../../core/components/app_button.dart';
 
 /// Screen to manage scheduled follow-ups
 class FollowUpsScreen extends ConsumerStatefulWidget {
@@ -679,7 +681,8 @@ class _FollowUpsScreenState extends ConsumerState<FollowUpsScreen> with SingleTi
               label: 'Cancel',
               onPressed: () => Navigator.pop(context),
             ),
-            FilledButton(
+            AppButton.primary(
+              label: 'Schedule',
               onPressed: () async {
                 if (reasonController.text.isEmpty) {
                   ScaffoldMessenger.of(context).showSnackBar(
@@ -711,7 +714,6 @@ class _FollowUpsScreenState extends ConsumerState<FollowUpsScreen> with SingleTi
                   }
                 });
               },
-              child: const Text('Schedule'),
             ),
           ],
         ),

@@ -1417,10 +1417,11 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> with SingleTick
                       ],
                     ),
                   ),
-                  AppButton.tertiary(
+                  AppButton(
                     label: 'Sign Out',
-                    foregroundColor: AppColors.error,
                     onPressed: () => _showDisconnectCalendarDialog(context, ref),
+                    variant: AppButtonVariant.tertiary,
+                    foregroundColor: AppColors.error,
                   ),
                 ],
               ),

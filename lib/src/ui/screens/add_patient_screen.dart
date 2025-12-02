@@ -331,7 +331,7 @@ class _AddPatientScreenState extends ConsumerState<AddPatientScreen> {
                         },
                       ),
                       const SizedBox(height: 12),
-                      AppInput.text(
+                      AppInput(
                         controller: _address,
                         label: 'Address',
                         hint: '123 Medical Ave, City, State',
