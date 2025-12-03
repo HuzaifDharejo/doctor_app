@@ -294,27 +294,134 @@ class _PulmonaryEvaluationScreenModernState
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Pulmonary Evaluation'),
-        centerTitle: true,
-        elevation: 0,
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.save_outlined),
-            tooltip: 'Save Draft',
-            onPressed: _saveDraft,
-          ),
-        ],
-      ),
+      backgroundColor: isDark ? const Color(0xFF0F0F0F) : AppColors.background,
       body: Form(
         key: _formKey,
-        child: SingleChildScrollView(
+        child: CustomScrollView(
           controller: _scrollController,
-          padding: const EdgeInsets.all(AppSpacing.lg),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
+          slivers: [
+            SliverAppBar(
+              expandedHeight: 140,
+              pinned: true,
+              elevation: 0,
+              backgroundColor: isDark ? const Color(0xFF1A1A1A) : Colors.white,
+              leading: Padding(
+                padding: const EdgeInsets.all(8.0),
+                child: Container(
+                  decoration: BoxDecoration(
+                    color: isDark 
+                        ? Colors.white.withValues(alpha: 0.1)
+                        : const Color(0xFF3B82F6).withValues(alpha: 0.1),
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: IconButton(
+                    icon: Icon(
+                      Icons.arrow_back,
+                      color: isDark ? Colors.white : const Color(0xFF3B82F6),
+                    ),
+                    onPressed: () => Navigator.pop(context),
+                  ),
+                ),
+              ),
+              actions: [
+                Padding(
+                  padding: const EdgeInsets.only(right: 8.0),
+                  child: Container(
+                    decoration: BoxDecoration(
+                      color: isDark 
+                          ? Colors.white.withValues(alpha: 0.1)
+                          : const Color(0xFF3B82F6).withValues(alpha: 0.1),
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: IconButton(
+                      icon: Icon(
+                        Icons.save_outlined,
+                        color: isDark ? Colors.white : const Color(0xFF3B82F6),
+                      ),
+                      tooltip: 'Save Draft',
+                      onPressed: _saveDraft,
+                    ),
+                  ),
+                ),
+              ],
+              flexibleSpace: FlexibleSpaceBar(
+                background: Container(
+                  decoration: BoxDecoration(
+                    gradient: LinearGradient(
+                      begin: Alignment.topLeft,
+                      end: Alignment.bottomRight,
+                      colors: isDark
+                          ? [const Color(0xFF1A1A1A), const Color(0xFF0F0F0F)]
+                          : [Colors.white, const Color(0xFFF8F9FA)],
+                    ),
+                  ),
+                  child: SafeArea(
+                    child: Padding(
+                      padding: const EdgeInsets.fromLTRB(20, 50, 20, 0),
+                      child: Row(
+                        children: [
+                          Container(
+                            padding: const EdgeInsets.all(12),
+                            decoration: BoxDecoration(
+                              gradient: const LinearGradient(
+                                colors: [Color(0xFF3B82F6), Color(0xFF1D4ED8)],
+                              ),
+                              borderRadius: BorderRadius.circular(16),
+                              boxShadow: [
+                                BoxShadow(
+                                  color: const Color(0xFF3B82F6).withValues(alpha: 0.3),
+                                  blurRadius: 12,
+                                  offset: const Offset(0, 4),
+                                ),
+                              ],
+                            ),
+                            child: const Icon(
+                              Icons.air_rounded,
+                              color: Colors.white,
+                              size: 28,
+                            ),
+                          ),
+                          const SizedBox(width: 16),
+                          Expanded(
+                            child: Column(
+                              mainAxisSize: MainAxisSize.min,
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  'Pulmonary Evaluation',
+                                  style: TextStyle(
+                                    fontSize: 24,
+                                    fontWeight: FontWeight.bold,
+                                    color: isDark ? Colors.white : const Color(0xFF1A1A2E),
+                                  ),
+                                ),
+                                const SizedBox(height: 4),
+                                Text(
+                                  'Respiratory assessment',
+                                  style: TextStyle(
+                                    fontSize: 14,
+                                    color: isDark 
+                                        ? Colors.white.withValues(alpha: 0.7)
+                                        : const Color(0xFF6B7280),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+            ),
+            SliverPadding(
+              padding: const EdgeInsets.all(AppSpacing.lg),
+              sliver: SliverList(
+                delegate: SliverChildListDelegate([
               // Evaluation Date
               _buildEvaluationHeader(context),
               const SizedBox(height: 20),
@@ -638,8 +745,10 @@ class _PulmonaryEvaluationScreenModernState
                 ),
               ),
               const SizedBox(height: 20),
-            ],
-          ),
+            ]),
+              ),
+            ),
+          ],
         ),
       ),
     );

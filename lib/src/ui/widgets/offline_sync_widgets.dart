@@ -376,10 +376,10 @@ class _ConflictResolutionDialogState extends State<ConflictResolutionDialog> {
   }
 
   String _formatData(Map<String, dynamic> data) {
-    return data.entries
+    final formatted = data.entries
         .map((e) => '${e.key}: ${e.value}')
-        .join('\n')
-        .substring(0, 100);
+        .join('\n');
+    return formatted.length > 100 ? formatted.substring(0, 100) : formatted;
   }
 }
 

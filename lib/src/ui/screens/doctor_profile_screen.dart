@@ -397,117 +397,158 @@ class _DoctorProfileScreenState extends ConsumerState<DoctorProfileScreen>
 
   Widget _buildSliverAppBar(bool isDark, bool isCompact) {
     return SliverAppBar(
-      expandedHeight: 320,
+      expandedHeight: 300,
       pinned: true,
-      backgroundColor: AppColors.primary,
-      leading: IconButton(
-        icon: Container(
-          padding: const EdgeInsets.all(AppSpacing.sm),
+      elevation: 0,
+      backgroundColor: isDark ? const Color(0xFF1A1A1A) : Colors.white,
+      surfaceTintColor: Colors.transparent,
+      leading: Padding(
+        padding: const EdgeInsets.all(8.0),
+        child: Container(
           decoration: BoxDecoration(
-            color: Colors.white.withValues(alpha: 0.2),
+            color: isDark ? Colors.white.withValues(alpha: 0.1) : Colors.grey.shade100,
             borderRadius: BorderRadius.circular(12),
           ),
-          child: const Icon(Icons.arrow_back_rounded, color: Colors.white, size: 20),
+          child: IconButton(
+            icon: Icon(
+              Icons.arrow_back_ios_new_rounded,
+              size: 18,
+              color: isDark ? Colors.white : Colors.black87,
+            ),
+            onPressed: () => Navigator.pop(context),
+          ),
         ),
-        onPressed: () => Navigator.pop(context),
       ),
       flexibleSpace: FlexibleSpaceBar(
-        background: DecoratedBox(
-          decoration: const BoxDecoration(
+        background: Container(
+          decoration: BoxDecoration(
             gradient: LinearGradient(
-              colors: [AppColors.primary, AppColors.primaryDark],
-              begin: Alignment.topCenter,
-              end: Alignment.bottomCenter,
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+              colors: isDark
+                  ? [const Color(0xFF1A1A1A), const Color(0xFF0F0F0F)]
+                  : [Colors.white, const Color(0xFFF8FAFC)],
             ),
           ),
           child: SafeArea(
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                const SizedBox(height: 50),
-                GestureDetector(
-                  onTap: _pickPhoto,
-                  child: Stack(
-                    children: [
-                      Container(
-                        padding: const EdgeInsets.all(AppSpacing.xs),
-                        decoration: BoxDecoration(
-                          shape: BoxShape.circle,
-                          border: Border.all(color: Colors.white, width: 3),
-                          boxShadow: [
-                            BoxShadow(
-                              color: Colors.black.withValues(alpha: 0.2),
-                              blurRadius: 20,
-                              offset: const Offset(0, 10),
-                            ),
-                          ],
-                        ),
-                        child: CircleAvatar(
-                          radius: 55,
-                          backgroundColor: Colors.white.withValues(alpha: 0.2),
-                          backgroundImage: _photoData != null
-                              ? MemoryImage(base64Decode(_photoData!))
-                              : null,
-                          child: _photoData == null
-                              ? Text(
-                                  _getInitials(_nameController.text),
-                                  style: const TextStyle(
-                                    fontSize: 36,
-                                    fontWeight: FontWeight.bold,
-                                    color: Colors.white,
-                                  ),
-                                )
-                              : null,
-                        ),
-                      ),
-                      Positioned(
-                        bottom: 0,
-                        right: 0,
-                        child: Container(
-                          padding: const EdgeInsets.all(AppSpacing.md),
+            child: Padding(
+              padding: const EdgeInsets.fromLTRB(20, 40, 20, 10),
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  GestureDetector(
+                    onTap: _pickPhoto,
+                    child: Stack(
+                      children: [
+                        Container(
+                          padding: const EdgeInsets.all(3),
                           decoration: BoxDecoration(
-                            color: AppColors.accent,
                             shape: BoxShape.circle,
-                            border: Border.all(color: Colors.white, width: 2),
+                            gradient: const LinearGradient(
+                              colors: [Color(0xFF6366F1), Color(0xFF8B5CF6)],
+                              begin: Alignment.topLeft,
+                              end: Alignment.bottomRight,
+                            ),
+                            boxShadow: [
+                              BoxShadow(
+                                color: const Color(0xFF6366F1).withValues(alpha: 0.4),
+                                blurRadius: 16,
+                                offset: const Offset(0, 8),
+                              ),
+                            ],
                           ),
-                          child: const Icon(Icons.camera_alt, size: 18, color: Colors.white),
+                          child: CircleAvatar(
+                            radius: 40,
+                            backgroundColor: isDark ? const Color(0xFF1A1A1A) : Colors.white,
+                            backgroundImage: _photoData != null
+                                ? MemoryImage(base64Decode(_photoData!))
+                                : null,
+                            child: _photoData == null
+                                ? Text(
+                                    _getInitials(_nameController.text),
+                                    style: TextStyle(
+                                      fontSize: 26,
+                                      fontWeight: FontWeight.bold,
+                                      color: isDark ? Colors.white : const Color(0xFF6366F1),
+                                    ),
+                                  )
+                                : null,
+                          ),
                         ),
+                        Positioned(
+                          bottom: 0,
+                          right: 0,
+                          child: Container(
+                            padding: const EdgeInsets.all(8),
+                            decoration: BoxDecoration(
+                              gradient: const LinearGradient(
+                                colors: [Color(0xFF10B981), Color(0xFF059669)],
+                              ),
+                              shape: BoxShape.circle,
+                              border: Border.all(
+                                color: isDark ? const Color(0xFF1A1A1A) : Colors.white,
+                                width: 2,
+                              ),
+                              boxShadow: [
+                                BoxShadow(
+                                  color: const Color(0xFF10B981).withValues(alpha: 0.4),
+                                  blurRadius: 6,
+                                  offset: const Offset(0, 2),
+                                ),
+                              ],
+                            ),
+                            child: const Icon(Icons.camera_alt, size: 14, color: Colors.white),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(height: 10),
+                  Text(
+                    _nameController.text.isNotEmpty
+                        ? 'Dr. ${_nameController.text}'
+                        : 'Doctor Name',
+                    style: TextStyle(
+                      fontSize: 20,
+                      fontWeight: FontWeight.w800,
+                      color: isDark ? Colors.white : const Color(0xFF1E293B),
+                      letterSpacing: -0.5,
+                    ),
+                  ),
+                  const SizedBox(height: 4),
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFF6366F1).withValues(alpha: 0.1),
+                      borderRadius: BorderRadius.circular(16),
+                    ),
+                    child: Text(
+                      _specializationController.text.isNotEmpty
+                          ? _specializationController.text
+                          : 'Specialization',
+                      style: TextStyle(
+                        fontSize: 12,
+                        fontWeight: FontWeight.w600,
+                        color: isDark ? const Color(0xFF818CF8) : const Color(0xFF6366F1),
                       ),
+                    ),
+                  ),
+                  const SizedBox(height: 10),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      _buildQuickStat(Icons.work_history,
+                          '${_experienceController.text.isNotEmpty ? _experienceController.text : "0"}+ yrs', isDark),
+                      _buildStatDivider(isDark),
+                      _buildQuickStat(Icons.verified,
+                          _licenseController.text.isNotEmpty ? _licenseController.text : 'License #', isDark),
+                      _buildStatDivider(isDark),
+                      _buildQuickStat(Icons.language, '${_languages.length} Languages', isDark),
                     ],
                   ),
-                ),
-                const SizedBox(height: 16),
-                Text(
-                  _nameController.text.isNotEmpty
-                      ? 'Dr. ${_nameController.text}'
-                      : 'Doctor Name',
-                  style: const TextStyle(
-                    fontSize: 24,
-                    fontWeight: FontWeight.bold,
-                    color: Colors.white,
-                  ),
-                ),
-                const SizedBox(height: 4),
-                Text(
-                  _specializationController.text.isNotEmpty
-                      ? _specializationController.text
-                      : 'Specialization',
-                  style: TextStyle(fontSize: 15, color: Colors.white.withValues(alpha: 0.9)),
-                ),
-                const SizedBox(height: 12),
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    _buildQuickStat(Icons.work_history,
-                        '${_experienceController.text.isNotEmpty ? _experienceController.text : "0"}+ yrs',),
-                    _buildStatDivider(),
-                    _buildQuickStat(Icons.verified,
-                        _licenseController.text.isNotEmpty ? _licenseController.text : 'License #',),
-                    _buildStatDivider(),
-                    _buildQuickStat(Icons.language, '${_languages.length} Languages'),
-                  ],
-                ),
-              ],
+                ],
+              ),
             ),
           ),
         ),
@@ -515,22 +556,26 @@ class _DoctorProfileScreenState extends ConsumerState<DoctorProfileScreen>
     );
   }
 
-  Widget _buildQuickStat(IconData icon, String text) {
+  Widget _buildQuickStat(IconData icon, String text, bool isDark) {
     return Row(
       children: [
-        Icon(icon, size: 14, color: Colors.white.withValues(alpha: 0.8)),
+        Icon(icon, size: 14, color: isDark ? Colors.white54 : const Color(0xFF64748B)),
         const SizedBox(width: 4),
-        Text(text, style: TextStyle(fontSize: 12, color: Colors.white.withValues(alpha: 0.9))),
+        Text(text, style: TextStyle(
+          fontSize: 12, 
+          fontWeight: FontWeight.w500,
+          color: isDark ? Colors.white70 : const Color(0xFF64748B),
+        )),
       ],
     );
   }
 
-  Widget _buildStatDivider() {
+  Widget _buildStatDivider(bool isDark) {
     return Container(
       height: 12,
       width: 1,
       margin: const EdgeInsets.symmetric(horizontal: AppSpacing.md),
-      color: Colors.white.withValues(alpha: 0.3),
+      color: isDark ? Colors.white24 : const Color(0xFFE2E8F0),
     );
   }
 

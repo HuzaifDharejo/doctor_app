@@ -39,6 +39,8 @@ class NotificationsPanel extends ConsumerWidget {
             final pending = notifications.where((n) => n.isPending).toList();
 
             return ListView(
+              // Use primary: false when inside NestedScrollView to avoid ScrollController conflicts
+              primary: false,
               children: [
                 if (overdue.isNotEmpty) ...[
                   _buildSectionHeader(context, 'Overdue (${overdue.length})', Colors.red),

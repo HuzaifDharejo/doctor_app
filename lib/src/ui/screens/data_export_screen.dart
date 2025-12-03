@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../core/widgets/app_card.dart';
 import '../../core/theme/design_tokens.dart';
 import '../../core/components/app_button.dart';
+import '../../theme/app_theme.dart';
 
 import '../../services/data_export_service.dart';
 import '../widgets/report_widgets.dart';
@@ -34,132 +35,229 @@ class _DataExportScreenState extends ConsumerState<DataExportScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final surfaceColor = isDark ? AppColors.darkSurface : Colors.white;
+    final textColor = isDark ? AppColors.darkTextPrimary : AppColors.textPrimary;
+
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Data Export & Reporting'),
-        elevation: 2,
-      ),
-      body: SingleChildScrollView(
-        child: Padding(
-          padding: const EdgeInsets.all(AppSpacing.lg),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              // Report Type Selector
-              ReportTypeSelector(
-                selectedReportType: _selectedReportType,
-                onReportTypeChanged: (newType) {
-                  setState(() {
-                    _selectedReportType = newType;
-                  });
-                },
-              ),
-              const SizedBox(height: 16),
-
-              // Date Range Selector
-              DateRangeSelector(
-                fromDate: _dateFrom,
-                toDate: _dateTo,
-                onDateRangeChanged: (range) {
-                  setState(() {
-                    _dateFrom = range.start;
-                    _dateTo = range.end;
-                  });
-                },
-              ),
-              const SizedBox(height: 16),
-
-              // Export Format Selector
-              ExportFormatSelector(
-                selectedFormat: _selectedFormat,
-                onFormatChanged: (newFormat) {
-                  setState(() {
-                    _selectedFormat = newFormat;
-                  });
-                },
-              ),
-              const SizedBox(height: 16),
-
-              // Filter Panel
-              ExportFilterPanel(
-                includeArchived: _includeArchived,
-                includeInactive: _includeInactive,
-                selectedStatuses: _selectedStatuses,
-                onFiltersChanged: (filters) {
-                  setState(() {
-                    _includeArchived = filters['includeArchived'] as bool;
-                    _includeInactive = filters['includeInactive'] as bool;
-                    _selectedStatuses = List<String>.from(filters['selectedStatuses'] as List);
-                  });
-                },
-              ),
-              const SizedBox(height: 16),
-
-              // Export Summary
-              ExportSummary(
-                reportType: _selectedReportType,
-                format: _selectedFormat,
-                recordCount: _estimateRecordCount(),
-                dateFrom: _dateFrom,
-                dateTo: _dateTo,
-              ),
-              const SizedBox(height: 24),
-
-              // Action Buttons
-              Row(
-                children: [
-                  Expanded(
-                    child: AppButton.primary(
-                      label: 'Export Data',
-                      icon: Icons.download,
-                      onPressed: _handleExport,
-                    ),
+      backgroundColor: isDark ? AppColors.darkBackground : AppColors.background,
+      body: CustomScrollView(
+        slivers: [
+          SliverAppBar(
+            expandedHeight: 140,
+            floating: false,
+            pinned: true,
+            backgroundColor: surfaceColor,
+            foregroundColor: textColor,
+            elevation: 0,
+            scrolledUnderElevation: 1,
+            leading: Padding(
+              padding: const EdgeInsets.all(8.0),
+              child: Container(
+                decoration: BoxDecoration(
+                  color: isDark ? Colors.white.withValues(alpha: 0.1) : Colors.black.withValues(alpha: 0.05),
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: IconButton(
+                  icon: Icon(
+                    Icons.arrow_back,
+                    color: isDark ? Colors.white : const Color(0xFF1A1A2E),
                   ),
-                  const SizedBox(width: 12),
-                  AppButton.secondary(
-                    label: 'Preview',
-                    icon: Icons.preview,
-                    onPressed: _handlePreview,
-                  ),
-                ],
+                  onPressed: () => Navigator.pop(context),
+                ),
               ),
-              const SizedBox(height: 24),
-
-              // Information Section
-              AppCard(
-                child: Padding(
-                  padding: const EdgeInsets.all(AppSpacing.lg),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        'About Data Export',
-                        style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                              fontWeight: FontWeight.bold,
+            ),
+            flexibleSpace: FlexibleSpaceBar(
+              background: Container(
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                    colors: isDark
+                        ? [const Color(0xFF1A1A2E), const Color(0xFF16213E)]
+                        : [const Color(0xFFF8FAFC), surfaceColor],
+                  ),
+                ),
+                child: SafeArea(
+                  child: Padding(
+                    padding: const EdgeInsets.fromLTRB(20, 60, 20, 16),
+                    child: Row(
+                      children: [
+                        Container(
+                          padding: const EdgeInsets.all(14),
+                          decoration: BoxDecoration(
+                            gradient: const LinearGradient(
+                              colors: [Color(0xFF6366F1), Color(0xFF8B5CF6)],
+                              begin: Alignment.topLeft,
+                              end: Alignment.bottomRight,
                             ),
-                      ),
-                      const SizedBox(height: 12),
-                      _buildInfoItem(
-                        'PDF Format',
-                        'Best for printing and sharing formatted reports with professional layout',
-                      ),
-                      _buildInfoItem(
-                        'CSV Format',
-                        'Ideal for importing data into spreadsheet applications like Excel',
-                      ),
-                      _buildInfoItem(
-                        'JSON Format',
-                        'Perfect for data integration and programmatic access',
-                      ),
-                      const SizedBox(height: 12),
-                      _buildSecurityNote(),
-                    ],
+                            borderRadius: BorderRadius.circular(16),
+                            boxShadow: [
+                              BoxShadow(
+                                color: const Color(0xFF6366F1).withValues(alpha: 0.3),
+                                blurRadius: 12,
+                                offset: const Offset(0, 4),
+                              ),
+                            ],
+                          ),
+                          child: const Icon(
+                            Icons.file_download_rounded,
+                            color: Colors.white,
+                            size: 28,
+                          ),
+                        ),
+                        const SizedBox(width: 16),
+                        Expanded(
+                          child: Column(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                'Data Export',
+                                style: TextStyle(
+                                  fontSize: 22,
+                                  fontWeight: FontWeight.bold,
+                                  color: textColor,
+                                ),
+                              ),
+                              const SizedBox(height: 4),
+                              Text(
+                                'Export reports & data files',
+                                style: TextStyle(
+                                  fontSize: 14,
+                                  color: isDark ? AppColors.darkTextSecondary : AppColors.textSecondary,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
+                    ),
                   ),
                 ),
               ),
-            ],
+            ),
           ),
-        ),
+          SliverPadding(
+            padding: const EdgeInsets.all(AppSpacing.lg),
+            sliver: SliverList(
+              delegate: SliverChildListDelegate([
+                // Report Type Selector
+                ReportTypeSelector(
+                  selectedReportType: _selectedReportType,
+                  onReportTypeChanged: (newType) {
+                    setState(() {
+                      _selectedReportType = newType;
+                    });
+                  },
+                ),
+                const SizedBox(height: 16),
+
+                // Date Range Selector
+                DateRangeSelector(
+                  fromDate: _dateFrom,
+                  toDate: _dateTo,
+                  onDateRangeChanged: (range) {
+                    setState(() {
+                      _dateFrom = range.start;
+                      _dateTo = range.end;
+                    });
+                  },
+                ),
+                const SizedBox(height: 16),
+
+                // Export Format Selector
+                ExportFormatSelector(
+                  selectedFormat: _selectedFormat,
+                  onFormatChanged: (newFormat) {
+                    setState(() {
+                      _selectedFormat = newFormat;
+                    });
+                  },
+                ),
+                const SizedBox(height: 16),
+
+                // Filter Panel
+                ExportFilterPanel(
+                  includeArchived: _includeArchived,
+                  includeInactive: _includeInactive,
+                  selectedStatuses: _selectedStatuses,
+                  onFiltersChanged: (filters) {
+                    setState(() {
+                      _includeArchived = filters['includeArchived'] as bool;
+                      _includeInactive = filters['includeInactive'] as bool;
+                      _selectedStatuses = List<String>.from(filters['selectedStatuses'] as List);
+                    });
+                  },
+                ),
+                const SizedBox(height: 16),
+
+                // Export Summary
+                ExportSummary(
+                  reportType: _selectedReportType,
+                  format: _selectedFormat,
+                  recordCount: _estimateRecordCount(),
+                  dateFrom: _dateFrom,
+                  dateTo: _dateTo,
+                ),
+                const SizedBox(height: 24),
+
+                // Action Buttons
+                Row(
+                  children: [
+                    Expanded(
+                      child: AppButton.primary(
+                        label: 'Export Data',
+                        icon: Icons.download,
+                        onPressed: _handleExport,
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    AppButton.secondary(
+                      label: 'Preview',
+                      icon: Icons.preview,
+                      onPressed: _handlePreview,
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 24),
+
+                // Information Section
+                AppCard(
+                  child: Padding(
+                    padding: const EdgeInsets.all(AppSpacing.lg),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          'About Data Export',
+                          style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                                fontWeight: FontWeight.bold,
+                              ),
+                        ),
+                        const SizedBox(height: 12),
+                        _buildInfoItem(
+                          'PDF Format',
+                          'Best for printing and sharing formatted reports with professional layout',
+                        ),
+                        _buildInfoItem(
+                          'CSV Format',
+                          'Ideal for importing data into spreadsheet applications like Excel',
+                        ),
+                        _buildInfoItem(
+                          'JSON Format',
+                          'Perfect for data integration and programmatic access',
+                        ),
+                        const SizedBox(height: 12),
+                        _buildSecurityNote(),
+                      ],
+                    ),
+                  ),
+                ),
+              ]),
+            ),
+          ),
+        ],
       ),
     );
   }

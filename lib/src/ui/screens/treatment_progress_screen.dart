@@ -77,56 +77,161 @@ class _TreatmentProgressScreenState extends ConsumerState<TreatmentProgressScree
     final isDark = Theme.of(context).brightness == Brightness.dark;
     
     return Scaffold(
-      backgroundColor: isDark ? AppColors.darkBackground : const Color(0xFFF8FAFC),
-      appBar: AppBar(
-        title: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            const Text('Treatment Progress'),
-            Text(
-              widget.patientName,
-              style: TextStyle(
-                fontSize: 12,
-                fontWeight: FontWeight.normal,
-                color: isDark ? AppColors.darkTextSecondary : AppColors.textSecondary,
+      backgroundColor: isDark ? const Color(0xFF0F0F0F) : const Color(0xFFF8FAFC),
+      body: NestedScrollView(
+        headerSliverBuilder: (context, innerBoxIsScrolled) => [
+          SliverAppBar(
+            expandedHeight: 160,
+            pinned: true,
+            elevation: 0,
+            backgroundColor: isDark ? const Color(0xFF1A1A1A) : Colors.white,
+            leading: Padding(
+              padding: const EdgeInsets.all(8.0),
+              child: Container(
+                decoration: BoxDecoration(
+                  color: isDark 
+                      ? Colors.white.withValues(alpha: 0.1)
+                      : const Color(0xFF6366F1).withValues(alpha: 0.1),
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: IconButton(
+                  icon: Icon(
+                    Icons.arrow_back,
+                    color: isDark ? Colors.white : const Color(0xFF6366F1),
+                  ),
+                  onPressed: () => Navigator.pop(context),
+                ),
               ),
             ),
-          ],
-        ),
-        bottom: TabBar(
-          controller: _tabController,
-          isScrollable: true,
-          tabs: const [
-            Tab(icon: Icon(Icons.event_note), text: 'Sessions'),
-            Tab(icon: Icon(Icons.medication), text: 'Medications'),
-            Tab(icon: Icon(Icons.track_changes), text: 'Goals'),
-            Tab(icon: Icon(Icons.warning_amber), text: 'Side Effects'),
-          ],
-        ),
-      ),
-      body: _isLoading
-          ? const Center(child: CircularProgressIndicator())
-          : Column(
-              children: [
-                _buildSummaryCards(context),
-                Expanded(
-                  child: TabBarView(
-                    controller: _tabController,
-                    children: [
-                      _buildSessionsTab(context),
-                      _buildMedicationsTab(context),
-                      _buildGoalsTab(context),
-                      _buildSideEffectsTab(context),
-                    ],
+            flexibleSpace: FlexibleSpaceBar(
+              background: Container(
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                    colors: isDark
+                        ? [const Color(0xFF1A1A1A), const Color(0xFF0F0F0F)]
+                        : [Colors.white, const Color(0xFFF8F9FA)],
                   ),
                 ),
+                child: SafeArea(
+                  child: Padding(
+                    padding: const EdgeInsets.fromLTRB(20, 40, 20, 0),
+                    child: Row(
+                      children: [
+                        Container(
+                          padding: const EdgeInsets.all(12),
+                          decoration: BoxDecoration(
+                            gradient: const LinearGradient(
+                              colors: [Color(0xFF8B5CF6), Color(0xFFA78BFA)],
+                            ),
+                            borderRadius: BorderRadius.circular(16),
+                            boxShadow: [
+                              BoxShadow(
+                                color: const Color(0xFF8B5CF6).withValues(alpha: 0.3),
+                                blurRadius: 12,
+                                offset: const Offset(0, 4),
+                              ),
+                            ],
+                          ),
+                          child: const Icon(
+                            Icons.trending_up_rounded,
+                            color: Colors.white,
+                            size: 28,
+                          ),
+                        ),
+                        const SizedBox(width: 16),
+                        Expanded(
+                          child: Column(
+                            mainAxisSize: MainAxisSize.min,
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                'Treatment Progress',
+                                style: TextStyle(
+                                  fontSize: 24,
+                                  fontWeight: FontWeight.bold,
+                                  color: isDark ? Colors.white : const Color(0xFF1A1A2E),
+                                ),
+                              ),
+                              const SizedBox(height: 4),
+                              Text(
+                                widget.patientName,
+                                style: TextStyle(
+                                  fontSize: 14,
+                                  color: isDark 
+                                      ? Colors.white.withValues(alpha: 0.7)
+                                      : const Color(0xFF6B7280),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+            ),
+            bottom: TabBar(
+              controller: _tabController,
+              isScrollable: true,
+              indicatorColor: const Color(0xFF8B5CF6),
+              indicatorWeight: 3,
+              labelColor: isDark ? Colors.white : const Color(0xFF8B5CF6),
+              unselectedLabelColor: isDark 
+                  ? Colors.white.withValues(alpha: 0.5)
+                  : const Color(0xFF6B7280),
+              labelStyle: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600),
+              tabs: const [
+                Tab(text: 'Sessions'),
+                Tab(text: 'Medications'),
+                Tab(text: 'Goals'),
+                Tab(text: 'Side Effects'),
               ],
             ),
-      floatingActionButton: FloatingActionButton.extended(
-        onPressed: () => _showAddMenu(context),
-        icon: const Icon(Icons.add),
-        label: const Text('Add'),
-        backgroundColor: AppColors.primary,
+          ),
+        ],
+        body: _isLoading
+            ? const Center(child: CircularProgressIndicator())
+            : Column(
+                children: [
+                  _buildSummaryCards(context),
+                  Expanded(
+                    child: TabBarView(
+                      controller: _tabController,
+                      children: [
+                        _buildSessionsTab(context),
+                        _buildMedicationsTab(context),
+                        _buildGoalsTab(context),
+                        _buildSideEffectsTab(context),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+      ),
+      floatingActionButton: Container(
+        decoration: BoxDecoration(
+          gradient: const LinearGradient(
+            colors: [Color(0xFF8B5CF6), Color(0xFFA78BFA)],
+          ),
+          borderRadius: BorderRadius.circular(16),
+          boxShadow: [
+            BoxShadow(
+              color: const Color(0xFF8B5CF6).withValues(alpha: 0.4),
+              blurRadius: 12,
+              offset: const Offset(0, 4),
+            ),
+          ],
+        ),
+        child: FloatingActionButton.extended(
+          onPressed: () => _showAddMenu(context),
+          backgroundColor: Colors.transparent,
+          elevation: 0,
+          icon: const Icon(Icons.add, color: Colors.white),
+          label: const Text('Add', style: TextStyle(color: Colors.white)),
+        ),
       ),
     );
   }
@@ -843,11 +948,11 @@ class _TreatmentProgressScreenState extends ConsumerState<TreatmentProgressScree
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
                       if (goal.baselineMeasure.isNotEmpty)
-                        _buildMeasureChip('Baseline', goal.baselineMeasure, AppColors.textSecondary),
+                        Flexible(child: _buildMeasureChip('Baseline', goal.baselineMeasure, AppColors.textSecondary)),
                       if (goal.currentMeasure.isNotEmpty)
-                        _buildMeasureChip('Current', goal.currentMeasure, AppColors.primary),
+                        Flexible(child: _buildMeasureChip('Current', goal.currentMeasure, AppColors.primary)),
                       if (goal.targetMeasure.isNotEmpty)
-                        _buildMeasureChip('Target', goal.targetMeasure, AppColors.success),
+                        Flexible(child: _buildMeasureChip('Target', goal.targetMeasure, AppColors.success)),
                     ],
                   ),
                 ],
@@ -896,6 +1001,8 @@ class _TreatmentProgressScreenState extends ConsumerState<TreatmentProgressScree
           ),
           child: Text(
             value,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
             style: TextStyle(
               fontSize: 11,
               fontWeight: FontWeight.w600,
@@ -938,7 +1045,12 @@ class _TreatmentProgressScreenState extends ConsumerState<TreatmentProgressScree
       if (med.sideEffects.isNotEmpty) {
         final decoded = jsonDecode(med.sideEffects);
         if (decoded is List) {
-          sideEffectsList = decoded.cast<String>();
+          // Handle both string arrays and object arrays
+          sideEffectsList = decoded.map((item) {
+            if (item is String) return item;
+            if (item is Map) return item['name']?.toString() ?? item.toString();
+            return item.toString();
+          }).toList();
         }
       }
     } catch (_) {

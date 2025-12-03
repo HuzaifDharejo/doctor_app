@@ -14,6 +14,37 @@ class PdfService {
   static pw.Font? _italicFont;
   static bool _fontsInitialized = false;
   
+  /// Parse signature data which may be in JSON format (strokes or image)
+  /// or raw base64 image data
+  static Uint8List? _parseSignatureData(String? signatureData) {
+    if (signatureData == null || signatureData.isEmpty) return null;
+    
+    try {
+      // Try to parse as JSON first
+      final jsonData = jsonDecode(signatureData);
+      if (jsonData is Map) {
+        // Handle image format: {"image": "base64data"}
+        if (jsonData['image'] != null) {
+          return base64Decode(jsonData['image'] as String);
+        }
+        // Handle strokes format: {"strokes": [...]} - can't render strokes in PDF directly
+        // Would need to render to image first, skip for now
+        if (jsonData['strokes'] != null) {
+          log.w('PDF', 'Signature is in strokes format - cannot render in PDF. Please re-capture signature as image.');
+          return null;
+        }
+      }
+    } catch (_) {
+      // Not JSON, try as raw base64
+      try {
+        return base64Decode(signatureData);
+      } catch (e) {
+        log.w('PDF', 'Error parsing signature as base64: $e');
+      }
+    }
+    return null;
+  }
+  
   /// Initialize fonts with Unicode support - with fallback
   static Future<void> _initFonts() async {
     if (_fontsInitialized) return;
@@ -463,12 +494,12 @@ class PdfService {
     
     // Parse signature image if available
     pw.MemoryImage? signatureImage;
-    if (signatureData != null && signatureData.isNotEmpty) {
+    final signatureBytes = _parseSignatureData(signatureData);
+    if (signatureBytes != null) {
       try {
-        final bytes = base64Decode(signatureData);
-        signatureImage = pw.MemoryImage(bytes);
+        signatureImage = pw.MemoryImage(signatureBytes);
       } catch (e) {
-        log.w('PDF', 'Error parsing signature: $e');
+        log.w('PDF', 'Error creating signature image: $e');
       }
     }
     
@@ -664,12 +695,12 @@ class PdfService {
     
     // Parse signature image if available
     pw.MemoryImage? signatureImage;
-    if (signatureData != null && signatureData.isNotEmpty) {
+    final signatureBytes = _parseSignatureData(signatureData);
+    if (signatureBytes != null) {
       try {
-        final bytes = base64Decode(signatureData);
-        signatureImage = pw.MemoryImage(bytes);
+        signatureImage = pw.MemoryImage(signatureBytes);
       } catch (e) {
-        log.w('PDF', 'Error parsing signature: $e');
+        log.w('PDF', 'Error creating signature image: $e');
       }
     }
     

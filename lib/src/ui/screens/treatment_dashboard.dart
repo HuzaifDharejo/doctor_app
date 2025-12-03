@@ -6,6 +6,7 @@ import 'package:intl/intl.dart';
 
 import '../../db/doctor_db.dart';
 import '../../providers/db_provider.dart';
+import '../../core/mixins/responsive_mixin.dart';
 import '../../core/widgets/app_card.dart';
 import '../../theme/app_theme.dart';
 import '../../core/theme/design_tokens.dart';
@@ -28,7 +29,7 @@ class TreatmentDashboard extends ConsumerStatefulWidget {
 }
 
 class _TreatmentDashboardState extends ConsumerState<TreatmentDashboard>
-    with SingleTickerProviderStateMixin {
+    with SingleTickerProviderStateMixin, ResponsiveConsumerStateMixin {
   late TabController _tabController;
   bool _isLoading = true;
 
@@ -125,37 +126,165 @@ class _TreatmentDashboardState extends ConsumerState<TreatmentDashboard>
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
     final isDark = theme.brightness == Brightness.dark;
+    final surfaceColor = isDark ? AppColors.darkSurface : Colors.white;
+    final textColor = isDark ? AppColors.darkTextPrimary : AppColors.textPrimary;
+
+    // Responsive values
+    final headerExpandedHeight = isCompact ? 150.0 : 180.0;
+    final headerPadding = isCompact 
+        ? const EdgeInsets.fromLTRB(16, 40, 16, 12)
+        : const EdgeInsets.fromLTRB(20, 50, 20, 16);
+    final iconContainerPadding = isCompact ? 10.0 : 14.0;
+    final headerIconSize = isCompact ? 24.0 : 28.0;
+    final titleSize = isCompact ? 18.0 : 22.0;
 
     return Scaffold(
-      appBar: AppBar(
-        title: Text('Treatment Dashboard - ${widget.patientName}'),
-        bottom: TabBar(
-          controller: _tabController,
-          isScrollable: true,
-          labelColor: colorScheme.primary,
-          unselectedLabelColor: isDark ? Colors.grey[400] : Colors.grey[600],
-          indicatorColor: colorScheme.primary,
-          tabs: const [
-            Tab(text: 'Overview'),
-            Tab(text: 'Active Treatments'),
-            Tab(text: 'Medications'),
-            Tab(text: 'Goals'),
-            Tab(text: 'Sessions'),
-          ],
-        ),
-      ),
-      body: _isLoading
-          ? const Center(child: CircularProgressIndicator())
-          : TabBarView(
+      backgroundColor: isDark ? AppColors.darkBackground : AppColors.background,
+      body: NestedScrollView(
+        headerSliverBuilder: (context, innerBoxIsScrolled) => [
+          SliverAppBar(
+            expandedHeight: headerExpandedHeight,
+            floating: false,
+            pinned: true,
+            backgroundColor: surfaceColor,
+            foregroundColor: textColor,
+            elevation: 0,
+            scrolledUnderElevation: 1,
+            leading: Padding(
+              padding: EdgeInsets.all(isCompact ? 6.0 : 8.0),
+              child: Container(
+                decoration: BoxDecoration(
+                  color: isDark ? Colors.white.withValues(alpha: 0.1) : Colors.black.withValues(alpha: 0.05),
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: IconButton(
+                  icon: Icon(
+                    Icons.arrow_back,
+                    color: isDark ? Colors.white : const Color(0xFF1A1A2E),
+                    size: isCompact ? 20 : 24,
+                  ),
+                  onPressed: () => Navigator.pop(context),
+                ),
+              ),
+            ),
+            flexibleSpace: FlexibleSpaceBar(
+              background: Container(
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                    colors: isDark
+                        ? [const Color(0xFF1A1A2E), const Color(0xFF16213E)]
+                        : [const Color(0xFFF8FAFC), surfaceColor],
+                  ),
+                ),
+                child: SafeArea(
+                  child: Padding(
+                    padding: headerPadding,
+                    child: Row(
+                      children: [
+                        Container(
+                          padding: EdgeInsets.all(iconContainerPadding),
+                          decoration: BoxDecoration(
+                            gradient: const LinearGradient(
+                              colors: [Color(0xFF10B981), Color(0xFF059669)],
+                              begin: Alignment.topLeft,
+                              end: Alignment.bottomRight,
+                            ),
+                            borderRadius: BorderRadius.circular(isCompact ? 12 : 16),
+                            boxShadow: [
+                              BoxShadow(
+                                color: const Color(0xFF10B981).withValues(alpha: 0.3),
+                                blurRadius: 12,
+                                offset: const Offset(0, 4),
+                              ),
+                            ],
+                          ),
+                          child: Icon(
+                            Icons.healing_rounded,
+                            color: Colors.white,
+                            size: headerIconSize,
+                          ),
+                        ),
+                        SizedBox(width: isCompact ? 12 : 16),
+                        Expanded(
+                          child: Column(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                'Treatment Dashboard',
+                                style: TextStyle(
+                                  fontSize: titleSize,
+                                  fontWeight: FontWeight.bold,
+                                  color: textColor,
+                                ),
+                              ),
+                              SizedBox(height: isCompact ? 2 : 4),
+                              Text(
+                                widget.patientName,
+                                style: TextStyle(
+                                  fontSize: isCompact ? 12 : 14,
+                                  color: isDark ? AppColors.darkTextSecondary : AppColors.textSecondary,
+                                ),
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                            ],
+                          ),
+                        ),
+                        if ((_stats['activeCount'] as int? ?? 0) > 0)
+                          Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                            decoration: BoxDecoration(
+                              color: AppColors.success.withValues(alpha: 0.15),
+                              borderRadius: BorderRadius.circular(10),
+                            ),
+                            child: Text(
+                              '${_stats['activeCount']} active',
+                              style: TextStyle(
+                                fontWeight: FontWeight.w600,
+                                fontSize: 12,
+                                color: AppColors.success,
+                              ),
+                            ),
+                          ),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+            ),
+            bottom: TabBar(
               controller: _tabController,
-              children: [
-                _buildOverviewTab(context, colorScheme, isDark),
-                _buildActiveTreatmentsTab(colorScheme, isDark),
-                _buildMedicationsTab(colorScheme, isDark),
-                _buildGoalsTab(colorScheme, isDark),
-                _buildSessionsTab(colorScheme, isDark),
+              isScrollable: true,
+              labelColor: AppColors.primary,
+              unselectedLabelColor: isDark ? AppColors.darkTextSecondary : AppColors.textSecondary,
+              indicatorColor: AppColors.primary,
+              indicatorWeight: 3,
+              tabs: const [
+                Tab(text: 'Overview'),
+                Tab(text: 'Treatments'),
+                Tab(text: 'Medications'),
+                Tab(text: 'Goals'),
+                Tab(text: 'Sessions'),
               ],
             ),
+          ),
+        ],
+        body: _isLoading
+            ? const Center(child: CircularProgressIndicator())
+            : TabBarView(
+                controller: _tabController,
+                children: [
+                  _buildOverviewTab(context, colorScheme, isDark),
+                  _buildActiveTreatmentsTab(colorScheme, isDark),
+                  _buildMedicationsTab(colorScheme, isDark),
+                  _buildGoalsTab(colorScheme, isDark),
+                  _buildSessionsTab(colorScheme, isDark),
+                ],
+              ),
+      ),
     );
   }
 

@@ -11,29 +11,36 @@ import '../../ui/screens/allergy_management_screen.dart';
 import '../../ui/screens/appointments_screen.dart';
 import '../../ui/screens/billing_screen.dart';
 import '../../ui/screens/clinical_analytics_screen.dart';
+import '../../ui/screens/clinical_dashboard.dart';
 import '../../ui/screens/communications_screen.dart';
+import '../../ui/screens/dashboard_screen.dart';
 import '../../ui/screens/data_export_screen.dart';
+import '../../ui/screens/follow_ups_screen.dart';
+import '../../ui/screens/invoice_detail_screen.dart';
+import '../../ui/screens/lab_results_screen.dart';
+import '../../ui/screens/medical_record_detail_screen.dart';
+import '../../ui/screens/medical_records_list_screen.dart';
 import '../../ui/screens/medical_reference_screen.dart';
-import '../../ui/screens/doctor_dashboard_screen.dart';
-import '../../ui/screens/doctor_login_screen.dart';
 import '../../ui/screens/doctor_profile_screen.dart';
 import '../../ui/screens/notifications_screen.dart';
 import '../../ui/screens/offline_sync_screen.dart';
-import '../../ui/screens/patient_view_screen_modern.dart';
+import '../../ui/screens/onboarding_screen.dart';
+import '../../ui/screens/patient_view/patient_view.dart';
 import '../../ui/screens/patients_screen.dart';
 import '../../ui/screens/prescriptions_screen.dart';
 import '../../ui/screens/psychiatric_assessment_screen_modern.dart';
 import '../../ui/screens/pulmonary_evaluation_screen_modern.dart';
 import '../../ui/screens/records/records.dart';
 import '../../ui/screens/settings_screen.dart';
-import '../../ui/screens/user_manual_screen.dart';
 import '../../ui/screens/treatment_dashboard.dart';
+import '../../ui/screens/treatment_outcomes_screen.dart';
+import '../../ui/screens/treatment_progress_screen.dart';
+import '../../ui/screens/user_manual_screen.dart';
+import '../../ui/screens/vital_signs_screen.dart';
 
 /// Route names as constants
 abstract class AppRoutes {
   static const String home = '/';
-  static const String doctorLogin = '/doctor-login';
-  static const String doctorDashboard = '/doctor-dashboard';
   static const String dashboard = '/dashboard';
   static const String patients = '/patients';
   static const String patientView = '/patients/view';
@@ -46,21 +53,30 @@ abstract class AppRoutes {
   static const String addPrescription = '/prescriptions/add';
   static const String billing = '/billing';
   static const String addInvoice = '/billing/add';
+  static const String invoiceDetail = '/billing/detail';
   static const String settings = '/settings';
   static const String doctorProfile = '/doctor-profile';
   static const String psychiatricAssessment = '/psychiatric-assessment';
-  static const String psychiatricAssessmentModern = '/psychiatric-assessment/modern';
-  static const String pulmonaryEvaluationModern = '/pulmonary-evaluation/modern';
+  static const String pulmonaryEvaluation = '/pulmonary-evaluation';
   static const String addMedicalRecord = '/medical-records/add';
+  static const String medicalRecordsList = '/medical-records';
+  static const String medicalRecordDetail = '/medical-records/detail';
   static const String userManual = '/user-manual';
   static const String treatmentDashboard = '/treatment-dashboard';
+  static const String treatmentProgress = '/treatment-progress';
+  static const String treatmentOutcomes = '/treatment-outcomes';
   static const String allergyManagement = '/allergy-management';
   static const String notifications = '/notifications';
   static const String communications = '/communications';
   static const String medicalReference = '/medical-reference';
   static const String clinicalAnalytics = '/clinical-analytics';
+  static const String clinicalDashboard = '/clinical-dashboard';
   static const String offlineSync = '/offline-sync';
   static const String dataExport = '/data-export';
+  static const String vitalSigns = '/vital-signs';
+  static const String followUps = '/follow-ups';
+  static const String labResults = '/lab-results';
+  static const String onboarding = '/onboarding';
 }
 
 /// Route arguments for type-safe navigation
@@ -107,16 +123,57 @@ class TreatmentDashboardArgs {
   final String patientName;
 }
 
+class VitalSignsArgs {
+  const VitalSignsArgs({required this.patientId, required this.patientName});
+  final int patientId;
+  final String patientName;
+}
+
+class FollowUpsArgs {
+  const FollowUpsArgs({this.patientId, this.patientName});
+  final int? patientId;
+  final String? patientName;
+}
+
+class TreatmentProgressArgs {
+  const TreatmentProgressArgs({required this.patientId, required this.patientName});
+  final int patientId;
+  final String patientName;
+}
+
+class TreatmentOutcomesArgs {
+  const TreatmentOutcomesArgs({required this.patientId, required this.patientName});
+  final int patientId;
+  final String patientName;
+}
+
+class LabResultsArgs {
+  const LabResultsArgs({required this.patientId, required this.patientName});
+  final int patientId;
+  final String patientName;
+}
+
+class InvoiceDetailArgs {
+  const InvoiceDetailArgs({required this.invoice, this.patient});
+  final Invoice invoice;
+  final Patient? patient;
+}
+
+class MedicalRecordDetailArgs {
+  const MedicalRecordDetailArgs({required this.record, required this.patient});
+  final MedicalRecord record;
+  final Patient patient;
+}
+
+class MedicalRecordsListArgs {
+  const MedicalRecordsListArgs({this.filterRecordType});
+  final String? filterRecordType;
+}
+
 /// App router configuration
 class AppRouter {
   static Route<dynamic> generateRoute(RouteSettings settings) {
     switch (settings.name) {
-      case AppRoutes.doctorLogin:
-        return _buildRoute(const DoctorLoginScreen(), settings);
-        
-      case AppRoutes.doctorDashboard:
-        return _buildRoute(const DoctorDashboardScreen(), settings);
-        
       case AppRoutes.patients:
         return _buildRoute(const PatientsScreen(), settings);
         
@@ -168,14 +225,13 @@ class AppRouter {
         return _buildRoute(const DoctorProfileScreen(), settings);
         
       case AppRoutes.psychiatricAssessment:
-      case AppRoutes.psychiatricAssessmentModern:
         final args = settings.arguments as PsychiatricAssessmentArgs?;
         return _buildRoute(
           PsychiatricAssessmentScreenModern(preselectedPatient: args?.patient),
           settings,
         );
         
-      case AppRoutes.pulmonaryEvaluationModern:
+      case AppRoutes.pulmonaryEvaluation:
         final args = settings.arguments as PulmonaryEvaluationArgs?;
         return _buildRoute(
           PulmonaryEvaluationScreenModern(preselectedPatient: args?.patient),
@@ -214,11 +270,76 @@ class AppRouter {
       case AppRoutes.clinicalAnalytics:
         return _buildRoute(const ClinicalAnalyticsScreen(), settings);
         
+      case AppRoutes.clinicalDashboard:
+        return _buildRoute(const ClinicalDashboard(), settings);
+        
       case AppRoutes.offlineSync:
         return _buildRoute(const OfflineSyncScreen(), settings);
         
       case AppRoutes.dataExport:
         return _buildRoute(const DataExportScreen(), settings);
+        
+      case AppRoutes.vitalSigns:
+        final args = settings.arguments as VitalSignsArgs;
+        return _buildRoute(
+          VitalSignsScreen(patientId: args.patientId, patientName: args.patientName),
+          settings,
+        );
+        
+      case AppRoutes.followUps:
+        final args = settings.arguments as FollowUpsArgs?;
+        return _buildRoute(
+          FollowUpsScreen(patientId: args?.patientId, patientName: args?.patientName),
+          settings,
+        );
+        
+      case AppRoutes.labResults:
+        final args = settings.arguments as LabResultsArgs;
+        return _buildRoute(
+          LabResultsScreen(patientId: args.patientId, patientName: args.patientName),
+          settings,
+        );
+        
+      case AppRoutes.treatmentProgress:
+        final args = settings.arguments as TreatmentProgressArgs;
+        return _buildRoute(
+          TreatmentProgressScreen(patientId: args.patientId, patientName: args.patientName),
+          settings,
+        );
+        
+      case AppRoutes.treatmentOutcomes:
+        final args = settings.arguments as TreatmentOutcomesArgs;
+        return _buildRoute(
+          TreatmentOutcomesScreen(patientId: args.patientId, patientName: args.patientName),
+          settings,
+        );
+        
+      case AppRoutes.invoiceDetail:
+        final args = settings.arguments as InvoiceDetailArgs;
+        return _buildRoute(
+          InvoiceDetailScreen(invoice: args.invoice, patient: args.patient),
+          settings,
+        );
+        
+      case AppRoutes.medicalRecordsList:
+        final args = settings.arguments as MedicalRecordsListArgs?;
+        return _buildRoute(
+          MedicalRecordsListScreen(filterRecordType: args?.filterRecordType),
+          settings,
+        );
+        
+      case AppRoutes.medicalRecordDetail:
+        final args = settings.arguments as MedicalRecordDetailArgs;
+        return _buildRoute(
+          MedicalRecordDetailScreen(record: args.record, patient: args.patient),
+          settings,
+        );
+        
+      case AppRoutes.onboarding:
+        return _buildRoute(const OnboardingScreen(), settings);
+        
+      case AppRoutes.dashboard:
+        return _buildRoute(const DashboardScreen(), settings);
         
       default:
         return _buildRoute(
@@ -304,10 +425,6 @@ extension NavigationHelper on BuildContext {
   /// Navigate to doctor profile
   Future<void> goToDoctorProfile() => pushNamed(AppRoutes.doctorProfile);
 
-  /// Navigate to psychiatric assessment
-  Future<void> goToPsychiatricAssessment() =>
-      pushNamed(AppRoutes.psychiatricAssessment);
-
   /// Navigate to modern patient view
   Future<void> goToPatientViewModern(Patient patient) {
     return pushNamed(
@@ -316,18 +433,18 @@ extension NavigationHelper on BuildContext {
     );
   }
 
-  /// Navigate to modern psychiatric assessment
-  Future<void> goToPsychiatricAssessmentModern({Patient? patient}) {
+  /// Navigate to psychiatric assessment
+  Future<void> goToPsychiatricAssessment({Patient? patient}) {
     return pushNamed(
-      AppRoutes.psychiatricAssessmentModern,
+      AppRoutes.psychiatricAssessment,
       arguments: PsychiatricAssessmentArgs(patient: patient),
     );
   }
 
-  /// Navigate to modern pulmonary evaluation
-  Future<void> goToPulmonaryEvaluationModern({Patient? patient}) {
+  /// Navigate to pulmonary evaluation
+  Future<void> goToPulmonaryEvaluation({Patient? patient}) {
     return pushNamed(
-      AppRoutes.pulmonaryEvaluationModern,
+      AppRoutes.pulmonaryEvaluation,
       arguments: PulmonaryEvaluationArgs(patient: patient),
     );
   }
@@ -355,9 +472,82 @@ extension NavigationHelper on BuildContext {
   /// Navigate to clinical analytics
   Future<void> goToClinicalAnalytics() => pushNamed(AppRoutes.clinicalAnalytics);
 
+  /// Navigate to clinical dashboard
+  Future<void> goToClinicalDashboard() => pushNamed(AppRoutes.clinicalDashboard);
+
   /// Navigate to offline sync
   Future<void> goToOfflineSync() => pushNamed(AppRoutes.offlineSync);
 
   /// Navigate to data export
   Future<void> goToDataExport() => pushNamed(AppRoutes.dataExport);
+
+  /// Navigate to vital signs
+  Future<void> goToVitalSigns(int patientId, String patientName) {
+    return pushNamed(
+      AppRoutes.vitalSigns,
+      arguments: VitalSignsArgs(patientId: patientId, patientName: patientName),
+    );
+  }
+
+  /// Navigate to follow-ups
+  Future<void> goToFollowUps({int? patientId, String? patientName}) {
+    return pushNamed(
+      AppRoutes.followUps,
+      arguments: FollowUpsArgs(patientId: patientId, patientName: patientName),
+    );
+  }
+
+  /// Navigate to lab results
+  Future<void> goToLabResults(int patientId, String patientName) {
+    return pushNamed(
+      AppRoutes.labResults,
+      arguments: LabResultsArgs(patientId: patientId, patientName: patientName),
+    );
+  }
+
+  /// Navigate to treatment progress
+  Future<void> goToTreatmentProgress(int patientId, String patientName) {
+    return pushNamed(
+      AppRoutes.treatmentProgress,
+      arguments: TreatmentProgressArgs(patientId: patientId, patientName: patientName),
+    );
+  }
+
+  /// Navigate to treatment outcomes
+  Future<void> goToTreatmentOutcomes(int patientId, String patientName) {
+    return pushNamed(
+      AppRoutes.treatmentOutcomes,
+      arguments: TreatmentOutcomesArgs(patientId: patientId, patientName: patientName),
+    );
+  }
+
+  /// Navigate to invoice detail
+  Future<void> goToInvoiceDetail(Invoice invoice, {Patient? patient}) {
+    return pushNamed(
+      AppRoutes.invoiceDetail,
+      arguments: InvoiceDetailArgs(invoice: invoice, patient: patient),
+    );
+  }
+
+  /// Navigate to medical records list
+  Future<void> goToMedicalRecordsList({String? filterRecordType}) {
+    return pushNamed(
+      AppRoutes.medicalRecordsList,
+      arguments: MedicalRecordsListArgs(filterRecordType: filterRecordType),
+    );
+  }
+
+  /// Navigate to medical record detail
+  Future<void> goToMedicalRecordDetail(MedicalRecord record, Patient patient) {
+    return pushNamed(
+      AppRoutes.medicalRecordDetail,
+      arguments: MedicalRecordDetailArgs(record: record, patient: patient),
+    );
+  }
+
+  /// Navigate to onboarding
+  Future<void> goToOnboarding() => pushNamed(AppRoutes.onboarding);
+
+  /// Navigate to dashboard
+  Future<void> goToDashboard() => pushNamed(AppRoutes.dashboard);
 }

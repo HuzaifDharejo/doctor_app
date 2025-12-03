@@ -103,76 +103,224 @@ class _LabResultsScreenState extends ConsumerState<LabResultsScreen> with Single
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
     final isDark = theme.brightness == Brightness.dark;
+    final surfaceColor = isDark ? AppColors.darkSurface : Colors.white;
+    final textColor = isDark ? AppColors.darkTextPrimary : AppColors.textPrimary;
 
     return Scaffold(
       backgroundColor: isDark ? AppColors.darkBackground : AppColors.background,
-      appBar: AppBar(
-        title: Text('Lab Results - ${widget.patientName}'),
-        bottom: TabBar(
-          controller: _tabController,
-          tabs: [
-            Tab(
-              icon: Badge(
-                label: Text('${_filteredResults.length}'),
-                isLabelVisible: _filteredResults.isNotEmpty,
-                child: const Icon(Icons.science),
+      body: NestedScrollView(
+        headerSliverBuilder: (context, innerBoxIsScrolled) => [
+          SliverAppBar(
+            expandedHeight: 200,
+            floating: false,
+            pinned: true,
+            backgroundColor: surfaceColor,
+            foregroundColor: textColor,
+            elevation: 0,
+            scrolledUnderElevation: 1,
+            leading: Padding(
+              padding: const EdgeInsets.all(8.0),
+              child: Container(
+                decoration: BoxDecoration(
+                  color: isDark ? Colors.white.withValues(alpha: 0.1) : Colors.black.withValues(alpha: 0.05),
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: IconButton(
+                  icon: Icon(
+                    Icons.arrow_back,
+                    color: isDark ? Colors.white : const Color(0xFF1A1A2E),
+                  ),
+                  onPressed: () => Navigator.pop(context),
+                ),
               ),
-              text: 'All Results',
             ),
-            Tab(
-              icon: Badge(
-                label: Text('${_abnormalResults.length}'),
-                isLabelVisible: _abnormalResults.isNotEmpty,
-                backgroundColor: Colors.red,
-                child: const Icon(Icons.warning_amber),
+            actions: [
+              Container(
+                margin: const EdgeInsets.only(right: 8),
+                decoration: BoxDecoration(
+                  color: isDark ? Colors.white.withValues(alpha: 0.1) : Colors.black.withValues(alpha: 0.05),
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: IconButton(
+                  icon: Icon(
+                    Icons.add,
+                    color: isDark ? Colors.white : const Color(0xFF1A1A2E),
+                  ),
+                  tooltip: 'Add Lab Result',
+                  onPressed: () async {
+                    final db = ref.read(doctorDbProvider).value;
+                    if (db != null) {
+                      final patient = await db.getPatientById(widget.patientId);
+                      if (patient != null && mounted) {
+                        final result = await Navigator.push<bool>(
+                          context,
+                          MaterialPageRoute(
+                            builder: (_) => AddLabResultScreen(preselectedPatient: patient),
+                          ),
+                        );
+                        if (result == true) {
+                          _loadLabResults();
+                        }
+                      }
+                    }
+                  },
+                ),
               ),
-              text: 'Abnormal',
-            ),
-          ],
-        ),
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.add),
-            tooltip: 'Add Lab Result',
-            onPressed: () async {
-              final db = ref.read(doctorDbProvider).value;
-              if (db != null) {
-                final patient = await db.getPatientById(widget.patientId);
-                if (patient != null && mounted) {
-                  final result = await Navigator.push<bool>(
-                    context,
-                    MaterialPageRoute(
-                      builder: (_) => AddLabResultScreen(preselectedPatient: patient),
+            ],
+            flexibleSpace: FlexibleSpaceBar(
+              background: Container(
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                    colors: isDark
+                        ? [const Color(0xFF1A1A2E), const Color(0xFF16213E)]
+                        : [const Color(0xFFF8FAFC), surfaceColor],
+                  ),
+                ),
+                child: SafeArea(
+                  child: Padding(
+                    padding: const EdgeInsets.fromLTRB(20, 50, 20, 16),
+                    child: Row(
+                      children: [
+                        Container(
+                          padding: const EdgeInsets.all(14),
+                          decoration: BoxDecoration(
+                            gradient: const LinearGradient(
+                              colors: [Color(0xFF06B6D4), Color(0xFF0891B2)],
+                              begin: Alignment.topLeft,
+                              end: Alignment.bottomRight,
+                            ),
+                            borderRadius: BorderRadius.circular(16),
+                            boxShadow: [
+                              BoxShadow(
+                                color: const Color(0xFF06B6D4).withValues(alpha: 0.3),
+                                blurRadius: 12,
+                                offset: const Offset(0, 4),
+                              ),
+                            ],
+                          ),
+                          child: const Icon(
+                            Icons.science_rounded,
+                            color: Colors.white,
+                            size: 28,
+                          ),
+                        ),
+                        const SizedBox(width: 16),
+                        Expanded(
+                          child: Column(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                'Lab Results',
+                                style: TextStyle(
+                                  fontSize: 22,
+                                  fontWeight: FontWeight.bold,
+                                  color: textColor,
+                                ),
+                              ),
+                              const SizedBox(height: 4),
+                              Text(
+                                widget.patientName,
+                                style: TextStyle(
+                                  fontSize: 14,
+                                  color: isDark ? AppColors.darkTextSecondary : AppColors.textSecondary,
+                                ),
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                            ],
+                          ),
+                        ),
+                        if (_abnormalResults.isNotEmpty)
+                          Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                            decoration: BoxDecoration(
+                              color: AppColors.error.withValues(alpha: 0.15),
+                              borderRadius: BorderRadius.circular(10),
+                            ),
+                            child: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Icon(Icons.warning_rounded, color: AppColors.error, size: 16),
+                                const SizedBox(width: 4),
+                                Text(
+                                  '${_abnormalResults.length}',
+                                  style: TextStyle(
+                                    fontWeight: FontWeight.bold,
+                                    color: AppColors.error,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                      ],
                     ),
-                  );
-                  if (result == true) {
-                    _loadLabResults();
-                  }
-                }
-              }
-            },
-          ),
-        ],
-      ),
-      body: _isLoading
-          ? const Center(child: CircularProgressIndicator())
-          : Column(
-              children: [
-                // Category Filter
-                _buildCategoryFilter(isDark),
-                
-                // Tab Content
-                Expanded(
-                  child: TabBarView(
-                    controller: _tabController,
+                  ),
+                ),
+              ),
+            ),
+            bottom: TabBar(
+              controller: _tabController,
+              labelColor: AppColors.primary,
+              unselectedLabelColor: isDark ? AppColors.darkTextSecondary : AppColors.textSecondary,
+              indicatorColor: AppColors.primary,
+              indicatorWeight: 3,
+              tabs: [
+                Tab(
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
                     children: [
-                      _buildResultsList(_filteredResults, isDark),
-                      _buildResultsList(_abnormalResults, isDark, showAbnormalOnly: true),
+                      Badge(
+                        label: Text('${_filteredResults.length}'),
+                        isLabelVisible: _filteredResults.isNotEmpty,
+                        child: const Icon(Icons.science, size: 18),
+                      ),
+                      const SizedBox(width: 6),
+                      const Text('All Results'),
+                    ],
+                  ),
+                ),
+                Tab(
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Badge(
+                        label: Text('${_abnormalResults.length}'),
+                        isLabelVisible: _abnormalResults.isNotEmpty,
+                        backgroundColor: Colors.red,
+                        child: const Icon(Icons.warning_amber, size: 18),
+                      ),
+                      const SizedBox(width: 6),
+                      const Text('Abnormal'),
                     ],
                   ),
                 ),
               ],
             ),
+          ),
+        ],
+        body: _isLoading
+            ? const Center(child: CircularProgressIndicator())
+            : Column(
+                children: [
+                  // Category Filter
+                  _buildCategoryFilter(isDark),
+                  
+                  // Tab Content
+                  Expanded(
+                    child: TabBarView(
+                      controller: _tabController,
+                      children: [
+                        _buildResultsList(_filteredResults, isDark),
+                        _buildResultsList(_abnormalResults, isDark, showAbnormalOnly: true),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+      ),
     );
   }
 

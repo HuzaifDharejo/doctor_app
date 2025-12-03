@@ -294,7 +294,7 @@ class _AddPulmonaryScreenState extends ConsumerState<AddPulmonaryScreen> {
                     : 'Pulmonary Evaluation',
                 subtitle: DateFormat('EEEE, dd MMMM yyyy').format(_recordDate),
                 icon: Icons.air_rounded,
-                gradientColors: [const Color(0xFF3B82F6), const Color(0xFF1D4ED8)],
+                gradientColors: [const Color(0xFF06B6D4), const Color(0xFF0891B2)], // Info Cyan
               ),
             ),
             // Body Content
@@ -987,7 +987,7 @@ class _AddPulmonaryScreenState extends ConsumerState<AddPulmonaryScreen> {
             isSaving: _isSaving,
             label: widget.existingRecord != null ? 'Update Evaluation' : 'Save Evaluation',
             onPressed: () => _saveRecord(db),
-            gradientColors: [const Color(0xFF3B82F6), const Color(0xFF1D4ED8)],
+            gradientColors: [const Color(0xFF06B6D4), const Color(0xFF0891B2)], // Info Cyan
           ),
           const SizedBox(height: 40),
         ],

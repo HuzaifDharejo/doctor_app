@@ -14,7 +14,7 @@ import '../../providers/db_provider.dart';
 import '../../services/pdf_service.dart';
 import '../../services/whatsapp_service.dart';
 import '../../theme/app_theme.dart';
-import 'patient_view_screen_modern.dart';
+import 'patient_view/patient_view.dart';
 
 class BillingScreen extends ConsumerStatefulWidget {
   const BillingScreen({super.key});
@@ -29,62 +29,195 @@ class _BillingScreenState extends ConsumerState<BillingScreen> {
   @override
   Widget build(BuildContext context) {
     final dbAsync = ref.watch(doctorDbProvider);
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     
     return Scaffold(
-      body: SafeArea(
-        child: dbAsync.when(
-          data: (db) => _buildContent(context, db),
-          loading: () => const LoadingState(),
-          error: (err, stack) => ErrorState.generic(
-            message: err.toString(),
-            onRetry: () => ref.invalidate(doctorDbProvider),
-          ),
+      backgroundColor: isDark ? const Color(0xFF0F0F0F) : const Color(0xFFF8FAFC),
+      body: dbAsync.when(
+        data: (db) => _buildContent(context, db, isDark),
+        loading: () => const LoadingState(),
+        error: (err, stack) => ErrorState.generic(
+          message: err.toString(),
+          onRetry: () => ref.invalidate(doctorDbProvider),
         ),
       ),
-
     );
   }
 
-  Widget _buildContent(BuildContext context, DoctorDatabase db) {
-    return Column(
-      children: [
-        _buildHeader(context),
-        FutureBuilder<Map<String, double>>(
-          future: db.getInvoiceStats(),
-          builder: (context, statsSnapshot) {
-            final stats = statsSnapshot.data ?? {
-              'totalRevenue': 0.0,
-              'pending': 0.0,
-              'pendingCount': 0.0,
-            };
-            return _buildSummaryCards(context, stats);
-          },
+  Widget _buildContent(BuildContext context, DoctorDatabase db, bool isDark) {
+    return CustomScrollView(
+      physics: const AlwaysScrollableScrollPhysics(
+        parent: BouncingScrollPhysics(),
+      ),
+      slivers: [
+        _buildModernSliverAppBar(context, isDark),
+        SliverToBoxAdapter(
+          child: FutureBuilder<Map<String, double>>(
+            future: db.getInvoiceStats(),
+            builder: (context, statsSnapshot) {
+              final stats = statsSnapshot.data ?? {
+                'totalRevenue': 0.0,
+                'pending': 0.0,
+                'pendingCount': 0.0,
+              };
+              return _buildSummaryCards(context, stats);
+            },
+          ),
         ),
-        _buildFilterChips(context),
-        Expanded(child: _buildInvoiceList(context, db)),
+        SliverToBoxAdapter(child: _buildFilterChips(context)),
+        _buildInvoiceSliverList(context, db, isDark),
       ],
     );
   }
 
-  Widget _buildHeader(BuildContext context) {
-    final isCompact = AppBreakpoint.isCompact(MediaQuery.of(context).size.width);
-    
-    return AppHeader(
-      title: AppStrings.billing,
-      subtitle: 'Manage invoices & payments',
-      showBackButton: true,
-      trailing: Container(
-        padding: EdgeInsets.all(isCompact ? AppSpacing.xs : AppSpacing.sm),
-        decoration: BoxDecoration(
-          color: const Color(0xFF6366F1).withValues(alpha: 0.1),
-          borderRadius: BorderRadius.circular(AppRadius.sm),
-        ),
-        child: Icon(
-          Icons.account_balance_wallet_rounded,
-          color: const Color(0xFF6366F1),
-          size: isCompact ? AppIconSize.smCompact : AppIconSize.md,
+  Widget _buildModernSliverAppBar(BuildContext context, bool isDark) {
+    return SliverAppBar(
+      expandedHeight: 140,
+      floating: false,
+      pinned: true,
+      elevation: 0,
+      backgroundColor: isDark ? const Color(0xFF1A1A1A) : Colors.white,
+      surfaceTintColor: Colors.transparent,
+      leading: Padding(
+        padding: const EdgeInsets.all(8.0),
+        child: Container(
+          decoration: BoxDecoration(
+            color: isDark ? Colors.white.withValues(alpha: 0.1) : Colors.grey.shade100,
+            borderRadius: BorderRadius.circular(12),
+          ),
+          child: IconButton(
+            icon: Icon(
+              Icons.arrow_back_ios_new_rounded,
+              size: 18,
+              color: isDark ? Colors.white : Colors.black87,
+            ),
+            onPressed: () => Navigator.of(context).pop(),
+          ),
         ),
       ),
+      flexibleSpace: FlexibleSpaceBar(
+        background: Container(
+          decoration: BoxDecoration(
+            gradient: LinearGradient(
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+              colors: isDark
+                  ? [const Color(0xFF1A1A1A), const Color(0xFF0F0F0F)]
+                  : [Colors.white, const Color(0xFFF8FAFC)],
+            ),
+          ),
+          child: SafeArea(
+            child: Padding(
+              padding: const EdgeInsets.fromLTRB(20, 60, 20, 20),
+              child: Row(
+                children: [
+                  Container(
+                    padding: const EdgeInsets.all(16),
+                    decoration: BoxDecoration(
+                      gradient: const LinearGradient(
+                        colors: [Color(0xFF6366F1), Color(0xFF8B5CF6)],
+                        begin: Alignment.topLeft,
+                        end: Alignment.bottomRight,
+                      ),
+                      borderRadius: BorderRadius.circular(20),
+                      boxShadow: [
+                        BoxShadow(
+                          color: const Color(0xFF6366F1).withValues(alpha: 0.4),
+                          blurRadius: 20,
+                          offset: const Offset(0, 8),
+                        ),
+                      ],
+                    ),
+                    child: const Icon(
+                      Icons.account_balance_wallet_rounded,
+                      color: Colors.white,
+                      size: 32,
+                    ),
+                  ),
+                  const SizedBox(width: 16),
+                  Expanded(
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          'Billing',
+                          style: TextStyle(
+                            fontSize: 28,
+                            fontWeight: FontWeight.w800,
+                            color: isDark ? Colors.white : const Color(0xFF1E293B),
+                            letterSpacing: -0.5,
+                          ),
+                        ),
+                        const SizedBox(height: 4),
+                        Text(
+                          'Manage invoices & payments',
+                          style: TextStyle(
+                            fontSize: 14,
+                            color: isDark 
+                                ? Colors.white.withValues(alpha: 0.6) 
+                                : const Color(0xFF64748B),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildInvoiceSliverList(BuildContext context, DoctorDatabase db, bool isDark) {
+    return FutureBuilder<List<Invoice>>(
+      future: db.getAllInvoices(),
+      builder: (context, snapshot) {
+        if (!snapshot.hasData) {
+          return const SliverFillRemaining(
+            child: Center(child: CircularProgressIndicator(color: AppColors.primary)),
+          );
+        }
+
+        var invoices = snapshot.data!;
+        
+        // Apply filter
+        if (_selectedFilter != 'All') {
+          invoices = invoices.where((inv) => inv.paymentStatus == _selectedFilter).toList();
+        }
+
+        if (invoices.isEmpty) {
+          return SliverFillRemaining(child: _buildEmptyState(context));
+        }
+
+        return SliverPadding(
+          padding: const EdgeInsets.all(AppSpacing.xl),
+          sliver: SliverList(
+            delegate: SliverChildBuilderDelegate(
+              (context, index) {
+                return TweenAnimationBuilder<double>(
+                  tween: Tween(begin: 0, end: 1),
+                  duration: Duration(milliseconds: 300 + (index * 50)),
+                  curve: Curves.easeOutCubic,
+                  builder: (context, value, child) {
+                    return Opacity(
+                      opacity: value,
+                      child: Transform.translate(
+                        offset: Offset(0, 20 * (1 - value)),
+                        child: child,
+                      ),
+                    );
+                  },
+                  child: _buildInvoiceCard(context, db, invoices[index]),
+                );
+              },
+              childCount: invoices.length,
+            ),
+          ),
+        );
+      },
     );
   }
 
@@ -256,7 +389,7 @@ class _BillingScreenState extends ConsumerState<BillingScreen> {
                 onSelected: (selected) {
                   setState(() => _selectedFilter = filter);
                 },
-                backgroundColor: Theme.of(context).colorScheme.surface,
+                backgroundColor: isDark ? const Color(0xFF1A1A1A) : Colors.white,
                 selectedColor: const Color(0xFF6366F1).withValues(alpha: 0.15),
                 checkmarkColor: const Color(0xFF6366F1),
                 labelStyle: TextStyle(
@@ -274,36 +407,6 @@ class _BillingScreenState extends ConsumerState<BillingScreen> {
           }).toList(),
         ),
       ),
-    );
-  }
-
-  Widget _buildInvoiceList(BuildContext context, DoctorDatabase db) {
-    return FutureBuilder<List<Invoice>>(
-      future: db.getAllInvoices(),
-      builder: (context, snapshot) {
-        if (!snapshot.hasData) {
-          return const Center(child: CircularProgressIndicator(color: AppColors.primary));
-        }
-
-        var invoices = snapshot.data!;
-        
-        // Apply filter
-        if (_selectedFilter != 'All') {
-          invoices = invoices.where((inv) => inv.paymentStatus == _selectedFilter).toList();
-        }
-
-        if (invoices.isEmpty) {
-          return _buildEmptyState(context);
-        }
-
-        return ListView.builder(
-          padding: const EdgeInsets.all(AppSpacing.xl),
-          itemCount: invoices.length,
-          itemBuilder: (context, index) {
-            return _buildInvoiceCard(context, db, invoices[index]);
-          },
-        );
-      },
     );
   }
 

@@ -33,6 +33,7 @@ class _AddPatientScreenState extends ConsumerState<AddPatientScreen> {
   int _riskLevel = 1;
   bool _isSaving = false;
   Uint8List? _selectedPhotoBytes;
+  DateTime? _dateOfBirth;
 
   @override
   void dispose() {
@@ -105,147 +106,148 @@ class _AddPatientScreenState extends ConsumerState<AddPatientScreen> {
     final screenWidth = MediaQuery.of(context).size.width;
     final isCompact = screenWidth < 400;
     final padding = isCompact ? 12.0 : 20.0;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     
     return CustomScrollView(
+      physics: const BouncingScrollPhysics(),
       slivers: [
-        // Gradient Header
-        SliverToBoxAdapter(
-          child: DecoratedBox(
-            decoration: const BoxDecoration(
-              gradient: AppColors.primaryGradient,
-              borderRadius: BorderRadius.only(
-                bottomLeft: Radius.circular(32),
-                bottomRight: Radius.circular(32),
+        // Modern SliverAppBar with Avatar
+        SliverAppBar(
+          expandedHeight: 200,
+          floating: false,
+          pinned: true,
+          elevation: 0,
+          backgroundColor: isDark ? const Color(0xFF1A1A1A) : Colors.white,
+          surfaceTintColor: Colors.transparent,
+          leading: Padding(
+            padding: const EdgeInsets.all(8.0),
+            child: Container(
+              decoration: BoxDecoration(
+                color: isDark ? Colors.white.withValues(alpha: 0.1) : Colors.grey.shade100,
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: IconButton(
+                icon: Icon(
+                  Icons.arrow_back_ios_new_rounded,
+                  size: 18,
+                  color: isDark ? Colors.white : Colors.black87,
+                ),
+                onPressed: () => Navigator.of(context).pop(),
               ),
             ),
-            child: SafeArea(
-              bottom: false,
-              child: Padding(
-                padding: EdgeInsets.all(padding),
-                child: Column(
-                  children: [
-                    // Custom App Bar
-                    Row(
-                      children: [
-                        GestureDetector(
-                          onTap: () => Navigator.pop(context),
-                          child: Container(
-                            padding: const EdgeInsets.all(AppSpacing.md),
-                            decoration: BoxDecoration(
-                              color: Colors.white.withValues(alpha: 0.2),
-                              borderRadius: BorderRadius.circular(12),
-                            ),
-                            child: const Icon(Icons.arrow_back, color: Colors.white, size: 20),
-                          ),
-                        ),
-                        const Expanded(
-                          child: Text(
-                            'Add New Patient',
-                            textAlign: TextAlign.center,
-                            style: TextStyle(
-                              color: Colors.white,
-                              fontSize: 20,
-                              fontWeight: FontWeight.bold,
-                            ),
-                          ),
-                        ),
-                        Container(
-                          padding: const EdgeInsets.all(AppSpacing.md),
-                          decoration: BoxDecoration(
-                            color: Colors.white.withValues(alpha: 0.2),
-                            borderRadius: BorderRadius.circular(12),
-                          ),
-                          child: const Icon(Icons.info_outline, color: Colors.white, size: 20),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 24),
-                    // Avatar Section
-                    GestureDetector(
-                      onTap: _showPhotoOptions,
-                      child: Stack(
-                        children: [
-                          Container(
-                            width: isCompact ? 90 : 110,
-                            height: isCompact ? 90 : 110,
-                            decoration: BoxDecoration(
-                              color: Colors.white,
-                              shape: BoxShape.circle,
-                              boxShadow: [
-                                BoxShadow(
-                                  color: Colors.black.withValues(alpha: 0.2),
-                                  blurRadius: 20,
-                                  offset: const Offset(0, 8),
-                                ),
-                              ],
-                            ),
-                            child: ClipOval(
-                              child: _selectedPhotoBytes != null
-                                  ? Image.memory(
-                                      _selectedPhotoBytes!,
-                                      fit: BoxFit.cover,
-                                      width: isCompact ? 90 : 110,
-                                      height: isCompact ? 90 : 110,
-                                    )
-                                  : DecoratedBox(
-                                      decoration: BoxDecoration(
-                                        gradient: LinearGradient(
-                                          begin: Alignment.topLeft,
-                                          end: Alignment.bottomRight,
-                                          colors: [
-                                            AppColors.primary.withValues(alpha: 0.1),
-                                            AppColors.accent.withValues(alpha: 0.1),
-                                          ],
-                                        ),
-                                      ),
-                                      child: Icon(
-                                        Icons.person_outline,
-                                        size: isCompact ? 40 : 50,
-                                        color: AppColors.primary.withValues(alpha: 0.5),
-                                      ),
-                                    ),
-                            ),
-                          ),
-                          Positioned(
-                            right: 0,
-                            bottom: 0,
-                            child: Container(
-                              padding: EdgeInsets.all(isCompact ? 8 : 10),
+          ),
+          flexibleSpace: FlexibleSpaceBar(
+            background: Container(
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                  colors: isDark
+                      ? [const Color(0xFF1A1A1A), const Color(0xFF0F0F0F)]
+                      : [Colors.white, const Color(0xFFF8FAFC)],
+                ),
+              ),
+              child: SafeArea(
+                child: Padding(
+                  padding: const EdgeInsets.fromLTRB(20, 16, 20, 8),
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      // Avatar Section
+                      GestureDetector(
+                        onTap: _showPhotoOptions,
+                        child: Stack(
+                          children: [
+                            Container(
+                              width: isCompact ? 56 : 70,
+                              height: isCompact ? 56 : 70,
                               decoration: BoxDecoration(
-                                gradient: const LinearGradient(
-                                  colors: [AppColors.accent, Color(0xFF7C4DFF)],
-                                ),
+                                gradient: _selectedPhotoBytes == null
+                                    ? const LinearGradient(
+                                        colors: [Color(0xFF6366F1), Color(0xFF8B5CF6)],
+                                        begin: Alignment.topLeft,
+                                        end: Alignment.bottomRight,
+                                      )
+                                    : null,
                                 shape: BoxShape.circle,
-                                border: Border.all(color: Colors.white, width: 3),
                                 boxShadow: [
                                   BoxShadow(
-                                    color: AppColors.accent.withValues(alpha: 0.4),
-                                    blurRadius: 8,
-                                    offset: const Offset(0, 2),
+                                    color: const Color(0xFF6366F1).withValues(alpha: 0.4),
+                                    blurRadius: 20,
+                                    offset: const Offset(0, 8),
                                   ),
                                 ],
                               ),
-                              child: Icon(
-                                _selectedPhotoBytes != null ? Icons.edit : Icons.camera_alt,
-                                size: isCompact ? 14 : 18,
-                                color: Colors.white,
+                              child: ClipOval(
+                                child: _selectedPhotoBytes != null
+                                    ? Image.memory(
+                                        _selectedPhotoBytes!,
+                                        fit: BoxFit.cover,
+                                        width: isCompact ? 56 : 70,
+                                        height: isCompact ? 56 : 70,
+                                      )
+                                    : Center(
+                                        child: Icon(
+                                          Icons.person_outline,
+                                          size: isCompact ? 28 : 32,
+                                          color: Colors.white,
+                                        ),
+                                      ),
                               ),
                             ),
-                          ),
-                        ],
+                            Positioned(
+                              right: 0,
+                              bottom: 0,
+                              child: Container(
+                                padding: EdgeInsets.all(isCompact ? 4 : 6),
+                                decoration: BoxDecoration(
+                                  color: const Color(0xFF10B981),
+                                  shape: BoxShape.circle,
+                                  border: Border.all(
+                                    color: isDark ? const Color(0xFF1A1A1A) : Colors.white,
+                                    width: 2,
+                                  ),
+                                  boxShadow: [
+                                    BoxShadow(
+                                      color: const Color(0xFF10B981).withValues(alpha: 0.4),
+                                      blurRadius: 8,
+                                      offset: const Offset(0, 2),
+                                    ),
+                                  ],
+                                ),
+                                child: Icon(
+                                  _selectedPhotoBytes != null ? Icons.edit : Icons.camera_alt,
+                                  size: isCompact ? 10 : 12,
+                                  color: Colors.white,
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
                       ),
-                    ),
-                    const SizedBox(height: 12),
-                    Text(
-                      'Tap to add photo',
-                      style: TextStyle(
-                        fontSize: isCompact ? 12 : 14,
-                        color: Colors.white.withValues(alpha: 0.8),
-                        fontWeight: FontWeight.w500,
+                      const SizedBox(height: 8),
+                      Text(
+                        'Add New Patient',
+                        style: TextStyle(
+                          fontSize: 18,
+                          fontWeight: FontWeight.w800,
+                          color: isDark ? Colors.white : const Color(0xFF1E293B),
+                          letterSpacing: -0.5,
+                        ),
                       ),
-                    ),
-                    const SizedBox(height: 16),
-                  ],
+                      const SizedBox(height: 2),
+                      Text(
+                        'Tap avatar to add photo',
+                        style: TextStyle(
+                          fontSize: 11,
+                          color: isDark 
+                              ? Colors.white.withValues(alpha: 0.5) 
+                              : const Color(0xFF64748B),
+                        ),
+                      ),
+                    ],
+                  ),
                 ),
               ),
             ),
@@ -268,7 +270,7 @@ class _AddPatientScreenState extends ConsumerState<AddPatientScreen> {
                     context,
                     title: 'Personal Information',
                     icon: Icons.person_outline,
-                    iconColor: AppColors.primary,
+                    iconColor: const Color(0xFF6366F1),
                     children: [
                       Row(
                         children: [
@@ -300,6 +302,52 @@ class _AddPatientScreenState extends ConsumerState<AddPatientScreen> {
                           ),
                         ],
                       ),
+                      const SizedBox(height: 12),
+                      // Date of Birth field
+                      InkWell(
+                        onTap: () async {
+                          final picked = await showDatePicker(
+                            context: context,
+                            initialDate: _dateOfBirth ?? DateTime.now().subtract(const Duration(days: 365 * 30)),
+                            firstDate: DateTime(1900),
+                            lastDate: DateTime.now(),
+                            builder: (context, child) {
+                              return Theme(
+                                data: Theme.of(context).copyWith(
+                                  colorScheme: Theme.of(context).colorScheme.copyWith(
+                                    primary: const Color(0xFF6366F1),
+                                  ),
+                                ),
+                                child: child!,
+                              );
+                            },
+                          );
+                          if (picked != null) {
+                            setState(() => _dateOfBirth = picked);
+                          }
+                        },
+                        borderRadius: BorderRadius.circular(12),
+                        child: InputDecorator(
+                          decoration: InputDecoration(
+                            labelText: 'Date of Birth *',
+                            prefixIcon: const Icon(Icons.cake_outlined),
+                            border: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                            errorText: _dateOfBirth == null ? null : null,
+                          ),
+                          child: Text(
+                            _dateOfBirth != null
+                                ? '${_dateOfBirth!.day}/${_dateOfBirth!.month}/${_dateOfBirth!.year} (${DateTime.now().year - _dateOfBirth!.year} years)'
+                                : 'Select date of birth',
+                            style: TextStyle(
+                              color: _dateOfBirth != null
+                                  ? null
+                                  : Theme.of(context).hintColor,
+                            ),
+                          ),
+                        ),
+                      ),
                     ],
                   ),
                   const SizedBox(height: 16),
@@ -309,26 +357,18 @@ class _AddPatientScreenState extends ConsumerState<AddPatientScreen> {
                     context,
                     title: 'Contact Information',
                     icon: Icons.contact_phone_outlined,
-                    iconColor: AppColors.teal,
+                    iconColor: const Color(0xFF10B981),
                     children: [
                       AppInput.phone(
                         controller: _phone,
                         label: 'Phone Number',
                         hint: '+1 (555) 123-4567',
-                        validator: (v) {
-                          final result = InputValidators.validatePhone(v);
-                          return result.isValid ? null : result.errorMessage;
-                        },
                       ),
                       const SizedBox(height: 12),
                       AppInput.email(
                         controller: _email,
                         label: 'Email Address',
                         hint: 'john.doe@email.com',
-                        validator: (v) {
-                          final result = InputValidators.validateEmail(v);
-                          return result.isValid ? null : result.errorMessage;
-                        },
                       ),
                       const SizedBox(height: 12),
                       AppInput(
@@ -347,7 +387,7 @@ class _AddPatientScreenState extends ConsumerState<AddPatientScreen> {
                     context,
                     title: 'Medical Information',
                     icon: Icons.medical_information_outlined,
-                    iconColor: AppColors.error,
+                    iconColor: const Color(0xFFEF4444),
                     children: [
                       _buildMedicalHistoryField(),
                       const SizedBox(height: 20),
@@ -368,11 +408,15 @@ class _AddPatientScreenState extends ConsumerState<AddPatientScreen> {
                     width: double.infinity,
                     height: 60,
                     decoration: BoxDecoration(
-                      gradient: AppColors.primaryGradient,
+                      gradient: const LinearGradient(
+                        colors: [Color(0xFF6366F1), Color(0xFF8B5CF6)],
+                        begin: Alignment.topLeft,
+                        end: Alignment.bottomRight,
+                      ),
                       borderRadius: BorderRadius.circular(20),
                       boxShadow: [
                         BoxShadow(
-                          color: AppColors.primary.withValues(alpha: 0.4),
+                          color: const Color(0xFF6366F1).withValues(alpha: 0.4),
                           blurRadius: 16,
                           offset: const Offset(0, 6),
                         ),
@@ -393,19 +437,12 @@ class _AddPatientScreenState extends ConsumerState<AddPatientScreen> {
                                     strokeWidth: 2.5,
                                   ),
                                 )
-                              : Row(
+                              : const Row(
                                   mainAxisAlignment: MainAxisAlignment.center,
                                   children: [
-                                    Container(
-                                      padding: const EdgeInsets.all(AppSpacing.sm),
-                                      decoration: BoxDecoration(
-                                        color: Colors.white.withValues(alpha: 0.2),
-                                        borderRadius: BorderRadius.circular(10),
-                                      ),
-                                      child: const Icon(Icons.check_rounded, color: Colors.white, size: 20),
-                                    ),
-                                    const SizedBox(width: 14),
-                                    const Text(
+                                    Icon(Icons.check_rounded, color: Colors.white, size: 22),
+                                    SizedBox(width: 12),
+                                    Text(
                                       'Save Patient',
                                       style: TextStyle(
                                         color: Colors.white,
@@ -699,6 +736,18 @@ class _AddPatientScreenState extends ConsumerState<AddPatientScreen> {
   Future<void> _savePatient(DoctorDatabase db) async {
     if (!_formKey.currentState!.validate()) return;
     
+    if (_dateOfBirth == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: const Text('Please select date of birth'),
+          backgroundColor: AppColors.error,
+          behavior: SnackBarBehavior.floating,
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+        ),
+      );
+      return;
+    }
+    
     setState(() => _isSaving = true);
     
     try {
@@ -711,6 +760,7 @@ class _AddPatientScreenState extends ConsumerState<AddPatientScreen> {
       final companion = PatientsCompanion.insert(
         firstName: _first.text,
         lastName: Value(_last.text),
+        dateOfBirth: Value(_dateOfBirth),
         phone: Value(_phone.text),
         email: Value(_email.text),
         address: Value(_address.text),

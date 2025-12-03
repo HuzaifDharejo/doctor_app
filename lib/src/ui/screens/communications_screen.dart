@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../core/theme/design_tokens.dart';
 import '../../core/components/app_button.dart';
+import '../../theme/app_theme.dart';
 import '../widgets/communication_panel.dart';
 
 /// Main communications screen for managing patient messages and calls
@@ -31,36 +32,141 @@ class _CommunicationsScreenState extends ConsumerState<CommunicationsScreen>
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final surfaceColor = isDark ? AppColors.darkSurface : Colors.white;
+    final textColor = isDark ? AppColors.darkTextPrimary : AppColors.textPrimary;
+
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Communications'),
-        bottom: TabBar(
-          controller: _tabController,
-          tabs: const [
-            Tab(text: 'Messages', icon: Icon(Icons.message_rounded, size: 18)),
-            Tab(text: 'Calls', icon: Icon(Icons.phone_in_talk_rounded, size: 18)),
-            Tab(text: 'History', icon: Icon(Icons.history_rounded, size: 18)),
-          ],
-          indicatorColor: const Color(0xFF6366F1),
-          labelColor: Colors.white,
-          unselectedLabelColor: Colors.grey,
-        ),
-      ),
-      body: TabBarView(
-        controller: _tabController,
-        children: [
-          // Messages tab
-          _buildMessagesTab(context),
-          // Calls tab
-          _buildCallsTab(context),
-          // History tab
-          _buildHistoryTab(context),
+      backgroundColor: isDark ? AppColors.darkBackground : AppColors.background,
+      body: NestedScrollView(
+        headerSliverBuilder: (context, innerBoxIsScrolled) => [
+          SliverAppBar(
+            expandedHeight: 200,
+            floating: false,
+            pinned: true,
+            backgroundColor: surfaceColor,
+            foregroundColor: textColor,
+            elevation: 0,
+            scrolledUnderElevation: 1,
+            leading: Padding(
+              padding: const EdgeInsets.all(8.0),
+              child: Container(
+                decoration: BoxDecoration(
+                  color: isDark ? Colors.white.withValues(alpha: 0.1) : Colors.black.withValues(alpha: 0.05),
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: IconButton(
+                  icon: Icon(
+                    Icons.arrow_back,
+                    color: isDark ? Colors.white : const Color(0xFF1A1A2E),
+                  ),
+                  onPressed: () => Navigator.pop(context),
+                ),
+              ),
+            ),
+            flexibleSpace: FlexibleSpaceBar(
+              background: Container(
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                    colors: isDark
+                        ? [const Color(0xFF1A1A2E), const Color(0xFF16213E)]
+                        : [const Color(0xFFF8FAFC), surfaceColor],
+                  ),
+                ),
+                child: SafeArea(
+                  child: Padding(
+                    padding: const EdgeInsets.fromLTRB(20, 50, 20, 16),
+                    child: Row(
+                      children: [
+                        Container(
+                          padding: const EdgeInsets.all(14),
+                          decoration: BoxDecoration(
+                            gradient: const LinearGradient(
+                              colors: [Color(0xFF3B82F6), Color(0xFF1D4ED8)],
+                              begin: Alignment.topLeft,
+                              end: Alignment.bottomRight,
+                            ),
+                            borderRadius: BorderRadius.circular(16),
+                            boxShadow: [
+                              BoxShadow(
+                                color: const Color(0xFF3B82F6).withValues(alpha: 0.3),
+                                blurRadius: 12,
+                                offset: const Offset(0, 4),
+                              ),
+                            ],
+                          ),
+                          child: const Icon(
+                            Icons.forum_rounded,
+                            color: Colors.white,
+                            size: 28,
+                          ),
+                        ),
+                        const SizedBox(width: 16),
+                        Expanded(
+                          child: Column(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                'Communications',
+                                style: TextStyle(
+                                  fontSize: 22,
+                                  fontWeight: FontWeight.bold,
+                                  color: textColor,
+                                ),
+                              ),
+                              const SizedBox(height: 4),
+                              Text(
+                                'Messages, calls & history',
+                                style: TextStyle(
+                                  fontSize: 14,
+                                  color: isDark ? AppColors.darkTextSecondary : AppColors.textSecondary,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+            ),
+            bottom: TabBar(
+              controller: _tabController,
+              labelColor: AppColors.primary,
+              unselectedLabelColor: isDark ? AppColors.darkTextSecondary : AppColors.textSecondary,
+              indicatorColor: AppColors.primary,
+              indicatorWeight: 3,
+              tabs: const [
+                Tab(child: Row(mainAxisSize: MainAxisSize.min, children: [Icon(Icons.message_rounded, size: 18), SizedBox(width: 6), Text('Messages')])),
+                Tab(child: Row(mainAxisSize: MainAxisSize.min, children: [Icon(Icons.phone_in_talk_rounded, size: 18), SizedBox(width: 6), Text('Calls')])),
+                Tab(child: Row(mainAxisSize: MainAxisSize.min, children: [Icon(Icons.history_rounded, size: 18), SizedBox(width: 6), Text('History')])),
+              ],
+            ),
+          ),
         ],
+        body: TabBarView(
+          controller: _tabController,
+          children: [
+            // Messages tab
+            _buildMessagesTab(context),
+            // Calls tab
+            _buildCallsTab(context),
+            // History tab
+            _buildHistoryTab(context),
+          ],
+        ),
       ),
     );
   }
 
   Widget _buildMessagesTab(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final textColor = isDark ? AppColors.darkTextPrimary : AppColors.textPrimary;
+
     return ListView(
       children: [
         // Active conversations
@@ -72,11 +178,12 @@ class _CommunicationsScreenState extends ConsumerState<CommunicationsScreen>
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  const Text(
+                  Text(
                     'Active Conversations',
                     style: TextStyle(
                       fontSize: 16,
                       fontWeight: FontWeight.bold,
+                      color: textColor,
                     ),
                   ),
                   AppButton.tertiary(
@@ -97,6 +204,7 @@ class _CommunicationsScreenState extends ConsumerState<CommunicationsScreen>
   }
 
   List<Widget> _buildConversationCards(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     final conversations = [
       {
         'name': 'Ahmed Hassan',

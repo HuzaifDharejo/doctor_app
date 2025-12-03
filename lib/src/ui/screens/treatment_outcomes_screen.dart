@@ -67,77 +67,233 @@ class _TreatmentOutcomesScreenState extends ConsumerState<TreatmentOutcomesScree
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
 
     return Scaffold(
-      appBar: AppBar(
-        title: Text('Treatment Outcomes - ${widget.patientName}'),
-        actions: [
-          PopupMenuButton<String>(
-            icon: const Icon(Icons.filter_list),
-            onSelected: (value) => setState(() => _filterStatus = value),
-            itemBuilder: (context) => [
-              const PopupMenuItem(value: 'all', child: Text('All Treatments')),
-              const PopupMenuItem(value: 'ongoing', child: Text('Ongoing')),
-              const PopupMenuItem(value: 'completed', child: Text('Completed')),
+      backgroundColor: isDark ? const Color(0xFF0F0F0F) : const Color(0xFFF8F9FA),
+      body: CustomScrollView(
+        slivers: [
+          SliverAppBar(
+            expandedHeight: 140,
+            pinned: true,
+            elevation: 0,
+            backgroundColor: isDark ? const Color(0xFF1A1A1A) : Colors.white,
+            leading: Padding(
+              padding: const EdgeInsets.all(8.0),
+              child: Container(
+                decoration: BoxDecoration(
+                  color: isDark 
+                      ? Colors.white.withValues(alpha: 0.1)
+                      : const Color(0xFF6366F1).withValues(alpha: 0.1),
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: IconButton(
+                  icon: Icon(
+                    Icons.arrow_back,
+                    color: isDark ? Colors.white : const Color(0xFF6366F1),
+                  ),
+                  onPressed: () => Navigator.pop(context),
+                ),
+              ),
+            ),
+            actions: [
+              Padding(
+                padding: const EdgeInsets.only(right: 8.0),
+                child: PopupMenuButton<String>(
+                  icon: Icon(
+                    Icons.filter_list,
+                    color: isDark ? Colors.white : const Color(0xFF6366F1),
+                  ),
+                  onSelected: (value) => setState(() => _filterStatus = value),
+                  itemBuilder: (context) => [
+                    const PopupMenuItem(value: 'all', child: Text('All Treatments')),
+                    const PopupMenuItem(value: 'ongoing', child: Text('Ongoing')),
+                    const PopupMenuItem(value: 'completed', child: Text('Completed')),
+                  ],
+                ),
+              ),
             ],
+            flexibleSpace: FlexibleSpaceBar(
+              background: Container(
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                    colors: isDark
+                        ? [const Color(0xFF1A1A1A), const Color(0xFF0F0F0F)]
+                        : [Colors.white, const Color(0xFFF8F9FA)],
+                  ),
+                ),
+                child: SafeArea(
+                  child: Padding(
+                    padding: const EdgeInsets.fromLTRB(20, 50, 20, 0),
+                    child: Row(
+                      children: [
+                        Container(
+                          padding: const EdgeInsets.all(12),
+                          decoration: BoxDecoration(
+                            gradient: const LinearGradient(
+                              colors: [Color(0xFF10B981), Color(0xFF059669)],
+                            ),
+                            borderRadius: BorderRadius.circular(16),
+                            boxShadow: [
+                              BoxShadow(
+                                color: const Color(0xFF10B981).withValues(alpha: 0.3),
+                                blurRadius: 12,
+                                offset: const Offset(0, 4),
+                              ),
+                            ],
+                          ),
+                          child: const Icon(
+                            Icons.medical_services_rounded,
+                            color: Colors.white,
+                            size: 28,
+                          ),
+                        ),
+                        const SizedBox(width: 16),
+                        Expanded(
+                          child: Column(
+                            mainAxisSize: MainAxisSize.min,
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                'Treatment Outcomes',
+                                style: TextStyle(
+                                  fontSize: 24,
+                                  fontWeight: FontWeight.bold,
+                                  color: isDark ? Colors.white : const Color(0xFF1A1A2E),
+                                ),
+                              ),
+                              const SizedBox(height: 4),
+                              Text(
+                                widget.patientName,
+                                style: TextStyle(
+                                  fontSize: 14,
+                                  color: isDark 
+                                      ? Colors.white.withValues(alpha: 0.7)
+                                      : const Color(0xFF6B7280),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+            ),
           ),
+          if (_isLoading)
+            const SliverFillRemaining(
+              child: Center(child: CircularProgressIndicator()),
+            )
+          else if (_filteredOutcomes.isEmpty)
+            SliverFillRemaining(
+              child: _buildEmptyState(colorScheme),
+            )
+          else
+            SliverPadding(
+              padding: const EdgeInsets.all(AppSpacing.lg),
+              sliver: SliverList(
+                delegate: SliverChildListDelegate([
+                  ..._buildOutcomesListContent(colorScheme),
+                ]),
+              ),
+            ),
         ],
       ),
-      body: _isLoading
-          ? const Center(child: CircularProgressIndicator())
-          : _filteredOutcomes.isEmpty
-              ? _buildEmptyState(colorScheme)
-              : _buildOutcomesList(colorScheme),
-      floatingActionButton: FloatingActionButton.extended(
-        onPressed: () => _showAddOutcomeDialog(),
-        icon: const Icon(Icons.add),
-        label: const Text('Add Treatment'),
+      floatingActionButton: Container(
+        decoration: BoxDecoration(
+          gradient: const LinearGradient(
+            colors: [Color(0xFF10B981), Color(0xFF059669)],
+          ),
+          borderRadius: BorderRadius.circular(16),
+          boxShadow: [
+            BoxShadow(
+              color: const Color(0xFF10B981).withValues(alpha: 0.4),
+              blurRadius: 12,
+              offset: const Offset(0, 4),
+            ),
+          ],
+        ),
+        child: FloatingActionButton.extended(
+          onPressed: () => _showAddOutcomeDialog(),
+          backgroundColor: Colors.transparent,
+          elevation: 0,
+          icon: const Icon(Icons.add, color: Colors.white),
+          label: const Text('Add Treatment', style: TextStyle(color: Colors.white)),
+        ),
       ),
     );
   }
 
+  List<Widget> _buildOutcomesListContent(ColorScheme colorScheme) {
+    // Group by status
+    final ongoing = _filteredOutcomes.where((o) => o.outcome == 'ongoing').toList();
+    final completed = _filteredOutcomes.where((o) => o.outcome != 'ongoing').toList();
+    
+    final widgets = <Widget>[];
+    
+    if (ongoing.isNotEmpty && _filterStatus != 'completed') {
+      widgets.add(_buildSectionHeader('Ongoing Treatments', Icons.hourglass_top, Colors.orange, ongoing.length));
+      widgets.add(const SizedBox(height: 8));
+      widgets.addAll(ongoing.map((o) => _buildOutcomeCard(o, colorScheme)));
+      widgets.add(const SizedBox(height: 24));
+    }
+    if (completed.isNotEmpty && _filterStatus != 'ongoing') {
+      widgets.add(_buildSectionHeader('Completed Treatments', Icons.check_circle_outline, Colors.green, completed.length));
+      widgets.add(const SizedBox(height: 8));
+      widgets.addAll(completed.map((o) => _buildOutcomeCard(o, colorScheme)));
+    }
+    
+    return widgets;
+  }
+
   Widget _buildEmptyState(ColorScheme colorScheme) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     return Center(
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          Icon(Icons.medical_services_outlined, size: 64, color: colorScheme.outline),
+          Container(
+            padding: const EdgeInsets.all(24),
+            decoration: BoxDecoration(
+              color: isDark 
+                  ? Colors.white.withValues(alpha: 0.1)
+                  : const Color(0xFF10B981).withValues(alpha: 0.1),
+              shape: BoxShape.circle,
+            ),
+            child: Icon(
+              Icons.medical_services_outlined, 
+              size: 64, 
+              color: isDark ? Colors.white54 : const Color(0xFF10B981),
+            ),
+          ),
           const SizedBox(height: 16),
           Text(
             _filterStatus == 'all' 
               ? 'No treatments recorded yet'
-              : 'No ${_filterStatus} treatments',
-            style: TextStyle(fontSize: 18, color: colorScheme.outline),
+              : 'No $_filterStatus treatments',
+            style: TextStyle(
+              fontSize: 18, 
+              fontWeight: FontWeight.w600,
+              color: isDark ? Colors.white : colorScheme.outline,
+            ),
           ),
           const SizedBox(height: 8),
-          const Text('Tap the button below to add a treatment'),
+          Text(
+            'Tap the button below to add a treatment',
+            style: TextStyle(
+              color: isDark ? Colors.white54 : colorScheme.outline,
+            ),
+          ),
         ],
       ),
     );
   }
 
-  Widget _buildOutcomesList(ColorScheme colorScheme) {
-    // Group by status
-    final ongoing = _filteredOutcomes.where((o) => o.outcome == 'ongoing').toList();
-    final completed = _filteredOutcomes.where((o) => o.outcome != 'ongoing').toList();
-
-    return ListView(
-      padding: const EdgeInsets.all(AppSpacing.lg),
-      children: [
-        if (ongoing.isNotEmpty && _filterStatus != 'completed') ...[
-          _buildSectionHeader('Ongoing Treatments', Icons.hourglass_top, Colors.orange, ongoing.length),
-          const SizedBox(height: 8),
-          ...ongoing.map((o) => _buildOutcomeCard(o, colorScheme)),
-          const SizedBox(height: 24),
-        ],
-        if (completed.isNotEmpty && _filterStatus != 'ongoing') ...[
-          _buildSectionHeader('Completed Treatments', Icons.check_circle_outline, Colors.green, completed.length),
-          const SizedBox(height: 8),
-          ...completed.map((o) => _buildOutcomeCard(o, colorScheme)),
-        ],
-      ],
-    );
-  }
+  // _buildOutcomesList moved to _buildOutcomesListContent for SliverList
 
   Widget _buildSectionHeader(String title, IconData icon, Color color, int count) {
     return Row(

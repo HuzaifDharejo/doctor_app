@@ -7,7 +7,7 @@ import 'package:url_launcher/url_launcher.dart';
 import '../../db/doctor_db.dart';
 import '../../theme/app_theme.dart';
 import '../../core/theme/design_tokens.dart';
-import '../screens/patient_view_screen_modern.dart';
+import '../screens/patient_view/patient_view.dart';
 import 'patient_avatar.dart';
 
 class PatientCard extends StatefulWidget {
@@ -127,6 +127,11 @@ class _PatientCardState extends State<PatientCard>
     Navigator.push(
       context,
       PageRouteBuilder<void>(
+        settings: RouteSettings(
+          name: '/patients/view/${widget.patient.id}',
+          arguments: widget.patient,
+        ),
+        maintainState: true,
         pageBuilder: (context, animation, secondaryAnimation) =>
             PatientViewScreenModern(patient: widget.patient),
         transitionsBuilder: (context, animation, secondaryAnimation, child) {

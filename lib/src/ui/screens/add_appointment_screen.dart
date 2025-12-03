@@ -61,81 +61,100 @@ class _AddAppointmentScreenState extends ConsumerState<AddAppointmentScreen> {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final screenWidth = MediaQuery.of(context).size.width;
     final isCompact = screenWidth < 400;
-    final padding = isCompact ? 12.0 : 20.0;
+    final padding = isCompact ? 16.0 : 20.0;
 
     return Scaffold(
-      backgroundColor: isDark ? AppColors.darkBackground : AppColors.background,
+      backgroundColor: isDark ? const Color(0xFF0F0F0F) : const Color(0xFFF8F9FA),
       body: dbAsync.when(
         data: (db) => CustomScrollView(
           slivers: [
-            // Gradient Header
-            SliverToBoxAdapter(
-              child: DecoratedBox(
-                decoration: const BoxDecoration(
-                  gradient: AppColors.primaryGradient,
-                  borderRadius: BorderRadius.only(
-                    bottomLeft: Radius.circular(32),
-                    bottomRight: Radius.circular(32),
+            // Modern App Bar
+            SliverAppBar(
+              expandedHeight: 140,
+              pinned: true,
+              elevation: 0,
+              scrolledUnderElevation: 1,
+              backgroundColor: isDark ? const Color(0xFF1A1A1A) : Colors.white,
+              leading: Padding(
+                padding: const EdgeInsets.all(8),
+                child: GestureDetector(
+                  onTap: () => Navigator.pop(context),
+                  child: Container(
+                    decoration: BoxDecoration(
+                      color: isDark ? Colors.white.withValues(alpha: 0.1) : Colors.grey.withValues(alpha: 0.1),
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: Icon(
+                      Icons.arrow_back_rounded,
+                      color: isDark ? Colors.white : Colors.black87,
+                      size: 22,
+                    ),
                   ),
                 ),
-                child: SafeArea(
-                  bottom: false,
-                  child: Padding(
-                    padding: EdgeInsets.all(padding),
-                    child: Column(
-                      children: [
-                        // Custom App Bar
-                        Row(
-                          children: [
-                            GestureDetector(
-                              onTap: () => Navigator.pop(context),
-                              child: Container(
-                                padding: const EdgeInsets.all(AppSpacing.md),
-                                decoration: BoxDecoration(
-                                  color: Colors.white.withValues(alpha: 0.2),
-                                  borderRadius: BorderRadius.circular(12),
-                                ),
-                                child: const Icon(Icons.arrow_back, color: Colors.white, size: 20),
+              ),
+              flexibleSpace: FlexibleSpaceBar(
+                background: Container(
+                  decoration: BoxDecoration(
+                    gradient: LinearGradient(
+                      colors: isDark 
+                          ? [const Color(0xFF1A1A1A), const Color(0xFF0F0F0F)]
+                          : [Colors.white, const Color(0xFFF8F9FA)],
+                      begin: Alignment.topCenter,
+                      end: Alignment.bottomCenter,
+                    ),
+                  ),
+                  child: SafeArea(
+                    child: Padding(
+                      padding: const EdgeInsets.fromLTRB(20, 50, 20, 0),
+                      child: Row(
+                        children: [
+                          Container(
+                            padding: const EdgeInsets.all(14),
+                            decoration: BoxDecoration(
+                              gradient: const LinearGradient(
+                                colors: [Color(0xFF3B82F6), Color(0xFF1D4ED8)],
+                                begin: Alignment.topLeft,
+                                end: Alignment.bottomRight,
                               ),
-                            ),
-                            const Expanded(
-                              child: Text(
-                                'New Appointment',
-                                textAlign: TextAlign.center,
-                                style: TextStyle(
-                                  color: Colors.white,
-                                  fontSize: 20,
-                                  fontWeight: FontWeight.bold,
+                              borderRadius: BorderRadius.circular(16),
+                              boxShadow: [
+                                BoxShadow(
+                                  color: const Color(0xFF3B82F6).withValues(alpha: 0.3),
+                                  blurRadius: 12,
+                                  offset: const Offset(0, 4),
                                 ),
-                              ),
+                              ],
                             ),
-                            const SizedBox(width: 40), // Balance the back button
-                          ],
-                        ),
-                        const SizedBox(height: 20),
-                        // Appointment Icon
-                        Container(
-                          padding: const EdgeInsets.all(AppSpacing.lg),
-                          decoration: BoxDecoration(
-                            color: Colors.white.withValues(alpha: 0.2),
-                            shape: BoxShape.circle,
+                            child: const Icon(Icons.calendar_month_rounded, color: Colors.white, size: 28),
                           ),
-                          child: const Icon(
-                            Icons.event_rounded,
-                            size: 48,
-                            color: Colors.white,
+                          const SizedBox(width: 16),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Text(
+                                  'Book Appointment',
+                                  style: TextStyle(
+                                    fontSize: 22,
+                                    fontWeight: FontWeight.w800,
+                                    color: isDark ? Colors.white : Colors.black87,
+                                    letterSpacing: -0.5,
+                                  ),
+                                ),
+                                const SizedBox(height: 4),
+                                Text(
+                                  DateFormat('EEEE, dd MMMM yyyy').format(_selectedDate),
+                                  style: TextStyle(
+                                    fontSize: 13,
+                                    color: isDark ? Colors.grey[400] : Colors.grey[600],
+                                  ),
+                                ),
+                              ],
+                            ),
                           ),
-                        ),
-                        const SizedBox(height: 12),
-                        Text(
-                          DateFormat('EEEE, dd MMMM yyyy').format(_selectedDate),
-                          style: TextStyle(
-                            color: Colors.white.withValues(alpha: 0.9),
-                            fontSize: 14,
-                          ),
-                        ),
-                        const SizedBox(height: 16),
-                      ],
+                        ],
+                      ),
                     ),
                   ),
                 ),
@@ -164,6 +183,8 @@ class _AddAppointmentScreenState extends ConsumerState<AddAppointmentScreen> {
     if (db == null) {
       return _buildErrorState(context);
     }
+    
+    final isDark = Theme.of(context).brightness == Brightness.dark;
 
     return Form(
         key: _formKey,
@@ -171,38 +192,307 @@ class _AddAppointmentScreenState extends ConsumerState<AddAppointmentScreen> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             // Date & Time Card
-            _buildDateTimeCard(context),
-            const SizedBox(height: 20),
+            _buildModernDateTimeCard(context, isDark),
+            const SizedBox(height: 16),
 
             // Patient Selection
-            _buildSectionHeader(context, 'Patient', Icons.person_outline),
-            const SizedBox(height: 12),
-            _buildPatientSelector(context, db),
-            const SizedBox(height: 20),
+            _buildModernSectionCard(
+              title: 'Patient',
+              icon: Icons.person_rounded,
+              iconColor: const Color(0xFF6366F1),
+              isDark: isDark,
+              child: _buildPatientSelector(context, db),
+            ),
+            const SizedBox(height: 16),
 
             // Appointment Details
-            _buildSectionHeader(context, 'Appointment Details', Icons.medical_services_outlined),
-            const SizedBox(height: 12),
-            _buildReasonSelector(context),
+            _buildModernSectionCard(
+              title: 'Visit Details',
+              icon: Icons.medical_services_rounded,
+              iconColor: const Color(0xFF10B981),
+              isDark: isDark,
+              child: Column(
+                children: [
+                  _buildReasonSelector(context),
+                  const SizedBox(height: 16),
+                  _buildDurationSelector(context),
+                ],
+              ),
+            ),
             const SizedBox(height: 16),
-            _buildDurationSelector(context),
-            const SizedBox(height: 20),
 
             // Notes
-            _buildSectionHeader(context, 'Notes', Icons.notes_outlined),
-            const SizedBox(height: 12),
-            _buildNotesField(context),
-            const SizedBox(height: 20),
+            _buildModernSectionCard(
+              title: 'Notes',
+              icon: Icons.note_alt_rounded,
+              iconColor: const Color(0xFFF59E0B),
+              isDark: isDark,
+              child: _buildNotesField(context),
+            ),
+            const SizedBox(height: 16),
 
             // Reminder Toggle
-            _buildReminderToggle(context),
-            const SizedBox(height: 32),
+            _buildModernReminderCard(context, isDark),
+            const SizedBox(height: 24),
 
             // Save Button
-            _buildSaveButton(context, db),
+            _buildModernSaveButton(context, db, isDark),
             const SizedBox(height: 40),
           ],
         ),
+    );
+  }
+  
+  Widget _buildModernSectionCard({
+    required String title,
+    required IconData icon,
+    required Color iconColor,
+    required bool isDark,
+    required Widget child,
+    Widget? trailing,
+  }) {
+    return Container(
+      decoration: BoxDecoration(
+        color: isDark ? const Color(0xFF1A1A1A) : Colors.white,
+        borderRadius: BorderRadius.circular(20),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.05),
+            blurRadius: 10,
+            offset: const Offset(0, 2),
+          ),
+        ],
+      ),
+      child: Padding(
+        padding: const EdgeInsets.all(18),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                Container(
+                  padding: const EdgeInsets.all(10),
+                  decoration: BoxDecoration(
+                    color: iconColor.withValues(alpha: 0.1),
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: Icon(icon, color: iconColor, size: 20),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Text(
+                    title,
+                    style: TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.w700,
+                      color: isDark ? Colors.white : Colors.black87,
+                      letterSpacing: -0.3,
+                    ),
+                  ),
+                ),
+                if (trailing != null) trailing,
+              ],
+            ),
+            const SizedBox(height: 16),
+            child,
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildModernDateTimeCard(BuildContext context, bool isDark) {
+    return Container(
+      decoration: BoxDecoration(
+        gradient: const LinearGradient(
+          colors: [Color(0xFF3B82F6), Color(0xFF1D4ED8)],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+        ),
+        borderRadius: BorderRadius.circular(20),
+        boxShadow: [
+          BoxShadow(
+            color: const Color(0xFF3B82F6).withValues(alpha: 0.3),
+            blurRadius: 16,
+            offset: const Offset(0, 6),
+          ),
+        ],
+      ),
+      child: Column(
+        children: [
+          Padding(
+            padding: const EdgeInsets.all(20),
+            child: Row(
+              children: [
+                Expanded(
+                  child: GestureDetector(
+                    onTap: () => _selectDate(context),
+                    child: _buildModernDateTimeItem(
+                      icon: Icons.calendar_today_rounded,
+                      label: 'Date',
+                      value: DateFormat('EEE, MMM d').format(_selectedDate),
+                    ),
+                  ),
+                ),
+                Container(
+                  width: 1,
+                  height: 60,
+                  margin: const EdgeInsets.symmetric(horizontal: 16),
+                  decoration: BoxDecoration(
+                    color: Colors.white.withValues(alpha: 0.2),
+                    borderRadius: BorderRadius.circular(1),
+                  ),
+                ),
+                Expanded(
+                  child: GestureDetector(
+                    onTap: () => setState(() => _showTimeSlots = !_showTimeSlots),
+                    child: _buildModernDateTimeItem(
+                      icon: Icons.access_time_rounded,
+                      label: 'Time',
+                      value: _selectedTime.format(context),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+          // Quick Time Slots
+          AnimatedSize(
+            duration: const Duration(milliseconds: 200),
+            child: _showTimeSlots
+                ? Container(
+                    width: double.infinity,
+                    padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Container(
+                          width: double.infinity,
+                          height: 1,
+                          color: Colors.white.withValues(alpha: 0.15),
+                        ),
+                        const SizedBox(height: 16),
+                        Text(
+                          'Quick Select',
+                          style: TextStyle(
+                            color: Colors.white.withValues(alpha: 0.8),
+                            fontSize: 12,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                        const SizedBox(height: 10),
+                        SingleChildScrollView(
+                          scrollDirection: Axis.horizontal,
+                          child: Row(
+                            children: [
+                              _buildModernTimeSlotChip('9:00 AM', const TimeOfDay(hour: 9, minute: 0)),
+                              _buildModernTimeSlotChip('10:00 AM', const TimeOfDay(hour: 10, minute: 0)),
+                              _buildModernTimeSlotChip('11:00 AM', const TimeOfDay(hour: 11, minute: 0)),
+                              _buildModernTimeSlotChip('12:00 PM', const TimeOfDay(hour: 12, minute: 0)),
+                              _buildModernTimeSlotChip('2:00 PM', const TimeOfDay(hour: 14, minute: 0)),
+                              _buildModernTimeSlotChip('3:00 PM', const TimeOfDay(hour: 15, minute: 0)),
+                              _buildModernTimeSlotChip('4:00 PM', const TimeOfDay(hour: 16, minute: 0)),
+                              _buildModernTimeSlotChip('5:00 PM', const TimeOfDay(hour: 17, minute: 0)),
+                              // Custom
+                              GestureDetector(
+                                onTap: () => _selectTime(context),
+                                child: Container(
+                                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                                  decoration: BoxDecoration(
+                                    color: Colors.white.withValues(alpha: 0.15),
+                                    borderRadius: BorderRadius.circular(10),
+                                    border: Border.all(color: Colors.white.withValues(alpha: 0.3)),
+                                  ),
+                                  child: Row(
+                                    mainAxisSize: MainAxisSize.min,
+                                    children: [
+                                      Icon(Icons.edit_rounded, color: Colors.white.withValues(alpha: 0.9), size: 14),
+                                      const SizedBox(width: 4),
+                                      Text(
+                                        'Custom',
+                                        style: TextStyle(color: Colors.white.withValues(alpha: 0.9), fontSize: 12, fontWeight: FontWeight.w500),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
+                    ),
+                  )
+                : const SizedBox.shrink(),
+          ),
+        ],
+      ),
+    );
+  }
+  
+  Widget _buildModernTimeSlotChip(String label, TimeOfDay time) {
+    final isSelected = _selectedTime.hour == time.hour && _selectedTime.minute == time.minute;
+    
+    return Padding(
+      padding: const EdgeInsets.only(right: 8),
+      child: GestureDetector(
+        onTap: () => setState(() => _selectedTime = time),
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 200),
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+          decoration: BoxDecoration(
+            color: isSelected ? Colors.white : Colors.white.withValues(alpha: 0.1),
+            borderRadius: BorderRadius.circular(10),
+            border: Border.all(
+              color: isSelected ? Colors.white : Colors.white.withValues(alpha: 0.2),
+            ),
+          ),
+          child: Text(
+            label,
+            style: TextStyle(
+              color: isSelected ? const Color(0xFF1D4ED8) : Colors.white.withValues(alpha: 0.9),
+              fontSize: 12,
+              fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+  
+  Widget _buildModernDateTimeItem({
+    required IconData icon,
+    required String label,
+    required String value,
+  }) {
+    return Column(
+      children: [
+        Container(
+          padding: const EdgeInsets.all(10),
+          decoration: BoxDecoration(
+            color: Colors.white.withValues(alpha: 0.15),
+            borderRadius: BorderRadius.circular(12),
+          ),
+          child: Icon(icon, color: Colors.white, size: 22),
+        ),
+        const SizedBox(height: 10),
+        Text(
+          label,
+          style: TextStyle(
+            color: Colors.white.withValues(alpha: 0.7),
+            fontSize: 12,
+            fontWeight: FontWeight.w500,
+          ),
+        ),
+        const SizedBox(height: 4),
+        Text(
+          value,
+          style: const TextStyle(
+            color: Colors.white,
+            fontSize: 17,
+            fontWeight: FontWeight.w700,
+          ),
+        ),
+      ],
     );
   }
 
@@ -367,31 +657,103 @@ class _AddAppointmentScreenState extends ConsumerState<AddAppointmentScreen> {
       builder: (context, snapshot) {
         final patients = snapshot.data ?? [];
         
-        return DecoratedBox(
+        // Find selected patient for display
+        Patient? selectedPatient;
+        if (_selectedPatientId != null) {
+          selectedPatient = patients.where((p) => p.id == _selectedPatientId).firstOrNull;
+        }
+        
+        if (selectedPatient != null) {
+          return Container(
+            padding: const EdgeInsets.all(14),
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                colors: [
+                  const Color(0xFF6366F1).withValues(alpha: 0.1),
+                  const Color(0xFF8B5CF6).withValues(alpha: 0.05),
+                ],
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+              ),
+              borderRadius: BorderRadius.circular(16),
+              border: Border.all(color: const Color(0xFF6366F1).withValues(alpha: 0.3)),
+            ),
+            child: Row(
+              children: [
+                Container(
+                  padding: const EdgeInsets.all(12),
+                  decoration: BoxDecoration(
+                    gradient: const LinearGradient(
+                      colors: [Color(0xFF6366F1), Color(0xFF8B5CF6)],
+                    ),
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: Text(
+                    selectedPatient.firstName.isNotEmpty ? selectedPatient.firstName[0].toUpperCase() : '?',
+                    style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 18),
+                  ),
+                ),
+                const SizedBox(width: 14),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        '${selectedPatient.firstName} ${selectedPatient.lastName}',
+                        style: TextStyle(
+                          fontWeight: FontWeight.w700,
+                          fontSize: 16,
+                          color: isDark ? Colors.white : Colors.black87,
+                        ),
+                      ),
+                      if (selectedPatient.phone.isNotEmpty)
+                        Text(
+                          selectedPatient.phone,
+                          style: TextStyle(color: isDark ? Colors.grey[400] : Colors.grey[600], fontSize: 13),
+                        ),
+                    ],
+                  ),
+                ),
+                GestureDetector(
+                  onTap: () => setState(() => _selectedPatientId = null),
+                  child: Container(
+                    padding: const EdgeInsets.all(8),
+                    decoration: BoxDecoration(
+                      color: Colors.red.withValues(alpha: 0.1),
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: const Icon(Icons.close_rounded, color: Colors.red, size: 18),
+                  ),
+                ),
+              ],
+            ),
+          );
+        }
+        
+        return Container(
           decoration: BoxDecoration(
-            color: Theme.of(context).colorScheme.surface,
-            borderRadius: BorderRadius.circular(16),
-            border: Border.all(color: isDark ? AppColors.darkDivider : AppColors.divider),
+            color: isDark ? Colors.white.withValues(alpha: 0.05) : Colors.grey.withValues(alpha: 0.05),
+            borderRadius: BorderRadius.circular(14),
+            border: Border.all(color: isDark ? Colors.grey[800]! : Colors.grey[300]!),
           ),
           child: DropdownButtonFormField<int>(
-            initialValue: _selectedPatientId,
+            value: _selectedPatientId,
             decoration: InputDecoration(
               hintText: 'Select a patient',
-              prefixIcon: Icon(Icons.person_search_rounded, color: isDark ? AppColors.darkTextSecondary : AppColors.textHint),
+              hintStyle: TextStyle(color: isDark ? Colors.grey[500] : Colors.grey[400]),
+              prefixIcon: Icon(Icons.person_search_rounded, color: isDark ? Colors.grey[400] : Colors.grey[500]),
               border: InputBorder.none,
-              contentPadding: const EdgeInsets.symmetric(horizontal: AppSpacing.lg, vertical: AppSpacing.md),
+              contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
             ),
             items: patients.map((p) => DropdownMenuItem(
               value: p.id,
               child: Text('${p.firstName} ${p.lastName}'),
-            ),).toList(),
-            onChanged: (value) {
-              setState(() => _selectedPatientId = value);
-            },
+            )).toList(),
+            onChanged: (value) => setState(() => _selectedPatientId = value),
             validator: (value) => value == null ? 'Please select a patient' : null,
-            dropdownColor: Theme.of(context).colorScheme.surface,
+            dropdownColor: isDark ? const Color(0xFF1A1A1A) : Colors.white,
             borderRadius: BorderRadius.circular(16),
-            icon: const Icon(Icons.keyboard_arrow_down_rounded),
+            icon: Icon(Icons.keyboard_arrow_down_rounded, color: isDark ? Colors.grey[400] : Colors.grey[600]),
           ),
         );
       },
@@ -400,146 +762,343 @@ class _AddAppointmentScreenState extends ConsumerState<AddAppointmentScreen> {
 
   Widget _buildReasonSelector(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    return DecoratedBox(
-      decoration: BoxDecoration(
-        color: Theme.of(context).colorScheme.surface,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: isDark ? AppColors.darkDivider : AppColors.divider),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Padding(
-            padding: const EdgeInsets.fromLTRB(16, 12, 16, 8),
-            child: Text(
-              'Reason for Visit',
-              style: TextStyle(
-                fontSize: 12,
-                color: isDark ? AppColors.darkTextSecondary : AppColors.textSecondary,
-                fontWeight: FontWeight.w500,
-              ),
-            ),
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          'Reason for Visit',
+          style: TextStyle(
+            fontSize: 13,
+            color: isDark ? Colors.grey[400] : Colors.grey[600],
+            fontWeight: FontWeight.w600,
           ),
-          SingleChildScrollView(
-            scrollDirection: Axis.horizontal,
-            padding: const EdgeInsets.fromLTRB(12, 0, 12, 12),
-            child: Row(
-              children: AppointmentSuggestions.visitReasons.map((reason) {
-                final isSelected = _reason == reason;
-                return Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: AppSpacing.xs),
-                  child: ChoiceChip(
-                    label: Text(reason),
-                    selected: isSelected,
-                    onSelected: (selected) {
-                      setState(() => _reason = selected ? reason : '');
-                    },
-                    backgroundColor: isDark ? AppColors.darkBackground : AppColors.background,
-                    selectedColor: AppColors.accent.withValues(alpha: 0.2),
-                    labelStyle: TextStyle(
-                      color: isSelected ? AppColors.accent : (isDark ? AppColors.darkTextSecondary : AppColors.textSecondary),
-                      fontWeight: isSelected ? FontWeight.w600 : FontWeight.normal,
-                      fontSize: 13,
-                    ),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(10),
-                      side: BorderSide(
-                        color: isSelected ? AppColors.accent : (isDark ? AppColors.darkDivider : AppColors.divider),
-                      ),
-                    ),
+        ),
+        const SizedBox(height: 12),
+        Wrap(
+          spacing: 8,
+          runSpacing: 8,
+          children: AppointmentSuggestions.visitReasons.map((reason) {
+            final isSelected = _reason == reason;
+            return GestureDetector(
+              onTap: () => setState(() => _reason = isSelected ? '' : reason),
+              child: AnimatedContainer(
+                duration: const Duration(milliseconds: 200),
+                padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                decoration: BoxDecoration(
+                  gradient: isSelected 
+                      ? const LinearGradient(colors: [Color(0xFF10B981), Color(0xFF059669)])
+                      : null,
+                  color: isSelected ? null : (isDark ? Colors.white.withValues(alpha: 0.05) : Colors.grey.withValues(alpha: 0.08)),
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(
+                    color: isSelected ? Colors.transparent : (isDark ? Colors.grey[700]! : Colors.grey[300]!),
                   ),
-                );
-              }).toList(),
-            ),
-          ),
-        ],
-      ),
+                  boxShadow: isSelected ? [
+                    BoxShadow(
+                      color: const Color(0xFF10B981).withValues(alpha: 0.3),
+                      blurRadius: 8,
+                      offset: const Offset(0, 2),
+                    ),
+                  ] : null,
+                ),
+                child: Text(
+                  reason,
+                  style: TextStyle(
+                    color: isSelected ? Colors.white : (isDark ? Colors.grey[300] : Colors.grey[700]),
+                    fontWeight: isSelected ? FontWeight.w600 : FontWeight.w500,
+                    fontSize: 13,
+                  ),
+                ),
+              ),
+            );
+          }).toList(),
+        ),
+      ],
     );
   }
 
   Widget _buildDurationSelector(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    return AppCard(
-      padding: const EdgeInsets.all(AppSpacing.lg),
-      color: Theme.of(context).colorScheme.surface,
-      borderRadius: BorderRadius.circular(16),
-      borderColor: isDark ? AppColors.darkDivider : AppColors.divider,
-      borderWidth: 1,
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Text(
-                'Duration',
-                style: TextStyle(
-                  fontSize: 14,
-                  color: isDark ? AppColors.darkTextSecondary : AppColors.textSecondary,
-                  fontWeight: FontWeight.w500,
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            Text(
+              'Duration',
+              style: TextStyle(
+                fontSize: 13,
+                color: isDark ? Colors.grey[400] : Colors.grey[600],
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+              decoration: BoxDecoration(
+                gradient: const LinearGradient(
+                  colors: [Color(0xFF3B82F6), Color(0xFF1D4ED8)],
+                ),
+                borderRadius: BorderRadius.circular(20),
+              ),
+              child: Text(
+                '$_duration min',
+                style: const TextStyle(
+                  color: Colors.white,
+                  fontWeight: FontWeight.w700,
+                  fontSize: 12,
                 ),
               ),
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: AppSpacing.md, vertical: AppSpacing.xs),
-                decoration: BoxDecoration(
-                  color: AppColors.primary.withValues(alpha: 0.1),
-                  borderRadius: BorderRadius.circular(8),
-                ),
-                child: Text(
-                  '$_duration min',
-                  style: const TextStyle(
-                    color: AppColors.primary,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 16),
-          Row(
-            children: _durations.map((duration) {
-              final isSelected = _duration == duration;
-              return Expanded(
-                child: GestureDetector(
-                  onTap: () => setState(() => _duration = duration),
-                  child: AnimatedContainer(
-                    duration: const Duration(milliseconds: 200),
-                    margin: const EdgeInsets.symmetric(horizontal: AppSpacing.xs),
-                    padding: const EdgeInsets.symmetric(vertical: AppSpacing.md),
-                    decoration: BoxDecoration(
-                      gradient: isSelected ? AppColors.accentGradient : null,
-                      color: isSelected ? null : (isDark ? AppColors.darkBackground : AppColors.background),
-                      borderRadius: BorderRadius.circular(10),
-                      border: isSelected ? null : Border.all(color: isDark ? AppColors.darkDivider : AppColors.divider),
+            ),
+          ],
+        ),
+        const SizedBox(height: 14),
+        Row(
+          children: _durations.map((duration) {
+            final isSelected = _duration == duration;
+            return Expanded(
+              child: GestureDetector(
+                onTap: () => setState(() => _duration = duration),
+                child: AnimatedContainer(
+                  duration: const Duration(milliseconds: 200),
+                  margin: const EdgeInsets.symmetric(horizontal: 3),
+                  padding: const EdgeInsets.symmetric(vertical: 14),
+                  decoration: BoxDecoration(
+                    gradient: isSelected 
+                        ? const LinearGradient(colors: [Color(0xFF3B82F6), Color(0xFF1D4ED8)])
+                        : null,
+                    color: isSelected ? null : (isDark ? Colors.white.withValues(alpha: 0.05) : Colors.grey.withValues(alpha: 0.08)),
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(
+                      color: isSelected ? Colors.transparent : (isDark ? Colors.grey[700]! : Colors.grey[300]!),
                     ),
-                    child: Center(
-                      child: Text(
-                        '$duration',
-                        style: TextStyle(
-                          fontSize: 13,
-                          fontWeight: isSelected ? FontWeight.bold : FontWeight.w500,
-                          color: isSelected ? Colors.white : (isDark ? AppColors.darkTextSecondary : AppColors.textSecondary),
-                        ),
+                    boxShadow: isSelected ? [
+                      BoxShadow(
+                        color: const Color(0xFF3B82F6).withValues(alpha: 0.3),
+                        blurRadius: 8,
+                        offset: const Offset(0, 2),
+                      ),
+                    ] : null,
+                  ),
+                  child: Center(
+                    child: Text(
+                      '$duration',
+                      style: TextStyle(
+                        fontSize: 14,
+                        fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
+                        color: isSelected ? Colors.white : (isDark ? Colors.grey[400] : Colors.grey[600]),
                       ),
                     ),
                   ),
                 ),
-              );
-            }).toList(),
+              ),
+            );
+          }).toList(),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildNotesField(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          'Additional Notes',
+          style: TextStyle(
+            fontSize: 13,
+            color: isDark ? Colors.grey[400] : Colors.grey[600],
+            fontWeight: FontWeight.w600,
+          ),
+        ),
+        const SizedBox(height: 12),
+        Container(
+          decoration: BoxDecoration(
+            color: isDark ? Colors.white.withValues(alpha: 0.03) : Colors.grey.withValues(alpha: 0.03),
+            borderRadius: BorderRadius.circular(14),
+            border: Border.all(
+              color: isDark ? Colors.grey[800]! : Colors.grey[300]!,
+            ),
+          ),
+          child: TextField(
+            controller: _notesController,
+            maxLines: 3,
+            style: TextStyle(
+              color: isDark ? Colors.white : Colors.black87,
+              fontSize: 14,
+            ),
+            decoration: InputDecoration(
+              hintText: 'Add any additional notes...',
+              hintStyle: TextStyle(color: isDark ? Colors.grey[600] : Colors.grey[400]),
+              border: InputBorder.none,
+              contentPadding: const EdgeInsets.all(16),
+            ),
+          ),
+        ),
+        const SizedBox(height: 10),
+        // Quick note suggestions
+        Wrap(
+          spacing: 6,
+          runSpacing: 6,
+          children: AppointmentSuggestions.notes.take(4).map((note) {
+            return GestureDetector(
+              onTap: () {
+                final currentText = _notesController.text;
+                _notesController.text = currentText.isEmpty ? note : '$currentText\n$note';
+              },
+              child: Container(
+                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                decoration: BoxDecoration(
+                  color: isDark ? Colors.white.withValues(alpha: 0.05) : Colors.grey.withValues(alpha: 0.08),
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(Icons.add_rounded, size: 14, color: isDark ? Colors.grey[400] : Colors.grey[600]),
+                    const SizedBox(width: 4),
+                    Text(
+                      note.length > 25 ? '${note.substring(0, 22)}...' : note,
+                      style: TextStyle(
+                        fontSize: 11,
+                        color: isDark ? Colors.grey[400] : Colors.grey[600],
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            );
+          }).toList(),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildModernReminderCard(BuildContext context, bool isDark) {
+    return Container(
+      padding: const EdgeInsets.all(18),
+      decoration: BoxDecoration(
+        color: isDark ? const Color(0xFF1A1A1A) : Colors.white,
+        borderRadius: BorderRadius.circular(20),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.05),
+            blurRadius: 10,
+            offset: const Offset(0, 2),
+          ),
+        ],
+      ),
+      child: Row(
+        children: [
+          Container(
+            padding: const EdgeInsets.all(12),
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                colors: [
+                  const Color(0xFFF59E0B).withValues(alpha: 0.15),
+                  const Color(0xFFD97706).withValues(alpha: 0.1),
+                ],
+              ),
+              borderRadius: BorderRadius.circular(14),
+            ),
+            child: const Icon(
+              Icons.notifications_active_rounded,
+              color: Color(0xFFF59E0B),
+              size: 24,
+            ),
+          ),
+          const SizedBox(width: 14),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'Reminder',
+                  style: TextStyle(
+                    fontWeight: FontWeight.w700,
+                    fontSize: 15,
+                    color: isDark ? Colors.white : Colors.black87,
+                  ),
+                ),
+                const SizedBox(height: 2),
+                Text(
+                  '30 minutes before appointment',
+                  style: TextStyle(
+                    color: isDark ? Colors.grey[400] : Colors.grey[600],
+                    fontSize: 12,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          Transform.scale(
+            scale: 0.9,
+            child: Switch(
+              value: _setReminder,
+              onChanged: (value) => setState(() => _setReminder = value),
+              activeTrackColor: const Color(0xFF3B82F6).withValues(alpha: 0.4),
+              activeColor: const Color(0xFF3B82F6),
+              inactiveTrackColor: isDark ? Colors.grey[700] : Colors.grey[300],
+              inactiveThumbColor: isDark ? Colors.grey[500] : Colors.grey[400],
+            ),
           ),
         ],
       ),
     );
   }
-
-  Widget _buildNotesField(BuildContext context) {
-    return SuggestionTextField(
-      controller: _notesController,
-      label: 'Notes',
-      hint: 'Add any additional notes...',
-      prefixIcon: Icons.notes_outlined,
-      maxLines: 3,
-      suggestions: AppointmentSuggestions.notes,
+  
+  Widget _buildModernSaveButton(BuildContext context, DoctorDatabase db, bool isDark) {
+    return Container(
+      width: double.infinity,
+      decoration: BoxDecoration(
+        gradient: _isSaving ? null : const LinearGradient(
+          colors: [Color(0xFF3B82F6), Color(0xFF1D4ED8)],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+        ),
+        color: _isSaving ? (isDark ? Colors.grey[700] : Colors.grey[400]) : null,
+        borderRadius: BorderRadius.circular(16),
+        boxShadow: _isSaving ? null : [
+          BoxShadow(
+            color: const Color(0xFF3B82F6).withValues(alpha: 0.4),
+            blurRadius: 16,
+            offset: const Offset(0, 6),
+          ),
+        ],
+      ),
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          onTap: _isSaving ? null : () => _saveAppointment(context, db),
+          borderRadius: BorderRadius.circular(16),
+          child: Padding(
+            padding: const EdgeInsets.symmetric(vertical: 18),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                if (_isSaving)
+                  const SizedBox(
+                    width: 20,
+                    height: 20,
+                    child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
+                  )
+                else
+                  const Icon(Icons.check_circle_rounded, color: Colors.white, size: 22),
+                const SizedBox(width: 10),
+                Text(
+                  _isSaving ? 'Scheduling...' : 'Schedule Appointment',
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontSize: 16,
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
     );
   }
 

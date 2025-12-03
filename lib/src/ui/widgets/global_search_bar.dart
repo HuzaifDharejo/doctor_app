@@ -6,7 +6,7 @@ import '../../core/theme/design_tokens.dart';
 
 import '../../db/doctor_db.dart';
 import '../../providers/db_provider.dart';
-import '../screens/patient_view_screen_modern.dart';
+import '../screens/patient_view/patient_view.dart';
 
 /// Represents a search result item
 class SearchResult {
@@ -157,6 +157,7 @@ class _GlobalSearchBarState extends ConsumerState<GlobalSearchBar> {
         Navigator.push<void>(
           context,
           MaterialPageRoute<void>(
+            settings: RouteSettings(name: '/patients/view/${patient.id}'),
             builder: (_) => PatientViewScreenModern(patient: patient),
           ),
         );
@@ -172,6 +173,7 @@ class _GlobalSearchBarState extends ConsumerState<GlobalSearchBar> {
               Navigator.push<void>(
                 context,
                 MaterialPageRoute<void>(
+                  settings: RouteSettings(name: '/patients/view/${patient.id}'),
                   builder: (_) => PatientViewScreenModern(patient: patient),
                 ),
               ),

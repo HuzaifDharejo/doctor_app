@@ -233,7 +233,7 @@ class _AddFollowUpScreenState extends ConsumerState<AddFollowUpScreen> {
                     : 'Follow-up Visit',
                 subtitle: DateFormat('EEEE, dd MMMM yyyy').format(_recordDate),
                 icon: Icons.event_repeat_rounded,
-                gradientColors: [const Color(0xFF14B8A6), const Color(0xFF0D9488)],
+                gradientColors: [const Color(0xFFF59E0B), const Color(0xFFD97706)], // Notes Amber
               ),
             ),
             // Body Content
@@ -506,7 +506,7 @@ class _AddFollowUpScreenState extends ConsumerState<AddFollowUpScreen> {
             isSaving: _isSaving,
             label: widget.existingRecord != null ? 'Update Follow-up' : 'Save Follow-up',
             onPressed: () => _saveRecord(db),
-            gradientColors: [const Color(0xFF14B8A6), const Color(0xFF0D9488)],
+            gradientColors: [const Color(0xFFF59E0B), const Color(0xFFD97706)], // Notes Amber
           ),
           const SizedBox(height: 40),
         ],

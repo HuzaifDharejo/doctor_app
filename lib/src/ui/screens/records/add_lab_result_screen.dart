@@ -204,7 +204,7 @@ class _AddLabResultScreenState extends ConsumerState<AddLabResultScreen> {
                     : 'Lab Result',
                 subtitle: DateFormat('EEEE, dd MMMM yyyy').format(_recordDate),
                 icon: Icons.science_rounded,
-                gradientColors: [AppColors.info, AppColors.primary],
+                gradientColors: [const Color(0xFF14B8A6), const Color(0xFF0D9488)], // Lab Teal
               ),
             ),
             // Body Content
@@ -401,7 +401,7 @@ class _AddLabResultScreenState extends ConsumerState<AddLabResultScreen> {
             isSaving: _isSaving,
             label: widget.existingRecord != null ? 'Update Lab Result' : 'Save Lab Result',
             onPressed: () => _saveRecord(db),
-            gradientColors: [AppColors.info, AppColors.primary],
+            gradientColors: [const Color(0xFF14B8A6), const Color(0xFF0D9488)], // Lab Teal
           ),
           const SizedBox(height: 40),
         ],

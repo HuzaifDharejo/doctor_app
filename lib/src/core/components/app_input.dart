@@ -345,19 +345,23 @@ class _AppInputState extends State<AppInput> {
             fillColor: widget.backgroundColor ??
                 (isDarkMode
                     ? colorScheme.surface.withValues(alpha: 0.5)
-                    : colorScheme.surfaceVariant.withValues(alpha: 0.3)),
+                    : colorScheme.surfaceContainerHighest.withValues(alpha: 0.4)),
             border: OutlineInputBorder(
               borderRadius: BorderRadius.circular(AppRadius.input),
               borderSide: BorderSide(
-                color: widget.showBorder ? colorScheme.outline : Colors.transparent,
-                width: 1.5,
+                color: widget.showBorder 
+                    ? (isDarkMode ? colorScheme.outline.withValues(alpha: 0.3) : colorScheme.outline.withValues(alpha: 0.2))
+                    : Colors.transparent,
+                width: 1,
               ),
             ),
             enabledBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(AppRadius.input),
               borderSide: BorderSide(
-                color: widget.showBorder ? colorScheme.outline : Colors.transparent,
-                width: 1.5,
+                color: widget.showBorder 
+                    ? (isDarkMode ? colorScheme.outline.withValues(alpha: 0.3) : colorScheme.outline.withValues(alpha: 0.2))
+                    : Colors.transparent,
+                width: 1,
               ),
             ),
             focusedBorder: OutlineInputBorder(
@@ -371,7 +375,7 @@ class _AppInputState extends State<AppInput> {
               borderRadius: BorderRadius.circular(AppRadius.input),
               borderSide: BorderSide(
                 color: colorScheme.error,
-                width: 1.5,
+                width: 1,
               ),
             ),
             focusedErrorBorder: OutlineInputBorder(
@@ -384,8 +388,8 @@ class _AppInputState extends State<AppInput> {
             disabledBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(AppRadius.input),
               borderSide: BorderSide(
-                color: colorScheme.outline.withValues(alpha: 0.38),
-                width: 1.5,
+                color: colorScheme.outline.withValues(alpha: 0.15),
+                width: 1,
               ),
             ),
             errorStyle: TextStyle(

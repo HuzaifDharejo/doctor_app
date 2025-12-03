@@ -60,66 +60,144 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> with SingleTick
     final isDark = context.isDarkMode;
     
     return Scaffold(
-      body: SafeArea(
-        child: RefreshIndicator(
-          onRefresh: _onRefresh,
-          color: AppColors.primary,
-          backgroundColor: isDark ? AppColors.darkSurface : Colors.white,
-          child: CustomScrollView(
-            physics: const AlwaysScrollableScrollPhysics(
-              parent: BouncingScrollPhysics(),
-            ),
-            slivers: [
-              SliverToBoxAdapter(child: _buildHeader(context)),
-              SliverToBoxAdapter(
-                child: FadeTransition(
-                  opacity: _animationController,
-                  child: SlideTransition(
-                    position: Tween<Offset>(
-                      begin: const Offset(0, 0.1),
-                      end: Offset.zero,
-                    ).animate(CurvedAnimation(
-                      parent: _animationController,
-                      curve: Curves.easeOutCubic,
-                    ),),
-                    child: _buildProfileCard(context, ref),
-                  ),
-                ),
-              ),
-              SliverToBoxAdapter(
-                child: FadeTransition(
-                  opacity: CurvedAnimation(
-                    parent: _animationController,
-                    curve: const Interval(0.2, 1),
-                  ),
-                  child: _buildSettingsSections(context, ref, appSettings),
-                ),
-              ),
-              const SliverToBoxAdapter(child: SizedBox(height: 100)),
-            ],
+      backgroundColor: isDark ? const Color(0xFF0F0F0F) : const Color(0xFFF8FAFC),
+      body: RefreshIndicator(
+        onRefresh: _onRefresh,
+        color: AppColors.primary,
+        backgroundColor: isDark ? AppColors.darkSurface : Colors.white,
+        child: CustomScrollView(
+          physics: const AlwaysScrollableScrollPhysics(
+            parent: BouncingScrollPhysics(),
           ),
+          slivers: [
+            _buildModernSliverAppBar(context, isDark),
+            SliverToBoxAdapter(
+              child: FadeTransition(
+                opacity: _animationController,
+                child: SlideTransition(
+                  position: Tween<Offset>(
+                    begin: const Offset(0, 0.1),
+                    end: Offset.zero,
+                  ).animate(CurvedAnimation(
+                    parent: _animationController,
+                    curve: Curves.easeOutCubic,
+                  ),),
+                  child: _buildProfileCard(context, ref),
+                ),
+              ),
+            ),
+            SliverToBoxAdapter(
+              child: FadeTransition(
+                opacity: CurvedAnimation(
+                  parent: _animationController,
+                  curve: const Interval(0.2, 1),
+                ),
+                child: _buildSettingsSections(context, ref, appSettings),
+              ),
+            ),
+            const SliverToBoxAdapter(child: SizedBox(height: 100)),
+          ],
         ),
       ),
     );
   }
 
-  Widget _buildHeader(BuildContext context) {
-    final isCompact = AppBreakpoint.isCompact(context.screenWidth);
-    
-    return AppHeader(
-      title: AppStrings.settings,
-      subtitle: AppStrings.manageSettings,
-      showBackButton: true,
-      trailing: Container(
-        padding: EdgeInsets.all(isCompact ? AppSpacing.xs : AppSpacing.xs),
-        decoration: BoxDecoration(
-          color: AppColors.primary.withValues(alpha: 0.1),
-          borderRadius: BorderRadius.circular(AppRadius.xs),
+  Widget _buildModernSliverAppBar(BuildContext context, bool isDark) {
+    return SliverAppBar(
+      expandedHeight: 160,
+      floating: false,
+      pinned: true,
+      elevation: 0,
+      backgroundColor: isDark ? const Color(0xFF1A1A1A) : Colors.white,
+      surfaceTintColor: Colors.transparent,
+      leading: Padding(
+        padding: const EdgeInsets.all(8.0),
+        child: Container(
+          decoration: BoxDecoration(
+            color: isDark ? Colors.white.withValues(alpha: 0.1) : Colors.grey.shade100,
+            borderRadius: BorderRadius.circular(12),
+          ),
+          child: IconButton(
+            icon: Icon(
+              Icons.arrow_back_ios_new_rounded,
+              size: 18,
+              color: isDark ? Colors.white : Colors.black87,
+            ),
+            onPressed: () => Navigator.of(context).pop(),
+          ),
         ),
-        child: Icon(
-          Icons.settings_rounded,
-          color: AppColors.primary,
-          size: isCompact ? AppIconSize.sm : AppIconSize.md,
+      ),
+      flexibleSpace: FlexibleSpaceBar(
+        background: Container(
+          decoration: BoxDecoration(
+            gradient: LinearGradient(
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+              colors: isDark
+                  ? [const Color(0xFF1A1A1A), const Color(0xFF0F0F0F)]
+                  : [Colors.white, const Color(0xFFF8FAFC)],
+            ),
+          ),
+          child: SafeArea(
+            child: Padding(
+              padding: const EdgeInsets.fromLTRB(20, 50, 20, 16),
+              child: Row(
+                children: [
+                  Container(
+                    padding: const EdgeInsets.all(14),
+                    decoration: BoxDecoration(
+                      gradient: const LinearGradient(
+                        colors: [Color(0xFF6366F1), Color(0xFF8B5CF6)],
+                        begin: Alignment.topLeft,
+                        end: Alignment.bottomRight,
+                      ),
+                      borderRadius: BorderRadius.circular(18),
+                      boxShadow: [
+                        BoxShadow(
+                          color: const Color(0xFF6366F1).withValues(alpha: 0.4),
+                          blurRadius: 16,
+                          offset: const Offset(0, 6),
+                        ),
+                      ],
+                    ),
+                    child: const Icon(
+                      Icons.settings_rounded,
+                      color: Colors.white,
+                      size: 28,
+                    ),
+                  ),
+                  const SizedBox(width: 16),
+                  Expanded(
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          'Settings',
+                          style: TextStyle(
+                            fontSize: 24,
+                            fontWeight: FontWeight.w800,
+                            color: isDark ? Colors.white : const Color(0xFF1E293B),
+                            letterSpacing: -0.5,
+                          ),
+                        ),
+                        const SizedBox(height: 2),
+                        Text(
+                          'Customize your experience',
+                          style: TextStyle(
+                            fontSize: 13,
+                            color: isDark 
+                                ? Colors.white.withValues(alpha: 0.6) 
+                                : const Color(0xFF64748B),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
         ),
       ),
     );

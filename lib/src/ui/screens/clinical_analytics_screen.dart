@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../core/theme/design_tokens.dart';
 import '../../core/widgets/app_card.dart';
 import '../../services/clinical_analytics_service.dart';
+import '../../theme/app_theme.dart';
 import '../widgets/analytics_widgets.dart';
 
 /// Clinical Analytics Screen
@@ -43,36 +44,140 @@ class _ClinicalAnalyticsScreenState extends ConsumerState<ClinicalAnalyticsScree
   @override
   Widget build(BuildContext context) {
     final analyticsService = const ClinicalAnalyticsService();
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final surfaceColor = isDark ? AppColors.darkSurface : Colors.white;
+    final textColor = isDark ? AppColors.darkTextPrimary : AppColors.textPrimary;
 
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Clinical Analytics'),
-        elevation: 2,
-        bottom: TabBar(
+      backgroundColor: isDark ? AppColors.darkBackground : AppColors.background,
+      body: NestedScrollView(
+        headerSliverBuilder: (context, innerBoxIsScrolled) => [
+          SliverAppBar(
+            expandedHeight: 200,
+            floating: false,
+            pinned: true,
+            backgroundColor: surfaceColor,
+            foregroundColor: textColor,
+            elevation: 0,
+            scrolledUnderElevation: 1,
+            leading: Padding(
+              padding: const EdgeInsets.all(8.0),
+              child: Container(
+                decoration: BoxDecoration(
+                  color: isDark ? Colors.white.withValues(alpha: 0.1) : Colors.black.withValues(alpha: 0.05),
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: IconButton(
+                  icon: Icon(
+                    Icons.arrow_back,
+                    color: isDark ? Colors.white : const Color(0xFF1A1A2E),
+                  ),
+                  onPressed: () => Navigator.pop(context),
+                ),
+              ),
+            ),
+            flexibleSpace: FlexibleSpaceBar(
+              background: Container(
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                    colors: isDark
+                        ? [const Color(0xFF1A1A2E), const Color(0xFF16213E)]
+                        : [const Color(0xFFF8FAFC), surfaceColor],
+                  ),
+                ),
+                child: SafeArea(
+                  child: Padding(
+                    padding: const EdgeInsets.fromLTRB(20, 50, 20, 16),
+                    child: Row(
+                      children: [
+                        Container(
+                          padding: const EdgeInsets.all(14),
+                          decoration: BoxDecoration(
+                            gradient: const LinearGradient(
+                              colors: [Color(0xFF10B981), Color(0xFF059669)],
+                              begin: Alignment.topLeft,
+                              end: Alignment.bottomRight,
+                            ),
+                            borderRadius: BorderRadius.circular(16),
+                            boxShadow: [
+                              BoxShadow(
+                                color: const Color(0xFF10B981).withValues(alpha: 0.3),
+                                blurRadius: 12,
+                                offset: const Offset(0, 4),
+                              ),
+                            ],
+                          ),
+                          child: const Icon(
+                            Icons.analytics_rounded,
+                            color: Colors.white,
+                            size: 28,
+                          ),
+                        ),
+                        const SizedBox(width: 16),
+                        Expanded(
+                          child: Column(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                'Clinical Analytics',
+                                style: TextStyle(
+                                  fontSize: 22,
+                                  fontWeight: FontWeight.bold,
+                                  color: textColor,
+                                ),
+                              ),
+                              const SizedBox(height: 4),
+                              Text(
+                                'Insights & performance metrics',
+                                style: TextStyle(
+                                  fontSize: 14,
+                                  color: isDark ? AppColors.darkTextSecondary : AppColors.textSecondary,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+            ),
+            bottom: TabBar(
+              controller: _tabController,
+              isScrollable: true,
+              labelColor: AppColors.primary,
+              unselectedLabelColor: isDark ? AppColors.darkTextSecondary : AppColors.textSecondary,
+              indicatorColor: AppColors.primary,
+              indicatorWeight: 3,
+              tabs: const [
+                Tab(child: Row(mainAxisSize: MainAxisSize.min, children: [Icon(Icons.trending_up, size: 18), SizedBox(width: 6), Text('Trends')])),
+                Tab(child: Row(mainAxisSize: MainAxisSize.min, children: [Icon(Icons.assessment, size: 18), SizedBox(width: 6), Text('Success')])),
+                Tab(child: Row(mainAxisSize: MainAxisSize.min, children: [Icon(Icons.check_circle_outline, size: 18), SizedBox(width: 6), Text('Outcomes')])),
+                Tab(child: Row(mainAxisSize: MainAxisSize.min, children: [Icon(Icons.people_outline, size: 18), SizedBox(width: 6), Text('Demographics')])),
+              ],
+            ),
+          ),
+        ],
+        body: TabBarView(
           controller: _tabController,
-          tabs: const [
-            Tab(text: 'Trends', icon: Icon(Icons.trending_up)),
-            Tab(text: 'Success Rates', icon: Icon(Icons.assessment)),
-            Tab(text: 'Outcomes', icon: Icon(Icons.check_circle_outline)),
-            Tab(text: 'Demographics', icon: Icon(Icons.people_outline)),
+          children: [
+            // Tab 1: Diagnosis Trends
+            _buildTrendsTab(context, analyticsService),
+
+            // Tab 2: Success Rates by Specialty
+            _buildSuccessRatesTab(context, analyticsService),
+
+            // Tab 3: Treatment Outcomes
+            _buildOutcomesTab(context, analyticsService),
+
+            // Tab 4: Patient Demographics
+            _buildDemographicsTab(context, analyticsService),
           ],
         ),
-      ),
-      body: TabBarView(
-        controller: _tabController,
-        children: [
-          // Tab 1: Diagnosis Trends
-          _buildTrendsTab(context, analyticsService),
-
-          // Tab 2: Success Rates by Specialty
-          _buildSuccessRatesTab(context, analyticsService),
-
-          // Tab 3: Treatment Outcomes
-          _buildOutcomesTab(context, analyticsService),
-
-          // Tab 4: Patient Demographics
-          _buildDemographicsTab(context, analyticsService),
-        ],
       ),
     );
   }

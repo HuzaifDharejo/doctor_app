@@ -102,128 +102,189 @@ class _InvoiceDetailScreenState extends ConsumerState<InvoiceDetailScreen> {
 
     return Scaffold(
       backgroundColor: isDark ? AppColors.darkBackground : AppColors.background,
-      appBar: AppBar(
-        backgroundColor: surfaceColor,
-        foregroundColor: textColor,
-        elevation: 0,
-        scrolledUnderElevation: 1,
-        title: Text('Invoice ${_invoice.invoiceNumber}'),
-        actions: [
-          PopupMenuButton<String>(
-            icon: const Icon(Icons.more_vert),
-            onSelected: (value) => _handleMenuAction(value),
-            itemBuilder: (context) => [
-              const PopupMenuItem(
-                value: 'pdf',
-                child: ListTile(
-                  leading: Icon(Icons.picture_as_pdf),
-                  title: Text('Export PDF'),
-                  contentPadding: EdgeInsets.zero,
-                ),
-              ),
-              const PopupMenuItem(
-                value: 'whatsapp',
-                child: ListTile(
-                  leading: Icon(Icons.chat, color: Color(0xFF25D366)),
-                  title: Text('Share via WhatsApp'),
-                  contentPadding: EdgeInsets.zero,
-                ),
-              ),
-              const PopupMenuDivider(),
-              const PopupMenuItem(
-                value: 'edit',
-                child: ListTile(
-                  leading: Icon(Icons.edit),
-                  title: Text('Edit Invoice'),
-                  contentPadding: EdgeInsets.zero,
-                ),
-              ),
-              const PopupMenuItem(
-                value: 'delete',
-                child: ListTile(
-                  leading: Icon(Icons.delete, color: AppColors.error),
-                  title: Text('Delete', style: TextStyle(color: AppColors.error)),
-                  contentPadding: EdgeInsets.zero,
-                ),
-              ),
-            ],
-          ),
-        ],
-      ),
       body: _isLoading
           ? const Center(child: CircularProgressIndicator())
-          : SingleChildScrollView(
-              padding: const EdgeInsets.all(AppSpacing.lg),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
-                  // Status Card
-                  Container(
-                    padding: const EdgeInsets.all(AppSpacing.xl),
-                    decoration: BoxDecoration(
-                      gradient: LinearGradient(
-                        colors: [statusColor, statusColor.withValues(alpha: 0.8)],
-                        begin: Alignment.topLeft,
-                        end: Alignment.bottomRight,
+          : CustomScrollView(
+              slivers: [
+                // Modern SliverAppBar
+                SliverAppBar(
+                  expandedHeight: 140,
+                  floating: false,
+                  pinned: true,
+                  backgroundColor: surfaceColor,
+                  foregroundColor: textColor,
+                  elevation: 0,
+                  scrolledUnderElevation: 1,
+                  leading: Padding(
+                    padding: const EdgeInsets.all(8.0),
+                    child: Container(
+                      decoration: BoxDecoration(
+                        color: isDark ? Colors.white.withValues(alpha: 0.1) : Colors.black.withValues(alpha: 0.05),
+                        borderRadius: BorderRadius.circular(12),
                       ),
-                      borderRadius: BorderRadius.circular(16),
-                    ),
-                    child: Row(
-                      children: [
-                        Container(
-                          padding: const EdgeInsets.all(AppSpacing.md),
-                          decoration: BoxDecoration(
-                            color: Colors.white.withValues(alpha: 0.2),
-                            borderRadius: BorderRadius.circular(12),
-                          ),
-                          child: Icon(statusIcon, color: Colors.white, size: 28),
+                      child: IconButton(
+                        icon: Icon(
+                          Icons.arrow_back,
+                          color: isDark ? Colors.white : const Color(0xFF1A1A2E),
                         ),
-                        const SizedBox(width: 16),
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
+                        onPressed: () => Navigator.pop(context),
+                      ),
+                    ),
+                  ),
+                  actions: [
+                    Container(
+                      margin: const EdgeInsets.only(right: 8),
+                      decoration: BoxDecoration(
+                        color: isDark ? Colors.white.withValues(alpha: 0.1) : Colors.black.withValues(alpha: 0.05),
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: PopupMenuButton<String>(
+                        icon: Icon(
+                          Icons.more_vert,
+                          color: isDark ? Colors.white : const Color(0xFF1A1A2E),
+                        ),
+                        onSelected: (value) => _handleMenuAction(value),
+                        itemBuilder: (context) => [
+                          const PopupMenuItem(
+                            value: 'pdf',
+                            child: ListTile(
+                              leading: Icon(Icons.picture_as_pdf),
+                              title: Text('Export PDF'),
+                              contentPadding: EdgeInsets.zero,
+                            ),
+                          ),
+                          const PopupMenuItem(
+                            value: 'whatsapp',
+                            child: ListTile(
+                              leading: Icon(Icons.chat, color: Color(0xFF25D366)),
+                              title: Text('Share via WhatsApp'),
+                              contentPadding: EdgeInsets.zero,
+                            ),
+                          ),
+                          const PopupMenuDivider(),
+                          const PopupMenuItem(
+                            value: 'edit',
+                            child: ListTile(
+                              leading: Icon(Icons.edit),
+                              title: Text('Edit Invoice'),
+                              contentPadding: EdgeInsets.zero,
+                            ),
+                          ),
+                          const PopupMenuItem(
+                            value: 'delete',
+                            child: ListTile(
+                              leading: Icon(Icons.delete, color: AppColors.error),
+                              title: Text('Delete', style: TextStyle(color: AppColors.error)),
+                              contentPadding: EdgeInsets.zero,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                  flexibleSpace: FlexibleSpaceBar(
+                    background: Container(
+                      decoration: BoxDecoration(
+                        gradient: LinearGradient(
+                          begin: Alignment.topLeft,
+                          end: Alignment.bottomRight,
+                          colors: isDark
+                              ? [const Color(0xFF1A1A2E), const Color(0xFF16213E)]
+                              : [const Color(0xFFF8FAFC), surfaceColor],
+                        ),
+                      ),
+                      child: SafeArea(
+                        child: Padding(
+                          padding: const EdgeInsets.fromLTRB(20, 60, 20, 16),
+                          child: Row(
                             children: [
-                              Text(
-                                _invoice.paymentStatus.toUpperCase(),
-                                style: const TextStyle(
-                                  color: Colors.white,
-                                  fontWeight: FontWeight.bold,
-                                  fontSize: 18,
+                              Container(
+                                padding: const EdgeInsets.all(14),
+                                decoration: BoxDecoration(
+                                  gradient: LinearGradient(
+                                    colors: [statusColor, statusColor.withValues(alpha: 0.8)],
+                                    begin: Alignment.topLeft,
+                                    end: Alignment.bottomRight,
+                                  ),
+                                  borderRadius: BorderRadius.circular(16),
+                                  boxShadow: [
+                                    BoxShadow(
+                                      color: statusColor.withValues(alpha: 0.3),
+                                      blurRadius: 12,
+                                      offset: const Offset(0, 4),
+                                    ),
+                                  ],
+                                ),
+                                child: Icon(statusIcon, color: Colors.white, size: 28),
+                              ),
+                              const SizedBox(width: 16),
+                              Expanded(
+                                child: Column(
+                                  mainAxisAlignment: MainAxisAlignment.center,
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text(
+                                      _invoice.invoiceNumber,
+                                      style: TextStyle(
+                                        fontSize: 22,
+                                        fontWeight: FontWeight.bold,
+                                        color: textColor,
+                                      ),
+                                    ),
+                                    const SizedBox(height: 4),
+                                    Container(
+                                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                                      decoration: BoxDecoration(
+                                        color: statusColor.withValues(alpha: 0.15),
+                                        borderRadius: BorderRadius.circular(8),
+                                      ),
+                                      child: Text(
+                                        _invoice.paymentStatus.toUpperCase(),
+                                        style: TextStyle(
+                                          fontSize: 11,
+                                          fontWeight: FontWeight.w600,
+                                          color: statusColor,
+                                          letterSpacing: 0.5,
+                                        ),
+                                      ),
+                                    ),
+                                  ],
                                 ),
                               ),
-                              const SizedBox(height: 4),
-                              Text(
-                                'Invoice Date: ${dateFormat.format(_invoice.invoiceDate)}',
-                                style: TextStyle(
-                                  color: Colors.white.withValues(alpha: 0.9),
-                                  fontSize: 13,
-                                ),
+                              Column(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                crossAxisAlignment: CrossAxisAlignment.end,
+                                children: [
+                                  Text(
+                                    currencyFormat.format(_invoice.grandTotal),
+                                    style: TextStyle(
+                                      fontSize: 20,
+                                      fontWeight: FontWeight.bold,
+                                      color: textColor,
+                                    ),
+                                  ),
+                                  const SizedBox(height: 2),
+                                  Text(
+                                    dateFormat.format(_invoice.invoiceDate),
+                                    style: TextStyle(
+                                      fontSize: 12,
+                                      color: secondaryColor,
+                                    ),
+                                  ),
+                                ],
                               ),
                             ],
                           ),
                         ),
-                        Column(
-                          crossAxisAlignment: CrossAxisAlignment.end,
-                          children: [
-                            const Text(
-                              'Total',
-                              style: TextStyle(color: Colors.white70, fontSize: 12),
-                            ),
-                            Text(
-                              currencyFormat.format(_invoice.grandTotal),
-                              style: const TextStyle(
-                                color: Colors.white,
-                                fontWeight: FontWeight.bold,
-                                fontSize: 20,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ],
+                      ),
                     ),
                   ),
-                  const SizedBox(height: 16),
-
+                ),
+                // Body Content
+                SliverPadding(
+                  padding: const EdgeInsets.all(AppSpacing.lg),
+                  sliver: SliverList(
+                    delegate: SliverChildListDelegate([
                   // Patient Info Card
                   if (_patient != null)
                     Container(
@@ -414,25 +475,27 @@ class _InvoiceDetailScreenState extends ConsumerState<InvoiceDetailScreen> {
                   ),
                   const SizedBox(height: 24),
 
-                  // Action Buttons
-                  if (_invoice.paymentStatus.toLowerCase() != 'paid')
-                    AppButton(
-                      label: 'Mark as Paid',
-                      icon: Icons.check_circle,
-                      fullWidth: true,
-                      backgroundColor: AppColors.success,
-                      foregroundColor: Colors.white,
-                      onPressed: _markAsPaid,
-                    ),
-                  const SizedBox(height: 12),
-                  AppButton.tertiary(
-                    label: 'Export PDF',
-                    icon: Icons.picture_as_pdf,
-                    fullWidth: true,
-                    onPressed: () => _handleMenuAction('pdf'),
+                      // Action Buttons
+                      if (_invoice.paymentStatus.toLowerCase() != 'paid')
+                        AppButton(
+                          label: 'Mark as Paid',
+                          icon: Icons.check_circle,
+                          fullWidth: true,
+                          backgroundColor: AppColors.success,
+                          foregroundColor: Colors.white,
+                          onPressed: _markAsPaid,
+                        ),
+                      const SizedBox(height: 12),
+                      AppButton.tertiary(
+                        label: 'Export PDF',
+                        icon: Icons.picture_as_pdf,
+                        fullWidth: true,
+                        onPressed: () => _handleMenuAction('pdf'),
+                      ),
+                    ]),
                   ),
-                ],
-              ),
+                ),
+              ],
             ),
     );
   }

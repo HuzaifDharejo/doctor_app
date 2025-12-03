@@ -42,18 +42,22 @@ class _AppointmentsScreenState extends ConsumerState<AppointmentsScreen> {
   @override
   Widget build(BuildContext context) {
     final dbAsync = ref.watch(doctorDbProvider);
-    final isCompact = context.isCompact;
+    final isDark = context.isDarkMode;
     
     return Scaffold(
-      body: SafeArea(
-        child: Column(
-          children: [
-            _buildHeader(context),
-            AnimatedCrossFade(
+      backgroundColor: isDark ? const Color(0xFF0F0F0F) : const Color(0xFFF8FAFC),
+      body: CustomScrollView(
+        physics: const AlwaysScrollableScrollPhysics(
+          parent: BouncingScrollPhysics(),
+        ),
+        slivers: [
+          _buildModernSliverAppBar(context, isDark),
+          SliverToBoxAdapter(
+            child: AnimatedCrossFade(
               firstChild: _buildDateSelector(context),
               secondChild: Padding(
                 padding: EdgeInsets.symmetric(
-                  horizontal: isCompact ? AppSpacing.md : AppSpacing.xl,
+                  horizontal: context.isCompact ? AppSpacing.md : AppSpacing.xl,
                   vertical: AppSpacing.xs,
                 ),
                 child: CalendarWidget(
@@ -70,22 +74,174 @@ class _AppointmentsScreenState extends ConsumerState<AppointmentsScreen> {
                   : CrossFadeState.showFirst,
               duration: AppDuration.normal,
             ),
-            Expanded(
-              child: dbAsync.when(
-                data: (db) => _buildAppointmentsList(context, db),
-                loading: () => const LoadingState(),
-                error: (err, stack) => ErrorState.generic(
-                  message: err.toString(),
-                  onRetry: () => ref.invalidate(doctorDbProvider),
-                ),
+          ),
+          dbAsync.when(
+            data: (db) => _buildAppointmentsSliverList(context, db),
+            loading: () => const SliverFillRemaining(
+              child: LoadingState(),
+            ),
+            error: (err, stack) => SliverFillRemaining(
+              child: ErrorState.generic(
+                message: err.toString(),
+                onRetry: () => ref.invalidate(doctorDbProvider),
               ),
+            ),
+          ),
+        ],
+      ),
+      floatingActionButton: Container(
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(20),
+          gradient: const LinearGradient(
+            colors: [Color(0xFF10B981), Color(0xFF059669)],
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+          ),
+          boxShadow: [
+            BoxShadow(
+              color: const Color(0xFF10B981).withValues(alpha: 0.4),
+              blurRadius: 20,
+              offset: const Offset(0, 8),
             ),
           ],
         ),
+        child: FloatingActionButton.extended(
+          onPressed: () => _navigateToAddAppointment(context),
+          backgroundColor: Colors.transparent,
+          elevation: 0,
+          icon: const Icon(Icons.add_rounded, color: Colors.white),
+          label: const Text(
+            'New Appointment',
+            style: TextStyle(
+              color: Colors.white,
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+        ),
       ),
-      floatingActionButton: GradientFAB(
-        onPressed: () => _navigateToAddAppointment(context),
-        heroTag: 'appointments_fab',
+    );
+  }
+
+  Widget _buildModernSliverAppBar(BuildContext context, bool isDark) {
+    return SliverAppBar(
+      expandedHeight: 160,
+      floating: false,
+      pinned: true,
+      elevation: 0,
+      backgroundColor: isDark ? const Color(0xFF1A1A1A) : Colors.white,
+      surfaceTintColor: Colors.transparent,
+      automaticallyImplyLeading: false,
+      actions: [
+        Padding(
+          padding: const EdgeInsets.only(right: 16),
+          child: GestureDetector(
+            onTap: () => setState(() => _showCalendar = !_showCalendar),
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+              decoration: BoxDecoration(
+                gradient: _showCalendar 
+                    ? const LinearGradient(
+                        colors: [Color(0xFF10B981), Color(0xFF059669)],
+                      )
+                    : null,
+                color: _showCalendar ? null : (isDark ? Colors.white.withValues(alpha: 0.1) : Colors.grey.shade100),
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Icon(
+                    _showCalendar ? Icons.view_week_rounded : Icons.calendar_month_rounded,
+                    color: _showCalendar ? Colors.white : (isDark ? Colors.white70 : Colors.black87),
+                    size: 18,
+                  ),
+                  const SizedBox(width: 6),
+                  Text(
+                    _showCalendar ? 'Week' : 'Month',
+                    style: TextStyle(
+                      color: _showCalendar ? Colors.white : (isDark ? Colors.white70 : Colors.black87),
+                      fontWeight: FontWeight.w600,
+                      fontSize: 13,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ),
+      ],
+      flexibleSpace: FlexibleSpaceBar(
+        background: Container(
+          decoration: BoxDecoration(
+            gradient: LinearGradient(
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+              colors: isDark
+                  ? [const Color(0xFF1A1A1A), const Color(0xFF0F0F0F)]
+                  : [Colors.white, const Color(0xFFF8FAFC)],
+            ),
+          ),
+          child: SafeArea(
+            child: Padding(
+              padding: const EdgeInsets.fromLTRB(20, 50, 20, 16),
+              child: Row(
+                children: [
+                  Container(
+                    padding: const EdgeInsets.all(14),
+                    decoration: BoxDecoration(
+                      gradient: const LinearGradient(
+                        colors: [Color(0xFF10B981), Color(0xFF059669)],
+                        begin: Alignment.topLeft,
+                        end: Alignment.bottomRight,
+                      ),
+                      borderRadius: BorderRadius.circular(18),
+                      boxShadow: [
+                        BoxShadow(
+                          color: const Color(0xFF10B981).withValues(alpha: 0.4),
+                          blurRadius: 16,
+                          offset: const Offset(0, 6),
+                        ),
+                      ],
+                    ),
+                    child: const Icon(
+                      Icons.calendar_today_rounded,
+                      color: Colors.white,
+                      size: 28,
+                    ),
+                  ),
+                  const SizedBox(width: 16),
+                  Expanded(
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          'Appointments',
+                          style: TextStyle(
+                            fontSize: 24,
+                            fontWeight: FontWeight.w800,
+                            color: isDark ? Colors.white : const Color(0xFF1E293B),
+                            letterSpacing: -0.5,
+                          ),
+                        ),
+                        const SizedBox(height: 4),
+                        Text(
+                          DateFormat('EEEE, MMMM d').format(_selectedDate),
+                          style: TextStyle(
+                            fontSize: 14,
+                            color: isDark 
+                                ? Colors.white.withValues(alpha: 0.6) 
+                                : const Color(0xFF64748B),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ),
       ),
     );
   }
@@ -100,35 +256,6 @@ class _AppointmentsScreenState extends ConsumerState<AppointmentsScreen> {
     if (result ?? false) {
       setState(() {}); // Refresh the list
     }
-  }
-
-  Widget _buildHeader(BuildContext context) {
-    final isCompact = context.isCompact;
-    
-    return AppHeader(
-      title: AppStrings.appointments,
-      subtitle: DateFormat('EEEE, MMMM d').format(_selectedDate),
-      showBackButton: true,
-      trailing: GestureDetector(
-        onTap: () => setState(() => _showCalendar = !_showCalendar),
-        child: Container(
-          padding: EdgeInsets.all(isCompact ? AppSpacing.sm : AppSpacing.md),
-          decoration: BoxDecoration(
-            color: _showCalendar 
-                ? AppColors.primary 
-                : AppColors.accent.withValues(alpha: 0.1),
-            borderRadius: BorderRadius.circular(AppRadius.sm),
-          ),
-          child: Icon(
-            _showCalendar 
-                ? Icons.view_week_rounded 
-                : Icons.calendar_month_rounded,
-            color: _showCalendar ? Colors.white : AppColors.accent,
-            size: isCompact ? AppIconSize.smCompact : AppIconSize.md,
-          ),
-        ),
-      ),
-    );
   }
 
   Widget _buildDateSelector(BuildContext context) {
@@ -157,29 +284,26 @@ class _AppointmentsScreenState extends ConsumerState<AppointmentsScreen> {
               margin: EdgeInsets.symmetric(horizontal: isCompact ? AppSpacing.xxs : AppSpacing.xs),
               decoration: BoxDecoration(
                 gradient: isSelected 
-                    ? LinearGradient(
-                        colors: [
-                          AppColors.appointments,
-                          AppColors.appointments.withValues(alpha: 0.85),
-                        ],
+                    ? const LinearGradient(
+                        colors: [Color(0xFF10B981), Color(0xFF059669)],
                         begin: Alignment.topCenter,
                         end: Alignment.bottomCenter,
                       )
                     : null,
-                color: isSelected ? null : context.colorScheme.surface,
+                color: isSelected ? null : (isDark ? const Color(0xFF1A1A1A) : Colors.white),
                 borderRadius: BorderRadius.circular(AppRadius.lg),
                 border: isSelected
                     ? null
                     : Border.all(
                         color: isToday 
-                            ? AppColors.appointments 
+                            ? const Color(0xFF10B981)
                             : (isDark ? AppColors.darkDivider : AppColors.divider),
                         width: isToday ? 2 : 1,
                       ),
                 boxShadow: isSelected
                     ? [
                         BoxShadow(
-                          color: AppColors.appointments.withValues(alpha: 0.4),
+                          color: const Color(0xFF10B981).withValues(alpha: 0.4),
                           blurRadius: 12,
                           offset: const Offset(0, 6),
                         ),
@@ -208,7 +332,7 @@ class _AppointmentsScreenState extends ConsumerState<AppointmentsScreen> {
                       fontWeight: FontWeight.w800,
                       color: isSelected 
                           ? Colors.white 
-                          : context.colorScheme.onSurface,
+                          : (isDark ? Colors.white : Colors.black87),
                     ),
                   ),
                   const SizedBox(height: AppSpacing.xs),
@@ -217,7 +341,7 @@ class _AppointmentsScreenState extends ConsumerState<AppointmentsScreen> {
                       width: isSelected ? 20 : 6,
                       height: 6,
                       decoration: BoxDecoration(
-                        color: isSelected ? Colors.white : AppColors.appointments,
+                        color: isSelected ? Colors.white : const Color(0xFF10B981),
                         borderRadius: BorderRadius.circular(3),
                       ),
                     ),
@@ -230,56 +354,131 @@ class _AppointmentsScreenState extends ConsumerState<AppointmentsScreen> {
     );
   }
 
-  Widget _buildAppointmentsList(BuildContext context, DoctorDatabase db) {
+  Widget _buildAppointmentsSliverList(BuildContext context, DoctorDatabase db) {
     final isDark = context.isDarkMode;
     
     return FutureBuilder<List<Appointment>>(
       future: db.getAppointmentsForDay(_selectedDate),
       builder: (context, snapshot) {
         if (!snapshot.hasData) {
-          return const LoadingState();
+          return const SliverFillRemaining(
+            child: LoadingState(),
+          );
         }
         
         final appointments = snapshot.data!;
         
         if (appointments.isEmpty) {
-          return EmptyState.appointments(
-            onAction: () => _navigateToAddAppointment(context),
+          return SliverFillRemaining(
+            child: _buildModernEmptyState(context),
           );
         }
         
         final isCompact = context.isCompact;
-        return RefreshIndicator(
-          key: _refreshKey,
-          onRefresh: _onRefresh,
-          color: AppColors.appointments,
-          backgroundColor: isDark ? AppColors.darkSurface : Colors.white,
-          child: ListView.builder(
-            physics: const AlwaysScrollableScrollPhysics(
-              parent: BouncingScrollPhysics(),
+        return SliverPadding(
+          padding: EdgeInsets.symmetric(horizontal: isCompact ? AppSpacing.md : AppSpacing.xl),
+          sliver: SliverList(
+            delegate: SliverChildBuilderDelegate(
+              (context, index) {
+                return TweenAnimationBuilder<double>(
+                  tween: Tween(begin: 0, end: 1),
+                  duration: Duration(milliseconds: 300 + (index * 50)),
+                  curve: Curves.easeOutCubic,
+                  builder: (context, value, child) {
+                    return Opacity(
+                      opacity: value,
+                      child: Transform.translate(
+                        offset: Offset(0, 20 * (1 - value)),
+                        child: child,
+                      ),
+                    );
+                  },
+                  child: _buildAppointmentCard(context, db, appointments[index]),
+                );
+              },
+              childCount: appointments.length,
             ),
-            padding: EdgeInsets.symmetric(horizontal: isCompact ? AppSpacing.md : AppSpacing.xl),
-            itemCount: appointments.length,
-            itemBuilder: (context, index) {
-              return TweenAnimationBuilder<double>(
-                tween: Tween(begin: 0, end: 1),
-                duration: Duration(milliseconds: 300 + (index * 50)),
-                curve: Curves.easeOutCubic,
-                builder: (context, value, child) {
-                  return Opacity(
-                    opacity: value,
-                    child: Transform.translate(
-                      offset: Offset(0, 20 * (1 - value)),
-                      child: child,
-                    ),
-                  );
-                },
-                child: _buildAppointmentCard(context, db, appointments[index]),
-              );
-            },
           ),
         );
       },
+    );
+  }
+
+  Widget _buildModernEmptyState(BuildContext context) {
+    final isDark = context.isDarkMode;
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.all(40),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Container(
+              padding: const EdgeInsets.all(24),
+              decoration: BoxDecoration(
+                color: const Color(0xFF10B981).withValues(alpha: 0.1),
+                borderRadius: BorderRadius.circular(24),
+              ),
+              child: Icon(
+                Icons.event_available_rounded,
+                size: 64,
+                color: const Color(0xFF10B981).withValues(alpha: 0.7),
+              ),
+            ),
+            const SizedBox(height: 24),
+            Text(
+              'No appointments',
+              style: TextStyle(
+                fontSize: 22,
+                fontWeight: FontWeight.w700,
+                color: isDark ? Colors.white : const Color(0xFF1E293B),
+              ),
+            ),
+            const SizedBox(height: 8),
+            Text(
+              'Your schedule is clear for ${DateFormat('MMMM d').format(_selectedDate)}',
+              style: TextStyle(
+                fontSize: 14,
+                color: isDark ? Colors.white54 : const Color(0xFF64748B),
+              ),
+              textAlign: TextAlign.center,
+            ),
+            const SizedBox(height: 32),
+            GestureDetector(
+              onTap: () => _navigateToAddAppointment(context),
+              child: Container(
+                padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 14),
+                decoration: BoxDecoration(
+                  gradient: const LinearGradient(
+                    colors: [Color(0xFF10B981), Color(0xFF059669)],
+                  ),
+                  borderRadius: BorderRadius.circular(14),
+                  boxShadow: [
+                    BoxShadow(
+                      color: const Color(0xFF10B981).withValues(alpha: 0.4),
+                      blurRadius: 16,
+                      offset: const Offset(0, 6),
+                    ),
+                  ],
+                ),
+                child: const Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(Icons.add_rounded, color: Colors.white, size: 20),
+                    SizedBox(width: 8),
+                    Text(
+                      'Schedule Appointment',
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
     );
   }
 

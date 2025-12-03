@@ -2,6 +2,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
+import '../../core/mixins/responsive_mixin.dart';
 import '../../db/doctor_db.dart';
 import '../../providers/db_provider.dart';
 import '../../theme/app_theme.dart';
@@ -33,7 +34,8 @@ class MedicalRecordsListScreen extends ConsumerStatefulWidget {
   ConsumerState<MedicalRecordsListScreen> createState() => _MedicalRecordsListScreenState();
 }
 
-class _MedicalRecordsListScreenState extends ConsumerState<MedicalRecordsListScreen> {
+class _MedicalRecordsListScreenState extends ConsumerState<MedicalRecordsListScreen>
+    with ResponsiveConsumerStateMixin {
   // State
   String _searchQuery = '';
   String? _selectedRecordType;

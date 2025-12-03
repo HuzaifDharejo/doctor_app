@@ -2,11 +2,13 @@ import 'package:drift/drift.dart' show Value;
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
+import '../../core/mixins/responsive_mixin.dart';
 import '../../core/theme/design_tokens.dart';
 import '../../db/doctor_db.dart';
 import '../../providers/db_provider.dart';
 import '../../core/components/app_input.dart';
 import '../../core/components/app_button.dart';
+import '../../theme/app_theme.dart';
 
 /// Screen to manage scheduled follow-ups
 class FollowUpsScreen extends ConsumerStatefulWidget {
@@ -23,7 +25,8 @@ class FollowUpsScreen extends ConsumerStatefulWidget {
   ConsumerState<FollowUpsScreen> createState() => _FollowUpsScreenState();
 }
 
-class _FollowUpsScreenState extends ConsumerState<FollowUpsScreen> with SingleTickerProviderStateMixin {
+class _FollowUpsScreenState extends ConsumerState<FollowUpsScreen> 
+    with SingleTickerProviderStateMixin, ResponsiveConsumerStateMixin {
   List<ScheduledFollowUp> _followUps = [];
   Map<int, Patient> _patientMap = {};
   bool _isLoading = true;
@@ -95,56 +98,222 @@ class _FollowUpsScreenState extends ConsumerState<FollowUpsScreen> with SingleTi
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final surfaceColor = isDark ? AppColors.darkSurface : Colors.white;
+    final textColor = isDark ? AppColors.darkTextPrimary : AppColors.textPrimary;
 
     return Scaffold(
-      appBar: AppBar(
-        title: Text(widget.patientName != null 
-          ? 'Follow-ups - ${widget.patientName}' 
-          : 'All Follow-ups'),
-        bottom: TabBar(
-          controller: _tabController,
-          tabs: [
-            Tab(
-              icon: Badge(
-                label: Text('${_overdueFollowUps.length}'),
-                isLabelVisible: _overdueFollowUps.isNotEmpty,
-                backgroundColor: Colors.red,
-                child: const Icon(Icons.warning_amber),
+      backgroundColor: isDark ? AppColors.darkBackground : AppColors.background,
+      body: NestedScrollView(
+        headerSliverBuilder: (context, innerBoxIsScrolled) => [
+          SliverAppBar(
+            expandedHeight: 200,
+            floating: false,
+            pinned: true,
+            backgroundColor: surfaceColor,
+            foregroundColor: textColor,
+            elevation: 0,
+            scrolledUnderElevation: 1,
+            leading: Padding(
+              padding: const EdgeInsets.all(8.0),
+              child: Container(
+                decoration: BoxDecoration(
+                  color: isDark ? Colors.white.withValues(alpha: 0.1) : Colors.black.withValues(alpha: 0.05),
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: IconButton(
+                  icon: Icon(
+                    Icons.arrow_back,
+                    color: isDark ? Colors.white : const Color(0xFF1A1A2E),
+                  ),
+                  onPressed: () => Navigator.pop(context),
+                ),
               ),
-              text: 'Overdue',
             ),
-            Tab(
-              icon: Badge(
-                label: Text('${_upcomingFollowUps.length}'),
-                isLabelVisible: _upcomingFollowUps.isNotEmpty,
-                child: const Icon(Icons.schedule),
+            flexibleSpace: FlexibleSpaceBar(
+              background: Container(
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                    colors: isDark
+                        ? [const Color(0xFF1A1A2E), const Color(0xFF16213E)]
+                        : [const Color(0xFFF8FAFC), surfaceColor],
+                  ),
+                ),
+                child: SafeArea(
+                  child: Padding(
+                    padding: const EdgeInsets.fromLTRB(20, 50, 20, 16),
+                    child: Row(
+                      children: [
+                        Container(
+                          padding: const EdgeInsets.all(12),
+                          decoration: BoxDecoration(
+                            gradient: const LinearGradient(
+                              colors: [Color(0xFF8B5CF6), Color(0xFFA78BFA)],
+                              begin: Alignment.topLeft,
+                              end: Alignment.bottomRight,
+                            ),
+                            borderRadius: BorderRadius.circular(16),
+                            boxShadow: [
+                              BoxShadow(
+                                color: const Color(0xFF8B5CF6).withValues(alpha: 0.3),
+                                blurRadius: 12,
+                                offset: const Offset(0, 4),
+                              ),
+                            ],
+                          ),
+                          child: const Icon(
+                            Icons.event_repeat_rounded,
+                            color: Colors.white,
+                            size: 28,
+                          ),
+                        ),
+                        const SizedBox(width: 16),
+                        Expanded(
+                          child: Column(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                widget.patientName != null 
+                                    ? 'Follow-ups' 
+                                    : 'All Follow-ups',
+                                style: TextStyle(
+                                  fontSize: 22,
+                                  fontWeight: FontWeight.bold,
+                                  color: textColor,
+                                ),
+                              ),
+                              const SizedBox(height: 4),
+                              Text(
+                                widget.patientName ?? 'Manage scheduled follow-ups',
+                                style: TextStyle(
+                                  fontSize: 14,
+                                  color: isDark ? AppColors.darkTextSecondary : AppColors.textSecondary,
+                                ),
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                            ],
+                          ),
+                        ),
+                        // Summary badge
+                        if (_overdueFollowUps.isNotEmpty)
+                          Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                            decoration: BoxDecoration(
+                              color: AppColors.error.withValues(alpha: 0.15),
+                              borderRadius: BorderRadius.circular(10),
+                            ),
+                            child: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Icon(Icons.warning_rounded, color: AppColors.error, size: 16),
+                                const SizedBox(width: 4),
+                                Text(
+                                  '${_overdueFollowUps.length}',
+                                  style: TextStyle(
+                                    fontWeight: FontWeight.bold,
+                                    color: AppColors.error,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                      ],
+                    ),
+                  ),
+                ),
               ),
-              text: 'Upcoming',
             ),
-            const Tab(icon: Icon(Icons.check_circle_outline), text: 'Completed'),
-          ],
-        ),
-      ),
-      body: _isLoading
-          ? const Center(child: CircularProgressIndicator())
-          : TabBarView(
+            bottom: TabBar(
               controller: _tabController,
-              children: [
-                _buildFollowUpsList(_overdueFollowUps, colorScheme, isOverdue: true),
-                _buildFollowUpsList(_upcomingFollowUps, colorScheme),
-                _buildFollowUpsList(_completedFollowUps, colorScheme, showCompleted: true),
+              labelColor: AppColors.primary,
+              unselectedLabelColor: isDark ? AppColors.darkTextSecondary : AppColors.textSecondary,
+              indicatorColor: AppColors.primary,
+              indicatorWeight: 3,
+              tabs: [
+                Tab(
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Badge(
+                        label: Text('${_overdueFollowUps.length}'),
+                        isLabelVisible: _overdueFollowUps.isNotEmpty,
+                        backgroundColor: Colors.red,
+                        child: const Icon(Icons.warning_amber, size: 18),
+                      ),
+                      const SizedBox(width: 6),
+                      const Text('Overdue'),
+                    ],
+                  ),
+                ),
+                Tab(
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Badge(
+                        label: Text('${_upcomingFollowUps.length}'),
+                        isLabelVisible: _upcomingFollowUps.isNotEmpty,
+                        child: const Icon(Icons.schedule, size: 18),
+                      ),
+                      const SizedBox(width: 6),
+                      const Text('Upcoming'),
+                    ],
+                  ),
+                ),
+                const Tab(
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(Icons.check_circle_outline, size: 18),
+                      SizedBox(width: 6),
+                      Text('Completed'),
+                    ],
+                  ),
+                ),
               ],
             ),
-      floatingActionButton: FloatingActionButton.extended(
-        onPressed: () => _showAddFollowUpDialog(),
-        icon: const Icon(Icons.add),
-        label: const Text('Schedule Follow-up'),
+          ),
+        ],
+        body: _isLoading
+            ? const Center(child: CircularProgressIndicator())
+            : TabBarView(
+                controller: _tabController,
+                children: [
+                  _buildFollowUpsList(_overdueFollowUps, colorScheme, isOverdue: true),
+                  _buildFollowUpsList(_upcomingFollowUps, colorScheme),
+                  _buildFollowUpsList(_completedFollowUps, colorScheme, showCompleted: true),
+                ],
+              ),
+      ),
+      floatingActionButton: Container(
+        decoration: BoxDecoration(
+          gradient: AppColors.primaryGradient,
+          borderRadius: BorderRadius.circular(16),
+          boxShadow: [
+            BoxShadow(
+              color: AppColors.primary.withValues(alpha: 0.4),
+              blurRadius: 12,
+              offset: const Offset(0, 4),
+            ),
+          ],
+        ),
+        child: FloatingActionButton.extended(
+          onPressed: () => _showAddFollowUpDialog(),
+          backgroundColor: Colors.transparent,
+          elevation: 0,
+          icon: const Icon(Icons.add),
+          label: const Text('Schedule Follow-up'),
+        ),
       ),
     );
   }
 
   Widget _buildFollowUpsList(List<ScheduledFollowUp> followUps, ColorScheme colorScheme, 
       {bool isOverdue = false, bool showCompleted = false}) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     if (followUps.isEmpty) {
       return Center(
         child: Column(

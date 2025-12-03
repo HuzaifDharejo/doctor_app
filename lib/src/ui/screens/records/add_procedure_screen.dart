@@ -249,7 +249,7 @@ class _AddProcedureScreenState extends ConsumerState<AddProcedureScreen> {
                     : 'Medical Procedure',
                 subtitle: DateFormat('EEEE, dd MMMM yyyy').format(_recordDate),
                 icon: Icons.healing_rounded,
-                gradientColors: [const Color(0xFFEC4899), const Color(0xFFBE185D)],
+                gradientColors: [const Color(0xFFEC4899), const Color(0xFFDB2777)], // Medication Pink
               ),
             ),
             // Body Content
@@ -587,7 +587,7 @@ class _AddProcedureScreenState extends ConsumerState<AddProcedureScreen> {
             isSaving: _isSaving,
             label: widget.existingRecord != null ? 'Update Procedure' : 'Save Procedure',
             onPressed: () => _saveRecord(db),
-            gradientColors: [const Color(0xFFEC4899), const Color(0xFFBE185D)],
+            gradientColors: [const Color(0xFFEC4899), const Color(0xFFDB2777)], // Medication Pink
           ),
           const SizedBox(height: 40),
         ],

@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'dart:convert';
+import 'dart:ui' as ui;
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:image_picker/image_picker.dart';
@@ -205,18 +206,95 @@ class _SignaturePadState extends State<SignaturePad> {
       }
       _currentStroke = [];
     });
-    _saveSignature();
+    unawaited(_saveSignature());
   }
 
-  void _saveSignature() {
+  Future<void> _saveSignature() async {
     if (_strokes.isEmpty) {
       widget.onSignatureChanged(null);
       return;
     }
-    final strokesData = _strokes.map((stroke) {
-      return stroke.map((point) => {'x': point.dx, 'y': point.dy}).toList();
-    }).toList();
-    widget.onSignatureChanged(jsonEncode({'strokes': strokesData}));
+    
+    // Convert strokes to PNG image for PDF compatibility
+    try {
+      final recorder = ui.PictureRecorder();
+      final canvas = Canvas(recorder);
+      
+      // Calculate bounds
+      double minX = double.infinity, minY = double.infinity;
+      double maxX = double.negativeInfinity, maxY = double.negativeInfinity;
+      for (final stroke in _strokes) {
+        for (final point in stroke) {
+          if (point.dx < minX) minX = point.dx;
+          if (point.dy < minY) minY = point.dy;
+          if (point.dx > maxX) maxX = point.dx;
+          if (point.dy > maxY) maxY = point.dy;
+        }
+      }
+      
+      // Add padding
+      const padding = 10.0;
+      minX -= padding;
+      minY -= padding;
+      maxX += padding;
+      maxY += padding;
+      
+      final width = (maxX - minX).clamp(100.0, 800.0);
+      final height = (maxY - minY).clamp(50.0, 400.0);
+      
+      // Draw white background
+      canvas.drawRect(
+        Rect.fromLTWH(0, 0, width, height),
+        Paint()..color = Colors.white,
+      );
+      
+      // Draw strokes
+      final paint = Paint()
+        ..color = widget.strokeColor
+        ..strokeWidth = widget.strokeWidth
+        ..strokeCap = StrokeCap.round
+        ..strokeJoin = StrokeJoin.round
+        ..style = PaintingStyle.stroke;
+      
+      for (final stroke in _strokes) {
+        if (stroke.length < 2) continue;
+        final path = Path();
+        path.moveTo(stroke.first.dx - minX, stroke.first.dy - minY);
+        for (int i = 1; i < stroke.length; i++) {
+          if (i < stroke.length - 1) {
+            final x1 = stroke[i].dx - minX;
+            final y1 = stroke[i].dy - minY;
+            final x2 = (stroke[i].dx + stroke[i + 1].dx) / 2 - minX;
+            final y2 = (stroke[i].dy + stroke[i + 1].dy) / 2 - minY;
+            path.quadraticBezierTo(x1, y1, x2, y2);
+          } else {
+            path.lineTo(stroke[i].dx - minX, stroke[i].dy - minY);
+          }
+        }
+        canvas.drawPath(path, paint);
+      }
+      
+      final picture = recorder.endRecording();
+      final image = await picture.toImage(width.toInt(), height.toInt());
+      final byteData = await image.toByteData(format: ui.ImageByteFormat.png);
+      
+      if (byteData != null) {
+        final pngBytes = byteData.buffer.asUint8List();
+        widget.onSignatureChanged(jsonEncode({'image': base64Encode(pngBytes)}));
+      } else {
+        // Fallback to strokes format if image conversion fails
+        final strokesData = _strokes.map((stroke) {
+          return stroke.map((point) => {'x': point.dx, 'y': point.dy}).toList();
+        }).toList();
+        widget.onSignatureChanged(jsonEncode({'strokes': strokesData}));
+      }
+    } catch (e) {
+      // Fallback to strokes format on error
+      final strokesData = _strokes.map((stroke) {
+        return stroke.map((point) => {'x': point.dx, 'y': point.dy}).toList();
+      }).toList();
+      widget.onSignatureChanged(jsonEncode({'strokes': strokesData}));
+    }
   }
 
   void _clearSignature() {

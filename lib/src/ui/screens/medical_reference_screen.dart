@@ -70,34 +70,126 @@ class _MedicalReferenceScreenState
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Medical Reference'),
-        elevation: 0,
-        bottom: TabBar(
+      backgroundColor: isDark ? const Color(0xFF0F0F0F) : const Color(0xFFF8F9FA),
+      body: NestedScrollView(
+        headerSliverBuilder: (context, innerBoxIsScrolled) => [
+          SliverAppBar(
+            expandedHeight: 180,
+            pinned: true,
+            elevation: 0,
+            backgroundColor: isDark ? const Color(0xFF1A1A1A) : Colors.white,
+            leading: Padding(
+              padding: const EdgeInsets.all(8.0),
+              child: Container(
+                decoration: BoxDecoration(
+                  color: isDark 
+                      ? Colors.white.withValues(alpha: 0.1)
+                      : const Color(0xFF6366F1).withValues(alpha: 0.1),
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: IconButton(
+                  icon: Icon(
+                    Icons.arrow_back,
+                    color: isDark ? Colors.white : const Color(0xFF6366F1),
+                  ),
+                  onPressed: () => Navigator.pop(context),
+                ),
+              ),
+            ),
+            flexibleSpace: FlexibleSpaceBar(
+              background: Container(
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                    colors: isDark
+                        ? [const Color(0xFF1A1A1A), const Color(0xFF0F0F0F)]
+                        : [Colors.white, const Color(0xFFF8F9FA)],
+                  ),
+                ),
+                child: SafeArea(
+                  child: Padding(
+                    padding: const EdgeInsets.fromLTRB(20, 40, 20, 0),
+                    child: Row(
+                      children: [
+                        Container(
+                          padding: const EdgeInsets.all(12),
+                          decoration: BoxDecoration(
+                            gradient: const LinearGradient(
+                              colors: [Color(0xFF10B981), Color(0xFF059669)],
+                            ),
+                            borderRadius: BorderRadius.circular(16),
+                            boxShadow: [
+                              BoxShadow(
+                                color: const Color(0xFF10B981).withValues(alpha: 0.3),
+                                blurRadius: 12,
+                                offset: const Offset(0, 4),
+                              ),
+                            ],
+                          ),
+                          child: const Icon(
+                            Icons.local_pharmacy_rounded,
+                            color: Colors.white,
+                            size: 28,
+                          ),
+                        ),
+                        const SizedBox(width: 16),
+                        Expanded(
+                          child: Column(
+                            mainAxisSize: MainAxisSize.min,
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                'Medical Reference',
+                                style: TextStyle(
+                                  fontSize: 24,
+                                  fontWeight: FontWeight.bold,
+                                  color: isDark ? Colors.white : const Color(0xFF1A1A2E),
+                                ),
+                              ),
+                              const SizedBox(height: 4),
+                              Text(
+                                'Drug database & interactions',
+                                style: TextStyle(
+                                  fontSize: 14,
+                                  color: isDark 
+                                      ? Colors.white.withValues(alpha: 0.7)
+                                      : const Color(0xFF6B7280),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+            ),
+            bottom: TabBar(
+              controller: _tabController,
+              indicatorColor: const Color(0xFF10B981),
+              indicatorWeight: 3,
+              labelColor: isDark ? Colors.white : const Color(0xFF10B981),
+              unselectedLabelColor: isDark 
+                  ? Colors.white.withValues(alpha: 0.5)
+                  : const Color(0xFF6B7280),
+              tabs: const [
+                Tab(child: Row(mainAxisSize: MainAxisSize.min, children: [Icon(Icons.medication_outlined, size: 18), SizedBox(width: 6), Text('Drugs')])),
+                Tab(child: Row(mainAxisSize: MainAxisSize.min, children: [Icon(Icons.warning_outlined, size: 18), SizedBox(width: 6), Text('Interactions')])),
+                Tab(child: Row(mainAxisSize: MainAxisSize.min, children: [Icon(Icons.info_outlined, size: 18), SizedBox(width: 6), Text('Warnings')])),
+              ],
+            ),
+          ),
+        ],
+        body: TabBarView(
           controller: _tabController,
-          tabs: const [
-            Tab(
-              icon: Icon(Icons.medication_outlined),
-              text: 'Drugs',
-            ),
-            Tab(
-              icon: Icon(Icons.warning_outlined),
-              text: 'Interactions',
-            ),
-            Tab(
-              icon: Icon(Icons.info_outlined),
-              text: 'Warnings',
-            ),
+          children: [
+            _buildDrugsTab(),
+            _buildInteractionsTab(),
+            _buildWarningsTab(),
           ],
         ),
-      ),
-      body: TabBarView(
-        controller: _tabController,
-        children: [
-          _buildDrugsTab(),
-          _buildInteractionsTab(),
-          _buildWarningsTab(),
-        ],
       ),
     );
   }

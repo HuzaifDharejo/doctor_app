@@ -5,10 +5,12 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 import '../../core/components/app_button.dart';
 import '../../core/components/app_input.dart';
+import '../../core/mixins/responsive_mixin.dart';
 import '../../core/theme/design_tokens.dart';
 import '../../db/doctor_db.dart';
 import '../../providers/db_provider.dart';
 import '../../services/vital_thresholds_service.dart' as vital_service;
+import '../../theme/app_theme.dart';
 import '../widgets/vital_signs_alert_dialog.dart';
 import '../widgets/quick_vital_entry_modal.dart';
 
@@ -27,7 +29,8 @@ class VitalSignsScreen extends ConsumerStatefulWidget {
   ConsumerState<VitalSignsScreen> createState() => _VitalSignsScreenState();
 }
 
-class _VitalSignsScreenState extends ConsumerState<VitalSignsScreen> with SingleTickerProviderStateMixin {
+class _VitalSignsScreenState extends ConsumerState<VitalSignsScreen> 
+    with SingleTickerProviderStateMixin, ResponsiveConsumerStateMixin {
   List<VitalSign> _vitalSigns = [];
   bool _isLoading = true;
   late TabController _tabController;
@@ -70,40 +73,186 @@ class _VitalSignsScreenState extends ConsumerState<VitalSignsScreen> with Single
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
+    final isDark = theme.brightness == Brightness.dark;
+    final surfaceColor = isDark ? AppColors.darkSurface : Colors.white;
+    final textColor = isDark ? AppColors.darkTextPrimary : AppColors.textPrimary;
+
+    // Responsive values
+    final headerExpandedHeight = isCompact ? 160.0 : 200.0;
+    final headerPadding = isCompact 
+        ? const EdgeInsets.fromLTRB(16, 40, 16, 12)
+        : const EdgeInsets.fromLTRB(20, 50, 20, 16);
+    final iconContainerSize = isCompact ? 10.0 : 12.0;
+    final headerIconSize = isCompact ? 24.0 : 28.0;
+    final titleSize = isCompact ? 18.0 : 22.0;
 
     return Scaffold(
-      appBar: AppBar(
-        title: Text('Vital Signs - ${widget.patientName}'),
-        bottom: TabBar(
-          controller: _tabController,
-          tabs: const [
-            Tab(text: 'History', icon: Icon(Icons.list)),
-            Tab(text: 'Blood Pressure', icon: Icon(Icons.favorite)),
-            Tab(text: 'Weight & BMI', icon: Icon(Icons.monitor_weight)),
-          ],
-        ),
-      ),
-      body: _isLoading
-          ? const Center(child: CircularProgressIndicator())
-          : TabBarView(
+      backgroundColor: isDark ? AppColors.darkBackground : AppColors.background,
+      body: NestedScrollView(
+        headerSliverBuilder: (context, innerBoxIsScrolled) => [
+          SliverAppBar(
+            expandedHeight: headerExpandedHeight,
+            floating: false,
+            pinned: true,
+            backgroundColor: surfaceColor,
+            foregroundColor: textColor,
+            elevation: 0,
+            scrolledUnderElevation: 1,
+            leading: Padding(
+              padding: EdgeInsets.all(isCompact ? 6.0 : 8.0),
+              child: Container(
+                decoration: BoxDecoration(
+                  color: isDark ? Colors.white.withValues(alpha: 0.1) : Colors.black.withValues(alpha: 0.05),
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: IconButton(
+                  icon: Icon(
+                    Icons.arrow_back,
+                    color: isDark ? Colors.white : const Color(0xFF1A1A2E),
+                    size: isCompact ? 20 : 24,
+                  ),
+                  onPressed: () => Navigator.pop(context),
+                ),
+              ),
+            ),
+            flexibleSpace: FlexibleSpaceBar(
+              background: Container(
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                    colors: isDark
+                        ? [const Color(0xFF1A1A2E), const Color(0xFF16213E)]
+                        : [const Color(0xFFF8FAFC), surfaceColor],
+                  ),
+                ),
+                child: SafeArea(
+                  child: Padding(
+                    padding: headerPadding,
+                    child: Row(
+                      children: [
+                        Container(
+                          padding: EdgeInsets.all(iconContainerSize),
+                          decoration: BoxDecoration(
+                            gradient: const LinearGradient(
+                              colors: [Color(0xFFEF4444), Color(0xFFF87171)],
+                              begin: Alignment.topLeft,
+                              end: Alignment.bottomRight,
+                            ),
+                            borderRadius: BorderRadius.circular(isCompact ? 12 : 16),
+                            boxShadow: [
+                              BoxShadow(
+                                color: const Color(0xFFEF4444).withValues(alpha: 0.3),
+                                blurRadius: 12,
+                                offset: const Offset(0, 4),
+                              ),
+                            ],
+                          ),
+                          child: Icon(
+                            Icons.monitor_heart_rounded,
+                            color: Colors.white,
+                            size: headerIconSize,
+                          ),
+                        ),
+                        SizedBox(width: isCompact ? 12 : 16),
+                        Expanded(
+                          child: Column(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                'Vital Signs',
+                                style: TextStyle(
+                                  fontSize: titleSize,
+                                  fontWeight: FontWeight.bold,
+                                  color: textColor,
+                                ),
+                              ),
+                              SizedBox(height: isCompact ? 2 : 4),
+                              Text(
+                                widget.patientName,
+                                style: TextStyle(
+                                  fontSize: isCompact ? 12 : 14,
+                                  color: isDark ? AppColors.darkTextSecondary : AppColors.textSecondary,
+                                ),
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                            ],
+                          ),
+                        ),
+                        if (_vitalSigns.isNotEmpty)
+                          Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                            decoration: BoxDecoration(
+                              color: AppColors.primary.withValues(alpha: 0.15),
+                              borderRadius: BorderRadius.circular(10),
+                            ),
+                            child: Text(
+                              '${_vitalSigns.length} records',
+                              style: TextStyle(
+                                fontWeight: FontWeight.w600,
+                                fontSize: 12,
+                                color: AppColors.primary,
+                              ),
+                            ),
+                          ),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+            ),
+            bottom: TabBar(
               controller: _tabController,
-              children: [
-                _buildHistoryTab(colorScheme),
-                _buildBloodPressureChart(colorScheme),
-                _buildWeightChart(colorScheme),
+              labelColor: AppColors.primary,
+              unselectedLabelColor: isDark ? AppColors.darkTextSecondary : AppColors.textSecondary,
+              indicatorColor: AppColors.primary,
+              indicatorWeight: 3,
+              tabs: const [
+                Tab(child: Row(mainAxisSize: MainAxisSize.min, children: [Icon(Icons.list, size: 18), SizedBox(width: 6), Text('History')])),
+                Tab(child: Row(mainAxisSize: MainAxisSize.min, children: [Icon(Icons.favorite, size: 18), SizedBox(width: 6), Text('BP')])),
+                Tab(child: Row(mainAxisSize: MainAxisSize.min, children: [Icon(Icons.monitor_weight, size: 18), SizedBox(width: 6), Text('Weight')])),
               ],
             ),
-      floatingActionButton: FloatingActionButton(
-        onPressed: () => QuickVitalEntryModal.showAdaptive(
-          context: context,
-          patientId: widget.patientId,
-          patientName: widget.patientName,
-          onSaved: _loadVitalSigns,
-        ),
-        tooltip: 'Quick Vital Entry',
-        child: const Icon(Icons.speed_rounded),
+          ),
+        ],
+        body: _isLoading
+            ? const Center(child: CircularProgressIndicator())
+            : TabBarView(
+                controller: _tabController,
+                children: [
+                  _buildHistoryTab(colorScheme),
+                  _buildBloodPressureChart(colorScheme),
+                  _buildWeightChart(colorScheme),
+                ],
+              ),
       ),
-      floatingActionButtonLocation: FloatingActionButtonLocation.centerDocked,
+      floatingActionButton: Container(
+        decoration: BoxDecoration(
+          gradient: AppColors.primaryGradient,
+          borderRadius: BorderRadius.circular(16),
+          boxShadow: [
+            BoxShadow(
+              color: AppColors.primary.withValues(alpha: 0.4),
+              blurRadius: 12,
+              offset: const Offset(0, 4),
+            ),
+          ],
+        ),
+        child: FloatingActionButton(
+          onPressed: () => QuickVitalEntryModal.showAdaptive(
+            context: context,
+            patientId: widget.patientId,
+            patientName: widget.patientName,
+            onSaved: _loadVitalSigns,
+          ),
+          backgroundColor: Colors.transparent,
+          elevation: 0,
+          tooltip: 'Quick Vital Entry',
+          child: const Icon(Icons.speed_rounded),
+        ),
+      ),
     );
   }
 

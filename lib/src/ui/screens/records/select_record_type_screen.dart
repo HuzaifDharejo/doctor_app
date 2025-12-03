@@ -161,7 +161,7 @@ class SelectRecordTypeScreen extends StatelessWidget {
         title: 'General\nConsultation',
         icon: Icons.medical_services_rounded,
         description: 'Standard medical visit',
-        gradientColors: [AppColors.primary, AppColors.primaryDark],
+        gradientColors: [const Color(0xFF10B981), const Color(0xFF059669)], // Clinical Green
         onTap: () => _navigateToScreen(
           context,
           AddGeneralRecordScreen(preselectedPatient: preselectedPatient),
@@ -171,7 +171,7 @@ class SelectRecordTypeScreen extends StatelessWidget {
         title: 'Pulmonary\nEvaluation',
         icon: Icons.air_rounded,
         description: 'Respiratory assessment',
-        gradientColors: [const Color(0xFF3B82F6), const Color(0xFF1D4ED8)],
+        gradientColors: [const Color(0xFF06B6D4), const Color(0xFF0891B2)], // Info Cyan
         onTap: () => _navigateToScreen(
           context,
           AddPulmonaryScreen(preselectedPatient: preselectedPatient),
@@ -181,7 +181,7 @@ class SelectRecordTypeScreen extends StatelessWidget {
         title: 'Psychiatric\nAssessment',
         icon: Icons.psychology_rounded,
         description: 'Mental health evaluation',
-        gradientColors: [const Color(0xFF8B5CF6), const Color(0xFF6D28D9)],
+        gradientColors: [const Color(0xFF8B5CF6), const Color(0xFF7C3AED)], // Billing Purple
         onTap: () => _navigateToScreen(
           context,
           PsychiatricAssessmentScreenModern(preselectedPatient: preselectedPatient),
@@ -191,7 +191,7 @@ class SelectRecordTypeScreen extends StatelessWidget {
         title: 'Lab\nResult',
         icon: Icons.science_rounded,
         description: 'Laboratory tests',
-        gradientColors: [AppColors.info, const Color(0xFF0284C7)],
+        gradientColors: [const Color(0xFF14B8A6), const Color(0xFF0D9488)], // Lab Teal
         onTap: () => _navigateToScreen(
           context,
           AddLabResultScreen(preselectedPatient: preselectedPatient),
@@ -201,7 +201,7 @@ class SelectRecordTypeScreen extends StatelessWidget {
         title: 'Imaging /\nRadiology',
         icon: Icons.image_rounded,
         description: 'X-Ray, CT, MRI, etc.',
-        gradientColors: [const Color(0xFF7C3AED), const Color(0xFF5B21B6)],
+        gradientColors: [const Color(0xFF6366F1), const Color(0xFF4F46E5)], // Patient Indigo
         onTap: () => _navigateToScreen(
           context,
           AddImagingScreen(preselectedPatient: preselectedPatient),
@@ -211,7 +211,7 @@ class SelectRecordTypeScreen extends StatelessWidget {
         title: 'Medical\nProcedure',
         icon: Icons.healing_rounded,
         description: 'Surgical procedures',
-        gradientColors: [const Color(0xFFEC4899), const Color(0xFFBE185D)],
+        gradientColors: [const Color(0xFFEC4899), const Color(0xFFDB2777)], // Medication Pink
         onTap: () => _navigateToScreen(
           context,
           AddProcedureScreen(preselectedPatient: preselectedPatient),
@@ -221,7 +221,7 @@ class SelectRecordTypeScreen extends StatelessWidget {
         title: 'Follow-up\nVisit',
         icon: Icons.event_repeat_rounded,
         description: 'Progress check',
-        gradientColors: [const Color(0xFF14B8A6), const Color(0xFF0D9488)],
+        gradientColors: [const Color(0xFFF59E0B), const Color(0xFFD97706)], // Notes Amber
         onTap: () => _navigateToScreen(
           context,
           AddFollowUpScreen(preselectedPatient: preselectedPatient),

@@ -1,0 +1,1 @@
+This file ensures the assets folder is not empty for Flutter web builds.

@@ -726,6 +726,35 @@ abstract class PsychiatricSuggestions {
     'Continue same treatment', 'Dose adjustment done',
     'Side effects monitoring', 'Compliance reinforced',
   ];
+
+  // Chief complaints - psychiatric
+  static const List<String> chiefComplaints = [
+    'Low mood', 'Feeling sad', 'Loss of interest', 'Anxiety',
+    'Panic attacks', 'Fear', 'Excessive worry', 'Irritability',
+    'Anger outbursts', 'Sleep problems', 'Insomnia', 'Excessive sleep',
+    'Poor appetite', 'Increased appetite', 'Difficulty concentrating',
+    'Memory problems', 'Hearing voices', 'Seeing things',
+    'Suspiciousness', 'Suicidal thoughts', 'Self-harm',
+    'Substance use', 'Alcohol dependence', 'Drug addiction',
+    'Obsessive thoughts', 'Compulsive behaviors', 'Flashbacks',
+    'Nightmares', 'Social withdrawal', 'Behavioral problems',
+    'Hyperactivity', 'Attention problems', 'Mood swings',
+    'Elated mood', 'Decreased need for sleep', 'Excessive talking',
+    'Medication review', 'Follow-up visit', 'Side effect complaint',
+  ];
+
+  // Duration suggestions - psychiatric
+  static const List<String> duration = [
+    'Since 1 week', 'Since 2 weeks', 'Since 1 month', 'Since 2 months',
+    'Since 3 months', 'Since 6 months', 'Since 1 year', 'Since 2 years',
+    'Since childhood', 'Since adolescence', 'Since marriage',
+    'Since job loss', 'Since bereavement', 'Progressive worsening',
+    'Episodic - current episode since', 'Continuous symptoms',
+    'Fluctuating', 'Worsened recently', 'First episode',
+  ];
+
+  // Alias for compatibility
+  static const List<String> durations = duration;
 }
 
 /// Pulmonary Evaluation suggestions

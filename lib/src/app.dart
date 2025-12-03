@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import 'core/core.dart';
@@ -31,6 +32,38 @@ class DoctorApp extends ConsumerWidget {
     
     log.d('APP', 'Building app - loaded: $isLoaded, onboarding: $isOnboardingComplete, dark: $isDarkMode, locale: ${localization.languageCode}');
     
+    // Show splash while loading
+    if (!isLoaded) {
+      return MaterialApp(
+        title: AppStrings.appName,
+        debugShowCheckedModeBanner: false,
+        theme: AppTheme.lightTheme,
+        darkTheme: AppTheme.darkTheme,
+        themeMode: isDarkMode ? ThemeMode.dark : ThemeMode.light,
+        home: const _SplashScreen(),
+      );
+    }
+    
+    // Show onboarding if not complete
+    if (!isOnboardingComplete) {
+      return MaterialApp(
+        title: AppStrings.appName,
+        debugShowCheckedModeBanner: false,
+        theme: AppTheme.lightTheme,
+        darkTheme: AppTheme.darkTheme,
+        themeMode: isDarkMode ? ThemeMode.dark : ThemeMode.light,
+        locale: localization.currentLocale,
+        supportedLocales: LocalizationService.supportedLocales,
+        localizationsDelegates: const [
+          GlobalMaterialLocalizations.delegate,
+          GlobalWidgetsLocalizations.delegate,
+          GlobalCupertinoLocalizations.delegate,
+        ],
+        home: const OnboardingScreen(),
+      );
+    }
+    
+    // Main app with navigation
     return MaterialApp(
       title: AppStrings.appName,
       debugShowCheckedModeBanner: false,
@@ -39,13 +72,14 @@ class DoctorApp extends ConsumerWidget {
       themeMode: isDarkMode ? ThemeMode.dark : ThemeMode.light,
       locale: localization.currentLocale,
       supportedLocales: LocalizationService.supportedLocales,
+      localizationsDelegates: const [
+        GlobalMaterialLocalizations.delegate,
+        GlobalWidgetsLocalizations.delegate,
+        GlobalCupertinoLocalizations.delegate,
+      ],
       onGenerateRoute: AppRouter.generateRoute,
       navigatorObservers: [_LoggingNavigatorObserver()],
-      home: !isLoaded 
-          ? const _SplashScreen()
-          : isOnboardingComplete 
-              ? const HomeShell() 
-              : const OnboardingScreen(),
+      home: const HomeShell(),
     );
   }
 }
@@ -161,41 +195,50 @@ class _HomeShellState extends ConsumerState<HomeShell> {
   Widget build(BuildContext context) {
     final isDark = context.isDarkMode;
     
-    return Scaffold(
-      key: _scaffoldKey,
-      body: IndexedStack(
-        index: _index,
-        children: _pages,
-      ),
-      bottomNavigationBar: DecoratedBox(
-        decoration: BoxDecoration(
-          color: isDark 
-              ? context.colorScheme.surface 
-              : Colors.white,
-          borderRadius: const BorderRadius.vertical(top: Radius.circular(AppRadius.xl)),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withValues(alpha: 0.08),
-              blurRadius: 24,
-              offset: const Offset(0, -8),
-            ),
-          ],
+    return PopScope(
+      canPop: _index == 0,
+      onPopInvokedWithResult: (didPop, result) {
+        if (!didPop && _index != 0) {
+          // Go back to dashboard instead of exiting
+          setState(() => _index = 0);
+        }
+      },
+      child: Scaffold(
+        key: _scaffoldKey,
+        body: IndexedStack(
+          index: _index,
+          children: _pages,
         ),
-        child: SafeArea(
-          child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: AppSpacing.sm, vertical: AppSpacing.sm),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceAround,
-              children: [
-                _buildNavItem(0, Icons.space_dashboard_rounded, Icons.space_dashboard_outlined, AppStrings.navHome, AppColors.primary, 0),
-                _buildNavItem(1, Icons.people_rounded, Icons.people_outlined, AppStrings.navPatients, AppColors.patients, 0),
-                _buildNavItem(2, Icons.calendar_month_rounded, Icons.calendar_month_outlined, AppStrings.navAppointments, AppColors.appointments, _pendingAppointments),
-              ],
+        bottomNavigationBar: DecoratedBox(
+          decoration: BoxDecoration(
+            color: isDark 
+                ? context.colorScheme.surface 
+                : Colors.white,
+            borderRadius: const BorderRadius.vertical(top: Radius.circular(AppRadius.xl)),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withValues(alpha: 0.08),
+                blurRadius: 24,
+                offset: const Offset(0, -8),
+              ),
+            ],
+          ),
+          child: SafeArea(
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: AppSpacing.sm, vertical: AppSpacing.sm),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceAround,
+                children: [
+                  _buildNavItem(0, Icons.space_dashboard_rounded, Icons.space_dashboard_outlined, AppStrings.navHome, AppColors.primary, 0),
+                  _buildNavItem(1, Icons.people_rounded, Icons.people_outlined, AppStrings.navPatients, AppColors.patients, 0),
+                  _buildNavItem(2, Icons.calendar_month_rounded, Icons.calendar_month_outlined, AppStrings.navAppointments, AppColors.appointments, _pendingAppointments),
+                ],
+              ),
             ),
           ),
         ),
+        drawer: _buildDrawer(context),
       ),
-      drawer: _buildDrawer(context),
     );
   }
 
@@ -286,11 +329,8 @@ class _HomeShellState extends ConsumerState<HomeShell> {
 
   Widget _buildDrawer(BuildContext context) {
     final doctorSettings = ref.watch(doctorSettingsProvider);
-    final appSettings = ref.watch(appSettingsProvider);
     final profile = doctorSettings.profile;
     final isDarkMode = context.isDarkMode;
-    final enabledRecordTypes = appSettings.settings.enabledMedicalRecordTypes;
-    final isPsychiatricEnabled = enabledRecordTypes.contains('psychiatric_assessment');
     
     return Drawer(
       backgroundColor: Colors.transparent,
@@ -469,11 +509,9 @@ class _HomeShellState extends ConsumerState<HomeShell> {
                     title: 'Clinical Dashboard',
                     subtitle: 'Full clinical overview',
                     onTap: () {
-                      context.pop<void>();
-                      Navigator.push<void>(
-                        context,
-                        MaterialPageRoute<void>(builder: (_) => const ClinicalDashboard()),
-                      );
+                      context
+                        ..pop<void>()
+                        ..goToClinicalDashboard();
                     },
                     color: const Color(0xFF8B5CF6),
                     isDark: isDarkMode,
@@ -484,11 +522,9 @@ class _HomeShellState extends ConsumerState<HomeShell> {
                     title: 'Medical Records',
                     subtitle: 'View all records',
                     onTap: () {
-                      context.pop<void>();
-                      Navigator.push<void>(
-                        context,
-                        MaterialPageRoute<void>(builder: (_) => const MedicalRecordsListScreen()),
-                      );
+                      context
+                        ..pop<void>()
+                        ..goToMedicalRecordsList();
                     },
                     color: const Color(0xFF10B981),
                     isDark: isDarkMode,
@@ -499,11 +535,9 @@ class _HomeShellState extends ConsumerState<HomeShell> {
                     title: AppStrings.billing,
                     subtitle: 'Invoices & payments',
                     onTap: () {
-                      context.pop<void>();
-                      Navigator.push<void>(
-                        context,
-                        MaterialPageRoute<void>(builder: (_) => const BillingScreen()),
-                      );
+                      context
+                        ..pop<void>()
+                        ..pushNamed<void>(AppRoutes.billing);
                     },
                     color: AppColors.billing,
                     isDark: isDarkMode,
@@ -515,11 +549,9 @@ class _HomeShellState extends ConsumerState<HomeShell> {
                     title: 'Follow-ups',
                     subtitle: 'Manage follow-ups',
                     onTap: () {
-                      context.pop<void>();
-                      Navigator.push<void>(
-                        context,
-                        MaterialPageRoute<void>(builder: (_) => const FollowUpsScreen()),
-                      );
+                      context
+                        ..pop<void>()
+                        ..goToFollowUps();
                     },
                     color: Colors.orange,
                     isDark: isDarkMode,
@@ -538,21 +570,6 @@ class _HomeShellState extends ConsumerState<HomeShell> {
                     color: const Color(0xFFDC2626),
                     isDark: isDarkMode,
                   ),
-                  
-                  if (isPsychiatricEnabled)
-                    _buildModernDrawerItem(
-                      icon: Icons.psychology_rounded,
-                      title: AppStrings.psychiatricAssessment,
-                      subtitle: 'Patient assessment',
-                      onTap: () {
-                        context
-                          ..pop<void>()
-                          ..pushNamed<void>(AppRoutes.psychiatricAssessment);
-                      },
-                      color: const Color(0xFF0EA5E9),
-                      isDark: isDarkMode,
-                    ),
-
                   
                   const SizedBox(height: 16),
                   _buildSectionTitle('MORE', isDarkMode),

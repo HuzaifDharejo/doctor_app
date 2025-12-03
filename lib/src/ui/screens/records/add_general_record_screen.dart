@@ -216,7 +216,7 @@ class _AddGeneralRecordScreenState extends ConsumerState<AddGeneralRecordScreen>
                     : 'General Consultation',
                 subtitle: DateFormat('EEEE, dd MMMM yyyy').format(_recordDate),
                 icon: Icons.medical_services_rounded,
-                gradientColors: [AppColors.primary, AppColors.primaryDark],
+                gradientColors: [const Color(0xFF10B981), const Color(0xFF059669)], // Clinical Green
               ),
             ),
             // Body Content
@@ -459,6 +459,7 @@ class _AddGeneralRecordScreenState extends ConsumerState<AddGeneralRecordScreen>
             isSaving: _isSaving,
             label: widget.existingRecord != null ? 'Update Record' : 'Save Record',
             onPressed: () => _saveRecord(db),
+            gradientColors: [const Color(0xFF10B981), const Color(0xFF059669)], // Clinical Green
           ),
           const SizedBox(height: 40),
         ],

@@ -318,27 +318,131 @@ class _PsychiatricAssessmentScreenModernState
     final backgroundColor = isDark ? colorScheme.surface : Colors.grey.shade50;
     
     return Scaffold(
-      backgroundColor: isDark ? AppColors.darkBackground : AppColors.background,
-      appBar: AppBar(
-        title: const Text('Psychiatric Assessment'),
-        centerTitle: true,
-        elevation: 0,
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.save_outlined),
-            tooltip: 'Save Draft',
-            onPressed: _saveDraft,
-          ),
-        ],
-      ),
+      backgroundColor: isDark ? const Color(0xFF0F0F0F) : AppColors.background,
       body: Form(
         key: _formKey,
-        child: SingleChildScrollView(
+        child: CustomScrollView(
           controller: _scrollController,
-          padding: const EdgeInsets.all(AppSpacing.lg),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
+          slivers: [
+            SliverAppBar(
+              expandedHeight: 140,
+              pinned: true,
+              elevation: 0,
+              backgroundColor: isDark ? const Color(0xFF1A1A1A) : Colors.white,
+              leading: Padding(
+                padding: const EdgeInsets.all(8.0),
+                child: Container(
+                  decoration: BoxDecoration(
+                    color: isDark 
+                        ? Colors.white.withValues(alpha: 0.1)
+                        : const Color(0xFF8B5CF6).withValues(alpha: 0.1),
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: IconButton(
+                    icon: Icon(
+                      Icons.arrow_back,
+                      color: isDark ? Colors.white : const Color(0xFF8B5CF6),
+                    ),
+                    onPressed: () => Navigator.pop(context),
+                  ),
+                ),
+              ),
+              actions: [
+                Padding(
+                  padding: const EdgeInsets.only(right: 8.0),
+                  child: Container(
+                    decoration: BoxDecoration(
+                      color: isDark 
+                          ? Colors.white.withValues(alpha: 0.1)
+                          : const Color(0xFF8B5CF6).withValues(alpha: 0.1),
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: IconButton(
+                      icon: Icon(
+                        Icons.save_outlined,
+                        color: isDark ? Colors.white : const Color(0xFF8B5CF6),
+                      ),
+                      tooltip: 'Save Draft',
+                      onPressed: _saveDraft,
+                    ),
+                  ),
+                ),
+              ],
+              flexibleSpace: FlexibleSpaceBar(
+                background: Container(
+                  decoration: BoxDecoration(
+                    gradient: LinearGradient(
+                      begin: Alignment.topLeft,
+                      end: Alignment.bottomRight,
+                      colors: isDark
+                          ? [const Color(0xFF1A1A1A), const Color(0xFF0F0F0F)]
+                          : [Colors.white, const Color(0xFFF8F9FA)],
+                    ),
+                  ),
+                  child: SafeArea(
+                    child: Padding(
+                      padding: const EdgeInsets.fromLTRB(20, 50, 20, 0),
+                      child: Row(
+                        children: [
+                          Container(
+                            padding: const EdgeInsets.all(12),
+                            decoration: BoxDecoration(
+                              gradient: const LinearGradient(
+                                colors: [Color(0xFF8B5CF6), Color(0xFF7C3AED)], // Billing Purple
+                              ),
+                              borderRadius: BorderRadius.circular(16),
+                              boxShadow: [
+                                BoxShadow(
+                                  color: const Color(0xFF8B5CF6).withValues(alpha: 0.3),
+                                  blurRadius: 12,
+                                  offset: const Offset(0, 4),
+                                ),
+                              ],
+                            ),
+                            child: const Icon(
+                              Icons.psychology_rounded,
+                              color: Colors.white,
+                              size: 28,
+                            ),
+                          ),
+                          const SizedBox(width: 16),
+                          Expanded(
+                            child: Column(
+                              mainAxisSize: MainAxisSize.min,
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  'Psychiatric Assessment',
+                                  style: TextStyle(
+                                    fontSize: 24,
+                                    fontWeight: FontWeight.bold,
+                                    color: isDark ? Colors.white : const Color(0xFF1A1A2E),
+                                  ),
+                                ),
+                                const SizedBox(height: 4),
+                                Text(
+                                  'Mental health evaluation',
+                                  style: TextStyle(
+                                    fontSize: 14,
+                                    color: isDark 
+                                        ? Colors.white.withValues(alpha: 0.7)
+                                        : const Color(0xFF6B7280),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+            ),
+            SliverPadding(
+              padding: const EdgeInsets.all(AppSpacing.lg),
+              sliver: SliverList(
+                delegate: SliverChildListDelegate([
               // Assessment Date & Info
               _buildAssessmentHeader(context, isDark, cardColor),
               const SizedBox(height: 20),
@@ -398,19 +502,18 @@ class _PsychiatricAssessmentScreenModernState
                 isDark: isDark,
                 cardColor: cardColor,
                 children: [
-                  _buildTextField(
+                  SuggestionTextField(
                     controller: _chiefComplaintController,
                     label: 'Chief Complaint',
                     maxLines: 3,
-                    required: true,
-                    isDark: isDark,
+                    suggestions: PsychiatricSuggestions.chiefComplaints,
                   ),
                   const SizedBox(height: 12),
-                  _buildTextField(
+                  SuggestionTextField(
                     controller: _durationController,
                     label: 'Duration',
                     hint: 'e.g., 2 weeks, 3 months',
-                    isDark: isDark,
+                    suggestions: PsychiatricSuggestions.duration,
                   ),
                 ],
               ),
@@ -470,52 +573,52 @@ class _PsychiatricAssessmentScreenModernState
                 isDark: isDark,
                 cardColor: cardColor,
                 children: [
-                  _buildTextField(
+                  SuggestionTextField(
                     controller: _moodController,
                     label: 'Mood',
                     hint: 'e.g., Depressed, Anxious, Elevated',
-                    isDark: isDark,
+                    suggestions: MedicalRecordSuggestions.mseMood,
                   ),
                   const SizedBox(height: 12),
-                  _buildTextField(
+                  SuggestionTextField(
                     controller: _affectController,
                     label: 'Affect',
                     hint: 'e.g., Flat, Congruent, Labile',
-                    isDark: isDark,
+                    suggestions: MedicalRecordSuggestions.mseAffect,
                   ),
                   const SizedBox(height: 12),
-                  _buildTextField(
+                  SuggestionTextField(
                     controller: _speechController,
                     label: 'Speech',
                     hint: 'e.g., Normal, Slow, Pressured',
-                    isDark: isDark,
+                    suggestions: MedicalRecordSuggestions.mseSpeech,
                   ),
                   const SizedBox(height: 12),
-                  _buildTextField(
+                  SuggestionTextField(
                     controller: _thoughtController,
                     label: 'Thought Process',
                     hint: 'Organized, Tangential, Blocked',
-                    isDark: isDark,
+                    suggestions: MedicalRecordSuggestions.mseThoughtProcess,
                   ),
                   const SizedBox(height: 12),
-                  _buildTextField(
+                  SuggestionTextField(
                     controller: _perceptionController,
                     label: 'Perception',
                     hint: 'Hallucinations, Delusions',
-                    isDark: isDark,
+                    suggestions: MedicalRecordSuggestions.msePerception,
                   ),
                   const SizedBox(height: 12),
-                  _buildTextField(
+                  SuggestionTextField(
                     controller: _cognitionController,
                     label: 'Cognition',
                     hint: 'Orientation, Memory, Attention',
-                    isDark: isDark,
+                    suggestions: MedicalRecordSuggestions.mseCognition,
                   ),
                   const SizedBox(height: 12),
-                  _buildTextField(
+                  SuggestionTextField(
                     controller: _insightController,
                     label: 'Insight & Judgment',
-                    isDark: isDark,
+                    suggestions: MedicalRecordSuggestions.mseInsight,
                   ),
                 ],
               ),
@@ -596,26 +699,25 @@ class _PsychiatricAssessmentScreenModernState
                 children: [
                   _buildDiagnosisField(isDark, cardColor),
                   const SizedBox(height: 12),
-                  _buildTextField(
+                  SuggestionTextField(
                     controller: _treatmentPlanController,
                     label: 'Treatment Plan',
                     maxLines: 4,
-                    required: true,
-                    isDark: isDark,
+                    suggestions: PsychiatricSuggestions.treatments,
                   ),
                   const SizedBox(height: 12),
-                  _buildTextField(
+                  SuggestionTextField(
                     controller: _medicationsController,
                     label: 'Medications',
                     maxLines: 3,
-                    isDark: isDark,
+                    suggestions: PsychiatricSuggestions.treatments,
                   ),
                   const SizedBox(height: 12),
-                  _buildTextField(
+                  SuggestionTextField(
                     controller: _followUpController,
                     label: 'Follow-up Plan',
                     hint: 'e.g., Review in 2 weeks',
-                    isDark: isDark,
+                    suggestions: PsychiatricSuggestions.followUp,
                   ),
                 ],
               ),
@@ -642,8 +744,10 @@ class _PsychiatricAssessmentScreenModernState
                 ),
               ),
               const SizedBox(height: 20),
-            ],
-          ),
+            ]),
+              ),
+            ),
+          ],
         ),
       ),
     );

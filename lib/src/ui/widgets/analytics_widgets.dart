@@ -209,42 +209,52 @@ class SuccessRateCard extends StatelessWidget {
     return Card(
       elevation: 4,
       child: Padding(
-        padding: const EdgeInsets.all(AppSpacing.lg),
+        padding: const EdgeInsets.all(AppSpacing.md),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
+          mainAxisSize: MainAxisSize.min,
           children: [
             Text(
               title,
               style: Theme.of(context).textTheme.titleMedium,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
             ),
-            const SizedBox(height: 12),
+            const SizedBox(height: 8),
             // Rate percentage display
             Row(
               children: [
-                Text(
-                  '${successRate.toStringAsFixed(1)}%',
-                  style: Theme.of(context).textTheme.displaySmall?.copyWith(
-                        color: color,
-                        fontWeight: FontWeight.bold,
-                      ),
+                Flexible(
+                  child: Text(
+                    '${successRate.toStringAsFixed(1)}%',
+                    style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+                          color: color,
+                          fontWeight: FontWeight.bold,
+                        ),
+                  ),
                 ),
-                const SizedBox(width: 12),
+                const SizedBox(width: 8),
                 if (improvement != null)
-                  Chip(
-                    label: Text(
-                      '${improvement > 0 ? '+' : ''}${improvement.toStringAsFixed(1)}%',
-                      style: TextStyle(
-                        color: improvement > 0 ? Colors.green : Colors.red,
-                        fontWeight: FontWeight.bold,
+                  Flexible(
+                    child: Chip(
+                      visualDensity: VisualDensity.compact,
+                      padding: EdgeInsets.zero,
+                      label: Text(
+                        '${improvement > 0 ? '+' : ''}${improvement.toStringAsFixed(1)}%',
+                        style: TextStyle(
+                          color: improvement > 0 ? Colors.green : Colors.red,
+                          fontWeight: FontWeight.bold,
+                          fontSize: 12,
+                        ),
                       ),
+                      backgroundColor: improvement > 0
+                          ? Colors.green.withValues(alpha: 0.2)
+                          : Colors.red.withValues(alpha: 0.2),
                     ),
-                    backgroundColor: improvement > 0
-                        ? Colors.green.withValues(alpha: 0.2)
-                        : Colors.red.withValues(alpha: 0.2),
                   ),
               ],
             ),
-            const SizedBox(height: 12),
+            const SizedBox(height: 8),
             // Cases count
             Text(
               '$totalCases cases',
@@ -252,13 +262,13 @@ class SuccessRateCard extends StatelessWidget {
                     color: isDark ? Colors.grey[400] : Colors.grey[600],
                   ),
             ),
-            const SizedBox(height: 12),
+            const SizedBox(height: 8),
             // Progress bar
             ClipRRect(
               borderRadius: BorderRadius.circular(4),
               child: LinearProgressIndicator(
                 value: successRate / 100,
-                minHeight: 8,
+                minHeight: 6,
                 backgroundColor: isDark ? Colors.grey[700] : Colors.grey[300],
                 valueColor: AlwaysStoppedAnimation<Color>(color),
               ),
