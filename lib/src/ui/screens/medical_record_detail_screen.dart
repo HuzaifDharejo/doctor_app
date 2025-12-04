@@ -777,30 +777,131 @@ class _GeneralContent extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Column(
-      children: [
-        if (record.description.isNotEmpty)
-          InfoCard(
-            title: 'Description',
-            content: record.description,
-            icon: Icons.description_outlined,
-            color: AppColors.info,
-            isDark: isDark,
-          ),
-        if (data.hasValue('chief_complaints')) ...[
-          const SizedBox(height: MedicalRecordConstants.paddingLarge),
-          InfoCard(
-            title: 'Chief Complaints',
-            content: data.getString('chief_complaints'),
-            icon: Icons.sick_outlined,
-            color: AppColors.warning,
-            isDark: isDark,
-          ),
-        ],
-        if (data.hasValue('vitals'))
-          _VitalsSection(vitals: data.getMap('vitals'), isDark: isDark),
-      ],
-    );
+    // Build widgets for all data fields dynamically
+    final dataWidgets = <Widget>[];
+    
+    // First show description if available
+    if (record.description.isNotEmpty) {
+      dataWidgets.add(
+        InfoCard(
+          title: 'Description',
+          content: record.description,
+          icon: Icons.description_outlined,
+          color: AppColors.info,
+          isDark: isDark,
+        ),
+      );
+    }
+    
+    // Then show all data from JSON
+    for (final entry in data.entries) {
+      final key = entry.key;
+      final value = entry.value;
+      
+      // Skip empty values and vitals (handled separately)
+      if (value == null || key == 'vitals') continue;
+      if (value is String && value.isEmpty) continue;
+      if (value is List && value.isEmpty) continue;
+      if (value is Map && value.isEmpty) continue;
+      
+      // Format the key as a readable title
+      final title = _formatKey(key);
+      
+      // Handle different value types
+      if (value is Map) {
+        // Show map as formatted key-value pairs
+        final mapContent = (value as Map<String, dynamic>).entries
+            .where((e) => e.value != null && e.value.toString().isNotEmpty)
+            .map((e) => '${_formatKey(e.key)}: ${e.value}')
+            .join('\n');
+        if (mapContent.isNotEmpty) {
+          dataWidgets.add(const SizedBox(height: MedicalRecordConstants.paddingLarge));
+          dataWidgets.add(
+            InfoCard(
+              title: title,
+              content: mapContent,
+              icon: _getIconForKey(key),
+              color: _getColorForKey(key),
+              isDark: isDark,
+            ),
+          );
+        }
+      } else if (value is List) {
+        // Show list as chips or comma-separated
+        final listItems = value.map((e) => e.toString()).where((e) => e.isNotEmpty).toList();
+        if (listItems.isNotEmpty) {
+          dataWidgets.add(const SizedBox(height: MedicalRecordConstants.paddingLarge));
+          dataWidgets.add(
+            ChipsSection(
+              title: title,
+              items: listItems,
+              color: _getColorForKey(key),
+              icon: _getIconForKey(key),
+              isDark: isDark,
+            ),
+          );
+        }
+      } else {
+        // Show as text
+        final content = value.toString();
+        if (content.isNotEmpty) {
+          dataWidgets.add(const SizedBox(height: MedicalRecordConstants.paddingLarge));
+          dataWidgets.add(
+            InfoCard(
+              title: title,
+              content: content,
+              icon: _getIconForKey(key),
+              color: _getColorForKey(key),
+              isDark: isDark,
+            ),
+          );
+        }
+      }
+    }
+    
+    // Add vitals section at the end if available
+    if (data.hasValue('vitals')) {
+      dataWidgets.add(_VitalsSection(vitals: data.getMap('vitals'), isDark: isDark));
+    }
+    
+    return Column(children: dataWidgets);
+  }
+  
+  String _formatKey(String key) {
+    // Convert snake_case or camelCase to Title Case
+    return key
+        .replaceAllMapped(RegExp(r'([a-z])([A-Z])'), (m) => '${m[1]} ${m[2]}')
+        .replaceAll('_', ' ')
+        .split(' ')
+        .map((word) => word.isNotEmpty ? '${word[0].toUpperCase()}${word.substring(1).toLowerCase()}' : '')
+        .join(' ')
+        .trim();
+  }
+  
+  IconData _getIconForKey(String key) {
+    final lowerKey = key.toLowerCase();
+    if (lowerKey.contains('complaint') || lowerKey.contains('symptom')) return Icons.sick_outlined;
+    if (lowerKey.contains('history')) return Icons.history;
+    if (lowerKey.contains('diagnosis')) return Icons.medical_information_outlined;
+    if (lowerKey.contains('treatment') || lowerKey.contains('plan')) return Icons.healing_outlined;
+    if (lowerKey.contains('medication') || lowerKey.contains('drug')) return Icons.medication_outlined;
+    if (lowerKey.contains('note')) return Icons.note_alt_outlined;
+    if (lowerKey.contains('exam') || lowerKey.contains('finding')) return Icons.search;
+    if (lowerKey.contains('investigation') || lowerKey.contains('test') || lowerKey.contains('lab')) return Icons.biotech;
+    if (lowerKey.contains('risk')) return Icons.warning_amber;
+    if (lowerKey.contains('follow')) return Icons.event_repeat;
+    if (lowerKey.contains('mood') || lowerKey.contains('affect') || lowerKey.contains('mental')) return Icons.psychology;
+    return Icons.info_outline;
+  }
+  
+  Color _getColorForKey(String key) {
+    final lowerKey = key.toLowerCase();
+    if (lowerKey.contains('complaint') || lowerKey.contains('symptom')) return AppColors.warning;
+    if (lowerKey.contains('diagnosis')) return AppColors.error;
+    if (lowerKey.contains('treatment') || lowerKey.contains('plan')) return AppColors.success;
+    if (lowerKey.contains('risk') || lowerKey.contains('warning')) return AppColors.error;
+    if (lowerKey.contains('investigation') || lowerKey.contains('test')) return AppColors.primary;
+    return AppColors.info;
   }
 }
 

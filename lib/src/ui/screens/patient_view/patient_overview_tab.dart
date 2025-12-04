@@ -53,28 +53,70 @@ class _PatientOverviewTabState extends ConsumerState<PatientOverviewTab> {
     final secondaryColor = isDark ? AppColors.darkTextSecondary : AppColors.textSecondary;
     final cardColor = isDark ? AppColors.darkSurface : Colors.white;
     final borderColor = isDark ? AppColors.darkDivider : AppColors.divider;
-    final patient = widget.patient;
 
     return SingleChildScrollView(
-      padding: const EdgeInsets.all(AppSpacing.lg),
+      padding: const EdgeInsets.only(
+        left: AppSpacing.lg,
+        right: AppSpacing.lg,
+        top: AppSpacing.lg,
+        bottom: 100, // Extra padding for FAB
+      ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
+          // Save/Cancel buttons when editing (at top for visibility)
+          if (widget.isEditing && widget.hasChanges) ...[
+            _buildSaveButtons(),
+            const SizedBox(height: 16),
+          ],
+          
           // Contact Info Card
           _buildContactInfoCard(isDark, textColor, secondaryColor, cardColor, borderColor),
           const SizedBox(height: 20),
           
-          // Medical History
+          // Medical History (with inline editing)
           _buildMedicalHistorySection(isDark, textColor, cardColor, borderColor),
           const SizedBox(height: 20),
           
-          // Clinical Quick Actions
-          _buildClinicalActionsSection(isDark, textColor),
-          const SizedBox(height: 20),
-          
-          // Edit Profile Section (expandable)
-          if (widget.isEditing)
-            _buildEditProfileSection(isDark, textColor, borderColor),
+          // Clinical Quick Actions (hide when editing for cleaner UI)
+          if (!widget.isEditing)
+            _buildClinicalActionsSection(isDark, textColor),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildSaveButtons() {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 20),
+      child: Row(
+        children: [
+          Expanded(
+            child: ElevatedButton.icon(
+              onPressed: widget.isSaving ? null : widget.onSave,
+              style: ElevatedButton.styleFrom(
+                backgroundColor: AppColors.primary,
+                foregroundColor: Colors.white,
+                padding: const EdgeInsets.symmetric(vertical: 12),
+              ),
+              icon: widget.isSaving
+                  ? const SizedBox(
+                      width: 20,
+                      height: 20,
+                      child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
+                    )
+                  : const Icon(Icons.save),
+              label: Text(widget.isSaving ? 'Saving...' : 'Save Changes'),
+            ),
+          ),
+          const SizedBox(width: 12),
+          OutlinedButton(
+            onPressed: widget.onDiscard,
+            style: OutlinedButton.styleFrom(
+              padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 24),
+            ),
+            child: const Text('Cancel'),
+          ),
         ],
       ),
     );
@@ -88,7 +130,7 @@ class _PatientOverviewTabState extends ConsumerState<PatientOverviewTab> {
       decoration: BoxDecoration(
         color: cardColor,
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: borderColor),
+        border: Border.all(color: widget.isEditing ? AppColors.primary.withValues(alpha: 0.5) : borderColor),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -112,22 +154,81 @@ class _PatientOverviewTabState extends ConsumerState<PatientOverviewTab> {
                   size: 20,
                   color: AppColors.primary,
                 ),
-                onPressed: widget.onToggleEdit,
+                onPressed: widget.isEditing ? widget.onDiscard : widget.onToggleEdit,
                 tooltip: widget.isEditing ? 'Cancel' : 'Edit',
               ),
             ],
           ),
           const Divider(height: 24),
-          _buildInfoRow(Icons.phone, 'Phone', patient.phone.isNotEmpty ? patient.phone : 'Not provided', secondaryColor, textColor),
-          const SizedBox(height: 12),
-          _buildInfoRow(Icons.email, 'Email', patient.email.isNotEmpty ? patient.email : 'Not provided', secondaryColor, textColor),
-          const SizedBox(height: 12),
-          _buildInfoRow(Icons.location_on, 'Address', patient.address.isNotEmpty ? patient.address : 'Not provided', secondaryColor, textColor),
-          if (patient.allergies.isNotEmpty) ...[
+          
+          // Show editable fields or read-only display
+          if (widget.isEditing) ...[
+            _buildEditableField(
+              controller: widget.phoneController,
+              label: 'Phone',
+              icon: Icons.phone,
+              keyboardType: TextInputType.phone,
+            ),
+            const SizedBox(height: 12),
+            _buildEditableField(
+              controller: widget.emailController,
+              label: 'Email',
+              icon: Icons.email,
+              keyboardType: TextInputType.emailAddress,
+            ),
+            const SizedBox(height: 12),
+            _buildEditableField(
+              controller: widget.addressController,
+              label: 'Address',
+              icon: Icons.location_on,
+              maxLines: 2,
+            ),
+            const SizedBox(height: 12),
+            _buildEditableField(
+              controller: widget.tagsController,
+              label: 'Tags (comma-separated)',
+              icon: Icons.label,
+            ),
+          ] else ...[
+            _buildInfoRow(Icons.phone, 'Phone', patient.phone.isNotEmpty ? patient.phone : 'Not provided', secondaryColor, textColor),
+            const SizedBox(height: 12),
+            _buildInfoRow(Icons.email, 'Email', patient.email.isNotEmpty ? patient.email : 'Not provided', secondaryColor, textColor),
+            const SizedBox(height: 12),
+            _buildInfoRow(Icons.location_on, 'Address', patient.address.isNotEmpty ? patient.address : 'Not provided', secondaryColor, textColor),
+            if (patient.tags.isNotEmpty) ...[
+              const SizedBox(height: 12),
+              _buildInfoRow(Icons.label, 'Tags', patient.tags, AppColors.primary, textColor),
+            ],
+          ],
+          
+          if (patient.allergies.isNotEmpty && !widget.isEditing) ...[
             const SizedBox(height: 12),
             _buildInfoRow(Icons.warning_amber, 'Allergies', patient.allergies, Colors.orange, textColor),
           ],
         ],
+      ),
+    );
+  }
+
+  Widget _buildEditableField({
+    required TextEditingController controller,
+    required String label,
+    required IconData icon,
+    TextInputType keyboardType = TextInputType.text,
+    int maxLines = 1,
+  }) {
+    return TextField(
+      controller: controller,
+      keyboardType: keyboardType,
+      maxLines: maxLines,
+      decoration: InputDecoration(
+        labelText: label,
+        prefixIcon: Icon(icon, size: 20),
+        border: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(12),
+        ),
+        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+        isDense: true,
       ),
     );
   }
@@ -178,25 +279,38 @@ class _PatientOverviewTabState extends ConsumerState<PatientOverviewTab> {
           ),
         ),
         const SizedBox(height: 8),
-        Container(
-          width: double.infinity,
-          padding: const EdgeInsets.all(AppSpacing.md),
-          decoration: BoxDecoration(
-            border: Border.all(color: borderColor),
-            borderRadius: BorderRadius.circular(12),
-            color: cardColor,
-          ),
-          child: Text(
-            patient.medicalHistory.isEmpty
-                ? 'No medical history recorded'
-                : patient.medicalHistory,
-            style: TextStyle(
-              color: patient.medicalHistory.isEmpty
-                  ? (isDark ? AppColors.darkTextSecondary : AppColors.textSecondary)
-                  : textColor,
+        if (widget.isEditing)
+          TextField(
+            controller: widget.medicalHistoryController,
+            maxLines: 4,
+            decoration: InputDecoration(
+              hintText: 'Enter medical history...',
+              border: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(12),
+              ),
+              contentPadding: const EdgeInsets.all(16),
+            ),
+          )
+        else
+          Container(
+            width: double.infinity,
+            padding: const EdgeInsets.all(AppSpacing.md),
+            decoration: BoxDecoration(
+              border: Border.all(color: borderColor),
+              borderRadius: BorderRadius.circular(12),
+              color: cardColor,
+            ),
+            child: Text(
+              patient.medicalHistory.isEmpty
+                  ? 'No medical history recorded'
+                  : patient.medicalHistory,
+              style: TextStyle(
+                color: patient.medicalHistory.isEmpty
+                    ? (isDark ? AppColors.darkTextSecondary : AppColors.textSecondary)
+                    : textColor,
+              ),
             ),
           ),
-        ),
       ],
     );
   }
@@ -311,91 +425,6 @@ class _PatientOverviewTabState extends ConsumerState<PatientOverviewTab> {
             ),
           ),
         ),
-      ],
-    );
-  }
-
-  Widget _buildEditProfileSection(bool isDark, Color textColor, Color borderColor) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.stretch,
-      children: [
-        Divider(color: borderColor),
-        const SizedBox(height: 16),
-        Text(
-          'Edit Patient Information',
-          style: Theme.of(context).textTheme.titleMedium?.copyWith(
-            fontWeight: FontWeight.bold,
-            color: textColor,
-          ),
-        ),
-        const SizedBox(height: 12),
-        TextField(
-          controller: widget.phoneController,
-          decoration: const InputDecoration(
-            labelText: 'Phone',
-            prefixIcon: Icon(Icons.phone),
-          ),
-          keyboardType: TextInputType.phone,
-        ),
-        const SizedBox(height: 12),
-        TextField(
-          controller: widget.emailController,
-          decoration: const InputDecoration(
-            labelText: 'Email',
-            prefixIcon: Icon(Icons.email),
-          ),
-          keyboardType: TextInputType.emailAddress,
-        ),
-        const SizedBox(height: 12),
-        TextField(
-          controller: widget.addressController,
-          decoration: const InputDecoration(
-            labelText: 'Address',
-            prefixIcon: Icon(Icons.location_on),
-          ),
-          maxLines: 2,
-        ),
-        const SizedBox(height: 12),
-        TextField(
-          controller: widget.medicalHistoryController,
-          decoration: const InputDecoration(
-            labelText: 'Medical History',
-            prefixIcon: Icon(Icons.note_alt),
-          ),
-          maxLines: 3,
-        ),
-        const SizedBox(height: 12),
-        TextField(
-          controller: widget.tagsController,
-          decoration: const InputDecoration(
-            labelText: 'Tags (comma-separated)',
-            prefixIcon: Icon(Icons.label),
-          ),
-        ),
-        const SizedBox(height: 16),
-        Row(
-          children: [
-            Expanded(
-              child: ElevatedButton.icon(
-                onPressed: widget.isSaving ? null : widget.onSave,
-                icon: widget.isSaving
-                    ? const SizedBox(
-                        width: 20,
-                        height: 20,
-                        child: CircularProgressIndicator(strokeWidth: 2),
-                      )
-                    : const Icon(Icons.save),
-                label: Text(widget.isSaving ? 'Saving...' : 'Save Changes'),
-              ),
-            ),
-            const SizedBox(width: 12),
-            OutlinedButton(
-              onPressed: widget.onDiscard,
-              child: const Text('Cancel'),
-            ),
-          ],
-        ),
-        const SizedBox(height: 20),
       ],
     );
   }

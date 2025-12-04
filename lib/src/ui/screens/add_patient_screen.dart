@@ -329,7 +329,7 @@ class _AddPatientScreenState extends ConsumerState<AddPatientScreen> {
                         borderRadius: BorderRadius.circular(12),
                         child: InputDecorator(
                           decoration: InputDecoration(
-                            labelText: 'Date of Birth *',
+                            labelText: 'Date of Birth',
                             prefixIcon: const Icon(Icons.cake_outlined),
                             border: OutlineInputBorder(
                               borderRadius: BorderRadius.circular(12),
@@ -369,6 +369,11 @@ class _AddPatientScreenState extends ConsumerState<AddPatientScreen> {
                         controller: _email,
                         label: 'Email Address',
                         hint: 'john.doe@email.com',
+                        validator: (value) {
+                          if (value == null || value.isEmpty) return null; // Optional
+                          if (!value.contains('@')) return 'Invalid email address';
+                          return null;
+                        },
                       ),
                       const SizedBox(height: 12),
                       AppInput(
@@ -735,18 +740,6 @@ class _AddPatientScreenState extends ConsumerState<AddPatientScreen> {
 
   Future<void> _savePatient(DoctorDatabase db) async {
     if (!_formKey.currentState!.validate()) return;
-    
-    if (_dateOfBirth == null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: const Text('Please select date of birth'),
-          backgroundColor: AppColors.error,
-          behavior: SnackBarBehavior.floating,
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-        ),
-      );
-      return;
-    }
     
     setState(() => _isSaving = true);
     

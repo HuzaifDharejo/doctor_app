@@ -72,7 +72,7 @@ class _BillingScreenState extends ConsumerState<BillingScreen> {
 
   Widget _buildModernSliverAppBar(BuildContext context, bool isDark) {
     return SliverAppBar(
-      expandedHeight: 140,
+      expandedHeight: 120,
       floating: false,
       pinned: true,
       elevation: 0,
@@ -107,62 +107,65 @@ class _BillingScreenState extends ConsumerState<BillingScreen> {
             ),
           ),
           child: SafeArea(
-            child: Padding(
-              padding: const EdgeInsets.fromLTRB(20, 60, 20, 20),
-              child: Row(
-                children: [
-                  Container(
-                    padding: const EdgeInsets.all(16),
-                    decoration: BoxDecoration(
-                      gradient: const LinearGradient(
-                        colors: [Color(0xFF6366F1), Color(0xFF8B5CF6)],
-                        begin: Alignment.topLeft,
-                        end: Alignment.bottomRight,
+            bottom: false,
+            child: Align(
+              alignment: Alignment.bottomLeft,
+              child: Padding(
+                padding: const EdgeInsets.fromLTRB(20, 0, 20, 8),
+                child: Row(
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.all(10),
+                      decoration: BoxDecoration(
+                        gradient: const LinearGradient(
+                          colors: [Color(0xFF6366F1), Color(0xFF8B5CF6)],
+                          begin: Alignment.topLeft,
+                          end: Alignment.bottomRight,
+                        ),
+                        borderRadius: BorderRadius.circular(14),
+                        boxShadow: [
+                          BoxShadow(
+                            color: const Color(0xFF6366F1).withValues(alpha: 0.4),
+                            blurRadius: 12,
+                            offset: const Offset(0, 4),
+                          ),
+                        ],
                       ),
-                      borderRadius: BorderRadius.circular(20),
-                      boxShadow: [
-                        BoxShadow(
-                          color: const Color(0xFF6366F1).withValues(alpha: 0.4),
-                          blurRadius: 20,
-                          offset: const Offset(0, 8),
-                        ),
-                      ],
+                      child: const Icon(
+                        Icons.account_balance_wallet_rounded,
+                        color: Colors.white,
+                        size: 22,
+                      ),
                     ),
-                    child: const Icon(
-                      Icons.account_balance_wallet_rounded,
-                      color: Colors.white,
-                      size: 32,
-                    ),
-                  ),
-                  const SizedBox(width: 16),
-                  Expanded(
-                    child: Column(
-                      mainAxisSize: MainAxisSize.min,
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          'Billing',
-                          style: TextStyle(
-                            fontSize: 28,
-                            fontWeight: FontWeight.w800,
-                            color: isDark ? Colors.white : const Color(0xFF1E293B),
-                            letterSpacing: -0.5,
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            'Billing',
+                            style: TextStyle(
+                              fontSize: 20,
+                              fontWeight: FontWeight.w800,
+                              color: isDark ? Colors.white : const Color(0xFF1E293B),
+                              letterSpacing: -0.5,
+                            ),
                           ),
-                        ),
-                        const SizedBox(height: 4),
-                        Text(
-                          'Manage invoices & payments',
-                          style: TextStyle(
-                            fontSize: 14,
-                            color: isDark 
-                                ? Colors.white.withValues(alpha: 0.6) 
-                                : const Color(0xFF64748B),
+                          Text(
+                            'Manage invoices & payments',
+                            style: TextStyle(
+                              fontSize: 11,
+                              color: isDark 
+                                  ? Colors.white.withValues(alpha: 0.6) 
+                                  : const Color(0xFF64748B),
+                            ),
                           ),
-                        ),
-                      ],
+                        ],
+                      ),
                     ),
-                  ),
-                ],
+                  ],
+                ),
               ),
             ),
           ),
@@ -225,24 +228,23 @@ class _BillingScreenState extends ConsumerState<BillingScreen> {
     final currencyFormat = NumberFormat.currency(symbol: 'Rs. ', decimalDigits: 0);
     final screenWidth = MediaQuery.of(context).size.width;
     final isCompact = screenWidth < 400;
-    final padding = isCompact ? 12.0 : 20.0;
+    final padding = isCompact ? 12.0 : 16.0;
     
     return Padding(
       padding: EdgeInsets.all(padding),
-      child: IntrinsicHeight(
-        child: Row(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            Expanded(
-              child: _buildSummaryCard(
-                context,
-                'Total Revenue',
-                currencyFormat.format(stats['totalRevenue'] ?? 0),
-                Icons.trending_up_rounded,
-              AppColors.success,
-              'All time',
-              useGradient: true,
-            ),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Expanded(
+            child: _buildSummaryCard(
+              context,
+              'Total Revenue',
+              currencyFormat.format(stats['totalRevenue'] ?? 0),
+              Icons.trending_up_rounded,
+            AppColors.success,
+            'All time',
+            useGradient: true,
+          ),
           ),
           SizedBox(width: isCompact ? 8 : 12),
           Expanded(
@@ -256,7 +258,6 @@ class _BillingScreenState extends ConsumerState<BillingScreen> {
             ),
           ),
         ],
-        ),
       ),
     );
   }
@@ -275,7 +276,7 @@ class _BillingScreenState extends ConsumerState<BillingScreen> {
     final isCompact = screenWidth < 400;
     
     return Container(
-      padding: EdgeInsets.all(isCompact ? 14 : 18),
+      padding: EdgeInsets.all(isCompact ? 10 : 12),
       decoration: BoxDecoration(
         gradient: useGradient 
             ? LinearGradient(
@@ -285,7 +286,7 @@ class _BillingScreenState extends ConsumerState<BillingScreen> {
               )
             : null,
         color: useGradient ? null : Theme.of(context).colorScheme.surface,
-        borderRadius: BorderRadius.circular(20),
+        borderRadius: BorderRadius.circular(16),
         border: useGradient ? null : Border.all(
           color: (isDark ? AppColors.darkDivider : AppColors.divider).withValues(alpha: 0.5),
         ),
@@ -294,8 +295,8 @@ class _BillingScreenState extends ConsumerState<BillingScreen> {
             color: useGradient 
                 ? color.withValues(alpha: 0.35)
                 : Colors.black.withValues(alpha: 0.05),
-            blurRadius: 20,
-            offset: const Offset(0, 8),
+            blurRadius: 16,
+            offset: const Offset(0, 6),
           ),
         ],
       ),
@@ -304,67 +305,59 @@ class _BillingScreenState extends ConsumerState<BillingScreen> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               Container(
-                padding: EdgeInsets.all(isCompact ? 8 : 10),
+                padding: const EdgeInsets.all(6),
                 decoration: BoxDecoration(
                   color: useGradient 
                       ? Colors.white.withValues(alpha: 0.2)
                       : color.withValues(alpha: 0.12),
-                  borderRadius: BorderRadius.circular(12),
+                  borderRadius: BorderRadius.circular(8),
                 ),
                 child: Icon(
                   icon, 
                   color: useGradient ? Colors.white : color, 
-                  size: isCompact ? 20 : 22,
+                  size: 16,
                 ),
               ),
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: AppSpacing.md, vertical: AppSpacing.xs),
-                decoration: BoxDecoration(
-                  color: useGradient 
-                      ? Colors.white.withValues(alpha: 0.2)
-                      : color.withValues(alpha: 0.1),
-                  borderRadius: BorderRadius.circular(12),
-                ),
+              const SizedBox(width: 8),
+              Expanded(
                 child: Text(
-                  subtitle,
+                  title,
                   style: TextStyle(
-                    color: useGradient ? Colors.white : color,
-                    fontSize: 10,
-                    fontWeight: FontWeight.w700,
+                    fontSize: isCompact ? 10 : 11,
+                    fontWeight: FontWeight.w500,
+                    color: useGradient 
+                        ? Colors.white.withValues(alpha: 0.85)
+                        : isDark ? AppColors.darkTextSecondary : AppColors.textSecondary,
                   ),
+                  overflow: TextOverflow.ellipsis,
                 ),
               ),
             ],
           ),
-          SizedBox(height: isCompact ? 14 : 18),
+          const SizedBox(height: 8),
           Text(
-            title,
+            value,
             style: TextStyle(
-              fontSize: isCompact ? 11 : 12,
-              fontWeight: FontWeight.w500,
+              fontSize: isCompact ? 16 : 18,
+              fontWeight: FontWeight.w800,
               color: useGradient 
-                  ? Colors.white.withValues(alpha: 0.85)
-                  : isDark ? AppColors.darkTextSecondary : AppColors.textSecondary,
+                  ? Colors.white 
+                  : Theme.of(context).colorScheme.onSurface,
+              letterSpacing: -0.5,
             ),
+            overflow: TextOverflow.ellipsis,
           ),
-          const SizedBox(height: 4),
-          FittedBox(
-            fit: BoxFit.scaleDown,
-            alignment: Alignment.centerLeft,
-            child: Text(
-              value,
-              style: TextStyle(
-                fontSize: isCompact ? 16 : 20,
-                fontWeight: FontWeight.w800,
-                color: useGradient 
-                    ? Colors.white 
-                    : Theme.of(context).colorScheme.onSurface,
-                letterSpacing: -0.5,
-              ),
+          const SizedBox(height: 2),
+          Text(
+            subtitle,
+            style: TextStyle(
+              color: useGradient ? Colors.white.withValues(alpha: 0.7) : color,
+              fontSize: isCompact ? 9 : 10,
+              fontWeight: FontWeight.w600,
             ),
+            overflow: TextOverflow.ellipsis,
           ),
         ],
       ),
