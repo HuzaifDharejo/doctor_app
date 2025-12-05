@@ -188,6 +188,7 @@ class _ClinicalAnalyticsScreenState extends ConsumerState<ClinicalAnalyticsScree
 
   Widget _buildTrendsTab(BuildContext context, ClinicalAnalyticsService analyticsService) {
     return SingleChildScrollView(
+      primary: false,
       child: Padding(
         padding: const EdgeInsets.all(AppSpacing.lg),
         child: Column(
@@ -310,6 +311,7 @@ class _ClinicalAnalyticsScreenState extends ConsumerState<ClinicalAnalyticsScree
 
   Widget _buildSuccessRatesTab(BuildContext context, ClinicalAnalyticsService analyticsService) {
     return SingleChildScrollView(
+      primary: false,
       child: Padding(
         padding: const EdgeInsets.all(AppSpacing.lg),
         child: Column(
@@ -439,6 +441,7 @@ class _ClinicalAnalyticsScreenState extends ConsumerState<ClinicalAnalyticsScree
 
   Widget _buildOutcomesTab(BuildContext context, ClinicalAnalyticsService analyticsService) {
     return SingleChildScrollView(
+      primary: false,
       child: Padding(
         padding: const EdgeInsets.all(AppSpacing.lg),
         child: Column(
@@ -640,6 +643,7 @@ class _ClinicalAnalyticsScreenState extends ConsumerState<ClinicalAnalyticsScree
 
   Widget _buildDemographicsTab(BuildContext context, ClinicalAnalyticsService analyticsService) {
     return SingleChildScrollView(
+      primary: false,
       child: Padding(
         padding: const EdgeInsets.all(AppSpacing.lg),
         child: Column(

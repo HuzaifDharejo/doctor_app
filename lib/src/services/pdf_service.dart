@@ -980,4 +980,845 @@ class PdfService {
   static String _formatDateForFile(DateTime date) {
     return '${date.year}${date.month.toString().padLeft(2, '0')}${date.day.toString().padLeft(2, '0')}';
   }
+
+  /// Generate and share a complete patient summary PDF
+  static Future<void> sharePatientSummaryPdf({
+    required Patient patient,
+    required List<Appointment> appointments,
+    required List<Prescription> prescriptions,
+    required List<VitalSign> vitalSigns,
+    required List<Invoice> invoices,
+    required String doctorName,
+    required String clinicName,
+    String? clinicPhone,
+    String? clinicAddress,
+  }) async {
+    await _initFonts();
+    final pdf = await _generatePatientSummaryPdf(
+      patient: patient,
+      appointments: appointments,
+      prescriptions: prescriptions,
+      vitalSigns: vitalSigns,
+      invoices: invoices,
+      doctorName: doctorName,
+      clinicName: clinicName,
+      clinicPhone: clinicPhone,
+      clinicAddress: clinicAddress,
+    );
+    
+    await Printing.sharePdf(
+      bytes: pdf,
+      filename: 'patient_summary_${patient.firstName}_${patient.lastName}_${_formatDateForFile(DateTime.now())}.pdf',
+    );
+  }
+
+  /// Print a patient summary PDF
+  static Future<void> printPatientSummaryPdf({
+    required Patient patient,
+    required List<Appointment> appointments,
+    required List<Prescription> prescriptions,
+    required List<VitalSign> vitalSigns,
+    required List<Invoice> invoices,
+    required String doctorName,
+    required String clinicName,
+    String? clinicPhone,
+    String? clinicAddress,
+  }) async {
+    await _initFonts();
+    final pdf = await _generatePatientSummaryPdf(
+      patient: patient,
+      appointments: appointments,
+      prescriptions: prescriptions,
+      vitalSigns: vitalSigns,
+      invoices: invoices,
+      doctorName: doctorName,
+      clinicName: clinicName,
+      clinicPhone: clinicPhone,
+      clinicAddress: clinicAddress,
+    );
+    
+    await Printing.layoutPdf(
+      onLayout: (_) => pdf,
+      name: 'Patient Summary - ${patient.firstName} ${patient.lastName}',
+    );
+  }
+
+  static Future<Uint8List> _generatePatientSummaryPdf({
+    required Patient patient,
+    required List<Appointment> appointments,
+    required List<Prescription> prescriptions,
+    required List<VitalSign> vitalSigns,
+    required List<Invoice> invoices,
+    required String doctorName,
+    required String clinicName,
+    String? clinicPhone,
+    String? clinicAddress,
+  }) async {
+    final theme = _getTheme();
+    final pdf = theme != null ? pw.Document(theme: theme) : pw.Document();
+    final now = DateTime.now();
+    
+    // Calculate patient age
+    String age = '';
+    if (patient.dateOfBirth != null) {
+      final dob = patient.dateOfBirth!;
+      int years = now.year - dob.year;
+      if (now.month < dob.month || (now.month == dob.month && now.day < dob.day)) {
+        years--;
+      }
+      age = '$years years';
+    }
+
+    pdf.addPage(
+      pw.MultiPage(
+        pageFormat: PdfPageFormat.a4,
+        margin: const pw.EdgeInsets.all(40),
+        header: (context) => _buildPdfHeader(clinicName, clinicPhone, clinicAddress, doctorName),
+        footer: (context) => pw.Container(
+          alignment: pw.Alignment.centerRight,
+          margin: const pw.EdgeInsets.only(top: 10),
+          child: pw.Text(
+            'Page ${context.pageNumber} of ${context.pagesCount}',
+            style: const pw.TextStyle(fontSize: 9, color: PdfColors.grey600),
+          ),
+        ),
+        build: (context) {
+          return [
+            pw.SizedBox(height: 10),
+            pw.Divider(color: PdfColors.blue800),
+            pw.SizedBox(height: 10),
+            
+            // Title
+            pw.Center(
+              child: pw.Text(
+                'PATIENT SUMMARY REPORT',
+                style: pw.TextStyle(
+                  fontSize: 18,
+                  fontWeight: pw.FontWeight.bold,
+                  color: PdfColors.blue900,
+                ),
+              ),
+            ),
+            pw.SizedBox(height: 5),
+            pw.Center(
+              child: pw.Text(
+                'Generated on: ${_formatDate(now)}',
+                style: const pw.TextStyle(fontSize: 10, color: PdfColors.grey600),
+              ),
+            ),
+            pw.SizedBox(height: 20),
+            
+            // Patient Demographics
+            _buildSectionHeader('Patient Information'),
+            pw.Container(
+              padding: const pw.EdgeInsets.all(12),
+              decoration: pw.BoxDecoration(
+                color: PdfColors.grey100,
+                borderRadius: pw.BorderRadius.circular(6),
+              ),
+              child: pw.Column(
+                crossAxisAlignment: pw.CrossAxisAlignment.start,
+                children: [
+                  _buildInfoRow('Name', '${patient.firstName} ${patient.lastName ?? ''}'),
+                  if (age.isNotEmpty) _buildInfoRow('Age', age),
+                  if (patient.dateOfBirth != null) 
+                    _buildInfoRow('Date of Birth', _formatDate(patient.dateOfBirth!)),
+                  if (patient.phone.isNotEmpty) _buildInfoRow('Phone', patient.phone),
+                  if (patient.email.isNotEmpty) _buildInfoRow('Email', patient.email),
+                  if (patient.address.isNotEmpty) _buildInfoRow('Address', patient.address),
+                  if (patient.riskLevel > 0) 
+                    _buildInfoRow('Risk Level', _formatRiskLevel(patient.riskLevel)),
+                ],
+              ),
+            ),
+            pw.SizedBox(height: 15),
+            
+            // Medical History
+            if (patient.medicalHistory.isNotEmpty) ...[
+              _buildSectionHeader('Medical History'),
+              pw.Container(
+                padding: const pw.EdgeInsets.all(12),
+                decoration: pw.BoxDecoration(
+                  border: pw.Border.all(color: PdfColors.grey300),
+                  borderRadius: pw.BorderRadius.circular(6),
+                ),
+                child: pw.Text(patient.medicalHistory, style: const pw.TextStyle(fontSize: 10)),
+              ),
+              pw.SizedBox(height: 15),
+            ],
+            
+            // Recent Vital Signs
+            if (vitalSigns.isNotEmpty) ...[
+              _buildSectionHeader('Recent Vital Signs (Last 5)'),
+              pw.Table(
+                border: pw.TableBorder.all(color: PdfColors.grey300),
+                children: [
+                  pw.TableRow(
+                    decoration: const pw.BoxDecoration(color: PdfColors.blue100),
+                    children: [
+                      _tableCell('Date', isHeader: true),
+                      _tableCell('BP', isHeader: true),
+                      _tableCell('HR', isHeader: true),
+                      _tableCell('Temp', isHeader: true),
+                      _tableCell('SpO2', isHeader: true),
+                      _tableCell('Weight', isHeader: true),
+                    ],
+                  ),
+                  ...vitalSigns.take(5).map((v) => pw.TableRow(
+                    children: [
+                      _tableCell(_formatDate(v.recordedAt)),
+                      _tableCell(_formatBloodPressure(v.systolicBp, v.diastolicBp)),
+                      _tableCell(v.heartRate != null ? '${v.heartRate} bpm' : '-'),
+                      _tableCell(v.temperature != null ? '${v.temperature}°C' : '-'),
+                      _tableCell(v.oxygenSaturation != null ? '${v.oxygenSaturation}%' : '-'),
+                      _tableCell(v.weight != null ? '${v.weight} kg' : '-'),
+                    ],
+                  )),
+                ],
+              ),
+              pw.SizedBox(height: 15),
+            ],
+            
+            // Recent Appointments
+            if (appointments.isNotEmpty) ...[
+              _buildSectionHeader('Recent Appointments (Last 10)'),
+              pw.Table(
+                border: pw.TableBorder.all(color: PdfColors.grey300),
+                children: [
+                  pw.TableRow(
+                    decoration: const pw.BoxDecoration(color: PdfColors.blue100),
+                    children: [
+                      _tableCell('Date', isHeader: true),
+                      _tableCell('Reason', isHeader: true),
+                      _tableCell('Status', isHeader: true),
+                    ],
+                  ),
+                  ...appointments.take(10).map((a) => pw.TableRow(
+                    children: [
+                      _tableCell(_formatDate(a.appointmentDateTime)),
+                      _tableCell(a.reason.isEmpty ? 'General Visit' : a.reason),
+                      _tableCell(a.status.toUpperCase()),
+                    ],
+                  )),
+                ],
+              ),
+              pw.SizedBox(height: 15),
+            ],
+            
+            // Active Prescriptions
+            if (prescriptions.isNotEmpty) ...[
+              _buildSectionHeader('Recent Prescriptions (Last 5)'),
+              ...prescriptions.take(5).map((p) {
+                final items = _parsePrescriptionItems(p.itemsJson);
+                final firstItem = items.isNotEmpty ? items.first : null;
+                return pw.Container(
+                  margin: const pw.EdgeInsets.only(bottom: 8),
+                  padding: const pw.EdgeInsets.all(10),
+                  decoration: pw.BoxDecoration(
+                    border: pw.Border.all(color: PdfColors.grey300),
+                    borderRadius: pw.BorderRadius.circular(4),
+                  ),
+                  child: pw.Column(
+                    crossAxisAlignment: pw.CrossAxisAlignment.start,
+                    children: [
+                      pw.Row(
+                        mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
+                        children: [
+                          pw.Text(
+                            (firstItem?['name'] as String?) ?? 'Prescription',
+                            style: pw.TextStyle(fontWeight: pw.FontWeight.bold, fontSize: 11),
+                          ),
+                          pw.Text(_formatDate(p.createdAt), style: const pw.TextStyle(fontSize: 9)),
+                        ],
+                      ),
+                      if (firstItem != null) ...[
+                        pw.SizedBox(height: 4),
+                        pw.Text(
+                          '${(firstItem['dosage'] as String?) ?? ''} - ${(firstItem['frequency'] as String?) ?? ''}',
+                          style: const pw.TextStyle(fontSize: 10),
+                        ),
+                      ],
+                      if (p.instructions.isNotEmpty)
+                        pw.Text(
+                          'Instructions: ${p.instructions}',
+                          style: const pw.TextStyle(fontSize: 9, color: PdfColors.grey700),
+                        ),
+                    ],
+                  ),
+                );
+              }),
+              pw.SizedBox(height: 15),
+            ],
+            
+            // Billing Summary
+            if (invoices.isNotEmpty) ...[
+              _buildSectionHeader('Billing Summary'),
+              pw.Row(
+                mainAxisAlignment: pw.MainAxisAlignment.spaceAround,
+                children: [
+                  _buildStatBox('Total Invoices', invoices.length.toString()),
+                  _buildStatBox('Paid', invoices.where((i) => i.paymentStatus.toLowerCase() == 'paid').length.toString()),
+                  _buildStatBox('Pending', invoices.where((i) => i.paymentStatus.toLowerCase() != 'paid').length.toString()),
+                  _buildStatBox('Total Amount', 
+                    '₹${invoices.fold<double>(0, (sum, i) => sum + i.grandTotal).toStringAsFixed(0)}'),
+                ],
+              ),
+            ],
+            
+            pw.SizedBox(height: 30),
+            pw.Divider(color: PdfColors.grey400),
+            pw.SizedBox(height: 10),
+            pw.Text(
+              'This document is confidential and contains protected health information.',
+              style: const pw.TextStyle(fontSize: 8, color: PdfColors.grey600),
+              textAlign: pw.TextAlign.center,
+            ),
+          ];
+        },
+      ),
+    );
+
+    return pdf.save();
+  }
+
+  static pw.Widget _buildInfoRow(String label, String value) {
+    return pw.Padding(
+      padding: const pw.EdgeInsets.symmetric(vertical: 2),
+      child: pw.Row(
+        crossAxisAlignment: pw.CrossAxisAlignment.start,
+        children: [
+          pw.SizedBox(
+            width: 100,
+            child: pw.Text(
+              '$label:',
+              style: const pw.TextStyle(fontSize: 10, color: PdfColors.grey700),
+            ),
+          ),
+          pw.Expanded(
+            child: pw.Text(value, style: const pw.TextStyle(fontSize: 10)),
+          ),
+        ],
+      ),
+    );
+  }
+
+  static pw.Widget _buildStatBox(String label, String value) {
+    return pw.Container(
+      padding: const pw.EdgeInsets.symmetric(horizontal: 15, vertical: 10),
+      decoration: pw.BoxDecoration(
+        color: PdfColors.blue50,
+        borderRadius: pw.BorderRadius.circular(6),
+      ),
+      child: pw.Column(
+        children: [
+          pw.Text(value, 
+            style: pw.TextStyle(fontSize: 16, fontWeight: pw.FontWeight.bold, color: PdfColors.blue900)),
+          pw.SizedBox(height: 2),
+          pw.Text(label, style: const pw.TextStyle(fontSize: 8, color: PdfColors.grey700)),
+        ],
+      ),
+    );
+  }
+
+  // Helper method to format blood pressure from systolic/diastolic
+  static String _formatBloodPressure(double? systolic, double? diastolic) {
+    if (systolic == null && diastolic == null) return '-';
+    final sys = systolic?.toInt() ?? 0;
+    final dia = diastolic?.toInt() ?? 0;
+    return '$sys/$dia';
+  }
+
+  // Helper method to format risk level from int to string
+  static String _formatRiskLevel(int riskLevel) {
+    switch (riskLevel) {
+      case 1: return 'Low';
+      case 2: return 'Low-Moderate';
+      case 3: return 'Moderate';
+      case 4: return 'Moderate-High';
+      case 5: return 'High';
+      default: return 'Unknown';
+    }
+  }
+
+  // Helper method to parse prescription items from JSON
+  static List<Map<String, dynamic>> _parsePrescriptionItems(String itemsJson) {
+    try {
+      final items = jsonDecode(itemsJson) as List<dynamic>;
+      return items.map((item) => item as Map<String, dynamic>).toList();
+    } catch (_) {
+      return [];
+    }
+  }
+
+  /// Generate and share a monthly clinic report PDF
+  static Future<void> shareMonthlyReportPdf({
+    required String clinicName,
+    required DateTime month,
+    required MonthlyReportData reportData,
+    String? doctorName,
+    String? clinicAddress,
+    String? clinicPhone,
+  }) async {
+    await _initFonts();
+    
+    final pdf = pw.Document(theme: _getTheme());
+    final monthName = _getMonthName(month.month);
+    final reportTitle = 'Monthly Clinic Report - $monthName ${month.year}';
+    
+    pdf.addPage(
+      pw.MultiPage(
+        pageFormat: PdfPageFormat.a4,
+        margin: const pw.EdgeInsets.all(40),
+        header: (context) => _buildReportHeader(
+          clinicName: clinicName,
+          reportTitle: reportTitle,
+          doctorName: doctorName,
+          clinicAddress: clinicAddress,
+          clinicPhone: clinicPhone,
+        ),
+        footer: (context) => pw.Container(
+          alignment: pw.Alignment.centerRight,
+          margin: const pw.EdgeInsets.only(top: 10),
+          child: pw.Text(
+            'Page ${context.pageNumber} of ${context.pagesCount}',
+            style: const pw.TextStyle(color: PdfColors.grey600, fontSize: 9),
+          ),
+        ),
+        build: (context) => [
+          // Executive Summary Section
+          _buildSectionTitle('Executive Summary'),
+          pw.SizedBox(height: 10),
+          _buildSummaryCards(reportData),
+          pw.SizedBox(height: 20),
+          
+          // Patient Statistics
+          _buildSectionTitle('Patient Statistics'),
+          pw.SizedBox(height: 10),
+          _buildPatientStats(reportData),
+          pw.SizedBox(height: 20),
+          
+          // Appointment Statistics
+          _buildSectionTitle('Appointment Statistics'),
+          pw.SizedBox(height: 10),
+          _buildAppointmentStats(reportData),
+          pw.SizedBox(height: 20),
+          
+          // Financial Summary
+          _buildSectionTitle('Financial Summary'),
+          pw.SizedBox(height: 10),
+          _buildFinancialStats(reportData),
+          pw.SizedBox(height: 20),
+          
+          // Top Diagnoses
+          if (reportData.topDiagnoses.isNotEmpty) ...[
+            _buildSectionTitle('Top Diagnoses'),
+            pw.SizedBox(height: 10),
+            _buildTopDiagnosesList(reportData.topDiagnoses),
+            pw.SizedBox(height: 20),
+          ],
+          
+          // Prescription Summary
+          if (reportData.prescriptionCount > 0) ...[
+            _buildSectionTitle('Prescription Summary'),
+            pw.SizedBox(height: 10),
+            _buildPrescriptionStats(reportData),
+            pw.SizedBox(height: 20),
+          ],
+          
+          // Report Footer
+          pw.Container(
+            margin: const pw.EdgeInsets.only(top: 20),
+            padding: const pw.EdgeInsets.all(15),
+            decoration: pw.BoxDecoration(
+              color: PdfColors.grey100,
+              borderRadius: pw.BorderRadius.circular(8),
+            ),
+            child: pw.Column(
+              crossAxisAlignment: pw.CrossAxisAlignment.start,
+              children: [
+                pw.Text(
+                  'Report Generated',
+                  style: pw.TextStyle(fontWeight: pw.FontWeight.bold, fontSize: 10),
+                ),
+                pw.SizedBox(height: 5),
+                pw.Text(
+                  'Date: ${DateTime.now().toString().split(' ')[0]}',
+                  style: const pw.TextStyle(fontSize: 9, color: PdfColors.grey700),
+                ),
+                pw.Text(
+                  'Period: ${month.year}-${month.month.toString().padLeft(2, '0')}-01 to ${_getLastDayOfMonth(month)}',
+                  style: const pw.TextStyle(fontSize: 9, color: PdfColors.grey700),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+
+    await Printing.sharePdf(
+      bytes: await pdf.save(),
+      filename: 'monthly_report_${month.year}_${month.month.toString().padLeft(2, '0')}.pdf',
+    );
+  }
+
+  static pw.Widget _buildReportHeader({
+    required String clinicName,
+    required String reportTitle,
+    String? doctorName,
+    String? clinicAddress,
+    String? clinicPhone,
+  }) {
+    return pw.Container(
+      margin: const pw.EdgeInsets.only(bottom: 20),
+      child: pw.Column(
+        crossAxisAlignment: pw.CrossAxisAlignment.start,
+        children: [
+          pw.Row(
+            mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
+            children: [
+              pw.Column(
+                crossAxisAlignment: pw.CrossAxisAlignment.start,
+                children: [
+                  pw.Text(
+                    clinicName,
+                    style: pw.TextStyle(fontSize: 20, fontWeight: pw.FontWeight.bold, color: PdfColors.blue900),
+                  ),
+                  if (doctorName != null)
+                    pw.Text(doctorName, style: const pw.TextStyle(fontSize: 11, color: PdfColors.grey700)),
+                  if (clinicAddress != null)
+                    pw.Text(clinicAddress, style: const pw.TextStyle(fontSize: 9, color: PdfColors.grey600)),
+                  if (clinicPhone != null)
+                    pw.Text('Tel: $clinicPhone', style: const pw.TextStyle(fontSize: 9, color: PdfColors.grey600)),
+                ],
+              ),
+              pw.Container(
+                padding: const pw.EdgeInsets.all(10),
+                decoration: pw.BoxDecoration(
+                  color: PdfColors.blue50,
+                  borderRadius: pw.BorderRadius.circular(8),
+                ),
+                child: pw.Column(
+                  children: [
+                    pw.Icon(const pw.IconData(0xe1b1), size: 24, color: PdfColors.blue800), // Chart icon
+                    pw.SizedBox(height: 4),
+                    pw.Text('Monthly Report', style: const pw.TextStyle(fontSize: 8, color: PdfColors.blue800)),
+                  ],
+                ),
+              ),
+            ],
+          ),
+          pw.SizedBox(height: 10),
+          pw.Container(
+            padding: const pw.EdgeInsets.symmetric(vertical: 8, horizontal: 12),
+            decoration: pw.BoxDecoration(
+              color: PdfColors.indigo900,
+              borderRadius: pw.BorderRadius.circular(6),
+            ),
+            child: pw.Text(
+              reportTitle,
+              style: pw.TextStyle(fontSize: 14, fontWeight: pw.FontWeight.bold, color: PdfColors.white),
+            ),
+          ),
+          pw.Divider(color: PdfColors.grey300, thickness: 1),
+        ],
+      ),
+    );
+  }
+
+  static pw.Widget _buildSectionTitle(String title) {
+    return pw.Container(
+      padding: const pw.EdgeInsets.symmetric(vertical: 6, horizontal: 10),
+      decoration: const pw.BoxDecoration(
+        color: PdfColors.blue100,
+        borderRadius: pw.BorderRadius.all(pw.Radius.circular(4)),
+      ),
+      child: pw.Text(
+        title,
+        style: pw.TextStyle(fontSize: 12, fontWeight: pw.FontWeight.bold, color: PdfColors.blue900),
+      ),
+    );
+  }
+
+  static pw.Widget _buildSummaryCards(MonthlyReportData data) {
+    return pw.Row(
+      mainAxisAlignment: pw.MainAxisAlignment.spaceEvenly,
+      children: [
+        _buildStatBox('Total Patients', data.totalPatients.toString()),
+        _buildStatBox('Appointments', data.totalAppointments.toString()),
+        _buildStatBox('Revenue', 'Rs. ${data.totalRevenue.toStringAsFixed(0)}'),
+        _buildStatBox('Prescriptions', data.prescriptionCount.toString()),
+      ],
+    );
+  }
+
+  static pw.Widget _buildPatientStats(MonthlyReportData data) {
+    return pw.Container(
+      padding: const pw.EdgeInsets.all(15),
+      decoration: pw.BoxDecoration(
+        border: pw.Border.all(color: PdfColors.grey300),
+        borderRadius: pw.BorderRadius.circular(8),
+      ),
+      child: pw.Column(
+        children: [
+          pw.Row(
+            mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
+            children: [
+              pw.Text('New Patients:', style: const pw.TextStyle(fontSize: 10)),
+              pw.Text('${data.newPatients}', style: pw.TextStyle(fontSize: 10, fontWeight: pw.FontWeight.bold)),
+            ],
+          ),
+          pw.SizedBox(height: 8),
+          pw.Row(
+            mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
+            children: [
+              pw.Text('Returning Patients:', style: const pw.TextStyle(fontSize: 10)),
+              pw.Text('${data.returningPatients}', style: pw.TextStyle(fontSize: 10, fontWeight: pw.FontWeight.bold)),
+            ],
+          ),
+          pw.SizedBox(height: 8),
+          pw.Row(
+            mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
+            children: [
+              pw.Text('High Risk Patients:', style: const pw.TextStyle(fontSize: 10, color: PdfColors.red700)),
+              pw.Text('${data.highRiskPatients}', style: pw.TextStyle(fontSize: 10, fontWeight: pw.FontWeight.bold, color: PdfColors.red700)),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  static pw.Widget _buildAppointmentStats(MonthlyReportData data) {
+    return pw.Container(
+      padding: const pw.EdgeInsets.all(15),
+      decoration: pw.BoxDecoration(
+        border: pw.Border.all(color: PdfColors.grey300),
+        borderRadius: pw.BorderRadius.circular(8),
+      ),
+      child: pw.Column(
+        children: [
+          pw.Row(
+            mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
+            children: [
+              pw.Text('Completed:', style: const pw.TextStyle(fontSize: 10, color: PdfColors.green700)),
+              pw.Text('${data.completedAppointments}', style: pw.TextStyle(fontSize: 10, fontWeight: pw.FontWeight.bold, color: PdfColors.green700)),
+            ],
+          ),
+          pw.SizedBox(height: 8),
+          pw.Row(
+            mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
+            children: [
+              pw.Text('Cancelled:', style: const pw.TextStyle(fontSize: 10, color: PdfColors.red700)),
+              pw.Text('${data.cancelledAppointments}', style: pw.TextStyle(fontSize: 10, fontWeight: pw.FontWeight.bold, color: PdfColors.red700)),
+            ],
+          ),
+          pw.SizedBox(height: 8),
+          pw.Row(
+            mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
+            children: [
+              pw.Text('No-Shows:', style: const pw.TextStyle(fontSize: 10, color: PdfColors.orange700)),
+              pw.Text('${data.noShowAppointments}', style: pw.TextStyle(fontSize: 10, fontWeight: pw.FontWeight.bold, color: PdfColors.orange700)),
+            ],
+          ),
+          pw.SizedBox(height: 8),
+          pw.Divider(color: PdfColors.grey300),
+          pw.SizedBox(height: 8),
+          pw.Row(
+            mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
+            children: [
+              pw.Text('Completion Rate:', style: pw.TextStyle(fontSize: 10, fontWeight: pw.FontWeight.bold)),
+              pw.Text('${data.completionRate.toStringAsFixed(1)}%', style: pw.TextStyle(fontSize: 10, fontWeight: pw.FontWeight.bold, color: PdfColors.blue700)),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  static pw.Widget _buildFinancialStats(MonthlyReportData data) {
+    return pw.Container(
+      padding: const pw.EdgeInsets.all(15),
+      decoration: pw.BoxDecoration(
+        color: PdfColors.green50,
+        border: pw.Border.all(color: PdfColors.green200),
+        borderRadius: pw.BorderRadius.circular(8),
+      ),
+      child: pw.Column(
+        children: [
+          pw.Row(
+            mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
+            children: [
+              pw.Text('Total Invoiced:', style: const pw.TextStyle(fontSize: 10)),
+              pw.Text('Rs. ${data.totalInvoiced.toStringAsFixed(0)}', style: pw.TextStyle(fontSize: 10, fontWeight: pw.FontWeight.bold)),
+            ],
+          ),
+          pw.SizedBox(height: 8),
+          pw.Row(
+            mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
+            children: [
+              pw.Text('Amount Collected:', style: const pw.TextStyle(fontSize: 10, color: PdfColors.green700)),
+              pw.Text('Rs. ${data.totalRevenue.toStringAsFixed(0)}', style: pw.TextStyle(fontSize: 10, fontWeight: pw.FontWeight.bold, color: PdfColors.green700)),
+            ],
+          ),
+          pw.SizedBox(height: 8),
+          pw.Row(
+            mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
+            children: [
+              pw.Text('Outstanding:', style: const pw.TextStyle(fontSize: 10, color: PdfColors.red700)),
+              pw.Text('Rs. ${data.outstandingAmount.toStringAsFixed(0)}', style: pw.TextStyle(fontSize: 10, fontWeight: pw.FontWeight.bold, color: PdfColors.red700)),
+            ],
+          ),
+          pw.SizedBox(height: 8),
+          pw.Divider(color: PdfColors.green300),
+          pw.SizedBox(height: 8),
+          pw.Row(
+            mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
+            children: [
+              pw.Text('Collection Rate:', style: pw.TextStyle(fontSize: 10, fontWeight: pw.FontWeight.bold)),
+              pw.Text('${data.collectionRate.toStringAsFixed(1)}%', style: pw.TextStyle(fontSize: 10, fontWeight: pw.FontWeight.bold, color: PdfColors.green800)),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  static pw.Widget _buildTopDiagnosesList(List<DiagnosisCount> diagnoses) {
+    return pw.Container(
+      padding: const pw.EdgeInsets.all(15),
+      decoration: pw.BoxDecoration(
+        border: pw.Border.all(color: PdfColors.grey300),
+        borderRadius: pw.BorderRadius.circular(8),
+      ),
+      child: pw.Column(
+        children: [
+          pw.Row(
+            children: [
+              pw.Expanded(flex: 3, child: pw.Text('Diagnosis', style: pw.TextStyle(fontSize: 9, fontWeight: pw.FontWeight.bold))),
+              pw.Expanded(flex: 1, child: pw.Text('Count', style: pw.TextStyle(fontSize: 9, fontWeight: pw.FontWeight.bold), textAlign: pw.TextAlign.center)),
+              pw.Expanded(flex: 1, child: pw.Text('%', style: pw.TextStyle(fontSize: 9, fontWeight: pw.FontWeight.bold), textAlign: pw.TextAlign.right)),
+            ],
+          ),
+          pw.Divider(color: PdfColors.grey300),
+          ...diagnoses.take(10).map((d) => pw.Padding(
+            padding: const pw.EdgeInsets.symmetric(vertical: 4),
+            child: pw.Row(
+              children: [
+                pw.Expanded(flex: 3, child: pw.Text(d.name, style: const pw.TextStyle(fontSize: 9))),
+                pw.Expanded(flex: 1, child: pw.Text('${d.count}', style: const pw.TextStyle(fontSize: 9), textAlign: pw.TextAlign.center)),
+                pw.Expanded(flex: 1, child: pw.Text('${d.percentage.toStringAsFixed(1)}%', style: const pw.TextStyle(fontSize: 9, color: PdfColors.grey700), textAlign: pw.TextAlign.right)),
+              ],
+            ),
+          )),
+        ],
+      ),
+    );
+  }
+
+  static pw.Widget _buildPrescriptionStats(MonthlyReportData data) {
+    return pw.Container(
+      padding: const pw.EdgeInsets.all(15),
+      decoration: pw.BoxDecoration(
+        border: pw.Border.all(color: PdfColors.grey300),
+        borderRadius: pw.BorderRadius.circular(8),
+      ),
+      child: pw.Column(
+        children: [
+          pw.Row(
+            mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
+            children: [
+              pw.Text('Total Prescriptions:', style: const pw.TextStyle(fontSize: 10)),
+              pw.Text('${data.prescriptionCount}', style: pw.TextStyle(fontSize: 10, fontWeight: pw.FontWeight.bold)),
+            ],
+          ),
+          pw.SizedBox(height: 8),
+          pw.Row(
+            mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
+            children: [
+              pw.Text('Unique Medications:', style: const pw.TextStyle(fontSize: 10)),
+              pw.Text('${data.uniqueMedications}', style: pw.TextStyle(fontSize: 10, fontWeight: pw.FontWeight.bold)),
+            ],
+          ),
+          pw.SizedBox(height: 8),
+          pw.Row(
+            mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
+            children: [
+              pw.Text('Refillable Prescriptions:', style: const pw.TextStyle(fontSize: 10)),
+              pw.Text('${data.refillablePrescriptions}', style: pw.TextStyle(fontSize: 10, fontWeight: pw.FontWeight.bold)),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  static String _getMonthName(int month) {
+    const months = ['', 'January', 'February', 'March', 'April', 'May', 'June', 
+                    'July', 'August', 'September', 'October', 'November', 'December'];
+    return months[month];
+  }
+
+  static String _getLastDayOfMonth(DateTime month) {
+    final lastDay = DateTime(month.year, month.month + 1, 0);
+    return '${lastDay.year}-${lastDay.month.toString().padLeft(2, '0')}-${lastDay.day.toString().padLeft(2, '0')}';
+  }
+}
+
+/// Data model for monthly report
+class MonthlyReportData {
+  final int totalPatients;
+  final int newPatients;
+  final int returningPatients;
+  final int highRiskPatients;
+  final int totalAppointments;
+  final int completedAppointments;
+  final int cancelledAppointments;
+  final int noShowAppointments;
+  final double totalRevenue;
+  final double totalInvoiced;
+  final double outstandingAmount;
+  final int prescriptionCount;
+  final int uniqueMedications;
+  final int refillablePrescriptions;
+  final List<DiagnosisCount> topDiagnoses;
+
+  MonthlyReportData({
+    required this.totalPatients,
+    required this.newPatients,
+    required this.returningPatients,
+    required this.highRiskPatients,
+    required this.totalAppointments,
+    required this.completedAppointments,
+    required this.cancelledAppointments,
+    required this.noShowAppointments,
+    required this.totalRevenue,
+    required this.totalInvoiced,
+    required this.outstandingAmount,
+    required this.prescriptionCount,
+    required this.uniqueMedications,
+    required this.refillablePrescriptions,
+    required this.topDiagnoses,
+  });
+
+  double get completionRate => totalAppointments > 0 
+      ? (completedAppointments / totalAppointments) * 100 
+      : 0;
+  
+  double get collectionRate => totalInvoiced > 0 
+      ? (totalRevenue / totalInvoiced) * 100 
+      : 0;
+}
+
+/// Data model for diagnosis count
+class DiagnosisCount {
+  final String name;
+  final int count;
+  final double percentage;
+
+  DiagnosisCount({
+    required this.name,
+    required this.count,
+    required this.percentage,
+  });
 }

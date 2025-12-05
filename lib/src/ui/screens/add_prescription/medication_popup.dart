@@ -1,8 +1,5 @@
 import 'package:flutter/material.dart';
-import '../../../services/suggestions_service.dart';
-import '../../../services/prescription_templates.dart';
 import '../../../theme/app_theme.dart';
-import '../../../core/theme/design_tokens.dart';
 
 /// Data model for a medication entry
 class MedicationData {
@@ -124,12 +121,6 @@ class _MedicationManagerPopupState extends State<MedicationManagerPopup> with Si
         content: Text('$name removed'),
         behavior: SnackBarBehavior.floating,
         duration: const Duration(seconds: 1),
-        action: SnackBarAction(
-          label: 'Undo',
-          onPressed: () {
-            // Could implement undo but keeping it simple
-          },
-        ),
       ),
     );
   }

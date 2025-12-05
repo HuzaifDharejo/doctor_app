@@ -397,6 +397,12 @@ class _AnimatedBadgeState extends State<AnimatedBadge>
       duration: const Duration(milliseconds: 300),
     );
     
+    // Use CurvedAnimation to ensure values stay within 0.0-1.0 bounds
+    final curvedAnimation = CurvedAnimation(
+      parent: _controller,
+      curve: Curves.easeOutCubic,
+    );
+    
     _scaleAnimation = TweenSequence<double>([
       TweenSequenceItem(
         tween: Tween<double>(begin: 1, end: 1.3),
@@ -406,10 +412,7 @@ class _AnimatedBadgeState extends State<AnimatedBadge>
         tween: Tween<double>(begin: 1.3, end: 1),
         weight: 50,
       ),
-    ]).animate(CurvedAnimation(
-      parent: _controller,
-      curve: Curves.easeOutCubic,
-    ),);
+    ]).animate(curvedAnimation);
     
     _previousCount = widget.count;
     if (widget.count > 0) {

@@ -56,6 +56,12 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen>
       duration: const Duration(milliseconds: 2000),
     );
     
+    // Use CurvedAnimation to ensure values stay within bounds
+    final curvedAnimation = CurvedAnimation(
+      parent: _logoAnimationController,
+      curve: Curves.linear,
+    );
+    
     _logoScaleAnimation = TweenSequence<double>([
       TweenSequenceItem(
         tween: Tween<double>(begin: 1, end: 1.08)
@@ -67,7 +73,7 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen>
             .chain(CurveTween(curve: Curves.easeIn)),
         weight: 50,
       ),
-    ]).animate(_logoAnimationController);
+    ]).animate(curvedAnimation);
     
     _logoRotationAnimation = Tween<double>(
       begin: 0,

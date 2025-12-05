@@ -8,20 +8,25 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../core/components/app_button.dart';
 import '../../core/constants/app_strings.dart';
 import '../../core/extensions/context_extensions.dart';
-import '../../core/widgets/app_header.dart';
 import '../../core/theme/design_tokens.dart';
+import '../../providers/app_lock_provider.dart';
 import '../../providers/db_provider.dart';
 import '../../providers/google_calendar_provider.dart';
+import '../../services/app_lock_service.dart';
 import '../../services/backup_service.dart';
 import '../../services/doctor_settings_service.dart';
+import '../../services/local_notification_service.dart';
 import '../../services/localization_service.dart';
 import '../../services/logger_service.dart';
 import '../../services/seed_data_service.dart';
 import '../../core/utils/date_time_formatter.dart';
 import '../../theme/app_theme.dart';
 import '../widgets/debug_console.dart';
+import 'audit_log_viewer_screen.dart';
+import 'backup_settings_screen.dart';
 import 'doctor_profile_screen.dart';
 import 'user_manual_screen.dart';
+import 'settings/data_migration_screen.dart';
 
 class SettingsScreen extends ConsumerStatefulWidget {
   const SettingsScreen({super.key});
@@ -368,13 +373,25 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> with SingleTick
               subtitle: settings.notificationsEnabled ? 'Enabled' : 'Disabled',
               trailing: Switch(
                 value: settings.notificationsEnabled,
-                onChanged: (v) {
+                onChanged: (v) async {
                   ref.read(appSettingsProvider).setNotificationsEnabled(v);
+                  if (v) {
+                    // Request notification permissions and schedule reminders
+                    await _setupNotificationReminders(context, ref);
+                  }
                 },
                 activeTrackColor: AppColors.primary.withValues(alpha: 0.5),
                 activeThumbColor: AppColors.primary,
               ),
             ),
+            if (settings.notificationsEnabled)
+              _SettingItem(
+                icon: Icons.schedule_rounded,
+                iconColor: AppColors.info,
+                title: 'Schedule Reminders',
+                subtitle: 'Setup appointment & follow-up reminders',
+                onTap: () => _showReminderSetupDialog(context, ref),
+              ),
             _SettingItem(
               icon: Icons.dark_mode_rounded,
               iconColor: AppColors.primaryDark,
@@ -421,6 +438,10 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> with SingleTick
           _buildMedicalRecordTypesSection(context, ref, settings),
           const SizedBox(height: AppSpacing.xl),
           
+          _buildSectionTitle(context, 'Security'),
+          _buildSecuritySection(context, ref),
+          const SizedBox(height: AppSpacing.xl),
+          
           _buildSectionTitle(context, 'Data & Privacy'),
           _buildSettingsGroup(context, [
             _SettingItem(
@@ -429,6 +450,18 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> with SingleTick
               title: 'Backup & Restore',
               subtitle: 'Last backup: $backupText',
               onTap: () => _showBackupDialog(context, ref),
+            ),
+            _SettingItem(
+              icon: Icons.sync_rounded,
+              iconColor: AppColors.primary,
+              title: 'Data Migration',
+              subtitle: 'Migrate to encounter-based system',
+              onTap: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute<void>(builder: (_) => const DataMigrationScreen()),
+                );
+              },
             ),
             _SettingItem(
               icon: Icons.delete_forever_rounded,
@@ -627,7 +660,6 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> with SingleTick
         content: Column(
           mainAxisSize: MainAxisSize.min,
           children: languages.entries.map((entry) {
-            final isSelected = locService.languageCode == entry.key;
             return RadioListTile<String>(
               title: Text(entry.value),
               value: entry.key,
@@ -648,7 +680,134 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> with SingleTick
     );
   }
 
+  Future<void> _setupNotificationReminders(BuildContext context, WidgetRef ref) async {
+    try {
+      // Request permissions
+      final granted = await localNotifications.requestPermissions();
+      if (!granted && context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Notification permissions required for reminders'),
+            backgroundColor: AppColors.warning,
+          ),
+        );
+        return;
+      }
+
+      // Schedule all reminders
+      final db = await ref.read(doctorDbProvider.future);
+      final appointmentsScheduled = await localNotifications.scheduleAllAppointmentReminders(db);
+      final followUpsScheduled = await localNotifications.scheduleAllFollowUpReminders(db);
+
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Scheduled $appointmentsScheduled appointment and $followUpsScheduled follow-up reminders'),
+            backgroundColor: AppColors.success,
+          ),
+        );
+      }
+    } catch (e) {
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Error setting up reminders: $e'),
+            backgroundColor: AppColors.error,
+          ),
+        );
+      }
+    }
+  }
+
+  void _showReminderSetupDialog(BuildContext context, WidgetRef ref) {
+    showDialog<void>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Row(
+          children: [
+            Icon(Icons.notifications_active, color: AppColors.primary),
+            SizedBox(width: 12),
+            Text('Reminder Settings'),
+          ],
+        ),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            ListTile(
+              leading: const Icon(Icons.event, color: AppColors.info),
+              title: const Text('Appointment Reminders'),
+              subtitle: const Text('1 hour before each appointment'),
+              trailing: IconButton(
+                icon: const Icon(Icons.refresh),
+                onPressed: () async {
+                  Navigator.pop(context);
+                  final db = await ref.read(doctorDbProvider.future);
+                  final count = await localNotifications.scheduleAllAppointmentReminders(db);
+                  if (context.mounted) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(content: Text('Scheduled $count appointment reminders')),
+                    );
+                  }
+                },
+              ),
+            ),
+            const Divider(),
+            ListTile(
+              leading: const Icon(Icons.repeat, color: AppColors.warning),
+              title: const Text('Follow-up Reminders'),
+              subtitle: const Text('1 day before each follow-up'),
+              trailing: IconButton(
+                icon: const Icon(Icons.refresh),
+                onPressed: () async {
+                  Navigator.pop(context);
+                  final db = await ref.read(doctorDbProvider.future);
+                  final count = await localNotifications.scheduleAllFollowUpReminders(db);
+                  if (context.mounted) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(content: Text('Scheduled $count follow-up reminders')),
+                    );
+                  }
+                },
+              ),
+            ),
+            const Divider(),
+            ListTile(
+              leading: const Icon(Icons.cancel, color: AppColors.error),
+              title: const Text('Clear All Reminders'),
+              subtitle: const Text('Cancel all scheduled notifications'),
+              onTap: () async {
+                Navigator.pop(context);
+                await localNotifications.cancelAllNotifications();
+                if (context.mounted) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(content: Text('All reminders cleared')),
+                  );
+                }
+              },
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Close'),
+          ),
+        ],
+      ),
+    );
+  }
+
   void _showBackupDialog(BuildContext context, WidgetRef ref) {
+    // Navigate to the full backup settings screen
+    Navigator.push(
+      context,
+      MaterialPageRoute<void>(
+        builder: (context) => const BackupSettingsScreen(),
+      ),
+    );
+  }
+
+  void _showBackupDialogLegacy(BuildContext context, WidgetRef ref) {
     showDialog<void>(
       context: context,
       builder: (context) => AlertDialog(
@@ -1425,6 +1584,282 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> with SingleTick
     );
   }
 
+  Widget _buildSecuritySection(BuildContext context, WidgetRef ref) {
+    final appLockService = ref.watch(appLockServiceProvider);
+    final settings = appLockService.settings;
+    
+    String getAuthMethodText() {
+      switch (settings.authMethod) {
+        case AuthMethod.none:
+          return 'Disabled';
+        case AuthMethod.biometric:
+          return appLockService.getBiometricDescription();
+        case AuthMethod.pin:
+          return 'PIN Code';
+        case AuthMethod.both:
+          return '${appLockService.getBiometricDescription()} + PIN';
+      }
+    }
+
+    return _buildSettingsGroup(context, [
+      _SettingItem(
+        icon: Icons.lock_rounded,
+        iconColor: settings.isEnabled ? AppColors.success : AppColors.textSecondary,
+        title: 'App Lock',
+        subtitle: settings.isEnabled ? 'Enabled - ${getAuthMethodText()}' : 'Protect app with biometrics or PIN',
+        trailing: Switch(
+          value: settings.isEnabled,
+          onChanged: (enabled) {
+            if (enabled) {
+              _showAppLockSetupDialog(context, ref);
+            } else {
+              _confirmDisableAppLock(context, ref);
+            }
+          },
+          activeTrackColor: AppColors.success.withValues(alpha: 0.5),
+          activeColor: AppColors.success,
+        ),
+      ),
+      if (settings.isEnabled) ...[
+        _SettingItem(
+          icon: Icons.timer_rounded,
+          iconColor: AppColors.info,
+          title: 'Auto-Lock Delay',
+          subtitle: settings.autoLockDelay == 0 
+              ? 'Immediately' 
+              : '${settings.autoLockDelay} seconds',
+          onTap: () => _showAutoLockDelayDialog(context, ref),
+        ),
+        _SettingItem(
+          icon: Icons.pin_rounded,
+          iconColor: AppColors.accent,
+          title: 'Change PIN',
+          subtitle: 'Update your security PIN',
+          onTap: () => _showChangePinDialog(context, ref),
+        ),
+      ],
+      _SettingItem(
+        icon: appLockService.canUseBiometrics 
+            ? Icons.fingerprint_rounded 
+            : Icons.no_encryption_rounded,
+        iconColor: appLockService.canUseBiometrics ? AppColors.primary : AppColors.textHint,
+        title: 'Biometric Status',
+        subtitle: appLockService.canUseBiometrics 
+            ? 'Available: ${appLockService.getBiometricDescription()}'
+            : 'Not available on this device',
+        onTap: null,
+      ),
+      _SettingItem(
+        icon: Icons.history_rounded,
+        iconColor: AppColors.info,
+        title: 'Audit Trail',
+        subtitle: 'View activity logs for HIPAA compliance',
+        onTap: () {
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (_) => const AuditLogViewerScreen(),
+            ),
+          );
+        },
+      ),
+    ]);
+  }
+
+  void _showAppLockSetupDialog(BuildContext context, WidgetRef ref) {
+    final appLockService = ref.read(appLockServiceProvider);
+    final canUseBiometrics = appLockService.canUseBiometrics;
+    
+    showDialog<void>(
+      context: context,
+      builder: (context) => _AppLockSetupDialog(
+        canUseBiometrics: canUseBiometrics,
+        biometricDescription: appLockService.getBiometricDescription(),
+        onSetup: (method, pin) async {
+          final success = await appLockService.enableAppLock(
+            method: method,
+            pin: pin,
+            autoLockDelay: 0,
+            lockOnBackground: true,
+          );
+          if (success && context.mounted) {
+            Navigator.pop(context);
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(
+                content: Text('App lock enabled'),
+                backgroundColor: AppColors.success,
+              ),
+            );
+          }
+        },
+      ),
+    );
+  }
+
+  void _confirmDisableAppLock(BuildContext context, WidgetRef ref) {
+    showDialog<void>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Disable App Lock?'),
+        content: const Text(
+          'This will remove the security lock from the app. '
+          'Your patient data will be accessible without authentication.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Cancel'),
+          ),
+          TextButton(
+            onPressed: () async {
+              await ref.read(appLockServiceProvider).disableAppLock();
+              if (context.mounted) {
+                Navigator.pop(context);
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(
+                    content: Text('App lock disabled'),
+                  ),
+                );
+              }
+            },
+            style: TextButton.styleFrom(foregroundColor: AppColors.error),
+            child: const Text('Disable'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _showAutoLockDelayDialog(BuildContext context, WidgetRef ref) {
+    final appLockService = ref.read(appLockServiceProvider);
+    final currentDelay = appLockService.settings.autoLockDelay;
+    
+    showDialog<void>(
+      context: context,
+      builder: (context) => SimpleDialog(
+        title: const Text('Auto-Lock Delay'),
+        children: [
+          for (final delay in [0, 15, 30, 60, 120, 300])
+            RadioListTile<int>(
+              value: delay,
+              groupValue: currentDelay,
+              title: Text(delay == 0 ? 'Immediately' : '${delay} seconds'),
+              onChanged: (value) async {
+                if (value != null) {
+                  await appLockService.enableAppLock(
+                    method: appLockService.settings.authMethod,
+                    autoLockDelay: value,
+                    lockOnBackground: appLockService.settings.lockOnBackground,
+                  );
+                  if (context.mounted) Navigator.pop(context);
+                }
+              },
+            ),
+        ],
+      ),
+    );
+  }
+
+  void _showChangePinDialog(BuildContext context, WidgetRef ref) {
+    final appLockService = ref.read(appLockServiceProvider);
+    String currentPin = '';
+    String newPin = '';
+    String confirmPin = '';
+    String? error;
+    
+    showDialog<void>(
+      context: context,
+      builder: (context) => StatefulBuilder(
+        builder: (context, setState) => AlertDialog(
+          title: const Text('Change PIN'),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              TextField(
+                obscureText: true,
+                keyboardType: TextInputType.number,
+                maxLength: 6,
+                decoration: const InputDecoration(
+                  labelText: 'Current PIN',
+                  counterText: '',
+                ),
+                onChanged: (v) => currentPin = v,
+              ),
+              const SizedBox(height: 16),
+              TextField(
+                obscureText: true,
+                keyboardType: TextInputType.number,
+                maxLength: 6,
+                decoration: const InputDecoration(
+                  labelText: 'New PIN (4-6 digits)',
+                  counterText: '',
+                ),
+                onChanged: (v) => newPin = v,
+              ),
+              const SizedBox(height: 16),
+              TextField(
+                obscureText: true,
+                keyboardType: TextInputType.number,
+                maxLength: 6,
+                decoration: const InputDecoration(
+                  labelText: 'Confirm New PIN',
+                  counterText: '',
+                ),
+                onChanged: (v) => confirmPin = v,
+              ),
+              if (error != null) ...[
+                const SizedBox(height: 16),
+                Text(
+                  error!,
+                  style: const TextStyle(color: AppColors.error),
+                ),
+              ],
+            ],
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: const Text('Cancel'),
+            ),
+            TextButton(
+              onPressed: () async {
+                // Verify current PIN
+                if (!appLockService.authenticateWithPin(currentPin)) {
+                  setState(() => error = 'Current PIN is incorrect');
+                  return;
+                }
+                
+                // Validate new PIN
+                if (newPin.length < 4) {
+                  setState(() => error = 'PIN must be at least 4 digits');
+                  return;
+                }
+                
+                if (newPin != confirmPin) {
+                  setState(() => error = 'PINs do not match');
+                  return;
+                }
+                
+                // Update PIN
+                final success = await appLockService.updatePin(newPin);
+                if (success && context.mounted) {
+                  Navigator.pop(context);
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(
+                      content: Text('PIN updated successfully'),
+                      backgroundColor: AppColors.success,
+                    ),
+                  );
+                }
+              },
+              child: const Text('Update'),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
   Widget _buildGoogleCalendarSection(BuildContext context, WidgetRef ref) {
     final calendarState = ref.watch(googleCalendarProvider);
     final isDark = context.isDarkMode;
@@ -2144,4 +2579,186 @@ class _BackupItem {
   final String size;
   final bool isAuto;
   final File file;
+}
+
+/// App Lock Setup Dialog
+class _AppLockSetupDialog extends StatefulWidget {
+  const _AppLockSetupDialog({
+    required this.canUseBiometrics,
+    required this.biometricDescription,
+    required this.onSetup,
+  });
+
+  final bool canUseBiometrics;
+  final String biometricDescription;
+  final void Function(AuthMethod method, String? pin) onSetup;
+
+  @override
+  State<_AppLockSetupDialog> createState() => _AppLockSetupDialogState();
+}
+
+class _AppLockSetupDialogState extends State<_AppLockSetupDialog> {
+  AuthMethod _selectedMethod = AuthMethod.pin;
+  String _pin = '';
+  String _confirmPin = '';
+  String? _error;
+  int _step = 1; // 1 = select method, 2 = enter PIN
+
+  @override
+  void initState() {
+    super.initState();
+    if (widget.canUseBiometrics) {
+      _selectedMethod = AuthMethod.both;
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return AlertDialog(
+      title: Text(_step == 1 ? 'Setup App Lock' : 'Create PIN'),
+      content: AnimatedSwitcher(
+        duration: const Duration(milliseconds: 200),
+        child: _step == 1 ? _buildMethodSelection() : _buildPinEntry(),
+      ),
+      actions: [
+        TextButton(
+          onPressed: () {
+            if (_step == 2) {
+              setState(() {
+                _step = 1;
+                _pin = '';
+                _confirmPin = '';
+                _error = null;
+              });
+            } else {
+              Navigator.pop(context);
+            }
+          },
+          child: Text(_step == 2 ? 'Back' : 'Cancel'),
+        ),
+        TextButton(
+          onPressed: _handleNext,
+          child: Text(_step == 1 ? 'Next' : 'Enable'),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildMethodSelection() {
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const Text(
+          'Choose how you want to unlock the app:',
+          style: TextStyle(fontSize: 14),
+        ),
+        const SizedBox(height: 16),
+        if (widget.canUseBiometrics) ...[
+          RadioListTile<AuthMethod>(
+            value: AuthMethod.biometric,
+            groupValue: _selectedMethod,
+            title: Text(widget.biometricDescription),
+            subtitle: const Text('Quick and secure'),
+            onChanged: (v) => setState(() => _selectedMethod = v!),
+            contentPadding: EdgeInsets.zero,
+          ),
+          RadioListTile<AuthMethod>(
+            value: AuthMethod.both,
+            groupValue: _selectedMethod,
+            title: const Text('Biometric + PIN'),
+            subtitle: const Text('Recommended - most secure'),
+            onChanged: (v) => setState(() => _selectedMethod = v!),
+            contentPadding: EdgeInsets.zero,
+          ),
+        ],
+        RadioListTile<AuthMethod>(
+          value: AuthMethod.pin,
+          groupValue: _selectedMethod,
+          title: const Text('PIN Only'),
+          subtitle: const Text('4-6 digit code'),
+          onChanged: (v) => setState(() => _selectedMethod = v!),
+          contentPadding: EdgeInsets.zero,
+        ),
+      ],
+    );
+  }
+
+  Widget _buildPinEntry() {
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        const Text(
+          'Create a 4-6 digit PIN for app security.',
+          style: TextStyle(fontSize: 14),
+        ),
+        const SizedBox(height: 24),
+        TextField(
+          obscureText: true,
+          keyboardType: TextInputType.number,
+          maxLength: 6,
+          autofocus: true,
+          decoration: const InputDecoration(
+            labelText: 'Enter PIN',
+            counterText: '',
+            border: OutlineInputBorder(),
+          ),
+          onChanged: (v) {
+            setState(() {
+              _pin = v;
+              _error = null;
+            });
+          },
+        ),
+        const SizedBox(height: 16),
+        TextField(
+          obscureText: true,
+          keyboardType: TextInputType.number,
+          maxLength: 6,
+          decoration: const InputDecoration(
+            labelText: 'Confirm PIN',
+            counterText: '',
+            border: OutlineInputBorder(),
+          ),
+          onChanged: (v) {
+            setState(() {
+              _confirmPin = v;
+              _error = null;
+            });
+          },
+        ),
+        if (_error != null) ...[
+          const SizedBox(height: 16),
+          Text(
+            _error!,
+            style: const TextStyle(color: AppColors.error, fontSize: 13),
+          ),
+        ],
+      ],
+    );
+  }
+
+  void _handleNext() {
+    if (_step == 1) {
+      // If biometric only, no PIN needed
+      if (_selectedMethod == AuthMethod.biometric) {
+        widget.onSetup(_selectedMethod, null);
+        return;
+      }
+      // Move to PIN entry
+      setState(() => _step = 2);
+    } else {
+      // Validate PIN
+      if (_pin.length < 4) {
+        setState(() => _error = 'PIN must be at least 4 digits');
+        return;
+      }
+      if (_pin != _confirmPin) {
+        setState(() => _error = 'PINs do not match');
+        return;
+      }
+      // Complete setup
+      widget.onSetup(_selectedMethod, _pin);
+    }
+  }
 }

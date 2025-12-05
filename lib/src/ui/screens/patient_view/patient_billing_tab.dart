@@ -46,6 +46,7 @@ class PatientBillingTab extends ConsumerWidget {
           invoices.sort((a, b) => b.createdAt.compareTo(a.createdAt));
 
           return ListView.builder(
+            primary: false,
             padding: const EdgeInsets.all(AppSpacing.lg),
             itemCount: invoices.length,
             itemBuilder: (context, index) => _InvoiceCard(

@@ -479,7 +479,6 @@ void main() {
     });
 
     test('should filter logs by time range', () {
-      final countBefore = logger.logs.length;
       logger.i('TEST', 'Message');
 
       final now = DateTime.now();

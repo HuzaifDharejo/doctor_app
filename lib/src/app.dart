@@ -6,18 +6,21 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'core/core.dart';
 import 'core/theme/design_tokens.dart';
 import 'core/routing/app_router.dart';
+import 'db/doctor_db.dart';
+import 'providers/app_lock_provider.dart';
+import 'providers/audit_provider.dart';
 import 'providers/db_provider.dart';
 import 'services/localization_service.dart';
 import 'services/logger_service.dart';
 import 'theme/app_theme.dart';
 import 'ui/screens/appointments_screen.dart';
-import 'ui/screens/billing_screen.dart';
-import 'ui/screens/clinical_dashboard.dart';
 import 'ui/screens/dashboard_screen.dart';
-import 'ui/screens/follow_ups_screen.dart';
-import 'ui/screens/medical_records_list_screen.dart';
+import 'ui/screens/global_search_screen.dart';
+import 'ui/screens/lock_screen.dart';
+import 'ui/widgets/patient_picker_dialog.dart';
 import 'ui/screens/onboarding_screen.dart';
 import 'ui/screens/patients_screen.dart';
+import 'ui/screens/workflow_wizard_screen.dart';
 
 class DoctorApp extends ConsumerWidget {
   const DoctorApp({super.key});
@@ -79,8 +82,68 @@ class DoctorApp extends ConsumerWidget {
       ],
       onGenerateRoute: AppRouter.generateRoute,
       navigatorObservers: [_LoggingNavigatorObserver()],
-      home: const HomeShell(),
+      home: const _AppLockWrapper(),
     );
+  }
+}
+
+/// Wrapper widget that shows lock screen when app is locked
+class _AppLockWrapper extends ConsumerStatefulWidget {
+  const _AppLockWrapper();
+
+  @override
+  ConsumerState<_AppLockWrapper> createState() => _AppLockWrapperState();
+}
+
+class _AppLockWrapperState extends ConsumerState<_AppLockWrapper> 
+    with WidgetsBindingObserver {
+  
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addObserver(this);
+  }
+
+  @override
+  void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    super.dispose();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    // Notify app lock service of lifecycle changes
+    ref.read(appLockServiceProvider).onAppLifecycleChanged(state);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final appLockService = ref.watch(appLockServiceProvider);
+    
+    // Wait for app lock service to load
+    if (!appLockService.isLoaded) {
+      return const Scaffold(
+        body: Center(
+          child: CircularProgressIndicator(),
+        ),
+      );
+    }
+    
+    // Show lock screen if app is locked
+    if (appLockService.isLocked) {
+      return LockScreen(
+        appLockService: appLockService,
+        onUnlocked: () {
+          // Log unlock event for HIPAA compliance
+          ref.read(auditServiceProvider).logScreenUnlocked();
+          // Force rebuild
+          setState(() {});
+        },
+      );
+    }
+    
+    // Show main app
+    return const HomeShell();
   }
 }
 
@@ -189,6 +252,43 @@ class _HomeShellState extends ConsumerState<HomeShell> {
 
   void _openDrawer() {
     _scaffoldKey.currentState?.openDrawer();
+  }
+
+  Future<void> _showLogoutConfirmation(BuildContext context) async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        title: const Text('Logout'),
+        content: const Text('Are you sure you want to logout? You will be returned to the setup screen.'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(false),
+            child: const Text('Cancel'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(true),
+            style: TextButton.styleFrom(foregroundColor: AppColors.error),
+            child: const Text('Logout'),
+          ),
+        ],
+      ),
+    );
+    
+    if (confirmed == true && context.mounted) {
+      // Close drawer first
+      Navigator.of(context).pop();
+      // Reset app state - go to onboarding
+      final appSettings = ref.read(appSettingsProvider);
+      await appSettings.setOnboardingComplete(false);
+      if (context.mounted) {
+        // Replace entire navigation stack with onboarding
+        Navigator.of(context).pushNamedAndRemoveUntil(
+          AppRoutes.onboarding,
+          (route) => false,
+        );
+      }
+    }
   }
 
   @override
@@ -505,6 +605,52 @@ class _HomeShellState extends ConsumerState<HomeShell> {
                   const SizedBox(height: 8),
                   
                   _buildModernDrawerItem(
+                    icon: Icons.play_circle_rounded,
+                    title: 'Patient Workflow',
+                    subtitle: 'Guided visit wizard',
+                    onTap: () {
+                      context.pop<void>();
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (_) => const WorkflowWizardScreen(),
+                        ),
+                      );
+                    },
+                    color: const Color(0xFF059669),
+                    isDark: isDarkMode,
+                  ),
+                  
+                  _buildModernDrawerItem(
+                    icon: Icons.medical_services_rounded,
+                    title: 'New Encounter',
+                    subtitle: 'Start clinical encounter',
+                    onTap: () {
+                      context.pop<void>();
+                      _startNewEncounterFromDrawer(context, ref);
+                    },
+                    color: const Color(0xFFEC4899),
+                    isDark: isDarkMode,
+                  ),
+                  
+                  _buildModernDrawerItem(
+                    icon: Icons.search_rounded,
+                    title: 'Global Search',
+                    subtitle: 'Search everything',
+                    onTap: () {
+                      context.pop<void>();
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (_) => const GlobalSearchScreen(),
+                        ),
+                      );
+                    },
+                    color: const Color(0xFFF59E0B),
+                    isDark: isDarkMode,
+                  ),
+                  
+                  _buildModernDrawerItem(
                     icon: Icons.dashboard_rounded,
                     title: 'Clinical Dashboard',
                     subtitle: 'Full clinical overview',
@@ -651,7 +797,11 @@ class _HomeShellState extends ConsumerState<HomeShell> {
                     icon: Icons.cloud_sync_outlined,
                     title: AppStrings.backupSync,
                     subtitle: 'Cloud backup',
-                    onTap: () {},
+                    onTap: () {
+                      context
+                        ..pop<void>()
+                        ..pushNamed<void>(AppRoutes.backupSettings);
+                    },
                     color: const Color(0xFF14B8A6),
                     isDark: isDarkMode,
                   ),
@@ -659,7 +809,11 @@ class _HomeShellState extends ConsumerState<HomeShell> {
                     icon: Icons.help_outline_rounded,
                     title: AppStrings.helpSupport,
                     subtitle: 'Get help',
-                    onTap: () {},
+                    onTap: () {
+                      context
+                        ..pop<void>()
+                        ..pushNamed<void>(AppRoutes.userManual);
+                    },
                     color: const Color(0xFF06B6D4),
                     isDark: isDarkMode,
                   ),
@@ -685,7 +839,7 @@ class _HomeShellState extends ConsumerState<HomeShell> {
               child: SafeArea(
                 top: false,
                 child: InkWell(
-                  onTap: () {},
+                  onTap: () => _showLogoutConfirmation(context),
                   borderRadius: BorderRadius.circular(12),
                   child: Container(
                     padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
@@ -852,4 +1006,19 @@ class _HomeShellState extends ConsumerState<HomeShell> {
       ),
     );
   }
+}
+
+/// Helper function to start a new encounter from the drawer
+Future<void> _startNewEncounterFromDrawer(BuildContext context, WidgetRef ref) async {
+  final dbAsync = ref.read(doctorDbProvider);
+  
+  final db = dbAsync.valueOrNull;
+  if (db == null) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text('Database not available')),
+    );
+    return;
+  }
+
+  await startNewEncounterWithPicker(context, db);
 }

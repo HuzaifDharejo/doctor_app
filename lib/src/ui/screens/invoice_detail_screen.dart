@@ -4,12 +4,12 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 import '../../db/doctor_db.dart';
 import '../../providers/db_provider.dart';
-import '../../services/doctor_settings_service.dart';
 import '../../services/pdf_service.dart';
 import '../../services/whatsapp_service.dart';
 import '../../core/components/app_button.dart';
 import '../../theme/app_theme.dart';
 import '../../core/theme/design_tokens.dart';
+import 'edit_invoice_screen.dart';
 
 class InvoiceDetailScreen extends ConsumerStatefulWidget {
   const InvoiceDetailScreen({
@@ -643,7 +643,7 @@ class _InvoiceDetailScreenState extends ConsumerState<InvoiceDetailScreen> {
         _shareWhatsApp();
         break;
       case 'edit':
-        _showNotImplemented('Edit invoice');
+        _editInvoice();
         break;
       case 'delete':
         _confirmDelete();
@@ -719,13 +719,32 @@ class _InvoiceDetailScreenState extends ConsumerState<InvoiceDetailScreen> {
     }
   }
 
-  void _showNotImplemented(String feature) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text('$feature coming soon'),
-        behavior: SnackBarBehavior.floating,
+  Future<void> _editInvoice() async {
+    final result = await Navigator.push<bool>(
+      context,
+      MaterialPageRoute(
+        builder: (context) => EditInvoiceScreen(
+          invoice: _invoice,
+          patient: _patient,
+        ),
       ),
     );
+
+    if (result == true && mounted) {
+      // Reload the invoice data
+      final db = ref.read(doctorDbProvider).valueOrNull;
+      if (db != null) {
+        final updatedInvoice = await db.getInvoiceById(_invoice.id);
+        if (updatedInvoice != null) {
+          setState(() {
+            _invoice = updatedInvoice;
+          });
+        } else {
+          // Invoice was deleted
+          Navigator.pop(context, true);
+        }
+      }
+    }
   }
 
   Future<void> _confirmDelete() async {

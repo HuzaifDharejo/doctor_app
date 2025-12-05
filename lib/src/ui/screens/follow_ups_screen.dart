@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 import '../../core/mixins/responsive_mixin.dart';
 import '../../core/theme/design_tokens.dart';
+import '../../core/widgets/date_time_picker.dart';
 import '../../db/doctor_db.dart';
 import '../../providers/db_provider.dart';
 import '../../core/components/app_input.dart';
@@ -313,7 +314,6 @@ class _FollowUpsScreenState extends ConsumerState<FollowUpsScreen>
 
   Widget _buildFollowUpsList(List<ScheduledFollowUp> followUps, ColorScheme colorScheme, 
       {bool isOverdue = false, bool showCompleted = false}) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
     if (followUps.isEmpty) {
       return Center(
         child: Column(
@@ -340,6 +340,7 @@ class _FollowUpsScreenState extends ConsumerState<FollowUpsScreen>
     followUps.sort((a, b) => a.scheduledDate.compareTo(b.scheduledDate));
 
     return ListView.builder(
+      primary: false,
       padding: const EdgeInsets.all(AppSpacing.lg),
       itemCount: followUps.length,
       itemBuilder: (context, index) {
@@ -644,21 +645,47 @@ class _FollowUpsScreenState extends ConsumerState<FollowUpsScreen>
   }
 
   Future<void> _rescheduleFollowUp(ScheduledFollowUp followUp) async {
-    final newDate = await showDatePicker(
+    DateTime selectedDate = followUp.scheduledDate;
+    
+    final confirmed = await showDialog<bool>(
       context: context,
-      initialDate: followUp.scheduledDate,
-      firstDate: DateTime.now(),
-      lastDate: DateTime.now().add(const Duration(days: 365)),
+      builder: (context) => StatefulBuilder(
+        builder: (context, setDialogState) => AlertDialog(
+          title: const Text('Reschedule Follow-up'),
+          content: SingleChildScrollView(
+            child: CompactDatePicker(
+              label: 'New Date',
+              selectedDate: selectedDate,
+              firstDate: DateTime.now(),
+              lastDate: DateTime.now().add(const Duration(days: 365)),
+              showPresets: true,
+              onDateSelected: (date) {
+                setDialogState(() => selectedDate = date);
+              },
+            ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context, false),
+              child: const Text('Cancel'),
+            ),
+            FilledButton(
+              onPressed: () => Navigator.pop(context, true),
+              child: const Text('Reschedule'),
+            ),
+          ],
+        ),
+      ),
     );
 
-    if (newDate != null) {
+    if (confirmed == true) {
       ref.read(doctorDbProvider).whenData((db) async {
         await db.updateScheduledFollowUp(ScheduledFollowUp(
           id: followUp.id,
           patientId: followUp.patientId,
           sourceAppointmentId: followUp.sourceAppointmentId,
           sourcePrescriptionId: followUp.sourcePrescriptionId,
-          scheduledDate: newDate,
+          scheduledDate: selectedDate,
           reason: followUp.reason,
           status: followUp.status,
           createdAppointmentId: followUp.createdAppointmentId,
@@ -670,7 +697,7 @@ class _FollowUpsScreenState extends ConsumerState<FollowUpsScreen>
         await _loadFollowUps();
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text('Follow-up rescheduled to ${DateFormat('MMM dd, yyyy').format(newDate)}')),
+            SnackBar(content: Text('Follow-up rescheduled to ${DateFormat('MMM dd, yyyy').format(selectedDate)}')),
           );
         }
       });
@@ -699,27 +726,6 @@ class _FollowUpsScreenState extends ConsumerState<FollowUpsScreen>
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text('Reminder sent to ${patient != null ? '${patient.firstName} ${patient.lastName}' : "patient"}'),
-            action: SnackBarAction(
-              label: 'Undo',
-              onPressed: () async {
-                ref.read(doctorDbProvider).whenData((db) async {
-                  await db.updateScheduledFollowUp(ScheduledFollowUp(
-                    id: followUp.id,
-                    patientId: followUp.patientId,
-                    sourceAppointmentId: followUp.sourceAppointmentId,
-                    sourcePrescriptionId: followUp.sourcePrescriptionId,
-                    scheduledDate: followUp.scheduledDate,
-                    reason: followUp.reason,
-                    status: followUp.status,
-                    createdAppointmentId: followUp.createdAppointmentId,
-                    reminderSent: false,
-                    notes: followUp.notes,
-                    createdAt: followUp.createdAt,
-                  ));
-                  await _loadFollowUps();
-                });
-              },
-            ),
           ),
         );
       }
@@ -763,14 +769,11 @@ class _FollowUpsScreenState extends ConsumerState<FollowUpsScreen>
     final notesController = TextEditingController();
     DateTime scheduledDate = DateTime.now().add(const Duration(days: 7));
     int? selectedPatientId = widget.patientId;
-    List<Patient> patients = [];
 
     // Load patients if not showing for a specific patient
     if (widget.patientId == null) {
       ref.read(doctorDbProvider).whenData((db) {
-        db.getAllPatients().then((p) {
-          patients = p;
-        });
+        db.getAllPatients();
       });
     }
 
@@ -812,28 +815,16 @@ class _FollowUpsScreenState extends ConsumerState<FollowUpsScreen>
                   hint: 'e.g., Blood test review, Medication check',
                 ),
                 const SizedBox(height: 16),
-                InkWell(
-                  onTap: () async {
-                    final date = await showDatePicker(
-                      context: context,
-                      initialDate: scheduledDate,
-                      firstDate: DateTime.now(),
-                      lastDate: DateTime.now().add(const Duration(days: 365)),
-                    );
-                    if (date != null) {
-                      setDialogState(() => scheduledDate = date);
-                    }
+                // Use AppDateTimePicker with presets for quick scheduling
+                CompactDatePicker(
+                  label: 'Scheduled Date',
+                  selectedDate: scheduledDate,
+                  firstDate: DateTime.now(),
+                  lastDate: DateTime.now().add(const Duration(days: 365)),
+                  showPresets: true,
+                  onDateSelected: (date) {
+                    setDialogState(() => scheduledDate = date);
                   },
-                  child: InputDecorator(
-                    decoration: const InputDecoration(labelText: 'Scheduled Date'),
-                    child: Row(
-                      children: [
-                        const Icon(Icons.calendar_today, size: 18),
-                        const SizedBox(width: 8),
-                        Text(DateFormat('EEE, MMM dd, yyyy').format(scheduledDate)),
-                      ],
-                    ),
-                  ),
                 ),
                 const SizedBox(height: 16),
                 AppInput.multiline(

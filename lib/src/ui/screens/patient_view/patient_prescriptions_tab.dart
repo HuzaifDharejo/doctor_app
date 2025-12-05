@@ -46,6 +46,7 @@ class PatientPrescriptionsTab extends ConsumerWidget {
           prescriptions.sort((a, b) => b.createdAt.compareTo(a.createdAt));
 
           return ListView.builder(
+            primary: false,
             padding: const EdgeInsets.all(AppSpacing.lg),
             itemCount: prescriptions.length,
             itemBuilder: (context, index) => _PrescriptionCard(

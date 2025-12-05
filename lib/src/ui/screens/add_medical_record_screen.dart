@@ -409,7 +409,7 @@ class _AddMedicalRecordScreenState extends ConsumerState<AddMedicalRecordScreen>
     setState(() => _isSaving = true);
 
     try {
-      await db.insertMedicalRecord(MedicalRecordsCompanion.insert(
+      final recordId = await db.insertMedicalRecord(MedicalRecordsCompanion.insert(
         patientId: _selectedPatientId!,
         recordType: _recordType,
         title: _titleController.text.isNotEmpty 
@@ -422,6 +422,9 @@ class _AddMedicalRecordScreenState extends ConsumerState<AddMedicalRecordScreen>
         doctorNotes: Value(_doctorNotesController.text),
         recordDate: _recordDate,
       ),);
+
+      // Fetch the created medical record to return it
+      final createdRecord = await db.getMedicalRecordById(recordId);
 
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -438,7 +441,7 @@ class _AddMedicalRecordScreenState extends ConsumerState<AddMedicalRecordScreen>
             shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
           ),
         );
-        Navigator.pop(context, true);
+        Navigator.pop(context, createdRecord);
       }
     } catch (e) {
       if (mounted) {

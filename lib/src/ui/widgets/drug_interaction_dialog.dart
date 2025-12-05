@@ -285,13 +285,13 @@ class _DrugInteractionDialogState extends State<DrugInteractionDialog> {
             label: 'Cannot Prescribe',
             icon: Icons.block,
             isDisabled: true,
-            onPressed: () {},
+            onPressed: widget.onCancel, // Close dialog since cannot prescribe
           )
         else
           AppButton.primary(
             label: 'Prescribe Anyway',
             isDisabled: !_acknowledgeRisk,
-            onPressed: _acknowledgeRisk ? widget.onConfirm : () {},
+            onPressed: _acknowledgeRisk ? widget.onConfirm : widget.onCancel,
           ),
       ],
     );

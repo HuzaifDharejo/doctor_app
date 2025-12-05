@@ -37,6 +37,7 @@ import '../../ui/screens/treatment_outcomes_screen.dart';
 import '../../ui/screens/treatment_progress_screen.dart';
 import '../../ui/screens/user_manual_screen.dart';
 import '../../ui/screens/vital_signs_screen.dart';
+import '../../ui/screens/backup_settings_screen.dart';
 
 /// Route names as constants
 abstract class AppRoutes {
@@ -77,6 +78,7 @@ abstract class AppRoutes {
   static const String followUps = '/follow-ups';
   static const String labResults = '/lab-results';
   static const String onboarding = '/onboarding';
+  static const String backupSettings = '/backup-settings';
 }
 
 /// Route arguments for type-safe navigation
@@ -247,6 +249,9 @@ class AppRouter {
         
       case AppRoutes.userManual:
         return _buildRoute(const UserManualScreen(), settings);
+        
+      case AppRoutes.backupSettings:
+        return _buildRoute(const BackupSettingsScreen(), settings);
         
       case AppRoutes.treatmentDashboard:
         final args = settings.arguments as TreatmentDashboardArgs;

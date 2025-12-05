@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import '../../providers/db_provider.dart';
 import '../../theme/app_theme.dart';
 import '../widgets/notifications_panel.dart';
 import '../../core/theme/design_tokens.dart';
@@ -160,11 +159,8 @@ class _NotificationsScreenState extends ConsumerState<NotificationsScreen>
   }
 
   Widget _buildPreferencesTab(bool isDark) {
-    final surfaceColor = isDark ? AppColors.darkSurface : Colors.white;
-    final borderColor = isDark ? AppColors.darkDivider : AppColors.divider;
-    final textColor = isDark ? AppColors.darkTextPrimary : AppColors.textPrimary;
-
     return SingleChildScrollView(
+      primary: false,
       padding: const EdgeInsets.all(AppSpacing.lg),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,

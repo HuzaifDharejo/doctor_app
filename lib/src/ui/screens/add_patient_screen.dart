@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../core/utils/input_validators.dart';
 import '../../db/doctor_db.dart';
+import '../../providers/audit_provider.dart';
 import '../../providers/db_provider.dart';
 import '../../services/photo_service.dart';
 import '../../services/suggestions_service.dart';
@@ -363,17 +364,14 @@ class _AddPatientScreenState extends ConsumerState<AddPatientScreen> {
                         controller: _phone,
                         label: 'Phone Number',
                         hint: '+1 (555) 123-4567',
+                        required: false, // Optional phone
                       ),
                       const SizedBox(height: 12),
                       AppInput.email(
                         controller: _email,
                         label: 'Email Address',
                         hint: 'john.doe@email.com',
-                        validator: (value) {
-                          if (value == null || value.isEmpty) return null; // Optional
-                          if (!value.contains('@')) return 'Invalid email address';
-                          return null;
-                        },
+                        required: false, // Optional email - uses proper InputValidators
                       ),
                       const SizedBox(height: 12),
                       AppInput(
@@ -762,10 +760,23 @@ class _AddPatientScreenState extends ConsumerState<AddPatientScreen> {
       );
       final patientId = await db.insertPatient(companion);
       
+      // Log audit trail for HIPAA compliance
+      final auditService = ref.read(auditServiceProvider);
+      final patientName = '${_first.text} ${_last.text}'.trim();
+      await auditService.logPatientCreated(patientId, patientName, data: {
+        'firstName': _first.text,
+        'lastName': _last.text,
+        'phone': _phone.text.isNotEmpty ? '****${_phone.text.substring(_phone.text.length > 4 ? _phone.text.length - 4 : 0)}' : '',
+        'email': _email.text.isNotEmpty ? '****@${_email.text.split('@').lastOrNull ?? ''}' : '',
+      });
+      
       // Save photo if one was selected
       if (_selectedPhotoBytes != null) {
         await PhotoService.savePatientPhoto(patientId, _selectedPhotoBytes!);
       }
+      
+      // Fetch the created patient to return it
+      final createdPatient = await db.getPatientById(patientId);
       
       if (!mounted) return;
       
@@ -783,7 +794,7 @@ class _AddPatientScreenState extends ConsumerState<AddPatientScreen> {
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
         ),
       );
-      Navigator.of(context).pop();
+      Navigator.of(context).pop(createdPatient);
     } catch (e) {
       setState(() => _isSaving = false);
       ScaffoldMessenger.of(context).showSnackBar(

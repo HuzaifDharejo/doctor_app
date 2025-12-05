@@ -313,9 +313,7 @@ class _PsychiatricAssessmentScreenModernState
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final colorScheme = Theme.of(context).colorScheme;
-    final textColor = isDark ? Colors.white : Colors.black87;
     final cardColor = isDark ? colorScheme.surface : Colors.white;
-    final backgroundColor = isDark ? colorScheme.surface : Colors.grey.shade50;
     
     return Scaffold(
       backgroundColor: isDark ? const Color(0xFF0F0F0F) : AppColors.background,

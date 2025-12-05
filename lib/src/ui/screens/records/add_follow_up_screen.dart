@@ -10,6 +10,7 @@ import '../../../theme/app_theme.dart';
 import '../../../core/theme/design_tokens.dart';
 import '../../widgets/suggestion_text_field.dart';
 import 'record_form_widgets.dart';
+import 'components/record_components.dart';
 
 /// Screen for adding a Follow-up Visit medical record
 class AddFollowUpScreen extends ConsumerStatefulWidget {
@@ -171,6 +172,9 @@ class _AddFollowUpScreenState extends ConsumerState<AddFollowUpScreen> {
         recordDate: _recordDate,
       );
 
+      MedicalRecord? resultRecord;
+      int? recordId;
+      
       if (widget.existingRecord != null) {
         final updatedRecord = MedicalRecord(
           id: widget.existingRecord!.id,
@@ -188,8 +192,21 @@ class _AddFollowUpScreenState extends ConsumerState<AddFollowUpScreen> {
           createdAt: widget.existingRecord!.createdAt,
         );
         await db.updateMedicalRecord(updatedRecord);
+        resultRecord = updatedRecord;
+        recordId = widget.existingRecord!.id;
       } else {
-        await db.insertMedicalRecord(companion);
+        recordId = await db.insertMedicalRecord(companion);
+        resultRecord = await db.getMedicalRecordById(recordId);
+      }
+
+      // Save vitals to VitalSigns table for patient history
+      if (_hasAnyVitals()) {
+        await _saveVitalsToPatientRecord(db);
+      }
+
+      // Create ScheduledFollowUp if next follow-up date is set
+      if (_nextFollowUpDate != null) {
+        await _createScheduledFollowUp(db, recordId);
       }
 
       if (mounted) {
@@ -199,7 +216,7 @@ class _AddFollowUpScreenState extends ConsumerState<AddFollowUpScreen> {
               ? 'Follow-up record updated successfully!' 
               : 'Follow-up record saved successfully!',
         );
-        Navigator.pop(context, true);
+        Navigator.pop(context, resultRecord);
       }
     } catch (e) {
       if (mounted) {
@@ -210,43 +227,83 @@ class _AddFollowUpScreenState extends ConsumerState<AddFollowUpScreen> {
     }
   }
 
+  bool _hasAnyVitals() {
+    return _bpController.text.isNotEmpty ||
+        _pulseController.text.isNotEmpty ||
+        _tempController.text.isNotEmpty ||
+        _weightController.text.isNotEmpty ||
+        _spo2Controller.text.isNotEmpty;
+  }
+
+  Future<void> _saveVitalsToPatientRecord(DoctorDatabase db) async {
+    // Parse BP if provided (format: "120/80")
+    double? systolic;
+    double? diastolic;
+    if (_bpController.text.isNotEmpty) {
+      final bpParts = _bpController.text.split('/');
+      if (bpParts.isNotEmpty) systolic = double.tryParse(bpParts[0].trim());
+      if (bpParts.length > 1) diastolic = double.tryParse(bpParts[1].trim());
+    }
+
+    double? weight = _weightController.text.isNotEmpty 
+        ? double.tryParse(_weightController.text) 
+        : null;
+
+    await db.insertVitalSigns(VitalSignsCompanion.insert(
+      patientId: _selectedPatientId!,
+      recordedAt: _recordDate,
+      systolicBp: Value(systolic),
+      diastolicBp: Value(diastolic),
+      heartRate: Value(_pulseController.text.isNotEmpty 
+          ? int.tryParse(_pulseController.text) 
+          : null),
+      temperature: Value(_tempController.text.isNotEmpty 
+          ? double.tryParse(_tempController.text) 
+          : null),
+      oxygenSaturation: Value(_spo2Controller.text.isNotEmpty 
+          ? double.tryParse(_spo2Controller.text) 
+          : null),
+      weight: Value(weight),
+      notes: Value('Recorded during follow-up visit'),
+    ));
+  }
+
+  Future<void> _createScheduledFollowUp(DoctorDatabase db, int? sourceRecordId) async {
+    // Check if there's already a scheduled follow-up for this date
+    final existingFollowUps = await db.getScheduledFollowUpsForPatient(_selectedPatientId!);
+    final alreadyScheduled = existingFollowUps.any((f) => 
+        f.scheduledDate.year == _nextFollowUpDate!.year &&
+        f.scheduledDate.month == _nextFollowUpDate!.month &&
+        f.scheduledDate.day == _nextFollowUpDate!.day);
+    
+    if (!alreadyScheduled) {
+      await db.insertScheduledFollowUp(ScheduledFollowUpsCompanion.insert(
+        patientId: _selectedPatientId!,
+        scheduledDate: _nextFollowUpDate!,
+        reason: _nextFollowUpController.text.isNotEmpty 
+            ? _nextFollowUpController.text 
+            : 'Follow-up as per treatment plan',
+        status: const Value('pending'),
+        notes: Value('Progress: $_overallProgress. ${_planController.text}'),
+      ));
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final dbAsync = ref.watch(doctorDbProvider);
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    final screenWidth = MediaQuery.of(context).size.width;
-    final isCompact = screenWidth < 400;
-    final padding = isCompact ? 12.0 : 20.0;
 
-    return Scaffold(
-      backgroundColor: isDark ? AppColors.darkBackground : AppColors.background,
+    return RecordFormScaffold(
+      title: widget.existingRecord != null 
+          ? 'Edit Follow-up' 
+          : 'Follow-up Visit',
+      subtitle: DateFormat('EEEE, dd MMMM yyyy').format(_recordDate),
+      icon: Icons.event_repeat_rounded,
+      gradientColors: [const Color(0xFFF59E0B), const Color(0xFFD97706)], // Notes Amber
+      scrollController: _scrollController,
       body: dbAsync.when(
-        data: (db) => CustomScrollView(
-          controller: _scrollController,
-          slivers: [
-            // Gradient Header
-            SliverToBoxAdapter(
-              child: RecordFormWidgets.buildGradientHeader(
-                context: context,
-                title: widget.existingRecord != null 
-                    ? 'Edit Follow-up' 
-                    : 'Follow-up Visit',
-                subtitle: DateFormat('EEEE, dd MMMM yyyy').format(_recordDate),
-                icon: Icons.event_repeat_rounded,
-                gradientColors: [const Color(0xFFF59E0B), const Color(0xFFD97706)], // Notes Amber
-              ),
-            ),
-            // Body Content
-            SliverPadding(
-              padding: EdgeInsets.all(padding),
-              sliver: SliverList(
-                delegate: SliverChildListDelegate([
-                  _buildFormContent(context, db, isDark),
-                ]),
-              ),
-            ),
-          ],
-        ),
+        data: (db) => _buildFormContent(context, db, isDark),
         loading: () => const Center(
           child: CircularProgressIndicator(color: AppColors.primary),
         ),
@@ -262,253 +319,225 @@ class _AddFollowUpScreenState extends ConsumerState<AddFollowUpScreen> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           // Patient Selection
-          RecordFormWidgets.buildSectionHeader(
-            context, 'Patient', Icons.person_outline,
-          ),
-          const SizedBox(height: 12),
-          RecordFormWidgets.buildPatientSelector(
-            context: context,
+          PatientSelectorCard(
             db: db,
             selectedPatientId: _selectedPatientId,
             onChanged: (id) => setState(() => _selectedPatientId = id),
           ),
-          const SizedBox(height: 20),
+          const SizedBox(height: AppSpacing.lg),
 
           // Date Selection
-          RecordFormWidgets.buildSectionHeader(
-            context, 'Visit Date', Icons.calendar_today,
-          ),
-          const SizedBox(height: 12),
-          RecordFormWidgets.buildDateSelector(
-            context: context,
+          DatePickerCard(
+            label: 'Visit Date',
             selectedDate: _recordDate,
             onDateSelected: (date) => setState(() => _recordDate = date),
           ),
-          const SizedBox(height: 20),
+          const SizedBox(height: AppSpacing.lg),
 
           // Title
-          RecordFormWidgets.buildSectionHeader(context, 'Title', Icons.title),
-          const SizedBox(height: 12),
-          RecordFormWidgets.buildTextField(
-            context: context,
-            controller: _titleController,
-            hint: 'Enter record title (optional)...',
+          RecordFormSection(
+            title: 'Title',
+            icon: Icons.title,
+            child: RecordTextField(
+              controller: _titleController,
+              hint: 'Enter record title (optional)...',
+            ),
           ),
-          const SizedBox(height: 20),
+          const SizedBox(height: AppSpacing.lg),
 
           // Overall Progress
           _buildProgressSelector(isDark),
-          const SizedBox(height: 20),
+          const SizedBox(height: AppSpacing.lg),
 
           // Current Symptoms
-          RecordFormWidgets.buildSectionHeader(
-            context, 'Current Symptoms', Icons.sick_outlined,
+          RecordFormSection(
+            title: 'Current Symptoms',
+            icon: Icons.sick_outlined,
+            child: SuggestionTextField(
+              controller: _symptomsController,
+              label: 'Current Symptoms',
+              hint: 'Describe current symptoms...',
+              prefixIcon: Icons.sick_outlined,
+              maxLines: 3,
+              suggestions: MedicalSuggestions.symptoms,
+            ),
           ),
-          const SizedBox(height: 12),
-          SuggestionTextField(
-            controller: _symptomsController,
-            label: 'Current Symptoms',
-            hint: 'Describe current symptoms...',
-            prefixIcon: Icons.sick_outlined,
-            maxLines: 3,
-            suggestions: MedicalSuggestions.symptoms,
-          ),
-          const SizedBox(height: 20),
+          const SizedBox(height: AppSpacing.lg),
 
           // Vitals Section
-          RecordFormWidgets.buildSectionCard(
-            context: context,
+          RecordFormSection(
             title: 'Vital Signs',
             icon: Icons.favorite_outline,
             accentColor: const Color(0xFF14B8A6),
-            children: [
-              Row(
-                children: [
-                  Expanded(
-                    child: RecordFormWidgets.buildVitalField(
-                      context: context,
+            child: Column(
+              children: [
+                RecordFieldGrid(
+                  children: [
+                    CompactTextField(
                       controller: _bpController,
                       label: 'BP',
-                      unit: 'mmHg',
                       hint: '120/80',
+                      suffix: 'mmHg',
                     ),
-                  ),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: RecordFormWidgets.buildVitalField(
-                      context: context,
+                    CompactTextField(
                       controller: _pulseController,
                       label: 'Pulse',
-                      unit: 'bpm',
                       hint: '72',
+                      suffix: 'bpm',
                     ),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 12),
-              Row(
-                children: [
-                  Expanded(
-                    child: RecordFormWidgets.buildVitalField(
-                      context: context,
+                  ],
+                ),
+                const SizedBox(height: AppSpacing.md),
+                RecordFieldGrid(
+                  children: [
+                    CompactTextField(
                       controller: _tempController,
                       label: 'Temp',
-                      unit: '°F',
                       hint: '98.6',
+                      suffix: '°F',
                     ),
-                  ),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: RecordFormWidgets.buildVitalField(
-                      context: context,
+                    CompactTextField(
                       controller: _spo2Controller,
                       label: 'SpO₂',
-                      unit: '%',
                       hint: '98',
+                      suffix: '%',
                     ),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 12),
-              RecordFormWidgets.buildVitalField(
-                context: context,
-                controller: _weightController,
-                label: 'Weight',
-                unit: 'kg',
-                hint: '70',
-              ),
-            ],
+                  ],
+                ),
+                const SizedBox(height: AppSpacing.md),
+                CompactTextField(
+                  controller: _weightController,
+                  label: 'Weight',
+                  hint: '70',
+                  suffix: 'kg',
+                ),
+              ],
+            ),
           ),
-          const SizedBox(height: 20),
+          const SizedBox(height: AppSpacing.lg),
 
           // Progress Notes
-          RecordFormWidgets.buildSectionHeader(
-            context, 'Progress Notes', Icons.trending_up,
+          RecordFormSection(
+            title: 'Progress Notes',
+            icon: Icons.trending_up,
+            child: SuggestionTextField(
+              controller: _progressNotesController,
+              label: 'Progress Notes',
+              hint: 'Describe patient progress since last visit...',
+              prefixIcon: Icons.trending_up_outlined,
+              maxLines: 5,
+              suggestions: MedicalRecordSuggestions.followUpNotes,
+              separator: '. ',
+            ),
           ),
-          const SizedBox(height: 12),
-          SuggestionTextField(
-            controller: _progressNotesController,
-            label: 'Progress Notes',
-            hint: 'Describe patient progress since last visit...',
-            prefixIcon: Icons.trending_up_outlined,
-            maxLines: 5,
-            suggestions: MedicalRecordSuggestions.followUpNotes,
-            separator: '. ',
-          ),
-          const SizedBox(height: 20),
+          const SizedBox(height: AppSpacing.lg),
 
           // Medication Review
-          RecordFormWidgets.buildSectionCard(
-            context: context,
+          RecordFormSection(
             title: 'Medication Review',
             icon: Icons.medication_outlined,
-            children: [
-              RecordFormWidgets.buildTextField(
-                context: context,
-                controller: _complianceController,
-                hint: 'Medication compliance...',
-                maxLines: 2,
-              ),
-              const SizedBox(height: 12),
-              RecordFormWidgets.buildTextField(
-                context: context,
-                controller: _sideEffectsController,
-                hint: 'Any side effects reported...',
-                maxLines: 2,
-              ),
-              const SizedBox(height: 12),
-              RecordFormWidgets.buildTextField(
-                context: context,
-                controller: _medicationReviewController,
-                hint: 'Medication changes or adjustments...',
-                maxLines: 3,
-              ),
-            ],
+            child: Column(
+              children: [
+                RecordTextField(
+                  controller: _complianceController,
+                  hint: 'Medication compliance...',
+                  maxLines: 2,
+                ),
+                const SizedBox(height: AppSpacing.md),
+                RecordTextField(
+                  controller: _sideEffectsController,
+                  hint: 'Any side effects reported...',
+                  maxLines: 2,
+                ),
+                const SizedBox(height: AppSpacing.md),
+                RecordTextField(
+                  controller: _medicationReviewController,
+                  hint: 'Medication changes or adjustments...',
+                  maxLines: 3,
+                ),
+              ],
+            ),
           ),
-          const SizedBox(height: 20),
+          const SizedBox(height: AppSpacing.lg),
 
           // Investigations
-          RecordFormWidgets.buildSectionHeader(
-            context, 'Investigation Results', Icons.science_outlined,
+          RecordFormSection(
+            title: 'Investigation Results',
+            icon: Icons.science_outlined,
+            child: RecordTextField(
+              controller: _investigationsController,
+              hint: 'Recent investigation results...',
+              maxLines: 3,
+            ),
           ),
-          const SizedBox(height: 12),
-          RecordFormWidgets.buildTextField(
-            context: context,
-            controller: _investigationsController,
-            hint: 'Recent investigation results...',
-            maxLines: 3,
-          ),
-          const SizedBox(height: 20),
+          const SizedBox(height: AppSpacing.lg),
 
           // Assessment
-          RecordFormWidgets.buildSectionHeader(
-            context, 'Assessment', Icons.analytics,
+          RecordFormSection(
+            title: 'Assessment',
+            icon: Icons.analytics,
+            child: SuggestionTextField(
+              controller: _assessmentController,
+              label: 'Assessment',
+              hint: 'Clinical assessment...',
+              prefixIcon: Icons.analytics_outlined,
+              maxLines: 4,
+              suggestions: MedicalSuggestions.diagnoses,
+            ),
           ),
-          const SizedBox(height: 12),
-          SuggestionTextField(
-            controller: _assessmentController,
-            label: 'Assessment',
-            hint: 'Clinical assessment...',
-            prefixIcon: Icons.analytics_outlined,
-            maxLines: 4,
-            suggestions: MedicalSuggestions.diagnoses,
-          ),
-          const SizedBox(height: 20),
+          const SizedBox(height: AppSpacing.lg),
 
           // Plan
-          RecordFormWidgets.buildSectionHeader(
-            context, 'Plan', Icons.assignment,
+          RecordFormSection(
+            title: 'Plan',
+            icon: Icons.assignment,
+            child: RecordNotesField(
+              controller: _planController,
+              hint: 'Treatment plan and instructions...',
+              maxLines: 4,
+            ),
           ),
-          const SizedBox(height: 12),
-          RecordFormWidgets.buildTextField(
-            context: context,
-            controller: _planController,
-            hint: 'Treatment plan and instructions...',
-            maxLines: 4,
-          ),
-          const SizedBox(height: 20),
+          const SizedBox(height: AppSpacing.lg),
 
           // Next Follow-up
-          RecordFormWidgets.buildSectionCard(
-            context: context,
+          RecordFormSection(
             title: 'Next Follow-up',
             icon: Icons.calendar_month,
             accentColor: const Color(0xFF14B8A6),
-            children: [
-              _buildNextFollowUpDateSelector(isDark),
-              const SizedBox(height: 12),
-              RecordFormWidgets.buildTextField(
-                context: context,
-                controller: _nextFollowUpController,
-                hint: 'Notes for next follow-up...',
-                maxLines: 2,
-              ),
-            ],
+            child: Column(
+              children: [
+                _buildNextFollowUpDateSelector(isDark),
+                const SizedBox(height: AppSpacing.md),
+                RecordTextField(
+                  controller: _nextFollowUpController,
+                  hint: 'Notes for next follow-up...',
+                  maxLines: 2,
+                ),
+              ],
+            ),
           ),
-          const SizedBox(height: 20),
+          const SizedBox(height: AppSpacing.lg),
 
           // Additional Notes
-          RecordFormWidgets.buildSectionHeader(
-            context, 'Additional Notes', Icons.note_alt,
+          RecordFormSection(
+            title: 'Additional Notes',
+            icon: Icons.note_alt,
+            child: RecordNotesField(
+              controller: _clinicalNotesController,
+              hint: 'Additional clinical notes...',
+              maxLines: 4,
+            ),
           ),
-          const SizedBox(height: 12),
-          RecordFormWidgets.buildTextField(
-            context: context,
-            controller: _clinicalNotesController,
-            hint: 'Additional clinical notes...',
-            maxLines: 4,
-          ),
-          const SizedBox(height: 32),
+          const SizedBox(height: AppSpacing.xl),
 
           // Save Button
-          RecordFormWidgets.buildSaveButton(
-            context: context,
+          RecordSaveButton(
             isSaving: _isSaving,
             label: widget.existingRecord != null ? 'Update Follow-up' : 'Save Follow-up',
             onPressed: () => _saveRecord(db),
             gradientColors: [const Color(0xFFF59E0B), const Color(0xFFD97706)], // Notes Amber
           ),
-          const SizedBox(height: 40),
+          const SizedBox(height: AppSpacing.xxl),
         ],
       ),
     );
@@ -522,44 +551,41 @@ class _AddFollowUpScreenState extends ConsumerState<AddFollowUpScreen> {
       ('Resolved', Icons.check_circle_outline, AppColors.accent),
     ];
 
-    return RecordFormWidgets.buildSectionCard(
-      context: context,
+    return RecordFormSection(
       title: 'Overall Progress',
       icon: Icons.assessment_outlined,
       accentColor: const Color(0xFF14B8A6),
-      children: [
-        Wrap(
-          spacing: 8,
-          runSpacing: 8,
-          children: options.map((option) {
-            final isSelected = _overallProgress == option.$1;
-            return ChoiceChip(
-              avatar: Icon(
-                option.$2,
-                size: 16,
-                color: isSelected ? Colors.white : option.$3,
+      child: Wrap(
+        spacing: AppSpacing.sm,
+        runSpacing: AppSpacing.sm,
+        children: options.map((option) {
+          final isSelected = _overallProgress == option.$1;
+          return ChoiceChip(
+            avatar: Icon(
+              option.$2,
+              size: 16,
+              color: isSelected ? Colors.white : option.$3,
+            ),
+            label: Text(option.$1),
+            selected: isSelected,
+            onSelected: (selected) {
+              if (selected) setState(() => _overallProgress = option.$1);
+            },
+            selectedColor: option.$3,
+            backgroundColor: isDark ? AppColors.darkBackground : AppColors.background,
+            labelStyle: TextStyle(
+              color: isSelected ? Colors.white : (isDark ? AppColors.darkTextPrimary : AppColors.textPrimary),
+              fontWeight: isSelected ? FontWeight.w600 : FontWeight.normal,
+            ),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(20),
+              side: BorderSide(
+                color: isSelected ? option.$3 : (isDark ? AppColors.darkDivider : AppColors.divider),
               ),
-              label: Text(option.$1),
-              selected: isSelected,
-              onSelected: (selected) {
-                if (selected) setState(() => _overallProgress = option.$1);
-              },
-              selectedColor: option.$3,
-              backgroundColor: isDark ? AppColors.darkBackground : AppColors.background,
-              labelStyle: TextStyle(
-                color: isSelected ? Colors.white : (isDark ? AppColors.darkTextPrimary : AppColors.textPrimary),
-                fontWeight: isSelected ? FontWeight.w600 : FontWeight.normal,
-              ),
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(20),
-                side: BorderSide(
-                  color: isSelected ? option.$3 : (isDark ? AppColors.darkDivider : AppColors.divider),
-                ),
-              ),
-            );
-          }).toList(),
-        ),
-      ],
+            ),
+          );
+        }).toList(),
+      ),
     );
   }
 

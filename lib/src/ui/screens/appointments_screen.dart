@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:drift/drift.dart' hide Column;
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -7,20 +8,19 @@ import 'package:intl/intl.dart';
 import 'package:url_launcher/url_launcher.dart';
 import '../../core/theme/design_tokens.dart';
 import '../../core/extensions/context_extensions.dart';
-import '../../core/widgets/app_header.dart';
-import '../../core/widgets/gradient_fab.dart';
+import '../../core/widgets/date_time_picker.dart';
 import '../../core/widgets/loading_state.dart';
 import '../../core/widgets/error_state.dart';
-import '../../core/widgets/empty_state.dart';
 import '../../core/widgets/app_card.dart';
 import '../../core/components/app_button.dart';
-import '../../core/constants/app_constants.dart';
-import '../../core/constants/app_strings.dart';
 import '../../db/doctor_db.dart';
 import '../../providers/db_provider.dart';
 import '../../theme/app_theme.dart';
 import '../widgets/calendar_widget.dart';
+import '../widgets/quick_checkin_dialog.dart';
 import 'add_appointment_screen.dart';
+import 'edit_appointment_screen.dart';
+import 'workflow_wizard_screen.dart';
 
 class AppointmentsScreen extends ConsumerStatefulWidget {
   const AppointmentsScreen({super.key});
@@ -355,8 +355,6 @@ class _AppointmentsScreenState extends ConsumerState<AppointmentsScreen> {
   }
 
   Widget _buildAppointmentsSliverList(BuildContext context, DoctorDatabase db) {
-    final isDark = context.isDarkMode;
-    
     return FutureBuilder<List<Appointment>>(
       future: db.getAppointmentsForDay(_selectedDate),
       builder: (context, snapshot) {
@@ -762,15 +760,23 @@ class _AppointmentsScreenState extends ConsumerState<AppointmentsScreen> {
                               icon: Icons.edit_calendar_rounded,
                               label: 'Reschedule',
                               color: AppColors.warning,
-                              onTap: () {
-                                HapticFeedback.lightImpact();
-                                ScaffoldMessenger.of(context).showSnackBar(
-                                  const SnackBar(
-                                    content: Text('Reschedule feature coming soon'),
-                                    behavior: SnackBarBehavior.floating,
-                                  ),
-                                );
-                              },
+                              onTap: () => _showRescheduleDialog(context, db, appt),
+                            ),
+                            const SizedBox(width: AppSpacing.sm),
+                            _buildQuickAction(
+                              context,
+                              icon: Icons.how_to_reg_rounded,
+                              label: 'Check-In',
+                              color: const Color(0xFF10B981),
+                              onTap: () => _quickCheckIn(context, db, appt, patient),
+                            ),
+                            const SizedBox(width: AppSpacing.sm),
+                            _buildQuickAction(
+                              context,
+                              icon: Icons.play_circle_rounded,
+                              label: 'Start',
+                              color: const Color(0xFF059669),
+                              onTap: () => _startConsultation(context, db, appt, patient),
                             ),
                             const Spacer(),
                             Icon(
@@ -787,6 +793,47 @@ class _AppointmentsScreenState extends ConsumerState<AppointmentsScreen> {
         );
       },
     );
+  }
+  
+  void _startConsultation(BuildContext context, DoctorDatabase db, Appointment appt, Patient? patient) async {
+    if (patient == null) return;
+    
+    HapticFeedback.mediumImpact();
+    
+    // Update appointment status to in_progress
+    await db.updateAppointmentStatus(appt.id, 'in_progress');
+    
+    // Navigate to workflow wizard with the patient and appointment
+    if (context.mounted) {
+      Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (_) => WorkflowWizardScreen(
+            existingPatient: patient,
+            existingAppointment: appt,
+          ),
+        ),
+      );
+    }
+  }
+  
+  /// Quick check-in for appointment with auto-encounter option
+  Future<void> _quickCheckIn(BuildContext context, DoctorDatabase db, Appointment appt, Patient? patient) async {
+    if (patient == null) return;
+    
+    HapticFeedback.mediumImpact();
+    
+    final result = await showQuickCheckInDialog(context, db, appt, patient);
+    if (result != null && result.success && context.mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(result.message ?? '${patient.firstName} checked in'),
+          backgroundColor: const Color(0xFF10B981),
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
+      setState(() {}); // Refresh appointments list
+    }
   }
   
   Widget _buildQuickAction(
@@ -840,12 +887,107 @@ class _AppointmentsScreenState extends ConsumerState<AppointmentsScreen> {
     }
   }
 
+  Future<void> _showRescheduleDialog(BuildContext context, DoctorDatabase db, Appointment appt) async {
+    HapticFeedback.lightImpact();
+    DateTime selectedDate = appt.appointmentDateTime;
+    TimeOfDay selectedTime = TimeOfDay.fromDateTime(appt.appointmentDateTime);
+    
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (dialogContext) => StatefulBuilder(
+        builder: (context, setDialogState) => AlertDialog(
+          title: const Text('Reschedule Appointment'),
+          content: SingleChildScrollView(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'Current: ${DateFormat('EEE, MMM d').format(appt.appointmentDateTime)} at ${DateFormat('h:mm a').format(appt.appointmentDateTime)}',
+                  style: TextStyle(
+                    color: Colors.grey[600],
+                    fontSize: 13,
+                  ),
+                ),
+                const SizedBox(height: 16),
+                AppDateTimePicker(
+                  label: 'New Date & Time',
+                  initialDate: selectedDate,
+                  initialTime: selectedTime,
+                  firstDate: DateTime.now(),
+                  lastDate: DateTime.now().add(const Duration(days: 365)),
+                  showDatePresets: true,
+                  showTimePresets: true,
+                  onDateSelected: (date) {
+                    setDialogState(() => selectedDate = date);
+                  },
+                  onTimeSelected: (time) {
+                    setDialogState(() => selectedTime = time);
+                  },
+                ),
+              ],
+            ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(dialogContext, false),
+              child: const Text('Cancel'),
+            ),
+            FilledButton(
+              onPressed: () => Navigator.pop(dialogContext, true),
+              child: const Text('Reschedule'),
+            ),
+          ],
+        ),
+      ),
+    );
+
+    if (confirmed == true && context.mounted) {
+      final newDateTime = DateTime(
+        selectedDate.year,
+        selectedDate.month,
+        selectedDate.day,
+        selectedTime.hour,
+        selectedTime.minute,
+      );
+      
+      // Update the appointment with all existing data plus new datetime and status
+      await db.updateAppointment(AppointmentsCompanion(
+        id: Value(appt.id),
+        patientId: Value(appt.patientId),
+        appointmentDateTime: Value(newDateTime),
+        durationMinutes: Value(appt.durationMinutes),
+        reason: Value(appt.reason),
+        status: const Value('rescheduled'),
+        notes: Value(appt.notes),
+        reminderAt: Value(appt.reminderAt),
+        medicalRecordId: Value(appt.medicalRecordId),
+      ));
+      
+      // Trigger a rebuild to refresh the appointments list
+      setState(() {
+        // Update selected date to show the rescheduled appointment
+        _selectedDate = newDateTime;
+      });
+      
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Appointment rescheduled to ${DateFormat('EEE, MMM d').format(newDateTime)} at ${DateFormat('h:mm a').format(newDateTime)}'),
+            behavior: SnackBarBehavior.floating,
+          ),
+        );
+      }
+    }
+  }
+
   void _showAppointmentDetails(BuildContext context, Appointment appointment, Patient? patient) {
     final dateFormat = DateFormat('EEEE, MMMM d, yyyy');
     final timeFormat = DateFormat('h:mm a');
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final isUpcoming = appointment.appointmentDateTime.isAfter(DateTime.now());
     final isPast = appointment.appointmentDateTime.isBefore(DateTime.now());
+    final db = ref.read(doctorDbProvider).value;
 
     Color statusColor;
     IconData statusIcon;
@@ -1222,21 +1364,80 @@ class _AppointmentsScreenState extends ConsumerState<AppointmentsScreen> {
                       ),
                     const SizedBox(height: 24),
                     // Action buttons
-                    if (isUpcoming && appointment.status.toLowerCase() != 'cancelled') ...[
+                    if (isUpcoming && appointment.status.toLowerCase() != 'cancelled' && patient != null && db != null) ...[
+                      // Complete Visit button for in_progress appointments
+                      if (appointment.status.toLowerCase() == 'in_progress') ...[
+                        Container(
+                          width: double.infinity,
+                          margin: const EdgeInsets.only(bottom: 12),
+                          child: ElevatedButton.icon(
+                            onPressed: () async {
+                              Navigator.pop(context);
+                              await db!.updateAppointmentStatus(appointment.id, 'completed');
+                              if (context.mounted) {
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  SnackBar(
+                                    content: Text('Visit completed for ${patient.firstName} ${patient.lastName}'),
+                                    backgroundColor: const Color(0xFF10B981),
+                                    behavior: SnackBarBehavior.floating,
+                                  ),
+                                );
+                                setState(() {});
+                              }
+                            },
+                            icon: const Icon(Icons.check_circle_rounded, size: 22),
+                            label: const Text('Complete Visit', style: TextStyle(fontWeight: FontWeight.w600, fontSize: 16)),
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: const Color(0xFF10B981),
+                              foregroundColor: Colors.white,
+                              padding: const EdgeInsets.symmetric(vertical: 16),
+                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                              elevation: 0,
+                            ),
+                          ),
+                        ),
+                      ] else ...[
+                        // Start Consultation button - prominent for doctors
+                        Container(
+                          width: double.infinity,
+                          margin: const EdgeInsets.only(bottom: 12),
+                          child: ElevatedButton.icon(
+                            onPressed: () {
+                              Navigator.pop(context);
+                              _startConsultation(context, db!, appointment, patient);
+                            },
+                            icon: const Icon(Icons.play_circle_rounded, size: 22),
+                            label: const Text('Start Consultation', style: TextStyle(fontWeight: FontWeight.w600, fontSize: 16)),
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: const Color(0xFF059669),
+                              foregroundColor: Colors.white,
+                              padding: const EdgeInsets.symmetric(vertical: 16),
+                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                              elevation: 0,
+                            ),
+                          ),
+                        ),
+                      ],
                       Row(
                         children: [
                           Expanded(
                             child: AppButton.tertiary(
-                              label: 'Reschedule',
-                              icon: Icons.edit_calendar,
-                              onPressed: () {
+                              label: 'Edit',
+                              icon: Icons.edit,
+                              onPressed: () async {
                                 Navigator.pop(context);
-                                ScaffoldMessenger.of(context).showSnackBar(
-                                  const SnackBar(
-                                    content: Text('Reschedule feature coming soon'),
-                                    behavior: SnackBarBehavior.floating,
+                                final result = await Navigator.push<bool>(
+                                  context,
+                                  MaterialPageRoute(
+                                    builder: (context) => EditAppointmentScreen(
+                                      appointment: appointment,
+                                      patient: patient,
+                                    ),
                                   ),
                                 );
+                                if (result == true) {
+                                  setState(() {});
+                                }
                               },
                             ),
                           ),
@@ -1247,35 +1448,85 @@ class _AppointmentsScreenState extends ConsumerState<AppointmentsScreen> {
                               icon: Icons.cancel_outlined,
                               onPressed: () {
                                 Navigator.pop(context);
-                                ScaffoldMessenger.of(context).showSnackBar(
-                                  const SnackBar(
-                                    content: Text('Cancel feature coming soon'),
-                                    behavior: SnackBarBehavior.floating,
-                                  ),
-                                );
+                                _showCancelConfirmation(context, appointment, patient);
                               },
                             ),
                           ),
                         ],
                       ),
                     ],
-                    if (isPast && appointment.status.toLowerCase() != 'completed')
-                      AppButton(
-                        label: 'Mark as Completed',
-                        icon: Icons.check,
+                    if (isPast && appointment.status.toLowerCase() != 'completed' && patient != null) ...[
+                      Row(
+                        children: [
+                          Expanded(
+                            child: AppButton.tertiary(
+                              label: 'Edit',
+                              icon: Icons.edit,
+                              onPressed: () async {
+                                Navigator.pop(context);
+                                final result = await Navigator.push<bool>(
+                                  context,
+                                  MaterialPageRoute(
+                                    builder: (context) => EditAppointmentScreen(
+                                      appointment: appointment,
+                                      patient: patient,
+                                    ),
+                                  ),
+                                );
+                                if (result == true) {
+                                  setState(() {});
+                                }
+                              },
+                            ),
+                          ),
+                          const SizedBox(width: 12),
+                          Expanded(
+                            child: AppButton(
+                              label: 'Complete',
+                              icon: Icons.check,
+                              backgroundColor: AppColors.success,
+                              foregroundColor: Colors.white,
+                              onPressed: () {
+                                Navigator.pop(context);
+                                _markAsCompleted(context, appointment);
+                              },
+                            ),
+                          ),
+                        ],
+                      ),
+                    ],
+                    if (isPast && appointment.status.toLowerCase() == 'completed' && patient != null)
+                      AppButton.tertiary(
+                        label: 'Edit',
+                        icon: Icons.edit,
                         fullWidth: true,
-                        backgroundColor: AppColors.success,
-                        foregroundColor: Colors.white,
-                        onPressed: () {
+                        onPressed: () async {
                           Navigator.pop(context);
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            const SnackBar(
-                              content: Text('Mark as completed feature coming soon'),
-                              behavior: SnackBarBehavior.floating,
+                          final result = await Navigator.push<bool>(
+                            context,
+                            MaterialPageRoute(
+                              builder: (context) => EditAppointmentScreen(
+                                appointment: appointment,
+                                patient: patient,
+                              ),
                             ),
                           );
+                          if (result == true) {
+                            setState(() {});
+                          }
                         },
                       ),
+                    const SizedBox(height: 12),
+                    // Delete button - always available
+                    AppButton.danger(
+                      label: 'Delete Appointment',
+                      icon: Icons.delete_outline,
+                      fullWidth: true,
+                      onPressed: () {
+                        Navigator.pop(context);
+                        _showDeleteAppointmentConfirmation(context, appointment, patient);
+                      },
+                    ),
                     const SizedBox(height: 24),
                   ],
                 ),
@@ -1286,6 +1537,161 @@ class _AppointmentsScreenState extends ConsumerState<AppointmentsScreen> {
         ),
       ),
     );
+  }
+
+  Future<void> _showCancelConfirmation(BuildContext parentContext, Appointment appointment, Patient? patient) async {
+    final patientName = patient != null ? '${patient.firstName} ${patient.lastName}' : 'this patient';
+    final confirmed = await showDialog<bool>(
+      context: parentContext,
+      builder: (dialogContext) => AlertDialog(
+        title: const Text('Cancel Appointment'),
+        content: Text('Are you sure you want to cancel the appointment with $patientName?'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(dialogContext, false),
+            child: const Text('No'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(dialogContext, true),
+            style: TextButton.styleFrom(foregroundColor: AppColors.error),
+            child: const Text('Yes, Cancel'),
+          ),
+        ],
+      ),
+    );
+
+    if (confirmed == true && mounted) {
+      try {
+        final db = await ref.read(doctorDbProvider.future);
+        final updatedAppointment = AppointmentsCompanion(
+          id: Value(appointment.id),
+          patientId: Value(appointment.patientId),
+          appointmentDateTime: Value(appointment.appointmentDateTime),
+          durationMinutes: Value(appointment.durationMinutes),
+          reason: Value(appointment.reason),
+          status: const Value('cancelled'),
+          notes: Value(appointment.notes),
+          reminderAt: Value(appointment.reminderAt),
+          medicalRecordId: Value(appointment.medicalRecordId),
+          createdAt: Value(appointment.createdAt),
+        );
+        await db.updateAppointment(updatedAppointment);
+        setState(() {});
+        if (mounted) {
+          ScaffoldMessenger.of(parentContext).showSnackBar(
+            const SnackBar(
+              content: Text('Appointment cancelled successfully'),
+              behavior: SnackBarBehavior.floating,
+              backgroundColor: AppColors.success,
+            ),
+          );
+        }
+      } catch (e) {
+        if (mounted) {
+          ScaffoldMessenger.of(parentContext).showSnackBar(
+            SnackBar(
+              content: Text('Failed to cancel appointment: $e'),
+              behavior: SnackBarBehavior.floating,
+              backgroundColor: AppColors.error,
+            ),
+          );
+        }
+      }
+    }
+  }
+
+  Future<void> _markAsCompleted(BuildContext parentContext, Appointment appointment) async {
+    try {
+      final db = await ref.read(doctorDbProvider.future);
+      final updatedAppointment = AppointmentsCompanion(
+        id: Value(appointment.id),
+        patientId: Value(appointment.patientId),
+        appointmentDateTime: Value(appointment.appointmentDateTime),
+        durationMinutes: Value(appointment.durationMinutes),
+        reason: Value(appointment.reason),
+        status: const Value('completed'),
+        notes: Value(appointment.notes),
+        reminderAt: Value(appointment.reminderAt),
+        medicalRecordId: Value(appointment.medicalRecordId),
+        createdAt: Value(appointment.createdAt),
+      );
+      await db.updateAppointment(updatedAppointment);
+      setState(() {});
+      if (mounted) {
+        ScaffoldMessenger.of(parentContext).showSnackBar(
+          const SnackBar(
+            content: Text('Appointment marked as completed'),
+            behavior: SnackBarBehavior.floating,
+            backgroundColor: AppColors.success,
+          ),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(parentContext).showSnackBar(
+          SnackBar(
+            content: Text('Failed to update appointment: $e'),
+            behavior: SnackBarBehavior.floating,
+            backgroundColor: AppColors.error,
+          ),
+        );
+      }
+    }
+  }
+
+  Future<void> _showDeleteAppointmentConfirmation(BuildContext parentContext, Appointment appointment, Patient? patient) async {
+    final patientName = patient != null ? '${patient.firstName} ${patient.lastName}' : 'this patient';
+    final confirmed = await showDialog<bool>(
+      context: parentContext,
+      builder: (dialogContext) => AlertDialog(
+        title: const Row(
+          children: [
+            Icon(Icons.warning_amber_rounded, color: AppColors.error),
+            SizedBox(width: 12),
+            Text('Delete Appointment'),
+          ],
+        ),
+        content: Text('Are you sure you want to permanently delete the appointment with $patientName? This action cannot be undone.'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(dialogContext, false),
+            child: const Text('Cancel'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(dialogContext, true),
+            style: TextButton.styleFrom(foregroundColor: AppColors.error),
+            child: const Text('Delete'),
+          ),
+        ],
+      ),
+    );
+
+    if (confirmed == true && mounted) {
+      try {
+        final db = await ref.read(doctorDbProvider.future);
+        await db.deleteAppointment(appointment.id);
+        setState(() {});
+        if (mounted) {
+          ScaffoldMessenger.of(parentContext).showSnackBar(
+            const SnackBar(
+              content: Text('Appointment deleted successfully'),
+              behavior: SnackBarBehavior.floating,
+              backgroundColor: AppColors.success,
+            ),
+          );
+        }
+      } catch (e) {
+        if (mounted) {
+          ScaffoldMessenger.of(parentContext).showSnackBar(
+            SnackBar(
+              content: Text('Failed to delete appointment: $e'),
+              behavior: SnackBarBehavior.floating,
+              backgroundColor: AppColors.error,
+            ),
+          );
+        }
+      }
+    }
   }
 
   Color _getStatusColor(String status) {

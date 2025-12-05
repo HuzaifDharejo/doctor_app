@@ -204,13 +204,16 @@ class NotificationService {
     Patient patient,
     int minutesBefore,
   ) {
-    final days = (minutesBefore / (60 * 24)).toStringAsFixed(0);
     final time = appointment.appointmentDateTime.toString().split(' ')[1].substring(0, 5);
     final date = appointment.appointmentDateTime.toString().split(' ')[0];
+    final hoursAhead = (minutesBefore / 60).round();
+    final timeframeText = hoursAhead >= 24 
+        ? 'in ${(hoursAhead / 24).round()} day(s)' 
+        : 'in $hoursAhead hour(s)';
 
     return '''Hello ${patient.firstName},
 
-This is a reminder that you have an appointment scheduled:
+This is a reminder that you have an appointment $timeframeText:
 
 Reason: ${appointment.reason}
 Date: $date

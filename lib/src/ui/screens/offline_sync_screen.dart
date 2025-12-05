@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../core/components/app_button.dart';
-import '../../core/widgets/app_card.dart';
 import '../../core/theme/design_tokens.dart';
 import '../../theme/app_theme.dart';
 import '../../services/offline_sync_service.dart';
@@ -184,9 +183,9 @@ class _OfflineSyncScreenState extends ConsumerState<OfflineSyncScreen>
 
   Widget _buildStatusTab() {
     final stats = _syncService.getCacheStatistics();
-    final isDark = Theme.of(context).brightness == Brightness.dark;
 
     return SingleChildScrollView(
+      primary: false,
       child: Padding(
         padding: const EdgeInsets.all(AppSpacing.lg),
         child: Column(
@@ -436,6 +435,7 @@ class _OfflineSyncScreenState extends ConsumerState<OfflineSyncScreen>
     }
 
     return ListView.builder(
+      primary: false,
       padding: const EdgeInsets.all(AppSpacing.lg),
       itemCount: queue.length,
       itemBuilder: (context, index) {
@@ -500,6 +500,7 @@ class _OfflineSyncScreenState extends ConsumerState<OfflineSyncScreen>
     }
 
     return ListView.builder(
+      primary: false,
       padding: const EdgeInsets.all(AppSpacing.lg),
       itemCount: conflicts.length,
       itemBuilder: (context, index) {
@@ -643,6 +644,7 @@ class _OfflineSyncScreenState extends ConsumerState<OfflineSyncScreen>
     }
 
     return ListView.builder(
+      primary: false,
       padding: const EdgeInsets.all(AppSpacing.lg),
       itemCount: history.length,
       itemBuilder: (context, index) {

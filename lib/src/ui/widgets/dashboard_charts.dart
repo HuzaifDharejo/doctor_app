@@ -7,15 +7,30 @@ import '../../utils/pkr_currency.dart';
 class RevenueChart extends StatelessWidget {
 
   const RevenueChart({
-    required this.weeklyRevenue, required this.totalRevenue, super.key,
+    required this.weeklyRevenue,
+    required this.totalRevenue,
+    this.previousWeekRevenue,
+    super.key,
   });
   final List<double> weeklyRevenue;
   final double totalRevenue;
+  final double? previousWeekRevenue;
+
+  /// Calculate percentage change from previous week
+  double get _trendPercentage {
+    if (previousWeekRevenue == null || previousWeekRevenue == 0) {
+      return 0;
+    }
+    return ((totalRevenue - previousWeekRevenue!) / previousWeekRevenue!) * 100;
+  }
+
+  bool get _isPositiveTrend => _trendPercentage >= 0;
 
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final days = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+    final trendColor = _isPositiveTrend ? AppColors.success : AppColors.error;
     
     return Container(
       padding: const EdgeInsets.all(AppSpacing.xl),
@@ -62,28 +77,33 @@ class RevenueChart extends StatelessWidget {
                   ),
                 ],
               ),
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: AppSpacing.md, vertical: AppSpacing.xs),
-                decoration: BoxDecoration(
-                  color: AppColors.success.withValues(alpha: 0.1),
-                  borderRadius: BorderRadius.circular(20),
-                ),
-                child: const Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Icon(Icons.trending_up, size: 16, color: AppColors.success),
-                    SizedBox(width: 4),
-                    Text(
-                      '+12%',
-                      style: TextStyle(
-                        fontSize: 12,
-                        fontWeight: FontWeight.w600,
-                        color: AppColors.success,
+              if (previousWeekRevenue != null && previousWeekRevenue! > 0)
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: AppSpacing.md, vertical: AppSpacing.xs),
+                  decoration: BoxDecoration(
+                    color: trendColor.withValues(alpha: 0.1),
+                    borderRadius: BorderRadius.circular(20),
+                  ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(
+                        _isPositiveTrend ? Icons.trending_up : Icons.trending_down, 
+                        size: 16, 
+                        color: trendColor,
                       ),
-                    ),
-                  ],
+                      const SizedBox(width: 4),
+                      Text(
+                        '${_isPositiveTrend ? '+' : ''}${_trendPercentage.toStringAsFixed(0)}%',
+                        style: TextStyle(
+                          fontSize: 12,
+                          fontWeight: FontWeight.w600,
+                          color: trendColor,
+                        ),
+                      ),
+                    ],
+                  ),
                 ),
-              ),
             ],
           ),
           const SizedBox(height: 24),

@@ -33,6 +33,7 @@ dependencies:
   share_plus: ^10.1.4
   shared_preferences: ^2.5.3
   sqlite3: ^2.9.4
+  timezone: ^0.9.4
   sqlite3_flutter_libs: ^0.5.15
   syncfusion_flutter_pdf: ^31.2.16
   url_launcher: ^6.2.1

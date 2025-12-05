@@ -1,4 +1,7 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../db/doctor_db.dart';
+import 'audit_service.dart';
+import 'logger_service.dart';
 
 enum DoctorRole { doctor, staff, admin }
 
@@ -35,7 +38,17 @@ class DoctorAuthState {
 }
 
 class DoctorAuthService extends StateNotifier<DoctorAuthState> {
-  DoctorAuthService() : super(DoctorAuthState());
+  DoctorAuthService({DoctorDatabase? database}) 
+      : _database = database,
+        super(DoctorAuthState());
+  
+  final DoctorDatabase? _database;
+  AuditService? _auditService;
+  
+  /// Initialize audit service with database
+  void initAuditService(DoctorDatabase db) {
+    _auditService = AuditService(db);
+  }
 
   // Simple in-memory credentials (replace with database later)
   final Map<String, Map<String, dynamic>> _doctors = {
@@ -74,13 +87,37 @@ class DoctorAuthService extends StateNotifier<DoctorAuthState> {
             isAuthenticated: true,
           );
 
-          // TODO: Log login in audit system
+          // Log successful login in audit system
+          if (_auditService != null) {
+            _auditService!.setCurrentDoctor(
+              doctorData['name'] as String? ?? 'Unknown',
+              role: (doctorData['role'] as DoctorRole?)?.name ?? 'doctor',
+            );
+            await _auditService!.logLogin(
+              result: AuditResult.success,
+              notes: 'Login from ${DateTime.now().toIso8601String()}',
+            );
+          }
           return true;
         }
       }
+      // Log failed login attempt
+      if (_auditService != null) {
+        await _auditService!.logLogin(
+          result: AuditResult.failure,
+          notes: 'Failed login attempt for email: $email',
+        );
+      }
       return false;
     } catch (e) {
-      print('Login error: $e');
+      log.e('AUTH', 'Login error', error: e);
+      // Log login error
+      if (_auditService != null) {
+        await _auditService!.logLogin(
+          result: AuditResult.failure,
+          notes: 'Login error: $e',
+        );
+      }
       return false;
     }
   }
@@ -88,10 +125,13 @@ class DoctorAuthService extends StateNotifier<DoctorAuthState> {
   /// Logout doctor
   Future<void> logout() async {
     try {
-      // TODO: Log logout in audit system
+      // Log logout in audit system before clearing state
+      if (_auditService != null) {
+        await _auditService!.logLogout();
+      }
       state = DoctorAuthState();
     } catch (e) {
-      print('Logout error: $e');
+      log.e('AUTH', 'Logout error', error: e);
     }
   }
 
@@ -138,5 +178,13 @@ class DoctorAuthService extends StateNotifier<DoctorAuthState> {
 // Create the provider
 final doctorAuthProvider =
     StateNotifierProvider<DoctorAuthService, DoctorAuthState>((ref) {
-  return DoctorAuthService();
+  final authService = DoctorAuthService();
+  return authService;
+});
+
+/// Provider that initializes DoctorAuthService with database for audit logging
+final doctorAuthWithAuditProvider = Provider<DoctorAuthService>((ref) {
+  final authService = ref.watch(doctorAuthProvider.notifier);
+  // Database will be initialized by the caller when available
+  return authService;
 });

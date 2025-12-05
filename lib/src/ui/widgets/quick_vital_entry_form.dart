@@ -7,9 +7,7 @@ import '../../db/doctor_db.dart';
 import '../../providers/db_provider.dart';
 import '../../core/components/app_button.dart';
 import '../../core/theme/design_tokens.dart';
-import '../../services/vital_thresholds_service.dart' as vital_service;
 import '../screens/vital_signs_screen.dart';
-import 'vital_signs_alert_dialog.dart';
 
 /// Quick Vital Entry Form - Optimized for fast data entry during patient visits
 /// Features:
@@ -151,61 +149,61 @@ class _QuickVitalEntryFormState extends ConsumerState<QuickVitalEntryForm> {
     setState(() => _isSaving = true);
 
     try {
-      final dbAsync = ref.read(doctorDbProvider);
-      dbAsync.whenData((db) async {
-        final vitalSign = VitalSignsCompanion(
-          patientId: Value(widget.patientId),
-          recordedAt: Value(DateTime.now()),
-          systolicBp: _systolicController.text.isNotEmpty
-              ? Value(double.tryParse(_systolicController.text))
-              : const Value(null),
-          diastolicBp: _diastolicController.text.isNotEmpty
-              ? Value(double.tryParse(_diastolicController.text))
-              : const Value(null),
-          heartRate: _hrController.text.isNotEmpty
-              ? Value(int.tryParse(_hrController.text))
-              : const Value(null),
-          temperature: _tempController.text.isNotEmpty
-              ? Value(double.tryParse(_tempController.text))
-              : const Value(null),
-          respiratoryRate: _respRateController.text.isNotEmpty
-              ? Value(int.tryParse(_respRateController.text))
-              : const Value(null),
-          oxygenSaturation: _spo2Controller.text.isNotEmpty
-              ? Value(double.tryParse(_spo2Controller.text))
-              : const Value(null),
-          weight: _weightController.text.isNotEmpty
-              ? Value(double.tryParse(_weightController.text))
-              : const Value(null),
-          painLevel: _painLevelController.text.isNotEmpty
-              ? Value(int.tryParse(_painLevelController.text))
-              : const Value(null),
-          bloodGlucose: Value(_glucoseController.text),
+      // Properly await the database provider
+      final db = await ref.read(doctorDbProvider.future);
+      
+      final vitalSign = VitalSignsCompanion(
+        patientId: Value(widget.patientId),
+        recordedAt: Value(DateTime.now()),
+        systolicBp: _systolicController.text.isNotEmpty
+            ? Value(double.tryParse(_systolicController.text))
+            : const Value(null),
+        diastolicBp: _diastolicController.text.isNotEmpty
+            ? Value(double.tryParse(_diastolicController.text))
+            : const Value(null),
+        heartRate: _hrController.text.isNotEmpty
+            ? Value(int.tryParse(_hrController.text))
+            : const Value(null),
+        temperature: _tempController.text.isNotEmpty
+            ? Value(double.tryParse(_tempController.text))
+            : const Value(null),
+        respiratoryRate: _respRateController.text.isNotEmpty
+            ? Value(int.tryParse(_respRateController.text))
+            : const Value(null),
+        oxygenSaturation: _spo2Controller.text.isNotEmpty
+            ? Value(double.tryParse(_spo2Controller.text))
+            : const Value(null),
+        weight: _weightController.text.isNotEmpty
+            ? Value(double.tryParse(_weightController.text))
+            : const Value(null),
+        painLevel: _painLevelController.text.isNotEmpty
+            ? Value(int.tryParse(_painLevelController.text))
+            : const Value(null),
+        bloodGlucose: Value(_glucoseController.text),
+      );
+
+      await db.insertVitalSigns(vitalSign);
+
+      if (mounted) {
+        setState(() {
+          _isSaving = false;
+          _lastSavedTime = DateFormat('HH:mm:ss').format(DateTime.now());
+        });
+
+        // Check thresholds
+        _checkThresholds();
+
+        // Show snackbar
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Vitals saved at $_lastSavedTime'),
+            duration: const Duration(seconds: 2),
+            behavior: SnackBarBehavior.floating,
+          ),
         );
 
-        await db.into(db.vitalSigns).insert(vitalSign);
-
-        if (mounted) {
-          setState(() {
-            _isSaving = false;
-            _lastSavedTime = DateFormat('HH:mm:ss').format(DateTime.now());
-          });
-
-          // Check thresholds
-          _checkThresholds();
-
-          // Show snackbar
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text('Vitals saved at $_lastSavedTime'),
-              duration: const Duration(seconds: 2),
-              behavior: SnackBarBehavior.floating,
-            ),
-          );
-
-          widget.onSaved?.call();
-        }
-      });
+        widget.onSaved?.call();
+      }
     } catch (e) {
       if (mounted) {
         setState(() => _isSaving = false);
@@ -321,32 +319,14 @@ class _QuickVitalEntryFormState extends ConsumerState<QuickVitalEntryForm> {
                     ),
                 ],
               ),
-              Column(
-                spacing: 8,
-                children: [
-                  if (_isSaving)
-                    const SizedBox(
-                      width: 24,
-                      height: 24,
-                      child: CircularProgressIndicator(strokeWidth: 2),
-                    )
-                  else if (_lastSavedTime.isNotEmpty)
-                    const Icon(Icons.check_circle, color: Colors.green, size: 24),
-                  Row(
-                    spacing: 4,
-                    children: [
-                      const Text('Auto', style: TextStyle(fontSize: 11)),
-                      Switch(
-                        value: _autoSaveEnabled,
-                        onChanged: (val) {
-                          setState(() => _autoSaveEnabled = val);
-                        },
-                        materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                      ),
-                    ],
-                  ),
-                ],
-              ),
+              if (_isSaving)
+                const SizedBox(
+                  width: 24,
+                  height: 24,
+                  child: CircularProgressIndicator(strokeWidth: 2),
+                )
+              else if (_lastSavedTime.isNotEmpty)
+                const Icon(Icons.check_circle, color: Colors.green, size: 24),
             ],
           ),
 

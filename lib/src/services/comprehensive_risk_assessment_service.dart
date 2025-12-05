@@ -421,6 +421,22 @@ class ComprehensiveRiskAssessmentService {
       );
     }
 
+    if (lateCount >= 3) {
+      risks.add(
+        RiskFactor(
+          category: 'appointment',
+          riskLevel: RiskLevel.low,
+          description: 'Patient has been late to $lateCount appointments',
+          recommendations: [
+            'Discuss scheduling preferences',
+            'Send earlier reminders',
+            'Consider transportation barriers',
+          ],
+          dataPoint: '$lateCount late arrivals',
+        ),
+      );
+    }
+
     return risks;
   }
 

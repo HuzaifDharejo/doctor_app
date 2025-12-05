@@ -101,7 +101,6 @@ class _LabResultsScreenState extends ConsumerState<LabResultsScreen> with Single
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final colorScheme = theme.colorScheme;
     final isDark = theme.brightness == Brightness.dark;
     final surfaceColor = isDark ? AppColors.darkSurface : Colors.white;
     final textColor = isDark ? AppColors.darkTextPrimary : AppColors.textPrimary;
@@ -397,6 +396,7 @@ class _LabResultsScreenState extends ConsumerState<LabResultsScreen> with Single
     return RefreshIndicator(
       onRefresh: _loadLabResults,
       child: ListView.builder(
+        primary: false,
         padding: const EdgeInsets.all(AppSpacing.lg),
         itemCount: results.length,
         itemBuilder: (context, index) {

@@ -3,14 +3,16 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 import '../../db/doctor_db.dart';
+import '../../providers/audit_provider.dart';
 import '../../providers/db_provider.dart';
 import '../../providers/google_calendar_provider.dart';
+import '../../services/local_notification_service.dart';
+import '../../services/logger_service.dart';
 import '../../services/suggestions_service.dart';
 import '../../core/components/app_button.dart';
 import '../../core/widgets/app_card.dart';
 import '../../core/theme/design_tokens.dart';
 import '../../theme/app_theme.dart';
-import '../widgets/suggestion_text_field.dart';
 
 class AddAppointmentScreen extends ConsumerStatefulWidget {
 
@@ -39,18 +41,26 @@ class _AddAppointmentScreenState extends ConsumerState<AddAppointmentScreen> {
   bool _isSaving = false;
   bool _setReminder = true;
   bool _showTimeSlots = false;
+  bool _isNavigating = false; // Prevent double navigation
 
   final List<int> _durations = [15, 30, 45, 60, 90, 120];
 
   @override
   void initState() {
     super.initState();
+    log.d('APPOINTMENT', 'AddAppointmentScreen opened', extra: {
+      'hasInitialDate': widget.initialDate != null,
+      'hasPatientId': widget.patientId != null,
+      'hasPreselectedPatient': widget.preselectedPatient != null,
+    });
+    log.trackScreen('AddAppointment');
     _selectedDate = widget.initialDate ?? DateTime.now();
     _selectedPatientId = widget.patientId ?? widget.preselectedPatient?.id;
   }
 
   @override
   void dispose() {
+    log.v('APPOINTMENT', 'AddAppointmentScreen disposed');
     _notesController.dispose();
     super.dispose();
   }
@@ -78,7 +88,15 @@ class _AddAppointmentScreenState extends ConsumerState<AddAppointmentScreen> {
               leading: Padding(
                 padding: const EdgeInsets.all(8),
                 child: GestureDetector(
-                  onTap: () => Navigator.pop(context),
+                  onTap: () {
+                    if (_isNavigating) {
+                      log.w('APPOINTMENT', 'Navigation blocked - already navigating');
+                      return;
+                    }
+                    _isNavigating = true;
+                    log.d('APPOINTMENT', 'Back button pressed, closing screen');
+                    Navigator.pop(context);
+                  },
                   child: Container(
                     decoration: BoxDecoration(
                       color: isDark ? Colors.white.withValues(alpha: 0.1) : Colors.grey.withValues(alpha: 0.1),
@@ -1270,8 +1288,12 @@ class _AddAppointmentScreenState extends ConsumerState<AddAppointmentScreen> {
   }
 
   Future<void> _saveAppointment(BuildContext context, DoctorDatabase db) async {
-    if (!_formKey.currentState!.validate()) return;
+    if (!_formKey.currentState!.validate()) {
+      log.d('APPOINTMENT', 'Form validation failed');
+      return;
+    }
     if (_selectedPatientId == null) {
+      log.w('APPOINTMENT', 'Save attempted without patient selection');
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: const Text('Please select a patient'),
@@ -1283,6 +1305,14 @@ class _AddAppointmentScreenState extends ConsumerState<AddAppointmentScreen> {
       return;
     }
 
+    log.d('APPOINTMENT', 'Starting appointment save', extra: {
+      'patientId': _selectedPatientId,
+      'date': _selectedDate.toIso8601String(),
+      'time': '${_selectedTime.hour}:${_selectedTime.minute}',
+      'duration': _duration,
+      'reason': _reason,
+    });
+    
     setState(() => _isSaving = true);
 
     try {
@@ -1304,7 +1334,7 @@ class _AddAppointmentScreenState extends ConsumerState<AddAppointmentScreen> {
           ? '${patient.firstName} ${patient.lastName}'
           : 'Patient';
 
-      await db.insertAppointment(AppointmentsCompanion.insert(
+      final appointmentId = await db.insertAppointment(AppointmentsCompanion.insert(
         patientId: _selectedPatientId!,
         appointmentDateTime: appointmentDateTime,
         durationMinutes: Value(_duration),
@@ -1313,6 +1343,24 @@ class _AddAppointmentScreenState extends ConsumerState<AddAppointmentScreen> {
         reminderAt: Value(reminderAt),
         notes: Value(_notesController.text),
       ),);
+      
+      // Log audit trail for HIPAA compliance
+      final auditService = ref.read(auditServiceProvider);
+      await auditService.logAppointmentCreated(
+        _selectedPatientId,
+        patientName,
+        appointmentId,
+      );
+      
+      // Get the created appointment to return
+      final createdAppointment = await db.getAppointmentById(appointmentId);
+      
+      log.i('APPOINTMENT', 'Appointment saved successfully', extra: {
+        'appointmentId': appointmentId,
+        'patientId': _selectedPatientId,
+        'patientName': patientName,
+        'dateTime': appointmentDateTime.toIso8601String(),
+      });
 
       // Sync with Google Calendar if connected
       final calendarState = ref.read(googleCalendarProvider);
@@ -1327,10 +1375,25 @@ class _AddAppointmentScreenState extends ConsumerState<AddAppointmentScreen> {
             patientPhone: patient?.phone,
             patientEmail: patient?.email,
           );
+          log.d('APPOINTMENT', 'Calendar event created');
         } catch (e) {
           // Don't fail the entire operation if calendar sync fails
-          debugPrint('Calendar sync failed: $e');
+          log.w('APPOINTMENT', 'Calendar sync failed', error: e);
         }
+      }
+
+      // Schedule notification reminder
+      try {
+        await localNotifications.scheduleAppointmentReminder(
+          appointmentId: appointmentId,
+          patientName: patientName,
+          appointmentTime: appointmentDateTime,
+          reason: _reason,
+        );
+        log.d('APPOINTMENT', 'Notification reminder scheduled');
+      } catch (e) {
+        // Don't fail the entire operation if notification fails
+        log.w('APPOINTMENT', 'Notification scheduling failed', error: e);
       }
 
       if (context.mounted) {
@@ -1351,9 +1414,10 @@ class _AddAppointmentScreenState extends ConsumerState<AddAppointmentScreen> {
             shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
           ),
         );
-        Navigator.pop(context, true);
+        Navigator.pop(context, createdAppointment);
       }
-    } catch (e) {
+    } catch (e, st) {
+      log.e('APPOINTMENT', 'Failed to save appointment', error: e, stackTrace: st);
       if (context.mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../theme/design_tokens.dart';
+import '../utils/input_validators.dart';
 
 /// Unified form field component for all text inputs
 /// Provides consistent styling and behavior across the app
@@ -84,6 +85,36 @@ class AppInput extends StatefulWidget {
         keyboardType: TextInputType.text,
       );
 
+  /// Name input variant with proper name validation
+  factory AppInput.name({
+    String? label = 'Name',
+    String? hint,
+    String? initialValue,
+    TextEditingController? controller,
+    String? Function(String?)? validator,
+    void Function(String)? onChanged,
+    bool enabled = true,
+    String fieldName = 'Name',
+    Key? key,
+  }) =>
+      AppInput(
+        key: key,
+        label: label,
+        hint: hint ?? 'Enter name',
+        initialValue: initialValue,
+        controller: controller,
+        validator: validator ??
+            (value) {
+              final result = InputValidators.validateName(value, fieldName: fieldName);
+              return result.isValid ? null : result.errorMessage;
+            },
+        onChanged: onChanged,
+        enabled: enabled,
+        keyboardType: TextInputType.name,
+        textCapitalization: TextCapitalization.words,
+        prefixIcon: Icons.person_outlined,
+      );
+
   /// Email input variant
   factory AppInput.email({
     String? label = 'Email Address',
@@ -93,6 +124,7 @@ class AppInput extends StatefulWidget {
     String? Function(String?)? validator,
     void Function(String)? onChanged,
     bool enabled = true,
+    bool required = false,
     Key? key,
   }) =>
       AppInput(
@@ -103,9 +135,8 @@ class AppInput extends StatefulWidget {
         controller: controller,
         validator: validator ??
             (value) {
-              if (value == null || value.isEmpty) return 'Email is required';
-              if (!value.contains('@')) return 'Invalid email address';
-              return null;
+              final result = InputValidators.validateEmail(value, required: required);
+              return result.isValid ? null : result.errorMessage;
             },
         onChanged: onChanged,
         enabled: enabled,
@@ -123,6 +154,7 @@ class AppInput extends StatefulWidget {
     String? Function(String?)? validator,
     void Function(String)? onChanged,
     bool enabled = true,
+    bool required = false,
     Key? key,
   }) =>
       AppInput(
@@ -131,7 +163,11 @@ class AppInput extends StatefulWidget {
         hint: hint ?? '+1 (555) 000-0000',
         initialValue: initialValue,
         controller: controller,
-        validator: validator,
+        validator: validator ??
+            (value) {
+              final result = InputValidators.validatePhone(value, required: required);
+              return result.isValid ? null : result.errorMessage;
+            },
         onChanged: onChanged,
         enabled: enabled,
         keyboardType: TextInputType.phone,

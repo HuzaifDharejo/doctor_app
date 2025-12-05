@@ -5,19 +5,9 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../db/doctor_db.dart';
 import '../../providers/db_provider.dart';
-import '../../theme/app_theme.dart';
-import '../../core/theme/design_tokens.dart';
-import '../../core/extensions/context_extensions.dart';
-import '../../core/widgets/app_header.dart';
-import '../../core/widgets/app_search_bar.dart';
-import '../../core/widgets/shimmer_loading.dart';
-import '../../core/widgets/error_display.dart';
 import '../../core/widgets/loading_state.dart';
 import '../../core/widgets/error_state.dart';
-import '../../core/widgets/empty_state.dart';
-import '../../core/widgets/gradient_fab.dart';
-import '../../core/constants/app_strings.dart';
-import '../widgets/patient_card.dart';
+import '../../core/utils/pagination.dart';
 import 'add_patient_screen.dart';
 import 'patient_view/patient_view.dart';
 
@@ -31,16 +21,124 @@ class PatientsScreen extends ConsumerStatefulWidget {
 class _PatientsScreenState extends ConsumerState<PatientsScreen> {
   String _searchQuery = '';
   String _filterRisk = 'All';
-  final _refreshKey = GlobalKey<RefreshIndicatorState>();
+  
+  // Pagination using PaginationController
+  late PaginationController<Patient> _paginationController;
+  final ScrollController _scrollController = ScrollController();
+  Timer? _debounceTimer;
+  String? _error;
+  bool _isRefreshing = false;
+  final TextEditingController _searchController = TextEditingController();
 
-  Future<void> _onRefresh() async {
-    unawaited(HapticFeedback.mediumImpact());
-    
-    // Invalidate the provider to force a refresh
-    ref.invalidate(doctorDbProvider);
-    
-    // Wait for a short delay to show the refresh animation
-    await Future<void>.delayed(const Duration(milliseconds: 500));
+  @override
+  void initState() {
+    super.initState();
+    _scrollController.addListener(_onScroll);
+    _initPaginationController();
+  }
+
+  void _initPaginationController() {
+    _paginationController = PaginationController<Patient>(
+      fetchPage: _fetchPage,
+      pageSize: 20,
+    );
+    _paginationController.addListener(_onPaginationUpdate);
+  }
+
+  void _onPaginationUpdate() {
+    if (mounted) {
+      setState(() {
+        _error = _paginationController.error;
+      });
+    }
+  }
+
+  Future<(List<Patient>, int)> _fetchPage(int pageIndex, int pageSize) async {
+    final db = ref.read(doctorDbProvider).value;
+    if (db == null) {
+      throw Exception('Database not available');
+    }
+
+    // Convert filter to risk level
+    int? riskLevel;
+    switch (_filterRisk) {
+      case 'Low Risk':
+        riskLevel = 1;
+      case 'Medium':
+        riskLevel = 2;
+      case 'High Risk':
+        riskLevel = 3;
+    }
+
+    return db.getPatientsPaginated(
+      offset: pageIndex * pageSize,
+      limit: pageSize,
+      searchQuery: _searchQuery.isNotEmpty ? _searchQuery : null,
+      riskLevel: riskLevel,
+    );
+  }
+
+  @override
+  void dispose() {
+    _scrollController.removeListener(_onScroll);
+    _scrollController.dispose();
+    _paginationController.removeListener(_onPaginationUpdate);
+    _paginationController.dispose();
+    _debounceTimer?.cancel();
+    _searchController.dispose();
+    super.dispose();
+  }
+
+  void _onScroll() {
+    _paginationController.onScroll(
+      scrollPosition: _scrollController.position.pixels,
+      maxScrollExtent: _scrollController.position.maxScrollExtent,
+      threshold: 200,
+    );
+  }
+
+  void _onSearchChanged(String value) {
+    _debounceTimer?.cancel();
+    _debounceTimer = Timer(const Duration(milliseconds: 300), () {
+      if (_searchQuery != value) {
+        setState(() {
+          _searchQuery = value;
+        });
+        _refreshList();
+      }
+    });
+  }
+
+  void _onFilterChanged(String filter) {
+    if (_filterRisk != filter) {
+      setState(() {
+        _filterRisk = filter;
+      });
+      _refreshList();
+    }
+  }
+
+  void _refreshList() {
+    // Recreate pagination controller with new filters
+    _paginationController.removeListener(_onPaginationUpdate);
+    _paginationController.dispose();
+    _initPaginationController();
+    _paginationController.loadInitial();
+  }
+
+  Future<void> _handleRefresh() async {
+    setState(() => _isRefreshing = true);
+    HapticFeedback.mediumImpact();
+    await _paginationController.refresh();
+    setState(() => _isRefreshing = false);
+  }
+
+  void _clearSearch() {
+    _searchController.clear();
+    setState(() {
+      _searchQuery = '';
+    });
+    _refreshList();
   }
 
   @override
@@ -53,100 +151,109 @@ class _PatientsScreenState extends ConsumerState<PatientsScreen> {
     
     return Scaffold(
       backgroundColor: isDark ? const Color(0xFF0F0F0F) : const Color(0xFFF8F9FA),
-      body: CustomScrollView(
-        slivers: [
-          // Modern SliverAppBar
-          SliverAppBar(
-            expandedHeight: 140,
-            pinned: true,
-            elevation: 0,
-            scrolledUnderElevation: 1,
-            backgroundColor: isDark ? const Color(0xFF1A1A1A) : Colors.white,
-            automaticallyImplyLeading: false,
-            flexibleSpace: FlexibleSpaceBar(
-              background: Container(
-                decoration: BoxDecoration(
-                  gradient: LinearGradient(
-                    colors: isDark 
-                        ? [const Color(0xFF1A1A1A), const Color(0xFF0F0F0F)]
-                        : [Colors.white, const Color(0xFFF8F9FA)],
-                    begin: Alignment.topCenter,
-                    end: Alignment.bottomCenter,
+      body: RefreshIndicator(
+        onRefresh: _handleRefresh,
+        color: const Color(0xFF6366F1),
+        child: CustomScrollView(
+          controller: _scrollController,
+          physics: const AlwaysScrollableScrollPhysics(),
+          slivers: [
+            // Modern SliverAppBar
+            SliverAppBar(
+              expandedHeight: 140,
+              pinned: true,
+              elevation: 0,
+              scrolledUnderElevation: 1,
+              backgroundColor: isDark ? const Color(0xFF1A1A1A) : Colors.white,
+              automaticallyImplyLeading: false,
+              flexibleSpace: FlexibleSpaceBar(
+                background: Container(
+                  decoration: BoxDecoration(
+                    gradient: LinearGradient(
+                      colors: isDark 
+                          ? [const Color(0xFF1A1A1A), const Color(0xFF0F0F0F)]
+                          : [Colors.white, const Color(0xFFF8F9FA)],
+                      begin: Alignment.topCenter,
+                      end: Alignment.bottomCenter,
+                    ),
                   ),
-                ),
-                child: SafeArea(
-                  child: Padding(
-                    padding: const EdgeInsets.fromLTRB(20, 50, 20, 0),
-                    child: Row(
-                      children: [
-                        Container(
-                          padding: const EdgeInsets.all(14),
-                          decoration: BoxDecoration(
-                            gradient: const LinearGradient(
-                              colors: [Color(0xFF6366F1), Color(0xFF8B5CF6)],
-                              begin: Alignment.topLeft,
-                              end: Alignment.bottomRight,
+                  child: SafeArea(
+                    child: Padding(
+                      padding: const EdgeInsets.fromLTRB(20, 50, 20, 0),
+                      child: Row(
+                        children: [
+                          Container(
+                            padding: const EdgeInsets.all(14),
+                            decoration: BoxDecoration(
+                              gradient: const LinearGradient(
+                                colors: [Color(0xFF6366F1), Color(0xFF8B5CF6)],
+                                begin: Alignment.topLeft,
+                                end: Alignment.bottomRight,
+                              ),
+                              borderRadius: BorderRadius.circular(16),
+                              boxShadow: [
+                                BoxShadow(
+                                  color: const Color(0xFF6366F1).withValues(alpha: 0.3),
+                                  blurRadius: 12,
+                                  offset: const Offset(0, 4),
+                                ),
+                              ],
                             ),
-                            borderRadius: BorderRadius.circular(16),
-                            boxShadow: [
-                              BoxShadow(
-                                color: const Color(0xFF6366F1).withValues(alpha: 0.3),
-                                blurRadius: 12,
-                                offset: const Offset(0, 4),
-                              ),
-                            ],
+                            child: const Icon(Icons.people_rounded, color: Colors.white, size: 28),
                           ),
-                          child: const Icon(Icons.people_rounded, color: Colors.white, size: 28),
-                        ),
-                        const SizedBox(width: 16),
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              Text(
-                                'Patients',
-                                style: TextStyle(
-                                  fontSize: 22,
-                                  fontWeight: FontWeight.w800,
-                                  color: isDark ? Colors.white : Colors.black87,
-                                  letterSpacing: -0.5,
+                          const SizedBox(width: 16),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Text(
+                                  'Patients',
+                                  style: TextStyle(
+                                    fontSize: 22,
+                                    fontWeight: FontWeight.w800,
+                                    color: isDark ? Colors.white : Colors.black87,
+                                    letterSpacing: -0.5,
+                                  ),
                                 ),
-                              ),
-                              const SizedBox(height: 4),
-                              Text(
-                                'Manage your patients',
-                                style: TextStyle(
-                                  fontSize: 13,
-                                  color: isDark ? Colors.grey[400] : Colors.grey[600],
+                                const SizedBox(height: 4),
+                                // Show patient count in header
+                                Text(
+                                  _paginationController.hasInitialized 
+                                      ? '${_paginationController.totalItems} patients'
+                                      : 'Manage your patients',
+                                  style: TextStyle(
+                                    fontSize: 13,
+                                    color: isDark ? Colors.grey[400] : Colors.grey[600],
+                                  ),
                                 ),
-                              ),
-                            ],
+                              ],
+                            ),
                           ),
-                        ),
-                      ],
+                        ],
+                      ),
                     ),
                   ),
                 ),
               ),
             ),
-          ),
-          // Search and Filter
-          SliverToBoxAdapter(
-            child: _buildModernSearchAndFilter(context, isDark),
-          ),
-          // Patient List
-          dbAsync.when(
-            data: (db) => _buildModernPatientList(context, db, isDark, padding),
-            loading: () => const SliverFillRemaining(child: LoadingState()),
-            error: (err, stack) => SliverFillRemaining(
-              child: ErrorState.generic(
-                message: err.toString(),
-                onRetry: () => ref.invalidate(doctorDbProvider),
+            // Search and Filter
+            SliverToBoxAdapter(
+              child: _buildModernSearchAndFilter(context, isDark),
+            ),
+            // Patient List
+            dbAsync.when(
+              data: (db) => _buildModernPatientList(context, db, isDark, padding),
+              loading: () => const SliverFillRemaining(child: LoadingState()),
+              error: (err, stack) => SliverFillRemaining(
+                child: ErrorState.generic(
+                  message: err.toString(),
+                  onRetry: () => ref.invalidate(doctorDbProvider),
+                ),
               ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
       floatingActionButton: Container(
         decoration: BoxDecoration(
@@ -165,10 +272,16 @@ class _PatientsScreenState extends ConsumerState<PatientsScreen> {
         child: Material(
           color: Colors.transparent,
           child: InkWell(
-            onTap: () => Navigator.push(
-              context,
-              MaterialPageRoute<void>(builder: (_) => const AddPatientScreen()),
-            ),
+            onTap: () async {
+              final result = await Navigator.push<bool>(
+                context,
+                MaterialPageRoute<bool>(builder: (_) => const AddPatientScreen()),
+              );
+              // Refresh list if a patient was added
+              if (result == true && mounted) {
+                _handleRefresh();
+              }
+            },
             borderRadius: BorderRadius.circular(16),
             child: const Padding(
               padding: EdgeInsets.all(16),
@@ -199,7 +312,8 @@ class _PatientsScreenState extends ConsumerState<PatientsScreen> {
               ],
             ),
             child: TextField(
-              onChanged: (value) => setState(() => _searchQuery = value),
+              controller: _searchController,
+              onChanged: _onSearchChanged,
               style: TextStyle(color: isDark ? Colors.white : Colors.black87),
               decoration: InputDecoration(
                 hintText: 'Search patients...',
@@ -207,7 +321,7 @@ class _PatientsScreenState extends ConsumerState<PatientsScreen> {
                 prefixIcon: Icon(Icons.search_rounded, color: isDark ? Colors.grey[400] : Colors.grey[500]),
                 suffixIcon: _searchQuery.isNotEmpty
                     ? GestureDetector(
-                        onTap: () => setState(() => _searchQuery = ''),
+                        onTap: _clearSearch,
                         child: Icon(Icons.close_rounded, color: isDark ? Colors.grey[400] : Colors.grey[500]),
                       )
                     : null,
@@ -237,7 +351,7 @@ class _PatientsScreenState extends ConsumerState<PatientsScreen> {
                 return Padding(
                   padding: const EdgeInsets.only(right: 8),
                   child: GestureDetector(
-                    onTap: () => setState(() => _filterRisk = filter),
+                    onTap: () => _onFilterChanged(filter),
                     child: AnimatedContainer(
                       duration: const Duration(milliseconds: 200),
                       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
@@ -275,59 +389,176 @@ class _PatientsScreenState extends ConsumerState<PatientsScreen> {
     );
   }
   
-  SliverList _buildModernPatientList(BuildContext context, DoctorDatabase db, bool isDark, double padding) {
-    return SliverList(
-      delegate: SliverChildListDelegate([
-        FutureBuilder<List<Patient>>(
-          future: db.getAllPatients(),
-          builder: (context, snapshot) {
-            if (!snapshot.hasData) {
-              return const Padding(
-                padding: EdgeInsets.all(40),
-                child: Center(child: CircularProgressIndicator(color: Color(0xFF6366F1))),
+  Widget _buildModernPatientList(BuildContext context, DoctorDatabase db, bool isDark, double padding) {
+    final controller = _paginationController;
+    
+    // Initialize pagination on first load
+    if (!controller.hasInitialized && !controller.isLoading) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        controller.loadInitial();
+      });
+    }
+
+    // Show error state
+    if (_error != null && controller.items.isEmpty) {
+      return SliverFillRemaining(
+        child: Center(
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(
+                Icons.error_outline_rounded,
+                size: 48,
+                color: isDark ? Colors.red[300] : Colors.red[400],
+              ),
+              const SizedBox(height: 16),
+              Text(
+                'Failed to load patients',
+                style: TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.w600,
+                  color: isDark ? Colors.white : Colors.black87,
+                ),
+              ),
+              const SizedBox(height: 8),
+              Text(
+                _error!,
+                style: TextStyle(
+                  fontSize: 13,
+                  color: isDark ? Colors.grey[400] : Colors.grey[600],
+                ),
+                textAlign: TextAlign.center,
+              ),
+              const SizedBox(height: 20),
+              TextButton.icon(
+                onPressed: () => controller.refresh(),
+                icon: const Icon(Icons.refresh_rounded),
+                label: const Text('Retry'),
+                style: TextButton.styleFrom(
+                  foregroundColor: const Color(0xFF6366F1),
+                ),
+              ),
+            ],
+          ),
+        ),
+      );
+    }
+
+    // Show loading on initial load
+    if (!controller.hasInitialized && controller.isLoading) {
+      return const SliverFillRemaining(
+        child: Center(child: CircularProgressIndicator(color: Color(0xFF6366F1))),
+      );
+    }
+
+    // Show empty state
+    if (controller.isEmpty) {
+      return SliverToBoxAdapter(child: _buildModernEmptyState(isDark));
+    }
+
+    final patients = controller.items;
+    final hasMore = controller.hasMore;
+    final isLoading = controller.isLoading;
+    final totalItems = controller.totalItems;
+
+    // Build paginated list
+    return SliverPadding(
+      padding: EdgeInsets.symmetric(horizontal: padding),
+      sliver: SliverList(
+        delegate: SliverChildBuilderDelegate(
+          (context, index) {
+            // Pagination info at the end
+            if (index == patients.length) {
+              return _buildPaginationFooter(
+                isDark: isDark,
+                loadedCount: patients.length,
+                totalCount: totalItems,
+                hasMore: hasMore,
+                isLoading: isLoading,
+                onLoadMore: () => controller.loadNextPage(),
               );
             }
-            
-            var patients = snapshot.data!;
-            
-            // Filter by search
-            if (_searchQuery.isNotEmpty) {
-              patients = patients.where((p) {
-                final fullName = '${p.firstName} ${p.lastName}'.toLowerCase();
-                return fullName.contains(_searchQuery.toLowerCase());
-              }).toList();
-            }
-            
-            // Filter by risk
-            if (_filterRisk != 'All') {
-              patients = patients.where((p) {
-                switch (_filterRisk) {
-                  case 'Low Risk':
-                    return p.riskLevel <= 2;
-                  case 'Medium':
-                    return p.riskLevel > 2 && p.riskLevel <= 4;
-                  case 'High Risk':
-                    return p.riskLevel > 4;
-                  default:
-                    return true;
-                }
-              }).toList();
-            }
-            
-            if (patients.isEmpty) {
-              return _buildModernEmptyState(isDark);
-            }
-            
-            return Padding(
-              padding: EdgeInsets.symmetric(horizontal: padding),
-              child: Column(
-                children: patients.map((patient) => _buildModernPatientCard(context, patient, isDark)).toList(),
-              ),
-            );
+
+            final patient = patients[index];
+            return _buildModernPatientCard(context, patient, isDark);
           },
+          childCount: patients.length + 1, // +1 for pagination footer
         ),
-        const SizedBox(height: 100), // Space for FAB
-      ]),
+      ),
+    );
+  }
+
+  Widget _buildPaginationFooter({
+    required bool isDark,
+    required int loadedCount,
+    required int totalCount,
+    required bool hasMore,
+    required bool isLoading,
+    required VoidCallback onLoadMore,
+  }) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 16),
+      child: Column(
+        children: [
+          // Progress indicator
+          if (isLoading)
+            const Padding(
+              padding: EdgeInsets.only(bottom: 12),
+              child: SizedBox(
+                width: 24,
+                height: 24,
+                child: CircularProgressIndicator(
+                  strokeWidth: 2,
+                  color: Color(0xFF6366F1),
+                ),
+              ),
+            ),
+          
+          // Pagination info
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+            decoration: BoxDecoration(
+              color: isDark 
+                  ? Colors.white.withValues(alpha: 0.05) 
+                  : Colors.grey.withValues(alpha: 0.1),
+              borderRadius: BorderRadius.circular(20),
+            ),
+            child: Text(
+              hasMore 
+                  ? 'Showing $loadedCount of $totalCount patients'
+                  : '$totalCount patients total',
+              style: TextStyle(
+                color: isDark ? Colors.grey[400] : Colors.grey[600],
+                fontSize: 12,
+                fontWeight: FontWeight.w500,
+              ),
+            ),
+          ),
+          
+          // Load more button (alternative to scroll)
+          if (hasMore && !isLoading) ...[
+            const SizedBox(height: 12),
+            TextButton(
+              onPressed: onLoadMore,
+              style: TextButton.styleFrom(
+                foregroundColor: const Color(0xFF6366F1),
+                padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+              ),
+              child: const Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Icon(Icons.expand_more_rounded, size: 20),
+                  SizedBox(width: 8),
+                  Text('Load More', style: TextStyle(fontWeight: FontWeight.w600)),
+                ],
+              ),
+            ),
+          ],
+          
+          // Safe area padding at bottom
+          const SizedBox(height: 80), // Space for FAB
+        ],
+      ),
     );
   }
   

@@ -14,7 +14,6 @@ import '../../core/widgets/error_state.dart';
 import '../../db/doctor_db.dart';
 import '../../providers/db_provider.dart';
 import '../../services/allergy_checking_service.dart';
-import '../../services/drug_interaction_service.dart';
 import '../../theme/app_theme.dart';
 import 'follow_ups_screen.dart';
 import 'patients_screen.dart';

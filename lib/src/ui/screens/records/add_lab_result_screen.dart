@@ -8,6 +8,7 @@ import '../../../providers/db_provider.dart';
 import '../../../services/suggestions_service.dart';
 import '../../../theme/app_theme.dart';
 import '../../widgets/suggestion_text_field.dart';
+import 'components/record_components.dart';
 import 'record_form_widgets.dart';
 
 /// Screen for adding a Lab Result medical record
@@ -29,6 +30,11 @@ class _AddLabResultScreenState extends ConsumerState<AddLabResultScreen> {
   final _formKey = GlobalKey<FormState>();
   final _scrollController = ScrollController();
   bool _isSaving = false;
+
+  // Theme colors for this record type
+  static const _primaryColor = Color(0xFF14B8A6); // Lab Teal
+  static const _secondaryColor = Color(0xFF0D9488);
+  static const _gradientColors = [_primaryColor, _secondaryColor];
 
   // Common fields
   int? _selectedPatientId;
@@ -140,6 +146,8 @@ class _AddLabResultScreenState extends ConsumerState<AddLabResultScreen> {
         recordDate: _recordDate,
       );
 
+      MedicalRecord? resultRecord;
+      
       if (widget.existingRecord != null) {
         final updatedRecord = MedicalRecord(
           id: widget.existingRecord!.id,
@@ -159,8 +167,10 @@ class _AddLabResultScreenState extends ConsumerState<AddLabResultScreen> {
           createdAt: widget.existingRecord!.createdAt,
         );
         await db.updateMedicalRecord(updatedRecord);
+        resultRecord = updatedRecord;
       } else {
-        await db.insertMedicalRecord(companion);
+        final recordId = await db.insertMedicalRecord(companion);
+        resultRecord = await db.getMedicalRecordById(recordId);
       }
 
       if (mounted) {
@@ -170,7 +180,7 @@ class _AddLabResultScreenState extends ConsumerState<AddLabResultScreen> {
               ? 'Lab result updated successfully!' 
               : 'Lab result saved successfully!',
         );
-        Navigator.pop(context, true);
+        Navigator.pop(context, resultRecord);
       }
     } catch (e) {
       if (mounted) {
@@ -190,23 +200,14 @@ class _AddLabResultScreenState extends ConsumerState<AddLabResultScreen> {
     final padding = isCompact ? 12.0 : 20.0;
 
     return Scaffold(
-      backgroundColor: isDark ? AppColors.darkBackground : AppColors.background,
+      backgroundColor: isDark ? const Color(0xFF0F0F0F) : const Color(0xFFF8FAFC),
       body: dbAsync.when(
         data: (db) => CustomScrollView(
           controller: _scrollController,
+          physics: const BouncingScrollPhysics(),
           slivers: [
-            // Gradient Header
-            SliverToBoxAdapter(
-              child: RecordFormWidgets.buildGradientHeader(
-                context: context,
-                title: widget.existingRecord != null 
-                    ? 'Edit Lab Result' 
-                    : 'Lab Result',
-                subtitle: DateFormat('EEEE, dd MMMM yyyy').format(_recordDate),
-                icon: Icons.science_rounded,
-                gradientColors: [const Color(0xFF14B8A6), const Color(0xFF0D9488)], // Lab Teal
-              ),
-            ),
+            // Modern Sliver App Bar
+            _buildSliverAppBar(context, isDark, isCompact),
             // Body Content
             SliverPadding(
               padding: EdgeInsets.all(padding),
@@ -219,9 +220,110 @@ class _AddLabResultScreenState extends ConsumerState<AddLabResultScreen> {
           ],
         ),
         loading: () => const Center(
-          child: CircularProgressIndicator(color: AppColors.primary),
+          child: CircularProgressIndicator(color: _primaryColor),
         ),
         error: (err, stack) => Center(child: Text('Error: $err')),
+      ),
+    );
+  }
+
+  Widget _buildSliverAppBar(BuildContext context, bool isDark, bool isCompact) {
+    return SliverAppBar(
+      expandedHeight: 160,
+      floating: false,
+      pinned: true,
+      elevation: 0,
+      backgroundColor: _primaryColor,
+      surfaceTintColor: Colors.transparent,
+      leading: Padding(
+        padding: const EdgeInsets.all(8.0),
+        child: GestureDetector(
+          onTap: () => Navigator.pop(context),
+          child: Container(
+            decoration: BoxDecoration(
+              color: Colors.white.withValues(alpha: 0.2),
+              borderRadius: BorderRadius.circular(12),
+            ),
+            child: const Icon(
+              Icons.arrow_back_ios_new_rounded,
+              size: 18,
+              color: Colors.white,
+            ),
+          ),
+        ),
+      ),
+      flexibleSpace: FlexibleSpaceBar(
+        background: Container(
+          decoration: BoxDecoration(
+            gradient: LinearGradient(
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+              colors: _gradientColors,
+            ),
+          ),
+          child: SafeArea(
+            child: Padding(
+              padding: EdgeInsets.fromLTRB(
+                isCompact ? 16 : 24,
+                50,
+                isCompact ? 16 : 24,
+                20,
+              ),
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.center,
+                children: [
+                  // Icon Container
+                  Container(
+                    padding: const EdgeInsets.all(16),
+                    decoration: BoxDecoration(
+                      color: Colors.white.withValues(alpha: 0.2),
+                      borderRadius: BorderRadius.circular(18),
+                    ),
+                    child: const Icon(
+                      Icons.science_rounded,
+                      color: Colors.white,
+                      size: 28,
+                    ),
+                  ),
+                  const SizedBox(width: 16),
+                  // Title and Subtitle
+                  Expanded(
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          widget.existingRecord != null 
+                              ? 'Edit Lab Result' 
+                              : 'Lab Result',
+                          style: TextStyle(
+                            fontSize: isCompact ? 20 : 24,
+                            fontWeight: FontWeight.w700,
+                            color: Colors.white,
+                          ),
+                        ),
+                        const SizedBox(height: 4),
+                        Row(
+                          children: [
+                            const Icon(Icons.calendar_today, color: Colors.white70, size: 14),
+                            const SizedBox(width: 6),
+                            Text(
+                              DateFormat('EEEE, dd MMM yyyy').format(_recordDate),
+                              style: TextStyle(
+                                fontSize: isCompact ? 12 : 14,
+                                color: Colors.white.withValues(alpha: 0.9),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ),
       ),
     );
   }
@@ -233,230 +335,194 @@ class _AddLabResultScreenState extends ConsumerState<AddLabResultScreen> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           // Patient Selection
-          RecordFormWidgets.buildSectionHeader(
-            context, 'Patient', Icons.person_outline,
+          RecordFormSection(
+            title: 'Patient Information',
+            icon: Icons.person_outline,
+            accentColor: _primaryColor,
+            child: PatientSelectorCard(
+              db: db,
+              selectedPatientId: _selectedPatientId,
+              onPatientSelected: (patient) {
+                setState(() => _selectedPatientId = patient?.id);
+              },
+              label: 'Select Patient',
+            ),
           ),
-          const SizedBox(height: 12),
-          RecordFormWidgets.buildPatientSelector(
-            context: context,
-            db: db,
-            selectedPatientId: _selectedPatientId,
-            onChanged: (id) => setState(() => _selectedPatientId = id),
-          ),
-          const SizedBox(height: 20),
+          const SizedBox(height: 16),
 
-          // Date Selection
-          RecordFormWidgets.buildSectionHeader(
-            context, 'Test Date', Icons.calendar_today,
+          // Date and Title Section
+          RecordFormSection(
+            title: 'Record Details',
+            icon: Icons.event_note,
+            accentColor: _primaryColor,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                DatePickerCard(
+                  selectedDate: _recordDate,
+                  onDateSelected: (date) => setState(() => _recordDate = date),
+                  label: 'Test Date',
+                  accentColor: _primaryColor,
+                ),
+                const SizedBox(height: 16),
+                RecordTextField(
+                  controller: _titleController,
+                  label: 'Title',
+                  hint: 'Enter record title (optional)...',
+                  prefixIcon: Icons.title,
+                  accentColor: _primaryColor,
+                ),
+              ],
+            ),
           ),
-          const SizedBox(height: 12),
-          RecordFormWidgets.buildDateSelector(
-            context: context,
-            selectedDate: _recordDate,
-            onDateSelected: (date) => setState(() => _recordDate = date),
-          ),
-          const SizedBox(height: 20),
-
-          // Title
-          RecordFormWidgets.buildSectionHeader(context, 'Title', Icons.title),
-          const SizedBox(height: 12),
-          RecordFormWidgets.buildTextField(
-            context: context,
-            controller: _titleController,
-            hint: 'Enter record title (optional)...',
-          ),
-          const SizedBox(height: 20),
+          const SizedBox(height: 16),
 
           // Test Information Section
-          RecordFormWidgets.buildSectionCard(
-            context: context,
+          RecordFormSection(
             title: 'Test Information',
             icon: Icons.biotech,
             accentColor: AppColors.info,
-            children: [
-              SuggestionTextField(
-                controller: _testNameController,
-                label: 'Test Name',
-                hint: 'e.g., Complete Blood Count, HbA1c...',
-                prefixIcon: Icons.science_outlined,
-                suggestions: MedicalRecordSuggestions.labTestNames,
-              ),
-              const SizedBox(height: 12),
-              SuggestionTextField(
-                controller: _testCategoryController,
-                label: 'Category',
-                hint: 'e.g., Hematology, Biochemistry...',
-                prefixIcon: Icons.category_outlined,
-                suggestions: const [
-                  'Hematology',
-                  'Biochemistry',
-                  'Immunology',
-                  'Microbiology',
-                  'Serology',
-                  'Endocrinology',
-                  'Urinalysis',
-                  'Coagulation',
-                  'Lipid Panel',
-                  'Liver Function',
-                  'Kidney Function',
-                  'Cardiac Markers',
-                  'Tumor Markers',
-                  'Thyroid Panel',
-                ],
-              ),
-              const SizedBox(height: 12),
-              Row(
-                children: [
-                  Expanded(
-                    child: RecordFormWidgets.buildTextField(
-                      context: context,
+            child: Column(
+              children: [
+                SuggestionTextField(
+                  controller: _testNameController,
+                  label: 'Test Name',
+                  hint: 'e.g., Complete Blood Count, HbA1c...',
+                  prefixIcon: Icons.science_outlined,
+                  suggestions: MedicalRecordSuggestions.labTestNames,
+                ),
+                const SizedBox(height: 12),
+                SuggestionTextField(
+                  controller: _testCategoryController,
+                  label: 'Category',
+                  hint: 'e.g., Hematology, Biochemistry...',
+                  prefixIcon: Icons.category_outlined,
+                  suggestions: const [
+                    'Hematology',
+                    'Biochemistry',
+                    'Immunology',
+                    'Microbiology',
+                    'Serology',
+                    'Endocrinology',
+                    'Urinalysis',
+                    'Coagulation',
+                    'Lipid Panel',
+                    'Liver Function',
+                    'Kidney Function',
+                    'Cardiac Markers',
+                    'Tumor Markers',
+                    'Thyroid Panel',
+                  ],
+                ),
+                const SizedBox(height: 12),
+                RecordFieldGrid(
+                  children: [
+                    CompactTextField(
                       controller: _specimenController,
-                      hint: 'Specimen type...',
+                      label: 'Specimen Type',
+                      hint: 'e.g., Blood, Urine...',
+                      accentColor: AppColors.info,
                     ),
-                  ),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: RecordFormWidgets.buildTextField(
-                      context: context,
+                    CompactTextField(
                       controller: _labNameController,
-                      hint: 'Lab name...',
+                      label: 'Lab Name',
+                      hint: 'Laboratory...',
+                      accentColor: AppColors.info,
                     ),
-                  ),
-                ],
-              ),
-            ],
+                  ],
+                ),
+              ],
+            ),
           ),
-          const SizedBox(height: 20),
+          const SizedBox(height: 16),
 
           // Results Section
-          RecordFormWidgets.buildSectionCard(
-            context: context,
-            title: 'Results',
+          RecordFormSection(
+            title: 'Test Results',
             icon: Icons.analytics_outlined,
             accentColor: _getStatusColor(_resultStatus),
-            children: [
-              RecordFormWidgets.buildTextField(
-                context: context,
-                controller: _resultController,
-                hint: 'Test result value(s)...',
-                maxLines: 4,
-              ),
-              const SizedBox(height: 12),
-              Row(
-                children: [
-                  Expanded(
-                    child: SuggestionTextField(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                RecordTextField(
+                  controller: _resultController,
+                  hint: 'Test result value(s)...',
+                  maxLines: 4,
+                  accentColor: _getStatusColor(_resultStatus),
+                ),
+                const SizedBox(height: 12),
+                RecordFieldGrid(
+                  children: [
+                    CompactTextField(
                       controller: _referenceRangeController,
                       label: 'Reference Range',
                       hint: 'Normal range...',
-                      prefixIcon: Icons.straighten_outlined,
-                      suggestions: MedicalRecordSuggestions.referenceRanges,
+                      accentColor: _getStatusColor(_resultStatus),
                     ),
-                  ),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: RecordFormWidgets.buildTextField(
-                      context: context,
+                    CompactTextField(
                       controller: _unitsController,
-                      hint: 'Units (e.g., mg/dL)...',
+                      label: 'Units',
+                      hint: 'e.g., mg/dL...',
+                      accentColor: _getStatusColor(_resultStatus),
                     ),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 16),
-              _buildResultStatusSelector(isDark),
-            ],
+                  ],
+                ),
+                const SizedBox(height: 16),
+                StatusSelector(
+                  selectedStatus: _resultStatus,
+                  onChanged: (status) {
+                    if (status != null) setState(() => _resultStatus = status);
+                  },
+                  label: 'Result Status',
+                  statuses: const ['Normal', 'Abnormal Low', 'Abnormal High', 'Critical'],
+                ),
+              ],
+            ),
           ),
-          const SizedBox(height: 20),
+          const SizedBox(height: 16),
 
           // Interpretation
-          RecordFormWidgets.buildSectionHeader(
-            context, 'Clinical Interpretation', Icons.analytics,
+          RecordFormSection(
+            title: 'Clinical Interpretation',
+            icon: Icons.analytics,
+            accentColor: Colors.purple,
+            collapsible: true,
+            child: RecordTextField(
+              controller: _interpretationController,
+              hint: 'Clinical significance and interpretation...',
+              maxLines: 4,
+              accentColor: Colors.purple,
+            ),
           ),
-          const SizedBox(height: 12),
-          RecordFormWidgets.buildTextField(
-            context: context,
-            controller: _interpretationController,
-            hint: 'Clinical significance and interpretation...',
-            maxLines: 4,
-          ),
-          const SizedBox(height: 20),
+          const SizedBox(height: 16),
 
           // Clinical Notes
-          RecordFormWidgets.buildSectionHeader(
-            context, 'Clinical Notes', Icons.note_alt,
-          ),
-          const SizedBox(height: 12),
-          RecordFormWidgets.buildTextField(
-            context: context,
-            controller: _clinicalNotesController,
-            hint: 'Additional notes...',
-            maxLines: 4,
+          RecordFormSection(
+            title: 'Clinical Notes',
+            icon: Icons.note_alt,
+            accentColor: Colors.indigo,
+            collapsible: true,
+            initiallyExpanded: false,
+            child: RecordNotesField(
+              controller: _clinicalNotesController,
+              label: '',
+              hint: 'Additional notes, follow-up instructions...',
+              accentColor: Colors.indigo,
+            ),
           ),
           const SizedBox(height: 32),
 
-          // Save Button
-          RecordFormWidgets.buildSaveButton(
-            context: context,
-            isSaving: _isSaving,
-            label: widget.existingRecord != null ? 'Update Lab Result' : 'Save Lab Result',
-            onPressed: () => _saveRecord(db),
-            gradientColors: [const Color(0xFF14B8A6), const Color(0xFF0D9488)], // Lab Teal
+          // Action Buttons
+          RecordActionButtons(
+            onSave: () => _saveRecord(db),
+            onCancel: () => Navigator.pop(context),
+            saveLabel: widget.existingRecord != null ? 'Update Lab Result' : 'Save Lab Result',
+            isLoading: _isSaving,
+            canSave: _selectedPatientId != null,
           ),
           const SizedBox(height: 40),
         ],
       ),
-    );
-  }
-
-  Widget _buildResultStatusSelector(bool isDark) {
-    final statuses = ['Normal', 'Abnormal Low', 'Abnormal High', 'Critical'];
-    
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(
-          'Result Status',
-          style: TextStyle(
-            fontSize: 14,
-            fontWeight: FontWeight.w500,
-            color: isDark ? AppColors.darkTextSecondary : AppColors.textSecondary,
-          ),
-        ),
-        const SizedBox(height: 8),
-        Wrap(
-          spacing: 8,
-          runSpacing: 8,
-          children: statuses.map((status) {
-            final isSelected = _resultStatus == status;
-            final chipColor = _getStatusColor(status);
-            
-            return ChoiceChip(
-              label: Text(status),
-              selected: isSelected,
-              onSelected: (selected) {
-                if (selected) setState(() => _resultStatus = status);
-              },
-              selectedColor: chipColor.withValues(alpha: 0.2),
-              backgroundColor: isDark ? AppColors.darkBackground : AppColors.background,
-              labelStyle: TextStyle(
-                color: isSelected 
-                    ? chipColor 
-                    : (isDark ? AppColors.darkTextSecondary : AppColors.textSecondary),
-                fontWeight: isSelected ? FontWeight.w600 : FontWeight.normal,
-              ),
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(8),
-                side: BorderSide(
-                  color: isSelected 
-                      ? chipColor 
-                      : (isDark ? AppColors.darkDivider : AppColors.divider),
-                ),
-              ),
-            );
-          }).toList(),
-        ),
-      ],
     );
   }
 

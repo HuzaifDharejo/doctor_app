@@ -20,12 +20,41 @@ Future<void> seedSampleData(DoctorDatabase db) async {
 
 /// Force seed sample data - always adds data regardless of existing records.
 /// Use this for demo/testing purposes when user explicitly requests it.
+/// Clears ALL existing data first.
 Future<void> seedSampleDataForce(DoctorDatabase db) async {
-  // Clear existing data first
-  final allPatients = await db.getAllPatients();
-  for (final patient in allPatients) {
-    await db.deletePatient(patient.id);
-  }
+  log.i('SEED', '═══════════════════════════════════════════════════════════');
+  log.i('SEED', '  CLEARING ALL EXISTING DATA...');
+  log.i('SEED', '═══════════════════════════════════════════════════════════');
+  
+  // Clear all data in proper order (child tables first due to foreign keys)
+  // Delete encounter-related tables
+  await (db.delete(db.clinicalNotes)).go();
+  await (db.delete(db.encounterDiagnoses)).go();
+  await (db.delete(db.diagnoses)).go();
+  await (db.delete(db.encounters)).go();
+  
+  // Delete treatment-related tables
+  await (db.delete(db.treatmentGoals)).go();
+  await (db.delete(db.medicationResponses)).go();
+  await (db.delete(db.treatmentSessions)).go();
+  await (db.delete(db.treatmentOutcomes)).go();
+  await (db.delete(db.scheduledFollowUps)).go();
+  
+  // Delete audit logs
+  await (db.delete(db.auditLogs)).go();
+  
+  // Delete clinical data
+  await (db.delete(db.vitalSigns)).go();
+  await (db.delete(db.medicalRecords)).go();
+  await (db.delete(db.prescriptions)).go();
+  await (db.delete(db.invoices)).go();
+  await (db.delete(db.appointments)).go();
+  
+  // Delete patients last
+  await (db.delete(db.patients)).go();
+  
+  log.i('SEED', '  ✓ All existing data cleared');
+  log.i('SEED', '');
   
   await _insertSampleDataRedesigned(db);
 }
@@ -233,6 +262,10 @@ Future<void> _insertSampleDataRedesigned(DoctorDatabase db) async {
   }
 
   // Today's appointments (increased from 6 to 12)
+  // Mix of statuses: completed, in_progress, checked_in, scheduled
+  final todayStatuses = ['completed', 'completed', 'completed', 'completed', 'completed', 
+                         'in_progress', 'in_progress', 'checked_in', 'checked_in', 
+                         'scheduled', 'scheduled', 'scheduled'];
   for (int i = 0; i < 12; i++) {
     final patientIndex = i % patientIds.length;
     final hour = 9 + (i * 0.75).floor();
@@ -243,7 +276,7 @@ Future<void> _insertSampleDataRedesigned(DoctorDatabase db) async {
         appointmentDateTime: Value(today.add(Duration(hours: hour, minutes: (i % 4) * 15))),
         durationMinutes: Value([15, 30, 30, 45, 30, 20, 45, 30, 15, 20, 30, 45][i]),
         reason: Value(appointmentReasons[i % appointmentReasons.length]),
-        status: Value(i < 5 ? 'completed' : (i < 8 ? 'in-progress' : 'confirmed')),
+        status: Value(todayStatuses[i]),
         notes: Value("Today's appointment for ${patientData[patientIndex]['firstName']}"),
       ),
     );
@@ -1302,7 +1335,6 @@ Future<void> _insertSampleDataRedesigned(DoctorDatabase db) async {
     {'name': 'Aripiprazole', 'dosage': '5mg', 'frequency': 'Once daily', 'targetSymptoms': ['Depression augmentation', 'Psychosis', 'Mood']},
     {'name': 'Prazosin', 'dosage': '1mg', 'frequency': 'At bedtime', 'targetSymptoms': ['Nightmares', 'PTSD', 'Hypertension']},
   ];
-  final responseStatuses = ['effective', 'partial', 'ineffective', 'monitoring', 'discontinued'];
   final sideEffectsList = [
     {'effect': 'Nausea', 'severity': 'mild'},
     {'effect': 'Headache', 'severity': 'mild'},
@@ -1317,7 +1349,6 @@ Future<void> _insertSampleDataRedesigned(DoctorDatabase db) async {
     {'effect': 'Increased appetite', 'severity': 'mild'},
     {'effect': 'Fatigue', 'severity': 'moderate'},
   ];
-  final severityLevels = ['none', 'mild', 'moderate', 'severe'];
 
   for (int i = 0; i < patientIds.length; i++) {
     final tags = patientData[i]['tags']! as String;
@@ -1402,7 +1433,6 @@ Future<void> _insertSampleDataRedesigned(DoctorDatabase db) async {
   // INSERT TREATMENT GOALS (Progress Tracking)
   // ══════════════════════════════════════════════════════════════════════════
   int goalCount = 0;
-  final goalCategories = ['symptom', 'functional', 'behavioral', 'cognitive', 'interpersonal'];
   final goalTemplates = [
     {'category': 'symptom', 'goal': 'Reduce anxiety symptoms', 'target': 'PHQ-9 score below 5', 'baseline': 'PHQ-9 score: 15'},
     {'category': 'symptom', 'goal': 'Improve depressive symptoms', 'target': 'GAD-7 score below 5', 'baseline': 'GAD-7 score: 12'},
@@ -1423,7 +1453,6 @@ Future<void> _insertSampleDataRedesigned(DoctorDatabase db) async {
     {'category': 'interpersonal', 'goal': 'Set healthy boundaries', 'target': 'Consistently maintain boundaries with family', 'baseline': 'Unable to say no'},
     {'category': 'interpersonal', 'goal': 'Build support network', 'target': '3+ supportive relationships', 'baseline': 'Socially isolated'},
   ];
-  final goalStatuses = ['active', 'achieved', 'modified', 'discontinued'];
   final barriersList = [
     'Lack of motivation',
     'Financial constraints',
@@ -1515,6 +1544,82 @@ Future<void> _insertSampleDataRedesigned(DoctorDatabase db) async {
   }
   log.i('SEED', '✓ Inserted $goalCount treatment goals');
 
+  // ========== ENCOUNTERS (for wait time tracking) ==========
+  log.i('SEED', 'Seeding encounters with check-in/check-out times...');
+  int encounterCount = 0;
+  
+  // Get today's completed and in-progress appointments
+  final todayAppts = await db.getAppointmentsForDay(today);
+  
+  for (final appt in todayAppts) {
+    // Create encounters for completed and in_progress appointments
+    if (appt.status == 'completed' || appt.status == 'in_progress' || appt.status == 'in-progress') {
+      final scheduledTime = appt.appointmentDateTime;
+      // Simulate realistic check-in (0-15 mins before or after scheduled time)
+      final checkInOffset = random.nextInt(30) - 15;
+      final checkInTime = scheduledTime.add(Duration(minutes: checkInOffset));
+      
+      DateTime? checkOutTime;
+      String status = 'in_progress';
+      
+      if (appt.status == 'completed') {
+        // Visit duration = appointment duration + random variance
+        final visitDuration = appt.durationMinutes + random.nextInt(20) - 5;
+        checkOutTime = checkInTime.add(Duration(minutes: visitDuration));
+        status = 'completed';
+      }
+      
+      await db.into(db.encounters).insert(
+        EncountersCompanion(
+          patientId: Value(appt.patientId),
+          appointmentId: Value(appt.id),
+          encounterDate: Value(scheduledTime),
+          encounterType: const Value('outpatient'),
+          status: Value(status),
+          chiefComplaint: Value(appt.reason),
+          providerType: const Value('psychiatrist'),
+          checkInTime: Value(checkInTime),
+          checkOutTime: Value(checkOutTime),
+          isBillable: const Value(true),
+        ),
+      );
+      encounterCount++;
+    }
+  }
+  
+  // Also seed some encounters for past days to have more data for wait time analysis
+  final pastAppointments = await db.getAllAppointments();
+  final completedPastAppts = pastAppointments.where((a) => 
+    a.status == 'completed' && 
+    a.appointmentDateTime.isBefore(today) &&
+    a.appointmentDateTime.isAfter(today.subtract(const Duration(days: 7)))
+  ).take(50).toList();
+  
+  for (final appt in completedPastAppts) {
+    final scheduledTime = appt.appointmentDateTime;
+    final checkInOffset = random.nextInt(30) - 10; // -10 to +20 mins
+    final checkInTime = scheduledTime.add(Duration(minutes: checkInOffset));
+    final visitDuration = appt.durationMinutes + random.nextInt(15);
+    final checkOutTime = checkInTime.add(Duration(minutes: visitDuration));
+    
+    await db.into(db.encounters).insert(
+      EncountersCompanion(
+        patientId: Value(appt.patientId),
+        appointmentId: Value(appt.id),
+        encounterDate: Value(scheduledTime),
+        encounterType: const Value('outpatient'),
+        status: const Value('completed'),
+        chiefComplaint: Value(appt.reason),
+        providerType: const Value('psychiatrist'),
+        checkInTime: Value(checkInTime),
+        checkOutTime: Value(checkOutTime),
+        isBillable: const Value(true),
+      ),
+    );
+    encounterCount++;
+  }
+  log.i('SEED', '✓ Inserted $encounterCount encounters with wait time data');
+
   log
     ..i('SEED', '')
     ..i('SEED', '═══════════════════════════════════════════════════════════')
@@ -1533,6 +1638,7 @@ Future<void> _insertSampleDataRedesigned(DoctorDatabase db) async {
     ..i('SEED', '  ✓ $sessionCount treatment sessions (therapy/psychiatry)')
     ..i('SEED', '  ✓ $medicationResponseCount medication responses with side effects')
     ..i('SEED', '  ✓ $goalCount treatment goals with progress tracking')
+    ..i('SEED', '  ✓ $encounterCount encounters with wait time tracking')
     ..i('SEED', '  ✓ Clinical safety features: Drug interaction checks enabled')
     ..i('SEED', '═══════════════════════════════════════════════════════════');
 }

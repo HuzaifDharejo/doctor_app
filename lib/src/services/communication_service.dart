@@ -1,8 +1,13 @@
 import 'package:flutter/material.dart';
 
 /// Service for managing patient communication history, messaging, and call logs
+/// Currently uses in-memory storage; can be upgraded to database storage later
 class CommunicationService {
-  const CommunicationService();
+  CommunicationService();
+  
+  // In-memory storage for messages and calls (per patient)
+  final Map<int, List<CommunicationMessage>> _messagesCache = {};
+  final Map<int, List<VoiceCallLog>> _callsCache = {};
 
   /// Create a new message in communication history
   Future<CommunicationMessage> createMessage({
@@ -13,7 +18,7 @@ class CommunicationService {
     String? attachmentUrl,
     String? attachmentType, // 'document', 'image', 'audio', 'video'
   }) async {
-    return CommunicationMessage(
+    final message = CommunicationMessage(
       id: '${patientId}_${DateTime.now().millisecondsSinceEpoch}',
       patientId: patientId,
       senderType: senderType,
@@ -25,6 +30,12 @@ class CommunicationService {
       attachmentType: attachmentType,
       metadata: {},
     );
+    
+    // Store in cache
+    _messagesCache.putIfAbsent(patientId, () => []);
+    _messagesCache[patientId]!.add(message);
+    
+    return message;
   }
 
   /// Create a voice call log
@@ -38,7 +49,7 @@ class CommunicationService {
   }) async {
     final callEnd = callStart.add(Duration(seconds: durationSeconds));
 
-    return VoiceCallLog(
+    final callLog = VoiceCallLog(
       id: '${patientId}_call_${DateTime.now().millisecondsSinceEpoch}',
       patientId: patientId,
       initiatedBy: initiatedBy,
@@ -49,6 +60,12 @@ class CommunicationService {
       callNotes: callNotes ?? '',
       createdAt: DateTime.now(),
     );
+    
+    // Store in cache
+    _callsCache.putIfAbsent(patientId, () => []);
+    _callsCache[patientId]!.add(callLog);
+    
+    return callLog;
   }
 
   /// Get communication history for a patient
@@ -56,8 +73,16 @@ class CommunicationService {
     int patientId, {
     int limitDays = 90,
   }) async {
-    // Placeholder - would query from database
-    return <CommunicationMessage>[];
+    final messages = _messagesCache[patientId] ?? [];
+    final cutoffDate = DateTime.now().subtract(Duration(days: limitDays));
+    
+    // Filter by date range and sort by creation time
+    final filteredMessages = messages
+        .where((m) => m.createdAt.isAfter(cutoffDate))
+        .toList()
+      ..sort((a, b) => a.createdAt.compareTo(b.createdAt));
+    
+    return filteredMessages;
   }
 
   /// Get voice call history for a patient
@@ -65,14 +90,22 @@ class CommunicationService {
     int patientId, {
     int limitDays = 90,
   }) async {
-    // Placeholder - would query from database
-    return <VoiceCallLog>[];
+    final calls = _callsCache[patientId] ?? [];
+    final cutoffDate = DateTime.now().subtract(Duration(days: limitDays));
+    
+    // Filter by date range and sort by call start time
+    final filteredCalls = calls
+        .where((c) => c.callStart.isAfter(cutoffDate))
+        .toList()
+      ..sort((a, b) => a.callStart.compareTo(b.callStart));
+    
+    return filteredCalls;
   }
 
   /// Get message count for unread messages
   Future<int> getUnreadMessageCount(int patientId) async {
-    // Placeholder - would query from database
-    return 0;
+    final messages = _messagesCache[patientId] ?? [];
+    return messages.where((m) => !m.isRead && m.senderType == 'patient').length;
   }
 
   /// Get statistics on patient communication
@@ -175,7 +208,91 @@ class CommunicationService {
 
   /// Mark messages as read
   Future<void> markMessagesAsRead(List<String> messageIds) async {
-    // Placeholder - would update in database
+    // Update messages across all patients in cache
+    for (final patientMessages in _messagesCache.values) {
+      for (int i = 0; i < patientMessages.length; i++) {
+        if (messageIds.contains(patientMessages[i].id)) {
+          // Create a new message with isRead = true
+          final oldMsg = patientMessages[i];
+          patientMessages[i] = CommunicationMessage(
+            id: oldMsg.id,
+            patientId: oldMsg.patientId,
+            senderType: oldMsg.senderType,
+            messageType: oldMsg.messageType,
+            content: oldMsg.content,
+            createdAt: oldMsg.createdAt,
+            isRead: true,
+            attachmentUrl: oldMsg.attachmentUrl,
+            attachmentType: oldMsg.attachmentType,
+            metadata: oldMsg.metadata,
+          );
+        }
+      }
+    }
+  }
+  
+  /// Mark all messages from a patient as read
+  Future<void> markAllMessagesAsRead(int patientId) async {
+    final messages = _messagesCache[patientId];
+    if (messages == null) return;
+    
+    final messageIds = messages
+        .where((m) => !m.isRead)
+        .map((m) => m.id)
+        .toList();
+    await markMessagesAsRead(messageIds);
+  }
+  
+  /// Clear communication history for a patient (useful for testing)
+  void clearHistory(int patientId) {
+    _messagesCache.remove(patientId);
+    _callsCache.remove(patientId);
+  }
+  
+  /// Seed demo communication data for a patient
+  Future<void> seedDemoData(int patientId, String patientName) async {
+    final now = DateTime.now();
+    
+    // Add some demo messages
+    await createMessage(
+      patientId: patientId,
+      senderType: 'patient',
+      messageType: 'text',
+      content: 'Hello Doctor, I wanted to follow up on my last visit.',
+    );
+    
+    await createMessage(
+      patientId: patientId,
+      senderType: 'doctor',
+      messageType: 'text',
+      content: 'Hello $patientName, how are you feeling today? Any updates on your symptoms?',
+    );
+    
+    await createMessage(
+      patientId: patientId,
+      senderType: 'patient',
+      messageType: 'text',
+      content: 'I\'m feeling much better, thank you. The medication seems to be working.',
+    );
+    
+    // Add some demo calls
+    await createCallLog(
+      patientId: patientId,
+      initiatedBy: 'doctor',
+      callStart: now.subtract(const Duration(days: 3)),
+      durationSeconds: 320,
+      status: 'completed',
+      callNotes: 'Follow-up call - patient reported improvement',
+    );
+    
+    await createCallLog(
+      patientId: patientId,
+      initiatedBy: 'patient',
+      callStart: now.subtract(const Duration(days: 7)),
+      durationSeconds: 0,
+      status: 'missed',
+      callNotes: 'Patient tried to reach during lunch hours',
+    );
   }
 
   // Helper method

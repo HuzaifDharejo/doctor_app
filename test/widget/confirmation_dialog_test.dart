@@ -191,7 +191,7 @@ void main() {
       expect(find.text('Confirm'), findsNWidgets(2));
       expect(find.text('Are you sure?'), findsOneWidget);
 
-      await tester.tap(find.widgetWithText(FilledButton, 'Confirm'));
+      await tester.tap(find.widgetWithText(ElevatedButton, 'Confirm'));
       await tester.pumpAndSettle();
 
       expect(result, isTrue);

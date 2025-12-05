@@ -9,7 +9,7 @@ import '../../../db/doctor_db.dart';
 import '../../../theme/app_theme.dart';
 import '../../../core/theme/design_tokens.dart';
 import '../../../core/components/app_button.dart';
-import 'patient_view_widgets.dart';
+import 'patient_view_widgets.dart' hide Text;
 
 /// Model for patient document
 class PatientDocument {
@@ -98,6 +98,7 @@ class _PatientDocumentsTabState extends State<PatientDocumentsTab> {
             // Documents list
             Expanded(
               child: ListView.builder(
+                primary: false,
                 padding: const EdgeInsets.symmetric(horizontal: AppSpacing.lg),
                 itemCount: documents.length,
                 itemBuilder: (context, index) {

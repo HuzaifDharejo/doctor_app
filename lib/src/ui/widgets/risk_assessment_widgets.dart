@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:doctor_app/src/services/comprehensive_risk_assessment_service.dart';
 import 'package:doctor_app/src/core/theme/design_tokens.dart';
-import 'package:doctor_app/src/theme/app_theme.dart';
 
 /// Widget to display critical alerts in a prominent, actionable way
 class CriticalAlertsWidget extends StatelessWidget {

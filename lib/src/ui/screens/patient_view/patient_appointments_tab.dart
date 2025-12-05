@@ -45,6 +45,7 @@ class PatientAppointmentsTab extends ConsumerWidget {
           appointments.sort((a, b) => b.appointmentDateTime.compareTo(a.appointmentDateTime));
 
           return ListView.builder(
+            primary: false,
             padding: const EdgeInsets.all(AppSpacing.lg),
             itemCount: appointments.length,
             itemBuilder: (context, index) => _AppointmentCard(

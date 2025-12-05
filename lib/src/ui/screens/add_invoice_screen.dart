@@ -10,9 +10,6 @@ import '../../providers/db_provider.dart';
 import '../../services/suggestions_service.dart';
 import '../../core/components/app_input.dart';
 import '../../core/widgets/app_card.dart';
-import '../../theme/app_theme.dart';
-import '../../core/components/app_input.dart';
-import '../../core/widgets/app_card.dart';
 import '../../core/components/app_button.dart';
 import '../../core/theme/design_tokens.dart';
 import '../widgets/suggestion_text_field.dart';
@@ -226,7 +223,10 @@ class _AddInvoiceScreenState extends ConsumerState<AddInvoiceScreen> {
           notes: Value(_notesController.text.isNotEmpty ? _notesController.text : ''),
         );
         
-        await db.insertInvoice(invoiceCompanion);
+        final invoiceId = await db.insertInvoice(invoiceCompanion);
+        
+        // Fetch the created invoice to return it
+        final createdInvoice = await db.getInvoiceById(invoiceId);
         
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
@@ -245,7 +245,7 @@ class _AddInvoiceScreenState extends ConsumerState<AddInvoiceScreen> {
               shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
             ),
           );
-          Navigator.pop(context, true); // Return true to indicate success
+          Navigator.pop(context, createdInvoice); // Return created invoice entity
         }
       } catch (e) {
         if (mounted) {
@@ -376,101 +376,105 @@ class _AddInvoiceScreenState extends ConsumerState<AddInvoiceScreen> {
                   ),
                   child: SafeArea(
                     child: Padding(
-                      padding: const EdgeInsets.fromLTRB(20, 60, 20, 20),
-                      child: Column(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          // Invoice Icon with Status Badge
-                          Stack(
-                            alignment: Alignment.center,
-                            children: [
-                              Container(
-                                padding: const EdgeInsets.all(20),
-                                decoration: BoxDecoration(
-                                  gradient: const LinearGradient(
-                                    colors: [Color(0xFF6366F1), Color(0xFF8B5CF6)],
-                                    begin: Alignment.topLeft,
-                                    end: Alignment.bottomRight,
-                                  ),
-                                  borderRadius: BorderRadius.circular(24),
-                                  boxShadow: [
-                                    BoxShadow(
-                                      color: const Color(0xFF6366F1).withValues(alpha: 0.4),
-                                      blurRadius: 20,
-                                      offset: const Offset(0, 8),
-                                    ),
-                                  ],
-                                ),
-                                child: const Icon(
-                                  Icons.receipt_long_rounded,
-                                  size: 36,
-                                  color: Colors.white,
-                                ),
-                              ),
-                              Positioned(
-                                bottom: -4,
-                                right: -4,
-                                child: Container(
-                                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                      padding: const EdgeInsets.fromLTRB(20, 60, 20, 16),
+                      child: SingleChildScrollView(
+                        physics: const NeverScrollableScrollPhysics(),
+                        child: Column(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            // Invoice Icon with Status Badge
+                            Stack(
+                              alignment: Alignment.center,
+                              children: [
+                                Container(
+                                  padding: const EdgeInsets.all(16),
                                   decoration: BoxDecoration(
-                                    color: _getStatusColor(_paymentStatus),
-                                    borderRadius: BorderRadius.circular(12),
-                                    border: Border.all(
-                                      color: isDark ? const Color(0xFF1A1A1A) : Colors.white,
-                                      width: 2,
+                                    gradient: const LinearGradient(
+                                      colors: [Color(0xFF6366F1), Color(0xFF8B5CF6)],
+                                      begin: Alignment.topLeft,
+                                      end: Alignment.bottomRight,
+                                    ),
+                                    borderRadius: BorderRadius.circular(20),
+                                    boxShadow: [
+                                      BoxShadow(
+                                        color: const Color(0xFF6366F1).withValues(alpha: 0.4),
+                                        blurRadius: 16,
+                                        offset: const Offset(0, 6),
+                                      ),
+                                    ],
+                                  ),
+                                  child: const Icon(
+                                    Icons.receipt_long_rounded,
+                                    size: 28,
+                                    color: Colors.white,
+                                  ),
+                                ),
+                                Positioned(
+                                  bottom: -4,
+                                  right: -4,
+                                  child: Container(
+                                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                                    decoration: BoxDecoration(
+                                      color: _getStatusColor(_paymentStatus),
+                                      borderRadius: BorderRadius.circular(10),
+                                      border: Border.all(
+                                        color: isDark ? const Color(0xFF1A1A1A) : Colors.white,
+                                        width: 2,
+                                      ),
+                                    ),
+                                    child: Text(
+                                      _paymentStatus,
+                                      style: const TextStyle(
+                                        color: Colors.white,
+                                        fontSize: 9,
+                                        fontWeight: FontWeight.bold,
+                                      ),
                                     ),
                                   ),
-                                  child: Text(
-                                    _paymentStatus,
-                                    style: const TextStyle(
-                                      color: Colors.white,
-                                      fontSize: 10,
-                                      fontWeight: FontWeight.bold,
-                                    ),
+                                ),
+                              ],
+                            ),
+                            const SizedBox(height: 10),
+                            Text(
+                              _invoiceNumber,
+                              style: TextStyle(
+                                fontSize: 16,
+                                fontWeight: FontWeight.w800,
+                                color: isDark ? Colors.white : const Color(0xFF1E293B),
+                                letterSpacing: -0.5,
+                              ),
+                            ),
+                            const SizedBox(height: 2),
+                            Text(
+                              DateFormat('EEE, dd MMM yyyy').format(_invoiceDate),
+                              style: TextStyle(
+                                fontSize: 12,
+                                color: isDark 
+                                    ? Colors.white.withValues(alpha: 0.6) 
+                                    : const Color(0xFF64748B),
+                              ),
+                            ),
+                            if (_dueDate != null) ...[
+                              const SizedBox(height: 4),
+                              Container(
+                                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                                decoration: BoxDecoration(
+                                  color: const Color(0xFFF59E0B).withValues(alpha: 0.1),
+                                  borderRadius: BorderRadius.circular(6),
+                                ),
+                                child: Text(
+                                  'Due: ${DateFormat('dd MMM').format(_dueDate!)}',
+                                  style: const TextStyle(
+                                    color: Color(0xFFF59E0B),
+                                    fontSize: 10,
+                                    fontWeight: FontWeight.w600,
                                   ),
                                 ),
                               ),
                             ],
-                          ),
-                          const SizedBox(height: 12),
-                          Text(
-                            _invoiceNumber,
-                            style: TextStyle(
-                              fontSize: 18,
-                              fontWeight: FontWeight.w800,
-                              color: isDark ? Colors.white : const Color(0xFF1E293B),
-                              letterSpacing: -0.5,
-                            ),
-                          ),
-                          const SizedBox(height: 4),
-                          Text(
-                            DateFormat('EEEE, dd MMMM yyyy').format(_invoiceDate),
-                            style: TextStyle(
-                              fontSize: 13,
-                              color: isDark 
-                                  ? Colors.white.withValues(alpha: 0.6) 
-                                  : const Color(0xFF64748B),
-                            ),
-                          ),
-                          if (_dueDate != null) ...[
-                            const SizedBox(height: 4),
-                            Container(
-                              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                              decoration: BoxDecoration(
-                                color: const Color(0xFFF59E0B).withValues(alpha: 0.1),
-                                borderRadius: BorderRadius.circular(8),
-                              ),
-                              child: Text(
-                                'Due: ${DateFormat('dd MMM yyyy').format(_dueDate!)}',
-                                style: const TextStyle(
-                                  color: Color(0xFFF59E0B),
-                                  fontSize: 11,
-                                  fontWeight: FontWeight.w600,
-                                ),
-                              ),
-                            ),
                           ],
-                        ],
+                        ),
                       ),
                     ),
                   ),

@@ -1,5 +1,6 @@
 import 'dart:convert';
 
+import 'package:drift/drift.dart' hide Column;
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
@@ -237,8 +238,6 @@ class _TreatmentProgressScreenState extends ConsumerState<TreatmentProgressScree
   }
 
   Widget _buildSummaryCards(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-    
     return Container(
       padding: const EdgeInsets.all(AppSpacing.lg),
       child: SingleChildScrollView(
@@ -351,6 +350,7 @@ class _TreatmentProgressScreenState extends ConsumerState<TreatmentProgressScree
     }
 
     return ListView.builder(
+      primary: false,
       padding: const EdgeInsets.all(AppSpacing.lg),
       itemCount: _sessions.length,
       itemBuilder: (context, index) => _buildSessionCard(context, _sessions[index]),
@@ -360,7 +360,6 @@ class _TreatmentProgressScreenState extends ConsumerState<TreatmentProgressScree
   Widget _buildSessionCard(BuildContext context, TreatmentSession session) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final dateFormat = DateFormat('MMM d, yyyy');
-    final timeFormat = DateFormat('h:mm a');
     
     Color providerColor;
     IconData providerIcon;
@@ -551,6 +550,7 @@ class _TreatmentProgressScreenState extends ConsumerState<TreatmentProgressScree
     }
 
     return ListView.builder(
+      primary: false,
       padding: const EdgeInsets.all(AppSpacing.lg),
       itemCount: _medications.length,
       itemBuilder: (context, index) => _buildMedicationCard(context, _medications[index]),
@@ -559,7 +559,6 @@ class _TreatmentProgressScreenState extends ConsumerState<TreatmentProgressScree
 
   Widget _buildMedicationCard(BuildContext context, MedicationResponse med) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    final dateFormat = DateFormat('MMM d, yyyy');
     
     Color statusColor;
     IconData statusIcon;
@@ -778,6 +777,7 @@ class _TreatmentProgressScreenState extends ConsumerState<TreatmentProgressScree
     }
 
     return ListView.builder(
+      primary: false,
       padding: const EdgeInsets.all(AppSpacing.lg),
       itemCount: _goals.length,
       itemBuilder: (context, index) => _buildGoalCard(context, _goals[index]),
@@ -1030,6 +1030,7 @@ class _TreatmentProgressScreenState extends ConsumerState<TreatmentProgressScree
     }
 
     return ListView.builder(
+      primary: false,
       padding: const EdgeInsets.all(AppSpacing.lg),
       itemCount: medsWithSideEffects.length,
       itemBuilder: (context, index) => _buildSideEffectCard(context, medsWithSideEffects[index]),
@@ -1440,37 +1441,1016 @@ class _TreatmentProgressScreenState extends ConsumerState<TreatmentProgressScree
   }
 
   void _showMedicationDetails(BuildContext context, MedicationResponse med) {
-    // Similar detail view for medications
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text('Medication details: ${med.medicationName}')),
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final dateFormat = DateFormat('MMM d, yyyy');
+    
+    showModalBottomSheet<void>(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (context) => DraggableScrollableSheet(
+        initialChildSize: 0.7,
+        minChildSize: 0.5,
+        maxChildSize: 0.95,
+        builder: (context, scrollController) => Container(
+          decoration: BoxDecoration(
+            color: isDark ? const Color(0xFF1A1A1A) : Colors.white,
+            borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
+          ),
+          child: SingleChildScrollView(
+            controller: scrollController,
+            padding: const EdgeInsets.all(20),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Center(
+                  child: Container(
+                    width: 40,
+                    height: 4,
+                    decoration: BoxDecoration(
+                      color: Colors.grey[400],
+                      borderRadius: BorderRadius.circular(2),
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 20),
+                Row(
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.all(12),
+                      decoration: BoxDecoration(
+                        color: AppColors.success.withValues(alpha: 0.1),
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: Icon(Icons.medication, color: AppColors.success, size: 28),
+                    ),
+                    const SizedBox(width: 16),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            med.medicationName,
+                            style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                          if (med.dosage.isNotEmpty)
+                            Text(
+                              '${med.dosage} - ${med.frequency}',
+                              style: TextStyle(color: AppColors.textSecondary),
+                            ),
+                        ],
+                      ),
+                    ),
+                    _buildStatusChip(med.responseStatus),
+                  ],
+                ),
+                const SizedBox(height: 24),
+                _buildDetailSection('Start Date', dateFormat.format(med.startDate)),
+                if (med.endDate != null)
+                  _buildDetailSection('End Date', dateFormat.format(med.endDate!)),
+                if (med.effectivenessScore != null)
+                  _buildDetailSection('Effectiveness', '${med.effectivenessScore}/10'),
+                if (med.targetSymptoms.isNotEmpty)
+                  _buildDetailSection('Target Symptoms', med.targetSymptoms),
+                if (med.sideEffects.isNotEmpty)
+                  _buildDetailSection('Side Effects', med.sideEffects, 
+                    color: _getSideEffectColor(med.sideEffectSeverity)),
+                if (med.adherenceNotes.isNotEmpty)
+                  _buildDetailSection('Adherence Notes', med.adherenceNotes),
+                if (med.providerNotes.isNotEmpty)
+                  _buildDetailSection('Provider Notes', med.providerNotes),
+                if (med.patientFeedback.isNotEmpty)
+                  _buildDetailSection('Patient Feedback', med.patientFeedback),
+              ],
+            ),
+          ),
+        ),
+      ),
     );
+  }
+
+  Widget _buildStatusChip(String status) {
+    Color color;
+    switch (status) {
+      case 'effective':
+        color = AppColors.success;
+        break;
+      case 'partial':
+        color = AppColors.warning;
+        break;
+      case 'ineffective':
+        color = AppColors.error;
+        break;
+      case 'discontinued':
+        color = Colors.grey;
+        break;
+      default:
+        color = AppColors.info;
+    }
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+      decoration: BoxDecoration(
+        color: color.withValues(alpha: 0.1),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: color.withValues(alpha: 0.3)),
+      ),
+      child: Text(
+        status.toUpperCase(),
+        style: TextStyle(
+          color: color,
+          fontSize: 11,
+          fontWeight: FontWeight.bold,
+        ),
+      ),
+    );
+  }
+
+  Color _getSideEffectColor(String severity) {
+    switch (severity) {
+      case 'severe':
+        return AppColors.error;
+      case 'moderate':
+        return AppColors.warning;
+      case 'mild':
+        return Colors.orange;
+      default:
+        return AppColors.textSecondary;
+    }
   }
 
   void _showGoalDetails(BuildContext context, TreatmentGoal goal) {
-    // Similar detail view for goals
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text('Goal details: ${goal.goalDescription}')),
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final dateFormat = DateFormat('MMM d, yyyy');
+    
+    showModalBottomSheet<void>(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (context) => DraggableScrollableSheet(
+        initialChildSize: 0.6,
+        minChildSize: 0.4,
+        maxChildSize: 0.9,
+        builder: (context, scrollController) => Container(
+          decoration: BoxDecoration(
+            color: isDark ? const Color(0xFF1A1A1A) : Colors.white,
+            borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
+          ),
+          child: SingleChildScrollView(
+            controller: scrollController,
+            padding: const EdgeInsets.all(20),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Center(
+                  child: Container(
+                    width: 40,
+                    height: 4,
+                    decoration: BoxDecoration(
+                      color: Colors.grey[400],
+                      borderRadius: BorderRadius.circular(2),
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 20),
+                Row(
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.all(12),
+                      decoration: BoxDecoration(
+                        color: AppColors.info.withValues(alpha: 0.1),
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: Icon(Icons.track_changes, color: AppColors.info, size: 28),
+                    ),
+                    const SizedBox(width: 16),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            goal.goalDescription,
+                            style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                          Text(
+                            goal.goalCategory.toUpperCase(),
+                            style: TextStyle(
+                              color: AppColors.textSecondary,
+                              fontSize: 12,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 24),
+                // Progress bar
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Text(
+                          'Progress',
+                          style: TextStyle(
+                            fontWeight: FontWeight.bold,
+                            color: isDark ? Colors.white : Colors.black87,
+                          ),
+                        ),
+                        Text(
+                          '${goal.progressPercent}%',
+                          style: TextStyle(
+                            fontWeight: FontWeight.bold,
+                            color: _getProgressColor(goal.progressPercent),
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 8),
+                    ClipRRect(
+                      borderRadius: BorderRadius.circular(8),
+                      child: LinearProgressIndicator(
+                        value: goal.progressPercent / 100,
+                        minHeight: 12,
+                        backgroundColor: Colors.grey.withValues(alpha: 0.2),
+                        valueColor: AlwaysStoppedAnimation(_getProgressColor(goal.progressPercent)),
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 20),
+                if (goal.targetBehavior.isNotEmpty)
+                  _buildDetailSection('Target Behavior', goal.targetBehavior),
+                if (goal.baselineMeasure.isNotEmpty)
+                  _buildDetailSection('Baseline', goal.baselineMeasure),
+                if (goal.targetMeasure.isNotEmpty)
+                  _buildDetailSection('Target', goal.targetMeasure),
+                if (goal.currentMeasure.isNotEmpty)
+                  _buildDetailSection('Current', goal.currentMeasure),
+                if (goal.targetDate != null)
+                  _buildDetailSection('Target Date', dateFormat.format(goal.targetDate!)),
+                if (goal.interventions.isNotEmpty)
+                  _buildDetailSection('Interventions', goal.interventions),
+                if (goal.barriers.isNotEmpty)
+                  _buildDetailSection('Barriers', goal.barriers),
+                if (goal.progressNotes.isNotEmpty)
+                  _buildDetailSection('Progress Notes', goal.progressNotes),
+              ],
+            ),
+          ),
+        ),
+      ),
     );
   }
 
+  Color _getProgressColor(int progress) {
+    if (progress >= 80) return AppColors.success;
+    if (progress >= 50) return AppColors.info;
+    if (progress >= 25) return AppColors.warning;
+    return AppColors.error;
+  }
+
   void _showAddSessionDialog(BuildContext context) {
-    // Add session dialog
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Add session dialog coming soon')),
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final formKey = GlobalKey<FormState>();
+    
+    // Form controllers
+    final providerNameController = TextEditingController();
+    final presentingConcernsController = TextEditingController();
+    final sessionNotesController = TextEditingController();
+    final interventionsController = TextEditingController();
+    final progressNotesController = TextEditingController();
+    final homeworkController = TextEditingController();
+    final planController = TextEditingController();
+    
+    DateTime sessionDate = DateTime.now();
+    String providerType = 'psychiatrist';
+    String sessionType = 'individual';
+    int duration = 50;
+    int? moodRating;
+    String patientMood = '';
+    String riskAssessment = 'none';
+
+    showDialog<void>(
+      context: context,
+      builder: (dialogContext) => StatefulBuilder(
+        builder: (context, setDialogState) => AlertDialog(
+          backgroundColor: isDark ? const Color(0xFF1A1A1A) : Colors.white,
+          title: Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.all(8),
+                decoration: BoxDecoration(
+                  color: AppColors.primary.withValues(alpha: 0.1),
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: Icon(Icons.event_note, color: AppColors.primary),
+              ),
+              const SizedBox(width: 12),
+              const Text('Add Treatment Session'),
+            ],
+          ),
+          content: SizedBox(
+            width: MediaQuery.of(context).size.width * 0.9,
+            child: Form(
+              key: formKey,
+              child: SingleChildScrollView(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    // Session Date
+                    ListTile(
+                      contentPadding: EdgeInsets.zero,
+                      leading: const Icon(Icons.calendar_today),
+                      title: const Text('Session Date'),
+                      subtitle: Text(DateFormat('MMM d, yyyy - h:mm a').format(sessionDate)),
+                      onTap: () async {
+                        final date = await showDatePicker(
+                          context: context,
+                          initialDate: sessionDate,
+                          firstDate: DateTime(2020),
+                          lastDate: DateTime.now(),
+                        );
+                        if (date != null) {
+                          final time = await showTimePicker(
+                            context: context,
+                            initialTime: TimeOfDay.fromDateTime(sessionDate),
+                          );
+                          setDialogState(() {
+                            sessionDate = DateTime(
+                              date.year, date.month, date.day,
+                              time?.hour ?? sessionDate.hour,
+                              time?.minute ?? sessionDate.minute,
+                            );
+                          });
+                        }
+                      },
+                    ),
+                    const Divider(),
+                    
+                    // Provider Type
+                    DropdownButtonFormField<String>(
+                      value: providerType,
+                      decoration: const InputDecoration(
+                        labelText: 'Provider Type',
+                        prefixIcon: Icon(Icons.person),
+                      ),
+                      items: const [
+                        DropdownMenuItem(value: 'psychiatrist', child: Text('Psychiatrist')),
+                        DropdownMenuItem(value: 'therapist', child: Text('Therapist')),
+                        DropdownMenuItem(value: 'counselor', child: Text('Counselor')),
+                        DropdownMenuItem(value: 'nurse', child: Text('Nurse')),
+                      ],
+                      onChanged: (v) => setDialogState(() => providerType = v!),
+                    ),
+                    const SizedBox(height: 16),
+                    
+                    // Provider Name
+                    TextFormField(
+                      controller: providerNameController,
+                      decoration: const InputDecoration(
+                        labelText: 'Provider Name',
+                        prefixIcon: Icon(Icons.badge),
+                      ),
+                    ),
+                    const SizedBox(height: 16),
+                    
+                    // Session Type & Duration Row
+                    Row(
+                      children: [
+                        Expanded(
+                          child: DropdownButtonFormField<String>(
+                            value: sessionType,
+                            decoration: const InputDecoration(
+                              labelText: 'Session Type',
+                            ),
+                            items: const [
+                              DropdownMenuItem(value: 'individual', child: Text('Individual')),
+                              DropdownMenuItem(value: 'group', child: Text('Group')),
+                              DropdownMenuItem(value: 'family', child: Text('Family')),
+                              DropdownMenuItem(value: 'couples', child: Text('Couples')),
+                            ],
+                            onChanged: (v) => setDialogState(() => sessionType = v!),
+                          ),
+                        ),
+                        const SizedBox(width: 16),
+                        Expanded(
+                          child: DropdownButtonFormField<int>(
+                            value: duration,
+                            decoration: const InputDecoration(
+                              labelText: 'Duration',
+                            ),
+                            items: const [
+                              DropdownMenuItem(value: 30, child: Text('30 min')),
+                              DropdownMenuItem(value: 45, child: Text('45 min')),
+                              DropdownMenuItem(value: 50, child: Text('50 min')),
+                              DropdownMenuItem(value: 60, child: Text('60 min')),
+                              DropdownMenuItem(value: 90, child: Text('90 min')),
+                            ],
+                            onChanged: (v) => setDialogState(() => duration = v!),
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 16),
+                    
+                    // Mood Rating
+                    Row(
+                      children: [
+                        const Text('Mood Rating: '),
+                        Expanded(
+                          child: Slider(
+                            value: (moodRating ?? 5).toDouble(),
+                            min: 1,
+                            max: 10,
+                            divisions: 9,
+                            label: '${moodRating ?? 5}',
+                            onChanged: (v) => setDialogState(() => moodRating = v.round()),
+                          ),
+                        ),
+                        Text('${moodRating ?? 5}/10'),
+                      ],
+                    ),
+                    
+                    // Patient Mood
+                    TextFormField(
+                      decoration: const InputDecoration(
+                        labelText: 'Patient Mood Description',
+                        hintText: 'e.g., anxious, depressed, stable',
+                      ),
+                      onChanged: (v) => patientMood = v,
+                    ),
+                    const SizedBox(height: 16),
+                    
+                    // Risk Assessment
+                    DropdownButtonFormField<String>(
+                      value: riskAssessment,
+                      decoration: const InputDecoration(
+                        labelText: 'Risk Assessment',
+                        prefixIcon: Icon(Icons.warning_amber),
+                      ),
+                      items: const [
+                        DropdownMenuItem(value: 'none', child: Text('None')),
+                        DropdownMenuItem(value: 'low', child: Text('Low')),
+                        DropdownMenuItem(value: 'moderate', child: Text('Moderate')),
+                        DropdownMenuItem(value: 'high', child: Text('High')),
+                      ],
+                      onChanged: (v) => setDialogState(() => riskAssessment = v!),
+                    ),
+                    const SizedBox(height: 16),
+                    
+                    // Presenting Concerns
+                    TextFormField(
+                      controller: presentingConcernsController,
+                      decoration: const InputDecoration(
+                        labelText: 'Presenting Concerns',
+                        alignLabelWithHint: true,
+                      ),
+                      maxLines: 2,
+                    ),
+                    const SizedBox(height: 16),
+                    
+                    // Session Notes
+                    TextFormField(
+                      controller: sessionNotesController,
+                      decoration: const InputDecoration(
+                        labelText: 'Session Notes',
+                        alignLabelWithHint: true,
+                      ),
+                      maxLines: 3,
+                      validator: (v) => v?.isEmpty ?? true ? 'Session notes required' : null,
+                    ),
+                    const SizedBox(height: 16),
+                    
+                    // Interventions
+                    TextFormField(
+                      controller: interventionsController,
+                      decoration: const InputDecoration(
+                        labelText: 'Interventions Used',
+                        hintText: 'CBT, mindfulness, etc.',
+                      ),
+                    ),
+                    const SizedBox(height: 16),
+                    
+                    // Progress Notes
+                    TextFormField(
+                      controller: progressNotesController,
+                      decoration: const InputDecoration(
+                        labelText: 'Progress Notes',
+                        alignLabelWithHint: true,
+                      ),
+                      maxLines: 2,
+                    ),
+                    const SizedBox(height: 16),
+                    
+                    // Homework
+                    TextFormField(
+                      controller: homeworkController,
+                      decoration: const InputDecoration(
+                        labelText: 'Homework Assigned',
+                      ),
+                    ),
+                    const SizedBox(height: 16),
+                    
+                    // Plan for Next Session
+                    TextFormField(
+                      controller: planController,
+                      decoration: const InputDecoration(
+                        labelText: 'Plan for Next Session',
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(dialogContext),
+              child: const Text('Cancel'),
+            ),
+            FilledButton.icon(
+              onPressed: () async {
+                if (formKey.currentState?.validate() ?? false) {
+                  final db = await ref.read(doctorDbProvider.future);
+                  await db.insertTreatmentSession(
+                    TreatmentSessionsCompanion.insert(
+                      patientId: widget.patientId,
+                      sessionDate: sessionDate,
+                      providerType: Value(providerType),
+                      providerName: Value(providerNameController.text),
+                      sessionType: Value(sessionType),
+                      durationMinutes: Value(duration),
+                      presentingConcerns: Value(presentingConcernsController.text),
+                      sessionNotes: Value(sessionNotesController.text),
+                      interventionsUsed: Value(interventionsController.text),
+                      patientMood: Value(patientMood),
+                      moodRating: Value(moodRating),
+                      progressNotes: Value(progressNotesController.text),
+                      homeworkAssigned: Value(homeworkController.text),
+                      riskAssessment: Value(riskAssessment),
+                      planForNextSession: Value(planController.text),
+                    ),
+                  );
+                  if (dialogContext.mounted) Navigator.pop(dialogContext);
+                  _loadData();
+                  if (context.mounted) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(
+                        content: Text('Session added successfully'),
+                        backgroundColor: Colors.green,
+                      ),
+                    );
+                  }
+                }
+              },
+              icon: const Icon(Icons.save),
+              label: const Text('Save Session'),
+            ),
+          ],
+        ),
+      ),
     );
   }
 
   void _showAddMedicationDialog(BuildContext context) {
-    // Add medication dialog
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Add medication response dialog coming soon')),
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final formKey = GlobalKey<FormState>();
+    
+    final medicationNameController = TextEditingController();
+    final dosageController = TextEditingController();
+    final frequencyController = TextEditingController();
+    final targetSymptomsController = TextEditingController();
+    final sideEffectsController = TextEditingController();
+    final notesController = TextEditingController();
+    
+    DateTime startDate = DateTime.now();
+    String responseStatus = 'monitoring';
+    String sideEffectSeverity = 'none';
+    int? effectivenessScore;
+
+    showDialog<void>(
+      context: context,
+      builder: (dialogContext) => StatefulBuilder(
+        builder: (context, setDialogState) => AlertDialog(
+          backgroundColor: isDark ? const Color(0xFF1A1A1A) : Colors.white,
+          title: Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.all(8),
+                decoration: BoxDecoration(
+                  color: AppColors.success.withValues(alpha: 0.1),
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: Icon(Icons.medication, color: AppColors.success),
+              ),
+              const SizedBox(width: 12),
+              const Expanded(child: Text('Add Medication Response')),
+            ],
+          ),
+          content: SizedBox(
+            width: MediaQuery.of(context).size.width * 0.9,
+            child: Form(
+              key: formKey,
+              child: SingleChildScrollView(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    // Medication Name
+                    TextFormField(
+                      controller: medicationNameController,
+                      decoration: const InputDecoration(
+                        labelText: 'Medication Name *',
+                        prefixIcon: Icon(Icons.medication),
+                      ),
+                      validator: (v) => v?.isEmpty ?? true ? 'Required' : null,
+                    ),
+                    const SizedBox(height: 16),
+                    
+                    // Dosage & Frequency Row
+                    Row(
+                      children: [
+                        Expanded(
+                          child: TextFormField(
+                            controller: dosageController,
+                            decoration: const InputDecoration(
+                              labelText: 'Dosage',
+                              hintText: 'e.g., 50mg',
+                            ),
+                          ),
+                        ),
+                        const SizedBox(width: 16),
+                        Expanded(
+                          child: TextFormField(
+                            controller: frequencyController,
+                            decoration: const InputDecoration(
+                              labelText: 'Frequency',
+                              hintText: 'e.g., twice daily',
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 16),
+                    
+                    // Start Date
+                    ListTile(
+                      contentPadding: EdgeInsets.zero,
+                      leading: const Icon(Icons.calendar_today),
+                      title: const Text('Start Date'),
+                      subtitle: Text(DateFormat('MMM d, yyyy').format(startDate)),
+                      onTap: () async {
+                        final date = await showDatePicker(
+                          context: context,
+                          initialDate: startDate,
+                          firstDate: DateTime(2020),
+                          lastDate: DateTime.now().add(const Duration(days: 365)),
+                        );
+                        if (date != null) {
+                          setDialogState(() => startDate = date);
+                        }
+                      },
+                    ),
+                    const Divider(),
+                    
+                    // Response Status
+                    DropdownButtonFormField<String>(
+                      value: responseStatus,
+                      decoration: const InputDecoration(
+                        labelText: 'Response Status',
+                        prefixIcon: Icon(Icons.assessment),
+                      ),
+                      items: const [
+                        DropdownMenuItem(value: 'monitoring', child: Text('Monitoring')),
+                        DropdownMenuItem(value: 'effective', child: Text('Effective')),
+                        DropdownMenuItem(value: 'partial', child: Text('Partial Response')),
+                        DropdownMenuItem(value: 'ineffective', child: Text('Ineffective')),
+                        DropdownMenuItem(value: 'discontinued', child: Text('Discontinued')),
+                      ],
+                      onChanged: (v) => setDialogState(() => responseStatus = v!),
+                    ),
+                    const SizedBox(height: 16),
+                    
+                    // Effectiveness Score
+                    Row(
+                      children: [
+                        const Text('Effectiveness: '),
+                        Expanded(
+                          child: Slider(
+                            value: (effectivenessScore ?? 5).toDouble(),
+                            min: 1,
+                            max: 10,
+                            divisions: 9,
+                            label: '${effectivenessScore ?? 5}',
+                            onChanged: (v) => setDialogState(() => effectivenessScore = v.round()),
+                          ),
+                        ),
+                        Text('${effectivenessScore ?? 5}/10'),
+                      ],
+                    ),
+                    const SizedBox(height: 8),
+                    
+                    // Target Symptoms
+                    TextFormField(
+                      controller: targetSymptomsController,
+                      decoration: const InputDecoration(
+                        labelText: 'Target Symptoms',
+                        hintText: 'anxiety, insomnia, depression...',
+                      ),
+                    ),
+                    const SizedBox(height: 16),
+                    
+                    // Side Effects
+                    TextFormField(
+                      controller: sideEffectsController,
+                      decoration: const InputDecoration(
+                        labelText: 'Side Effects',
+                        hintText: 'drowsiness, nausea...',
+                      ),
+                    ),
+                    const SizedBox(height: 16),
+                    
+                    // Side Effect Severity
+                    DropdownButtonFormField<String>(
+                      value: sideEffectSeverity,
+                      decoration: const InputDecoration(
+                        labelText: 'Side Effect Severity',
+                        prefixIcon: Icon(Icons.warning_amber),
+                      ),
+                      items: const [
+                        DropdownMenuItem(value: 'none', child: Text('None')),
+                        DropdownMenuItem(value: 'mild', child: Text('Mild')),
+                        DropdownMenuItem(value: 'moderate', child: Text('Moderate')),
+                        DropdownMenuItem(value: 'severe', child: Text('Severe')),
+                      ],
+                      onChanged: (v) => setDialogState(() => sideEffectSeverity = v!),
+                    ),
+                    const SizedBox(height: 16),
+                    
+                    // Provider Notes
+                    TextFormField(
+                      controller: notesController,
+                      decoration: const InputDecoration(
+                        labelText: 'Provider Notes',
+                        alignLabelWithHint: true,
+                      ),
+                      maxLines: 2,
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(dialogContext),
+              child: const Text('Cancel'),
+            ),
+            FilledButton.icon(
+              onPressed: () async {
+                if (formKey.currentState?.validate() ?? false) {
+                  final db = await ref.read(doctorDbProvider.future);
+                  await db.insertMedicationResponse(
+                    MedicationResponsesCompanion.insert(
+                      patientId: widget.patientId,
+                      medicationName: medicationNameController.text,
+                      dosage: Value(dosageController.text),
+                      frequency: Value(frequencyController.text),
+                      startDate: startDate,
+                      responseStatus: Value(responseStatus),
+                      effectivenessScore: Value(effectivenessScore),
+                      targetSymptoms: Value(targetSymptomsController.text),
+                      sideEffects: Value(sideEffectsController.text),
+                      sideEffectSeverity: Value(sideEffectSeverity),
+                      providerNotes: Value(notesController.text),
+                    ),
+                  );
+                  if (dialogContext.mounted) Navigator.pop(dialogContext);
+                  _loadData();
+                  if (context.mounted) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(
+                        content: Text('Medication response added'),
+                        backgroundColor: Colors.green,
+                      ),
+                    );
+                  }
+                }
+              },
+              icon: const Icon(Icons.save),
+              label: const Text('Save'),
+            ),
+          ],
+        ),
+      ),
     );
   }
 
   void _showAddGoalDialog(BuildContext context) {
-    // Add goal dialog
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Add treatment goal dialog coming soon')),
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final formKey = GlobalKey<FormState>();
+    
+    final goalDescriptionController = TextEditingController();
+    final targetBehaviorController = TextEditingController();
+    final baselineController = TextEditingController();
+    final targetMeasureController = TextEditingController();
+    final interventionsController = TextEditingController();
+    
+    String goalCategory = 'symptom';
+    int priority = 2;
+    DateTime? targetDate;
+
+    showDialog<void>(
+      context: context,
+      builder: (dialogContext) => StatefulBuilder(
+        builder: (context, setDialogState) => AlertDialog(
+          backgroundColor: isDark ? const Color(0xFF1A1A1A) : Colors.white,
+          title: Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.all(8),
+                decoration: BoxDecoration(
+                  color: AppColors.info.withValues(alpha: 0.1),
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: Icon(Icons.track_changes, color: AppColors.info),
+              ),
+              const SizedBox(width: 12),
+              const Text('Add Treatment Goal'),
+            ],
+          ),
+          content: SizedBox(
+            width: MediaQuery.of(context).size.width * 0.9,
+            child: Form(
+              key: formKey,
+              child: SingleChildScrollView(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    // Goal Category
+                    DropdownButtonFormField<String>(
+                      value: goalCategory,
+                      decoration: const InputDecoration(
+                        labelText: 'Goal Category',
+                        prefixIcon: Icon(Icons.category),
+                      ),
+                      items: const [
+                        DropdownMenuItem(value: 'symptom', child: Text('Symptom Reduction')),
+                        DropdownMenuItem(value: 'functional', child: Text('Functional Improvement')),
+                        DropdownMenuItem(value: 'behavioral', child: Text('Behavioral Change')),
+                        DropdownMenuItem(value: 'cognitive', child: Text('Cognitive Change')),
+                        DropdownMenuItem(value: 'interpersonal', child: Text('Interpersonal Skills')),
+                      ],
+                      onChanged: (v) => setDialogState(() => goalCategory = v!),
+                    ),
+                    const SizedBox(height: 16),
+                    
+                    // Goal Description
+                    TextFormField(
+                      controller: goalDescriptionController,
+                      decoration: const InputDecoration(
+                        labelText: 'Goal Description *',
+                        hintText: 'Describe the treatment goal',
+                        alignLabelWithHint: true,
+                      ),
+                      maxLines: 2,
+                      validator: (v) => v?.isEmpty ?? true ? 'Required' : null,
+                    ),
+                    const SizedBox(height: 16),
+                    
+                    // Target Behavior
+                    TextFormField(
+                      controller: targetBehaviorController,
+                      decoration: const InputDecoration(
+                        labelText: 'Target Behavior',
+                        hintText: 'Specific measurable behavior',
+                      ),
+                    ),
+                    const SizedBox(height: 16),
+                    
+                    // Baseline & Target Row
+                    Row(
+                      children: [
+                        Expanded(
+                          child: TextFormField(
+                            controller: baselineController,
+                            decoration: const InputDecoration(
+                              labelText: 'Baseline',
+                              hintText: 'Starting point',
+                            ),
+                          ),
+                        ),
+                        const SizedBox(width: 16),
+                        Expanded(
+                          child: TextFormField(
+                            controller: targetMeasureController,
+                            decoration: const InputDecoration(
+                              labelText: 'Target',
+                              hintText: 'Goal to achieve',
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 16),
+                    
+                    // Target Date
+                    ListTile(
+                      contentPadding: EdgeInsets.zero,
+                      leading: const Icon(Icons.event),
+                      title: const Text('Target Date (Optional)'),
+                      subtitle: Text(targetDate != null 
+                        ? DateFormat('MMM d, yyyy').format(targetDate!)
+                        : 'Not set'),
+                      onTap: () async {
+                        final date = await showDatePicker(
+                          context: context,
+                          initialDate: targetDate ?? DateTime.now().add(const Duration(days: 30)),
+                          firstDate: DateTime.now(),
+                          lastDate: DateTime.now().add(const Duration(days: 365 * 2)),
+                        );
+                        if (date != null) {
+                          setDialogState(() => targetDate = date);
+                        }
+                      },
+                    ),
+                    const Divider(),
+                    
+                    // Priority
+                    const Text('Priority', style: TextStyle(fontWeight: FontWeight.w500)),
+                    const SizedBox(height: 8),
+                    SegmentedButton<int>(
+                      segments: const [
+                        ButtonSegment(value: 1, label: Text('High')),
+                        ButtonSegment(value: 2, label: Text('Medium')),
+                        ButtonSegment(value: 3, label: Text('Low')),
+                      ],
+                      selected: {priority},
+                      onSelectionChanged: (s) => setDialogState(() => priority = s.first),
+                    ),
+                    const SizedBox(height: 16),
+                    
+                    // Interventions
+                    TextFormField(
+                      controller: interventionsController,
+                      decoration: const InputDecoration(
+                        labelText: 'Planned Interventions',
+                        hintText: 'CBT, medication, lifestyle changes...',
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(dialogContext),
+              child: const Text('Cancel'),
+            ),
+            FilledButton.icon(
+              onPressed: () async {
+                if (formKey.currentState?.validate() ?? false) {
+                  final db = await ref.read(doctorDbProvider.future);
+                  await db.insertTreatmentGoal(
+                    TreatmentGoalsCompanion.insert(
+                      patientId: widget.patientId,
+                      goalCategory: Value(goalCategory),
+                      goalDescription: goalDescriptionController.text,
+                      targetBehavior: Value(targetBehaviorController.text),
+                      baselineMeasure: Value(baselineController.text),
+                      targetMeasure: Value(targetMeasureController.text),
+                      targetDate: Value(targetDate),
+                      priority: Value(priority),
+                      interventions: Value(interventionsController.text),
+                    ),
+                  );
+                  if (dialogContext.mounted) Navigator.pop(dialogContext);
+                  _loadData();
+                  if (context.mounted) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(
+                        content: Text('Treatment goal added'),
+                        backgroundColor: Colors.green,
+                      ),
+                    );
+                  }
+                }
+              },
+              icon: const Icon(Icons.save),
+              label: const Text('Save Goal'),
+            ),
+          ],
+        ),
+      ),
     );
   }
 }

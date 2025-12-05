@@ -1,4 +1,6 @@
 import 'dart:convert';
+import 'package:drift/drift.dart' hide Column;
+import 'package:flutter/foundation.dart' show kDebugMode;
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
@@ -7,6 +9,7 @@ import '../../db/doctor_db.dart';
 import '../../providers/db_provider.dart';
 import '../../services/allergy_checking_service.dart';
 import '../../services/drug_interaction_service.dart';
+import '../../services/logger_service.dart';
 import '../../services/pdf_service.dart';
 import '../../services/prescription_templates.dart';
 import '../../services/suggestions_service.dart';
@@ -549,7 +552,7 @@ class _AddPrescriptionScreenState extends ConsumerState<AddPrescriptionScreen> {
     };
   }
 
-  void _savePrescription() {
+  void _savePrescription() async {
     if (_selectedPatientId == null) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
@@ -573,28 +576,67 @@ class _AddPrescriptionScreenState extends ConsumerState<AddPrescriptionScreen> {
 
     if (_formKey.currentState!.validate()) {
       final jsonData = _buildPrescriptionJson();
-      debugPrint('=== NEW PRESCRIPTION DATA ===');
-      debugPrint(jsonData.toString());
-      debugPrint('=============================');
+      
+      if (kDebugMode) {
+        log.d('PRESCRIPTION', 'New prescription data', extra: jsonData);
+      }
 
-      final patientName = _selectedPatient != null ? _getPatientName(_selectedPatient!) : 'Patient';
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Row(
-            children: [
-              const Icon(Icons.check_circle, color: Colors.white),
-              const SizedBox(width: 12),
-              Expanded(
-                child: Text('Prescription saved for $patientName'),
-              ),
-            ],
+      try {
+        // Save to database
+        final db = await ref.read(doctorDbProvider.future);
+        final prescriptionId = await db.insertPrescription(
+          PrescriptionsCompanion.insert(
+            patientId: _selectedPatientId!,
+            itemsJson: jsonEncode(jsonData['medications']),
+            instructions: Value(jsonData['advice'] as String? ?? ''),
+            diagnosis: Value(jsonData['diagnosis'] as String? ?? ''),
+            chiefComplaint: Value(jsonData['symptoms'] as String? ?? ''),
+            vitalsJson: Value(jsonEncode(jsonData['vitals'] ?? {})),
           ),
-          backgroundColor: Colors.green,
-          behavior: SnackBarBehavior.floating,
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-        ),
-      );
-      Navigator.pop(context);
+        );
+        
+        log.i('PRESCRIPTION', 'Prescription saved', extra: {
+          'prescriptionId': prescriptionId,
+          'patientId': _selectedPatientId,
+          'medicationCount': _medications.length,
+        });
+
+        // Get the created prescription to return
+        final createdPrescription = await db.getPrescriptionById(prescriptionId);
+
+        final patientName = _selectedPatient != null ? _getPatientName(_selectedPatient!) : 'Patient';
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Row(
+                children: [
+                  const Icon(Icons.check_circle, color: Colors.white),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Text('Prescription saved for $patientName'),
+                  ),
+                ],
+              ),
+              backgroundColor: Colors.green,
+              behavior: SnackBarBehavior.floating,
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+            ),
+          );
+          Navigator.pop(context, createdPrescription);
+        }
+      } catch (e, st) {
+        log.e('PRESCRIPTION', 'Failed to save prescription', error: e, stackTrace: st);
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('Error saving prescription: $e'),
+              backgroundColor: Colors.red,
+              behavior: SnackBarBehavior.floating,
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+            ),
+          );
+        }
+      }
     }
   }
 
@@ -1691,7 +1733,6 @@ class _AddPrescriptionScreenState extends ConsumerState<AddPrescriptionScreen> {
 
   /// Simplified medication summary - tap to open full popup
   Widget _buildMedicationsSummary(ColorScheme colorScheme) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
     final validMeds = _medications.where((m) => m.nameController.text.isNotEmpty).toList();
 
     if (validMeds.isEmpty) {

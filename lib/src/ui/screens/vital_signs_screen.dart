@@ -49,24 +49,20 @@ class _VitalSignsScreenState extends ConsumerState<VitalSignsScreen>
   }
 
   Future<void> _loadVitalSigns() async {
-    final dbAsync = ref.read(doctorDbProvider);
-    dbAsync.when(
-      data: (db) async {
-        final vitals = await db.getVitalSignsForPatient(widget.patientId);
-        if (mounted) {
-          setState(() {
-            _vitalSigns = vitals;
-            _isLoading = false;
-          });
-        }
-      },
-      loading: () {},
-      error: (_, __) {
-        if (mounted) {
-          setState(() => _isLoading = false);
-        }
-      },
-    );
+    try {
+      final db = await ref.read(doctorDbProvider.future);
+      final vitals = await db.getVitalSignsForPatient(widget.patientId);
+      if (mounted) {
+        setState(() {
+          _vitalSigns = vitals;
+          _isLoading = false;
+        });
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() => _isLoading = false);
+      }
+    }
   }
 
   @override
@@ -276,6 +272,7 @@ class _VitalSignsScreenState extends ConsumerState<VitalSignsScreen>
     }
 
     return ListView.builder(
+      primary: false,
       padding: const EdgeInsets.all(AppSpacing.lg),
       itemCount: _vitalSigns.length,
       itemBuilder: (context, index) {

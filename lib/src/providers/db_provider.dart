@@ -13,24 +13,29 @@ import '../services/offline_sync_service.dart';
 import '../services/seed_data_service.dart';
 import '../services/treatment_efficacy_service.dart';
 
+/// Flag to track if database has been seeded
+bool _databaseSeeded = false;
+
 final doctorDbProvider = FutureProvider<DoctorDatabase>((ref) async {
   log
     ..i('DB', 'Initializing database...')
     ..startMetric('database_init');
   
-  final db = DoctorDatabase();
-  ref.onDispose(() {
-    log.i('DB', 'Closing database connection');
-    db.close();
-  });
+  // Use singleton instance to prevent multiple database connections
+  final db = DoctorDatabase.instance;
   
-  // Seed sample data on first launch
-  try {
-    log.d('DB', 'Starting database seeding...');
-    await seedSampleData(db);
-    log.i('DB', 'Database seeding completed');
-  } catch (e, st) {
-    log.w('DB', 'Database seeding failed', error: e, stackTrace: st);
+  // Only seed once per app session
+  if (!_databaseSeeded) {
+    try {
+      log.d('DB', 'Starting database seeding...');
+      await seedSampleData(db);
+      _databaseSeeded = true;
+      log.i('DB', 'Database seeding completed');
+    } catch (e, st) {
+      log.w('DB', 'Database seeding failed', error: e, stackTrace: st);
+    }
+  } else {
+    log.d('DB', 'Database already seeded, skipping...');
   }
   
   log
@@ -72,7 +77,7 @@ final notificationProvider = Provider<NotificationService>((ref) {
 // Communication service provider
 final communicationProvider = Provider<CommunicationService>((ref) {
   log.d('COMMUNICATION', 'Initializing communication service...');
-  return const CommunicationService();
+  return CommunicationService();
 });
 
 // Drug reference service provider

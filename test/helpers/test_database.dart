@@ -125,6 +125,19 @@ class TestDoctorDatabase extends DoctorDatabase {
         .getSingleOrNull();
   }
 
+  /// Get prescriptions for a patient.
+  Future<List<Prescription>> getPrescriptionsForPatient(int patientId) {
+    return (select(prescriptions)
+          ..where((p) => p.patientId.equals(patientId))
+          ..orderBy([(p) => OrderingTerm.desc(p.createdAt)]))
+        .get();
+  }
+
+  /// Update a prescription by ID using a companion.
+  Future<void> updatePrescriptionById(int id, Insertable<Prescription> prescription) async {
+    await (update(prescriptions)..where((p) => p.id.equals(id))).write(prescription);
+  }
+
   /// Get upcoming appointments (from now).
   Future<List<Appointment>> getUpcomingAppointments({int limit = 10}) {
     final now = DateTime.now();
@@ -142,6 +155,61 @@ class TestDoctorDatabase extends DoctorDatabase {
           ..where((a) => a.appointmentDateTime.isSmallerThanValue(now))
           ..orderBy([(a) => OrderingTerm.desc(a.appointmentDateTime)])
           ..limit(limit))
+        .get();
+  }
+
+  /// Gets the count of encounters in the database.
+  Future<int> getEncounterCount() async {
+    final result =
+        await customSelect('SELECT COUNT(*) as count FROM encounters')
+            .getSingle();
+    return result.read<int>('count');
+  }
+
+  /// Gets the count of diagnoses in the database.
+  Future<int> getDiagnosisCount() async {
+    final result =
+        await customSelect('SELECT COUNT(*) as count FROM diagnoses')
+            .getSingle();
+    return result.read<int>('count');
+  }
+
+  /// Gets the count of clinical notes in the database.
+  Future<int> getClinicalNoteCount() async {
+    final result =
+        await customSelect('SELECT COUNT(*) as count FROM clinical_notes')
+            .getSingle();
+    return result.read<int>('count');
+  }
+
+  /// Get encounters for a patient.
+  Future<List<Encounter>> getEncountersForPatient(int patientId) {
+    return (select(encounters)
+          ..where((e) => e.patientId.equals(patientId))
+          ..orderBy([(e) => OrderingTerm.desc(e.encounterDate)]))
+        .get();
+  }
+
+  /// Get diagnoses for a patient.
+  Future<List<Diagnose>> getDiagnosesForPatient(int patientId) {
+    return (select(diagnoses)
+          ..where((d) => d.patientId.equals(patientId))
+          ..orderBy([(d) => OrderingTerm.desc(d.diagnosedDate)]))
+        .get();
+  }
+
+  /// Get clinical notes for an encounter.
+  Future<List<ClinicalNote>> getClinicalNotesForEncounter(int encounterId) {
+    return (select(clinicalNotes)
+          ..where((n) => n.encounterId.equals(encounterId))
+          ..orderBy([(n) => OrderingTerm.desc(n.createdAt)]))
+        .get();
+  }
+
+  /// Get encounter diagnoses for an encounter.
+  Future<List<EncounterDiagnose>> getEncounterDiagnosesForEncounter(int encounterId) {
+    return (select(encounterDiagnoses)
+          ..where((ed) => ed.encounterId.equals(encounterId)))
         .get();
   }
 }
@@ -267,6 +335,147 @@ class TestDataFactory {
       grandTotal: Value(grandTotal ?? 0),
       paymentMethod: Value(paymentMethod ?? 'Cash'),
       paymentStatus: Value(paymentStatus ?? 'Pending'),
+      notes: Value(notes ?? ''),
+    );
+  }
+
+  /// Creates a vital signs companion with minimal required data.
+  static VitalSignsCompanion createVitalSigns({
+    required int patientId,
+    int? encounterId,
+    DateTime? recordedAt,
+    double? systolicBp,
+    double? diastolicBp,
+    int? heartRate,
+    double? temperature,
+    int? respiratoryRate,
+    double? oxygenSaturation,
+    double? weight,
+    double? height,
+  }) {
+    return VitalSignsCompanion.insert(
+      patientId: patientId,
+      encounterId: Value(encounterId),
+      recordedAt: recordedAt ?? DateTime.now(),
+      systolicBp: Value(systolicBp),
+      diastolicBp: Value(diastolicBp),
+      heartRate: Value(heartRate),
+      temperature: Value(temperature),
+      respiratoryRate: Value(respiratoryRate),
+      oxygenSaturation: Value(oxygenSaturation),
+      weight: Value(weight),
+      height: Value(height),
+    );
+  }
+
+  /// Creates an encounter companion with minimal required data.
+  static EncountersCompanion createEncounter({
+    required int patientId,
+    int? appointmentId,
+    DateTime? encounterDate,
+    String? encounterType,
+    String? status,
+    String? chiefComplaint,
+    String? providerName,
+    String? providerType,
+    DateTime? checkInTime,
+    DateTime? checkOutTime,
+  }) {
+    return EncountersCompanion.insert(
+      patientId: patientId,
+      appointmentId: Value(appointmentId),
+      encounterDate: encounterDate ?? DateTime.now(),
+      encounterType: Value(encounterType ?? 'follow_up'),
+      status: Value(status ?? 'in_progress'),
+      chiefComplaint: Value(chiefComplaint ?? ''),
+      providerName: Value(providerName ?? ''),
+      providerType: Value(providerType ?? 'psychiatrist'),
+      checkInTime: Value(checkInTime),
+      checkOutTime: Value(checkOutTime),
+    );
+  }
+
+  /// Creates a diagnosis companion with minimal required data.
+  static DiagnosesCompanion createDiagnosis({
+    required int patientId,
+    int? encounterId,
+    String? icdCode,
+    required String description,
+    String? category,
+    String? severity,
+    String? diagnosisStatus,
+    DateTime? onsetDate,
+    DateTime? diagnosedDate,
+    DateTime? resolvedDate,
+    bool? isPrimary,
+    int? displayOrder,
+    String? notes,
+  }) {
+    return DiagnosesCompanion.insert(
+      patientId: patientId,
+      encounterId: Value(encounterId),
+      icdCode: Value(icdCode ?? ''),
+      description: description,
+      category: Value(category ?? 'psychiatric'),
+      severity: Value(severity ?? 'moderate'),
+      diagnosisStatus: Value(diagnosisStatus ?? 'active'),
+      onsetDate: Value(onsetDate),
+      diagnosedDate: diagnosedDate ?? DateTime.now(),
+      resolvedDate: Value(resolvedDate),
+      isPrimary: Value(isPrimary ?? false),
+      displayOrder: Value(displayOrder ?? 0),
+      notes: Value(notes ?? ''),
+    );
+  }
+
+  /// Creates a clinical note companion with minimal required data.
+  static ClinicalNotesCompanion createClinicalNote({
+    required int encounterId,
+    required int patientId,
+    String? noteType,
+    String? subjective,
+    String? objective,
+    String? assessment,
+    String? plan,
+    String? mentalStatusExam,
+    String? riskLevel,
+    String? riskFactors,
+    String? safetyPlan,
+    String? signedBy,
+    DateTime? signedAt,
+    bool? isLocked,
+  }) {
+    return ClinicalNotesCompanion.insert(
+      encounterId: encounterId,
+      patientId: patientId,
+      noteType: Value(noteType ?? 'progress'),
+      subjective: Value(subjective ?? ''),
+      objective: Value(objective ?? ''),
+      assessment: Value(assessment ?? ''),
+      plan: Value(plan ?? ''),
+      mentalStatusExam: Value(mentalStatusExam ?? '{}'),
+      riskLevel: Value(riskLevel ?? 'none'),
+      riskFactors: Value(riskFactors ?? ''),
+      safetyPlan: Value(safetyPlan ?? ''),
+      signedBy: Value(signedBy ?? ''),
+      signedAt: Value(signedAt),
+      isLocked: Value(isLocked ?? false),
+    );
+  }
+
+  /// Creates an encounter diagnosis companion with minimal required data.
+  static EncounterDiagnosesCompanion createEncounterDiagnosis({
+    required int encounterId,
+    required int diagnosisId,
+    bool? isNewDiagnosis,
+    String? encounterStatus,
+    String? notes,
+  }) {
+    return EncounterDiagnosesCompanion.insert(
+      encounterId: encounterId,
+      diagnosisId: diagnosisId,
+      isNewDiagnosis: Value(isNewDiagnosis ?? false),
+      encounterStatus: Value(encounterStatus ?? 'addressed'),
       notes: Value(notes ?? ''),
     );
   }

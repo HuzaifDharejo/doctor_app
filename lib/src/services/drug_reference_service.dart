@@ -195,7 +195,6 @@ class DrugReferenceService {
   /// Helper: Find interaction between two drugs
   DrugInteraction? _findInteraction(DrugInfo drug1, DrugInfo drug2) {
     final key1 = '${drug1.id}_${drug2.id}';
-    final key2 = '${drug2.id}_${drug1.id}';
 
     final interaction = _interactionDatabase.firstWhere(
       (i) => i.drug1Id == drug1.id && i.drug2Id == drug2.id ||

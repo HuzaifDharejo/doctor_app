@@ -1,5 +1,3 @@
-import 'dart:convert';
-
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
@@ -291,6 +289,7 @@ class _TreatmentDashboardState extends ConsumerState<TreatmentDashboard>
   /// Tab 1: Overview with key metrics and quick stats
   Widget _buildOverviewTab(BuildContext context, ColorScheme colorScheme, bool isDark) {
     return SingleChildScrollView(
+      primary: false,
       padding: const EdgeInsets.all(AppSpacing.lg),
       child: Column(
         spacing: 16,
@@ -475,6 +474,7 @@ class _TreatmentDashboardState extends ConsumerState<TreatmentDashboard>
     }
 
     return ListView.builder(
+      primary: false,
       padding: const EdgeInsets.all(AppSpacing.lg),
       itemCount: activeTreatments.length,
       itemBuilder: (context, index) => _buildActiveTreatmentCard(
@@ -626,6 +626,7 @@ class _TreatmentDashboardState extends ConsumerState<TreatmentDashboard>
     }
 
     return ListView.builder(
+      primary: false,
       padding: const EdgeInsets.all(AppSpacing.lg),
       itemCount: _medications.length,
       itemBuilder: (context, index) => _buildMedicationCard(
@@ -828,6 +829,7 @@ class _TreatmentDashboardState extends ConsumerState<TreatmentDashboard>
     }
 
     return ListView.builder(
+      primary: false,
       padding: const EdgeInsets.all(AppSpacing.lg),
       itemCount: _goals.length,
       itemBuilder: (context, index) => _buildGoalCard(
@@ -1013,6 +1015,7 @@ class _TreatmentDashboardState extends ConsumerState<TreatmentDashboard>
     }
 
     return ListView.builder(
+      primary: false,
       padding: const EdgeInsets.all(AppSpacing.lg),
       itemCount: _sessions.length,
       itemBuilder: (context, index) => _buildSessionCard(

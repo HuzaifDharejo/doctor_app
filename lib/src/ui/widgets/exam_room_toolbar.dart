@@ -8,9 +8,11 @@ import '../../core/theme/design_tokens.dart';
 import '../screens/add_appointment_screen.dart';
 import '../screens/add_patient_screen.dart';
 import '../screens/add_prescription_screen.dart';
+import '../screens/follow_ups_screen.dart';
 import '../screens/psychiatric_assessment_screen_modern.dart';
 import '../screens/pulmonary_evaluation_screen_modern.dart';
 import '../screens/records/select_record_type_screen.dart';
+import 'quick_vital_entry_modal.dart';
 
 /// Exam Room Toolbar
 /// Optimized for fast access in clinical environments
@@ -145,8 +147,9 @@ class ExamRoomToolbar extends ConsumerWidget {
                   icon: Icons.follow_the_signs_rounded,
                   label: 'Follow-up',
                   color: const Color(0xFF06B6D4),
-                  onTap: () => ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(content: Text('Follow-up scheduling coming soon')),
+                  onTap: () => _navigateTo(
+                    context,
+                    const FollowUpsScreen(),
                   ),
                 ),
               ],
@@ -167,8 +170,32 @@ class ExamRoomToolbar extends ConsumerWidget {
 
   void _showVitalsEntry(BuildContext context) {
     HapticFeedback.mediumImpact();
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Quick vitals entry - feature in development')),
+    if (preselectedPatient != null) {
+      final patientName = '${preselectedPatient!.firstName} ${preselectedPatient!.lastName}'.trim();
+      QuickVitalEntryModal.showAsBottomSheet(
+        context: context,
+        patientId: preselectedPatient!.id,
+        patientName: patientName.isNotEmpty ? patientName : 'Patient',
+      );
+    } else {
+      // Show patient selection dialog if no patient preselected
+      _showPatientSelectionForVitals(context);
+    }
+  }
+
+  void _showPatientSelectionForVitals(BuildContext context) {
+    showDialog<void>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Select Patient'),
+        content: const Text('Please select a patient first from the Patients screen, or navigate to a patient\'s profile to enter vitals.'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('OK'),
+          ),
+        ],
+      ),
     );
   }
 }

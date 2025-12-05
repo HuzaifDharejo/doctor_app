@@ -66,19 +66,11 @@ class _UserManualScreenState extends ConsumerState<UserManualScreen>
   @override
   Widget build(BuildContext context) {
     final isDark = context.isDarkMode;
+    final surfaceColor = isDark ? const Color(0xFF1A1A2E) : Colors.white;
+    final textColor = isDark ? Colors.white : const Color(0xFF1A1A2E);
 
     return Scaffold(
       backgroundColor: isDark ? const Color(0xFF1E1E2E) : const Color(0xFFF8FAFF),
-      appBar: AppBar(
-        elevation: 0,
-        backgroundColor: Colors.transparent,
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back_ios_rounded),
-          onPressed: () => Navigator.pop(context),
-        ),
-        title: const Text('User Manual & Guide'),
-        centerTitle: true,
-      ),
       body: Stack(
         children: [
           // Background gradient
@@ -95,24 +87,130 @@ class _UserManualScreenState extends ConsumerState<UserManualScreen>
               ),
             ),
           ),
+          // Header
+          Positioned(
+            top: 0,
+            left: 0,
+            right: 0,
+            child: Container(
+              padding: EdgeInsets.only(top: MediaQuery.of(context).padding.top),
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                  colors: isDark
+                      ? [const Color(0xFF1A1A2E), const Color(0xFF16213E)]
+                      : [const Color(0xFFF8FAFC), surfaceColor],
+                ),
+              ),
+              child: Padding(
+                padding: const EdgeInsets.fromLTRB(8, 8, 16, 16),
+                child: Row(
+                  children: [
+                    Container(
+                      margin: const EdgeInsets.only(left: 8),
+                      decoration: BoxDecoration(
+                        color: isDark ? Colors.white.withValues(alpha: 0.1) : Colors.black.withValues(alpha: 0.05),
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: IconButton(
+                        icon: Icon(
+                          Icons.arrow_back_ios_new_rounded,
+                          color: textColor,
+                          size: 20,
+                        ),
+                        onPressed: () => Navigator.pop(context),
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    Container(
+                      padding: const EdgeInsets.all(10),
+                      decoration: BoxDecoration(
+                        gradient: const LinearGradient(
+                          colors: [Color(0xFF6366F1), Color(0xFF8B5CF6)],
+                          begin: Alignment.topLeft,
+                          end: Alignment.bottomRight,
+                        ),
+                        borderRadius: BorderRadius.circular(12),
+                        boxShadow: [
+                          BoxShadow(
+                            color: const Color(0xFF6366F1).withValues(alpha: 0.3),
+                            blurRadius: 8,
+                            offset: const Offset(0, 3),
+                          ),
+                        ],
+                      ),
+                      child: const Icon(
+                        Icons.menu_book_rounded,
+                        color: Colors.white,
+                        size: 20,
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Text(
+                            'User Manual',
+                            style: TextStyle(
+                              fontSize: 18,
+                              fontWeight: FontWeight.bold,
+                              color: textColor,
+                            ),
+                          ),
+                          Text(
+                            'Complete Guide',
+                            style: TextStyle(
+                              fontSize: 12,
+                              color: isDark ? Colors.grey[400] : Colors.grey[600],
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFF6366F1).withValues(alpha: 0.15),
+                        borderRadius: BorderRadius.circular(20),
+                      ),
+                      child: Text(
+                        '${_currentPage + 1}/8',
+                        style: const TextStyle(
+                          fontWeight: FontWeight.w600,
+                          fontSize: 12,
+                          color: Color(0xFF6366F1),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ),
           // Page view
-          PageView(
-            controller: _pageController,
-            onPageChanged: (index) {
-              setState(() => _currentPage = index);
-              _fadeController.forward(from: 0);
-              _scaleController.forward(from: 0);
-            },
-            children: [
-              _buildWelcomePage(isDark),
-              _buildPatientManagementPage(isDark),
-              _buildAppointmentsPage(isDark),
-              _buildPrescriptionsPage(isDark),
-              _buildBillingPage(isDark),
-              _buildMedicalRecordsPage(isDark),
-              _buildSettingsPage(isDark),
-              _buildTipsPage(isDark),
-            ],
+          Padding(
+            padding: EdgeInsets.only(top: MediaQuery.of(context).padding.top + 80),
+            child: PageView(
+              controller: _pageController,
+              onPageChanged: (index) {
+                setState(() => _currentPage = index);
+                _fadeController.forward(from: 0);
+                _scaleController.forward(from: 0);
+              },
+              children: [
+                _buildWelcomePage(isDark),
+                _buildPatientManagementPage(isDark),
+                _buildAppointmentsPage(isDark),
+                _buildPrescriptionsPage(isDark),
+                _buildBillingPage(isDark),
+                _buildMedicalRecordsPage(isDark),
+                _buildSettingsPage(isDark),
+                _buildTipsPage(isDark),
+              ],
+            ),
           ),
           // Bottom navigation
           Positioned(

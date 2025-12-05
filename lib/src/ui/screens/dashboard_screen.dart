@@ -13,10 +13,18 @@ import '../../core/widgets/loading_state.dart';
 import '../../db/doctor_db.dart';
 import '../../providers/db_provider.dart';
 import '../../theme/app_theme.dart';
+import '../widgets/patient_picker_dialog.dart';
+import '../widgets/quick_vitals_dialog.dart';
+import '../widgets/quick_note_dialog.dart';
+import '../widgets/quick_checkin_dialog.dart';
+import '../widgets/wait_time_stats.dart';
 import 'add_appointment_screen.dart';
 import 'add_patient_screen.dart';
+import 'add_prescription_screen.dart';
+import 'encounter_screen.dart';
 import 'follow_ups_screen.dart';
 import 'patients_screen.dart';
+import 'workflow_wizard_screen.dart';
 
 class DashboardScreen extends ConsumerStatefulWidget {
   
@@ -74,9 +82,14 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
     final pendingFollowUps = await db.getPendingFollowUps();
     final allInvoices = await db.getAllInvoices();
     
+    // Calculate wait time statistics
+    final waitTimeStats = await calculateWaitTimeStats(db);
+    
     // Calculate statistics
     final pendingAppts = todayAppointments.where((a) => 
         a.status == 'pending' || a.status == 'scheduled').toList();
+    final checkedInAppts = todayAppointments.where((a) => 
+        a.status == 'checked_in').toList();
     final completedToday = todayAppointments.where((a) => 
         a.status == 'completed').length;
     final inProgressAppt = todayAppointments.where((a) => 
@@ -110,6 +123,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
       'patients': patients,
       'todayAppointments': todayAppointments,
       'pendingAppts': pendingAppts,
+      'checkedInAppts': checkedInAppts,
       'completedToday': completedToday,
       'inProgressAppt': inProgressAppt,
       'overdueFollowUps': overdueFollowUps,
@@ -117,12 +131,14 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
       'todayRevenue': todayRevenue,
       'pendingPayments': pendingPayments,
       'recentPatients': recentPatients,
+      'waitTimeStats': waitTimeStats,
     };
   }
 
   Widget _buildContent(BuildContext context, DoctorDatabase db, Map<String, dynamic> data) {
     final todayAppointments = data['todayAppointments'] as List<Appointment>;
     final pendingAppts = data['pendingAppts'] as List<Appointment>;
+    final checkedInAppts = data['checkedInAppts'] as List<Appointment>;
     final completedToday = data['completedToday'] as int;
     final inProgressAppt = data['inProgressAppt'] as List<Appointment>;
     final overdueFollowUps = data['overdueFollowUps'] as List<ScheduledFollowUp>;
@@ -130,6 +146,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
     final todayRevenue = data['todayRevenue'] as double;
     final pendingPayments = data['pendingPayments'] as double;
     final recentPatients = data['recentPatients'] as List<Patient>;
+    final waitTimeStats = data['waitTimeStats'] as WaitTimeStats;
     
     final isDark = context.isDarkMode;
     
@@ -184,31 +201,45 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                 ),
               ),
               
+              SliverToBoxAdapter(child: SizedBox(height: isCompact ? 16 : 20)),
+              
+              // Wait Time Statistics Card
+              SliverToBoxAdapter(
+                child: Padding(
+                  padding: EdgeInsets.symmetric(horizontal: padding),
+                  child: WaitTimeCard(
+                    stats: waitTimeStats,
+                    isCompact: isCompact,
+                    isDark: isDark,
+                  ),
+                ),
+              ),
+              
               SliverToBoxAdapter(child: SizedBox(height: isCompact ? 20 : 24)),
               
               // Current/Next Patient Card (Priority View)
-              if (pendingAppts.isNotEmpty)
+              if (pendingAppts.isNotEmpty || checkedInAppts.isNotEmpty)
                 SliverToBoxAdapter(
                   child: Padding(
                     padding: EdgeInsets.symmetric(horizontal: padding),
                     child: _buildCurrentPatientCard(
                       context, 
                       db, 
-                      pendingAppts, 
+                      [...checkedInAppts, ...pendingAppts], // Show checked-in first
                       isCompact, 
                       isDark,
                     ),
                   ),
                 ),
               
-              if (pendingAppts.isNotEmpty)
+              if (pendingAppts.isNotEmpty || checkedInAppts.isNotEmpty)
                 SliverToBoxAdapter(child: SizedBox(height: isCompact ? 20 : 24)),
               
               // Quick Clinical Actions
               SliverToBoxAdapter(
                 child: Padding(
                   padding: EdgeInsets.symmetric(horizontal: padding),
-                  child: _buildQuickClinicalActions(context, isCompact, isDark),
+                  child: _buildQuickClinicalActions(context, db, isCompact, isDark),
                 ),
               ),
               
@@ -879,7 +910,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
   // ============================================================
   // SECTION 5: QUICK CLINICAL ACTIONS
   // ============================================================
-  Widget _buildQuickClinicalActions(BuildContext context, bool isCompact, bool isDark) {
+  Widget _buildQuickClinicalActions(BuildContext context, DoctorDatabase db, bool isCompact, bool isDark) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -892,8 +923,27 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
           ),
         ),
         SizedBox(height: isCompact ? 12 : 16),
+        // Primary row
         Row(
           children: [
+            Expanded(child: _buildActionTile(
+              icon: Icons.play_circle_rounded,
+              label: 'Start Visit',
+              color: const Color(0xFF059669),
+              onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const WorkflowWizardScreen())),
+              isCompact: isCompact,
+              isDark: isDark,
+            )),
+            SizedBox(width: isCompact ? 10 : 12),
+            Expanded(child: _buildActionTile(
+              icon: Icons.medical_services_rounded,
+              label: 'Encounter',
+              color: const Color(0xFFEC4899),
+              onTap: () => _startNewEncounter(context, db),
+              isCompact: isCompact,
+              isDark: isDark,
+            )),
+            SizedBox(width: isCompact ? 10 : 12),
             Expanded(child: _buildActionTile(
               icon: Icons.person_add_rounded,
               label: 'New Patient',
@@ -916,16 +966,71 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
               icon: Icons.medication_rounded,
               label: 'Prescribe',
               color: const Color(0xFFF59E0B),
-              onTap: () => Navigator.pushNamed(context, '/patients'),
+              onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const AddPrescriptionScreen())),
+              isCompact: isCompact,
+              isDark: isDark,
+            )),
+          ],
+        ),
+        SizedBox(height: isCompact ? 10 : 12),
+        // Secondary row - Quick Vitals, Quick Note, Check-In
+        Row(
+          children: [
+            Expanded(child: _buildActionTile(
+              icon: Icons.how_to_reg_rounded,
+              label: 'Check-In',
+              color: const Color(0xFF10B981),
+              onTap: () => _showQuickCheckIn(context, db),
               isCompact: isCompact,
               isDark: isDark,
             )),
             SizedBox(width: isCompact ? 10 : 12),
             Expanded(child: _buildActionTile(
-              icon: Icons.psychology_rounded,
-              label: 'Assessment',
+              icon: Icons.favorite_rounded,
+              label: 'Quick Vitals',
+              color: AppColors.error,
+              onTap: () => _showQuickVitals(context, db),
+              isCompact: isCompact,
+              isDark: isDark,
+            )),
+            SizedBox(width: isCompact ? 10 : 12),
+            Expanded(child: _buildActionTile(
+              icon: Icons.note_add_rounded,
+              label: 'Quick Note',
+              color: AppColors.info,
+              onTap: () => _showQuickNote(context, db),
+              isCompact: isCompact,
+              isDark: isDark,
+            )),
+            SizedBox(width: isCompact ? 10 : 12),
+            Expanded(child: _buildActionTile(
+              icon: Icons.repeat_rounded,
+              label: 'Refill Rx',
               color: const Color(0xFF8B5CF6),
-              onTap: () => context.goToPsychiatricAssessment(),
+              onTap: () => _showRefillPrescription(context, db),
+              isCompact: isCompact,
+              isDark: isDark,
+            )),
+            SizedBox(width: isCompact ? 10 : 12),
+            Expanded(child: _buildActionTile(
+              icon: Icons.schedule_rounded,
+              label: 'Follow-ups',
+              color: AppColors.warning,
+              onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const FollowUpsScreen())),
+              isCompact: isCompact,
+              isDark: isDark,
+            )),
+          ],
+        ),
+        SizedBox(height: isCompact ? 10 : 12),
+        // Third row - Patients access
+        Row(
+          children: [
+            Expanded(child: _buildActionTile(
+              icon: Icons.people_rounded,
+              label: 'Patients',
+              color: AppColors.patients,
+              onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const PatientsScreen())),
               isCompact: isCompact,
               isDark: isDark,
             )),
@@ -933,6 +1038,170 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
         ),
       ],
     );
+  }
+  
+  /// Show quick vitals dialog with patient picker
+  Future<void> _showQuickVitals(BuildContext context, DoctorDatabase db) async {
+    final patients = await db.getAllPatients();
+    if (!context.mounted) return;
+    
+    if (patients.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('No patients found. Please add a patient first.')),
+      );
+      return;
+    }
+    
+    final selectedPatient = await showDialog<Patient>(
+      context: context,
+      builder: (context) => PatientPickerDialog(
+        patients: patients,
+        title: 'Record Vitals',
+        subtitle: 'Select patient to record vital signs',
+        icon: Icons.favorite_rounded,
+        iconColor: AppColors.error,
+      ),
+    );
+    
+    if (selectedPatient == null || !context.mounted) return;
+    
+    final result = await showQuickVitalsDialog(context, db, selectedPatient);
+    if (result != null && context.mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('✓ Vitals recorded successfully'),
+          backgroundColor: AppColors.success,
+        ),
+      );
+    }
+  }
+  
+  /// Show quick note dialog with patient picker
+  Future<void> _showQuickNote(BuildContext context, DoctorDatabase db) async {
+    final patients = await db.getAllPatients();
+    if (!context.mounted) return;
+    
+    if (patients.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('No patients found. Please add a patient first.')),
+      );
+      return;
+    }
+    
+    final selectedPatient = await showDialog<Patient>(
+      context: context,
+      builder: (context) => PatientPickerDialog(
+        patients: patients,
+        title: 'Add Note',
+        subtitle: 'Select patient to add a clinical note',
+        icon: Icons.note_add_rounded,
+        iconColor: AppColors.info,
+      ),
+    );
+    
+    if (selectedPatient == null || !context.mounted) return;
+    
+    final result = await showQuickNoteDialog(context, db, selectedPatient);
+    if (result != null && context.mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('✓ Note saved successfully'),
+          backgroundColor: AppColors.success,
+        ),
+      );
+    }
+  }
+  
+  /// Show refill prescription dialog
+  Future<void> _showRefillPrescription(BuildContext context, DoctorDatabase db) async {
+    final patients = await db.getAllPatients();
+    if (!context.mounted) return;
+    
+    if (patients.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('No patients found. Please add a patient first.')),
+      );
+      return;
+    }
+    
+    final selectedPatient = await showDialog<Patient>(
+      context: context,
+      builder: (context) => PatientPickerDialog(
+        patients: patients,
+        title: 'Refill Prescription',
+        subtitle: 'Select patient for prescription refill',
+        icon: Icons.repeat_rounded,
+        iconColor: const Color(0xFF8B5CF6),
+      ),
+    );
+    
+    if (selectedPatient == null || !context.mounted) return;
+    
+    // Navigate to prescription screen with refill mode
+    Navigator.push(
+      context, 
+      MaterialPageRoute(
+        builder: (_) => AddPrescriptionScreen(preselectedPatient: selectedPatient),
+      ),
+    );
+  }
+  
+  /// Show quick check-in dialog for scheduled appointments
+  Future<void> _showQuickCheckIn(BuildContext context, DoctorDatabase db) async {
+    // Get today's pending appointments
+    final todayAppts = await db.getAppointmentsForDay(DateTime.now());
+    final pendingAppts = todayAppts.where((a) => 
+        a.status == 'scheduled' || a.status == 'pending'
+    ).toList();
+    
+    if (!context.mounted) return;
+    
+    if (pendingAppts.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('No pending appointments to check in.')),
+      );
+      return;
+    }
+    
+    // Build a list of patients for pending appointments
+    final patientsWithAppts = <Map<String, dynamic>>[];
+    for (final appt in pendingAppts) {
+      final patient = await db.getPatientById(appt.patientId);
+      if (patient != null) {
+        patientsWithAppts.add({
+          'patient': patient,
+          'appointment': appt,
+        });
+      }
+    }
+    
+    if (!context.mounted || patientsWithAppts.isEmpty) return;
+    
+    // Show appointment picker
+    final selected = await showDialog<Map<String, dynamic>>(
+      context: context,
+      builder: (context) => _AppointmentPickerDialog(
+        appointments: patientsWithAppts,
+      ),
+    );
+    
+    if (selected == null || !context.mounted) return;
+    
+    final patient = selected['patient'] as Patient;
+    final appointment = selected['appointment'] as Appointment;
+    
+    // Show check-in dialog
+    final result = await showQuickCheckInDialog(context, db, appointment, patient);
+    if (result != null && result.success && context.mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(result.message ?? 'Patient checked in'),
+          backgroundColor: const Color(0xFF10B981),
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
+      setState(() {}); // Refresh dashboard
+    }
   }
 
   Widget _buildActionTile({
@@ -980,6 +1249,11 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
         ),
       ),
     );
+  }
+
+  /// Shows patient picker dialog and creates a new encounter
+  Future<void> _startNewEncounter(BuildContext context, DoctorDatabase db) async {
+    await startNewEncounterWithPicker(context, db);
   }
 
   // ============================================================
@@ -1090,7 +1364,22 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
             ? '${patient.firstName} ${patient.lastName}' 
             : 'Patient #${appt.patientId}';
         
-        return Container(
+        return GestureDetector(
+          onTap: () {
+            if (patient != null) {
+              // Navigate to patient view
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (_) => WorkflowWizardScreen(
+                    existingPatient: patient,
+                    existingAppointment: appt,
+                  ),
+                ),
+              );
+            }
+          },
+          child: Container(
           margin: const EdgeInsets.only(bottom: 10),
           padding: EdgeInsets.all(isCompact ? 12 : 14),
           decoration: BoxDecoration(
@@ -1167,8 +1456,114 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                   ),
                 ),
               ),
+              // Status indicator
+              if (appt.status.toLowerCase() == 'in_progress') ...[                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFFBBF24).withValues(alpha: 0.15),
+                    borderRadius: BorderRadius.circular(6),
+                  ),
+                  child: const Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(Icons.pending_rounded, color: Color(0xFFFBBF24), size: 12),
+                      SizedBox(width: 4),
+                      Text('In Progress', style: TextStyle(color: Color(0xFFFBBF24), fontSize: 10, fontWeight: FontWeight.w600)),
+                    ],
+                  ),
+                ),
+                const SizedBox(width: 8),
+                // Complete button for in_progress appointments
+                GestureDetector(
+                  onTap: () async {
+                    HapticFeedback.mediumImpact();
+                    await db.updateAppointmentStatus(appt.id, 'completed');
+                    if (context.mounted) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(
+                          content: Text('Visit completed for $patientName'),
+                          backgroundColor: const Color(0xFF10B981),
+                          behavior: SnackBarBehavior.floating,
+                        ),
+                      );
+                      setState(() {}); // Refresh the list
+                    }
+                  },
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                    decoration: BoxDecoration(
+                      gradient: const LinearGradient(
+                        colors: [Color(0xFF10B981), Color(0xFF059669)],
+                      ),
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: const Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Icon(Icons.check_circle_rounded, color: Colors.white, size: 16),
+                        SizedBox(width: 4),
+                        Text(
+                          'Complete',
+                          style: TextStyle(
+                            color: Colors.white,
+                            fontSize: 12,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ],
+              // Start button for first in queue
+              if (position == 1 && patient != null && appt.status.toLowerCase() != 'in_progress') ...[
+                const SizedBox(width: 8),
+                GestureDetector(
+                  onTap: () async {
+                    HapticFeedback.mediumImpact();
+                    // Update status to in_progress
+                    await db.updateAppointmentStatus(appt.id, 'in_progress');
+                    if (context.mounted) {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (_) => WorkflowWizardScreen(
+                            existingPatient: patient,
+                            existingAppointment: appt,
+                          ),
+                        ),
+                      );
+                    }
+                  },
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                    decoration: BoxDecoration(
+                      gradient: const LinearGradient(
+                        colors: [Color(0xFF10B981), Color(0xFF059669)],
+                      ),
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: const Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Icon(Icons.play_arrow_rounded, color: Colors.white, size: 16),
+                        SizedBox(width: 4),
+                        Text(
+                          'Start',
+                          style: TextStyle(
+                            color: Colors.white,
+                            fontSize: 12,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ],
             ],
           ),
+        ),
         );
       },
     );
@@ -1568,13 +1963,207 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
   }
 
   Color _getPatientColor(int index) {
-    final colors = [
-      const Color(0xFF6366F1),
-      const Color(0xFF8B5CF6),
-      const Color(0xFFEC4899),
-      const Color(0xFF14B8A6),
-      const Color(0xFFF59E0B),
-    ];
-    return colors[index % colors.length];
+    return PatientColors.getColor(index);
+  }
+}
+
+/// Dialog for picking an appointment for check-in
+class _AppointmentPickerDialog extends StatelessWidget {
+  const _AppointmentPickerDialog({required this.appointments});
+
+  final List<Map<String, dynamic>> appointments;
+
+  @override
+  Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final timeFormat = DateFormat('h:mm a');
+
+    return Dialog(
+      backgroundColor: Colors.transparent,
+      child: Container(
+        width: 400,
+        constraints: const BoxConstraints(maxHeight: 500),
+        decoration: BoxDecoration(
+          color: isDark ? const Color(0xFF1E1E1E) : Colors.white,
+          borderRadius: BorderRadius.circular(20),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withValues(alpha: 0.2),
+              blurRadius: 20,
+              offset: const Offset(0, 10),
+            ),
+          ],
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            // Header
+            Container(
+              padding: const EdgeInsets.all(20),
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  colors: [
+                    const Color(0xFF10B981).withValues(alpha: 0.15),
+                    const Color(0xFF059669).withValues(alpha: 0.1),
+                  ],
+                ),
+                borderRadius: const BorderRadius.only(
+                  topLeft: Radius.circular(20),
+                  topRight: Radius.circular(20),
+                ),
+              ),
+              child: Row(
+                children: [
+                  Container(
+                    padding: const EdgeInsets.all(12),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFF10B981).withValues(alpha: 0.2),
+                      borderRadius: BorderRadius.circular(14),
+                    ),
+                    child: const Icon(
+                      Icons.how_to_reg_rounded,
+                      color: Color(0xFF10B981),
+                      size: 24,
+                    ),
+                  ),
+                  const SizedBox(width: 14),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const Text(
+                          'Select Appointment',
+                          style: TextStyle(
+                            fontSize: 18,
+                            fontWeight: FontWeight.w700,
+                          ),
+                        ),
+                        const SizedBox(height: 2),
+                        Text(
+                          '${appointments.length} waiting to check in',
+                          style: TextStyle(
+                            fontSize: 13,
+                            color: isDark ? Colors.white60 : Colors.black54,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  IconButton(
+                    onPressed: () => Navigator.pop(context),
+                    icon: Icon(
+                      Icons.close_rounded,
+                      color: isDark ? Colors.white54 : Colors.black45,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+
+            // Appointments List
+            Flexible(
+              child: ListView.separated(
+                shrinkWrap: true,
+                padding: const EdgeInsets.all(16),
+                itemCount: appointments.length,
+                separatorBuilder: (_, __) => const SizedBox(height: 10),
+                itemBuilder: (context, index) {
+                  final item = appointments[index];
+                  final patient = item['patient'] as Patient;
+                  final appt = item['appointment'] as Appointment;
+                  final patientName = '${patient.firstName} ${patient.lastName}';
+
+                  return InkWell(
+                    onTap: () => Navigator.pop(context, item),
+                    borderRadius: BorderRadius.circular(14),
+                    child: Container(
+                      padding: const EdgeInsets.all(14),
+                      decoration: BoxDecoration(
+                        color: isDark 
+                            ? Colors.white.withValues(alpha: 0.05) 
+                            : Colors.grey.withValues(alpha: 0.1),
+                        borderRadius: BorderRadius.circular(14),
+                        border: Border.all(
+                          color: isDark 
+                              ? Colors.white.withValues(alpha: 0.1) 
+                              : Colors.grey.withValues(alpha: 0.2),
+                        ),
+                      ),
+                      child: Row(
+                        children: [
+                          CircleAvatar(
+                            radius: 22,
+                            backgroundColor: const Color(0xFF6366F1).withValues(alpha: 0.2),
+                            child: Text(
+                              '${patient.firstName[0]}${patient.lastName.isNotEmpty ? patient.lastName[0] : ''}',
+                              style: const TextStyle(
+                                fontWeight: FontWeight.w700,
+                                color: Color(0xFF6366F1),
+                              ),
+                            ),
+                          ),
+                          const SizedBox(width: 12),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  patientName,
+                                  style: const TextStyle(
+                                    fontSize: 15,
+                                    fontWeight: FontWeight.w600,
+                                  ),
+                                ),
+                                const SizedBox(height: 2),
+                                Row(
+                                  children: [
+                                    Icon(
+                                      Icons.access_time_rounded,
+                                      size: 13,
+                                      color: isDark ? Colors.white54 : Colors.black45,
+                                    ),
+                                    const SizedBox(width: 4),
+                                    Text(
+                                      timeFormat.format(appt.appointmentDateTime),
+                                      style: TextStyle(
+                                        fontSize: 13,
+                                        color: isDark ? Colors.white54 : Colors.black54,
+                                      ),
+                                    ),
+                                    if (appt.reason.isNotEmpty) ...[
+                                      const SizedBox(width: 10),
+                                      Expanded(
+                                        child: Text(
+                                          appt.reason,
+                                          style: TextStyle(
+                                            fontSize: 12,
+                                            color: isDark ? Colors.white38 : Colors.black38,
+                                          ),
+                                          maxLines: 1,
+                                          overflow: TextOverflow.ellipsis,
+                                        ),
+                                      ),
+                                    ],
+                                  ],
+                                ),
+                              ],
+                            ),
+                          ),
+                          Icon(
+                            Icons.arrow_forward_ios_rounded,
+                            size: 16,
+                            color: isDark ? Colors.white38 : Colors.black26,
+                          ),
+                        ],
+                      ),
+                    ),
+                  );
+                },
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
   }
 }

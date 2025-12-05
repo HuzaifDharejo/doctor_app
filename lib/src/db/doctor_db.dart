@@ -44,24 +44,32 @@ class Appointments extends Table {
 class Prescriptions extends Table {
   IntColumn get id => integer().autoIncrement()();
   IntColumn get patientId => integer().references(Patients, #id)();
+  IntColumn get encounterId => integer().nullable().references(Encounters, #id)(); // V2: Link to encounter
+  IntColumn get primaryDiagnosisId => integer().nullable().references(Diagnoses, #id)(); // V2: Primary diagnosis
   DateTimeColumn get createdAt => dateTime().withDefault(currentDateAndTime)();
   TextColumn get itemsJson => text()();
   TextColumn get instructions => text().withDefault(const Constant(''))();
   BoolColumn get isRefillable => boolean().withDefault(const Constant(false))();
   IntColumn get appointmentId => integer().nullable().references(Appointments, #id)(); // Link to appointment where prescribed
   IntColumn get medicalRecordId => integer().nullable().references(MedicalRecords, #id)(); // Link to diagnosis/assessment
-  TextColumn get diagnosis => text().withDefault(const Constant(''))(); // Diagnosis for which prescribed
-  TextColumn get chiefComplaint => text().withDefault(const Constant(''))(); // Chief complaint
-  TextColumn get vitalsJson => text().withDefault(const Constant('{}'))(); // Vital signs at time of prescription
+  // DEPRECATED in V2 - Use Encounters.chiefComplaint and VitalSigns table instead
+  @Deprecated('Use primaryDiagnosisId instead - links to Diagnoses table')
+  TextColumn get diagnosis => text().withDefault(const Constant(''))();
+  @Deprecated('Use Encounters.chiefComplaint instead')
+  TextColumn get chiefComplaint => text().withDefault(const Constant(''))();
+  @Deprecated('Use VitalSigns table with encounterId instead')
+  TextColumn get vitalsJson => text().withDefault(const Constant('{}'))();
 }
 
 class MedicalRecords extends Table {
   IntColumn get id => integer().autoIncrement()();
   IntColumn get patientId => integer().references(Patients, #id)();
+  IntColumn get encounterId => integer().nullable().references(Encounters, #id)(); // V2: Link to encounter
   TextColumn get recordType => text()(); // 'general', 'psychiatric_assessment', 'lab_result', 'imaging', 'procedure'
   TextColumn get title => text()();
   TextColumn get description => text().withDefault(const Constant(''))();
   TextColumn get dataJson => text().withDefault(const Constant('{}'))(); // Stores form data as JSON
+  @Deprecated('Use Diagnoses table via encounterId and EncounterDiagnoses instead')
   TextColumn get diagnosis => text().withDefault(const Constant(''))();
   TextColumn get treatment => text().withDefault(const Constant(''))();
   TextColumn get doctorNotes => text().withDefault(const Constant(''))();
@@ -95,6 +103,7 @@ class Invoices extends Table {
 class VitalSigns extends Table {
   IntColumn get id => integer().autoIncrement()();
   IntColumn get patientId => integer().references(Patients, #id)();
+  IntColumn get encounterId => integer().nullable().references(Encounters, #id)(); // V2: Link to encounter
   DateTimeColumn get recordedAt => dateTime()();
   RealColumn get systolicBp => real().nullable()(); // mmHg
   RealColumn get diastolicBp => real().nullable()(); // mmHg
@@ -122,6 +131,7 @@ class TreatmentOutcomes extends Table {
   TextColumn get treatmentDescription => text()();
   TextColumn get providerType => text().withDefault(const Constant('psychiatrist'))(); // 'psychiatrist', 'therapist', 'counselor', 'primary_care'
   TextColumn get providerName => text().withDefault(const Constant(''))();
+  @Deprecated('Use Diagnoses table - link via prescriptionId or medicalRecordId to encounter')
   TextColumn get diagnosis => text().withDefault(const Constant(''))(); // Primary diagnosis being treated
   DateTimeColumn get startDate => dateTime()();
   DateTimeColumn get endDate => dateTime().nullable()();
@@ -155,6 +165,7 @@ class ScheduledFollowUps extends Table {
 class TreatmentSessions extends Table {
   IntColumn get id => integer().autoIncrement()();
   IntColumn get patientId => integer().references(Patients, #id)();
+  IntColumn get encounterId => integer().nullable().references(Encounters, #id)(); // V2: Link to encounter
   IntColumn get treatmentOutcomeId => integer().nullable()(); // Link to treatment being tracked
   IntColumn get appointmentId => integer().nullable()(); // Link to appointment
   IntColumn get medicalRecordId => integer().nullable()(); // Link to assessment/record
@@ -252,16 +263,140 @@ class AuditLogs extends Table {
   DateTimeColumn get createdAt => dateTime().withDefault(currentDateAndTime)();
 }
 
-@DriftDatabase(tables: [Patients, Appointments, Prescriptions, MedicalRecords, Invoices, VitalSigns, TreatmentOutcomes, ScheduledFollowUps, TreatmentSessions, MedicationResponses, TreatmentGoals, AuditLogs])
+// ═══════════════════════════════════════════════════════════════════════════════
+// SCHEMA V2: ENCOUNTER-BASED CLINICAL DATA MODEL
+// ═══════════════════════════════════════════════════════════════════════════════
+
+/// Encounters - Central hub for each patient visit
+/// Every clinical interaction starts with an Encounter. All other data references it.
+class Encounters extends Table {
+  IntColumn get id => integer().autoIncrement()();
+  IntColumn get patientId => integer().references(Patients, #id)();
+  IntColumn get appointmentId => integer().nullable().references(Appointments, #id)();
+  
+  // Encounter metadata
+  DateTimeColumn get encounterDate => dateTime()();
+  TextColumn get encounterType => text().withDefault(const Constant('outpatient'))(); 
+  // Types: 'outpatient', 'follow_up', 'emergency', 'telehealth', 'inpatient', 'procedure'
+  
+  TextColumn get status => text().withDefault(const Constant('in_progress'))();
+  // Status: 'scheduled', 'checked_in', 'in_progress', 'completed', 'cancelled', 'no_show'
+  
+  TextColumn get chiefComplaint => text().withDefault(const Constant(''))();
+  TextColumn get providerName => text().withDefault(const Constant(''))();
+  TextColumn get providerType => text().withDefault(const Constant('psychiatrist'))();
+  
+  // Billing info
+  BoolColumn get isBillable => boolean().withDefault(const Constant(true))();
+  IntColumn get invoiceId => integer().nullable().references(Invoices, #id)();
+  
+  // Timestamps
+  DateTimeColumn get checkInTime => dateTime().nullable()();
+  DateTimeColumn get checkOutTime => dateTime().nullable()();
+  DateTimeColumn get createdAt => dateTime().withDefault(currentDateAndTime)();
+}
+
+/// Diagnoses - Normalized diagnosis tracking
+/// Single source of truth for all diagnoses. Referenced by other tables, not duplicated.
+class Diagnoses extends Table {
+  IntColumn get id => integer().autoIncrement()();
+  IntColumn get patientId => integer().references(Patients, #id)();
+  IntColumn get encounterId => integer().nullable().references(Encounters, #id)();
+  
+  // Diagnosis details
+  TextColumn get icdCode => text().withDefault(const Constant(''))(); // ICD-10 code
+  TextColumn get description => text()();
+  TextColumn get category => text().withDefault(const Constant('psychiatric'))();
+  // Categories: 'psychiatric', 'medical', 'substance', 'developmental', 'neurological'
+  
+  TextColumn get severity => text().withDefault(const Constant('moderate'))();
+  // Severity: 'mild', 'moderate', 'severe', 'in_remission', 'resolved'
+  
+  TextColumn get diagnosisStatus => text().withDefault(const Constant('active'))();
+  // Status: 'active', 'resolved', 'chronic', 'rule_out', 'history_of'
+  
+  // Clinical tracking
+  DateTimeColumn get onsetDate => dateTime().nullable()();
+  DateTimeColumn get diagnosedDate => dateTime()();
+  DateTimeColumn get resolvedDate => dateTime().nullable()();
+  
+  // Primary/Secondary
+  BoolColumn get isPrimary => boolean().withDefault(const Constant(false))();
+  IntColumn get displayOrder => integer().withDefault(const Constant(0))();
+  
+  TextColumn get notes => text().withDefault(const Constant(''))();
+  DateTimeColumn get createdAt => dateTime().withDefault(currentDateAndTime)();
+}
+
+/// Clinical Notes - SOAP notes and assessments
+/// Structured SOAP format for clinical documentation.
+class ClinicalNotes extends Table {
+  IntColumn get id => integer().autoIncrement()();
+  IntColumn get encounterId => integer().references(Encounters, #id)();
+  IntColumn get patientId => integer().references(Patients, #id)();
+  
+  TextColumn get noteType => text().withDefault(const Constant('progress'))();
+  // Types: 'initial_assessment', 'progress', 'psychiatric_eval', 'therapy_note', 
+  //        'medication_review', 'procedure_note', 'discharge_summary'
+  
+  // SOAP Format
+  TextColumn get subjective => text().withDefault(const Constant(''))(); // Patient's complaints
+  TextColumn get objective => text().withDefault(const Constant(''))(); // Exam findings
+  TextColumn get assessment => text().withDefault(const Constant(''))(); // Clinical impression
+  TextColumn get plan => text().withDefault(const Constant(''))(); // Treatment plan
+  
+  // Mental Status Exam (for psychiatric)
+  TextColumn get mentalStatusExam => text().withDefault(const Constant('{}'))(); // JSON
+  
+  // Risk Assessment
+  TextColumn get riskLevel => text().withDefault(const Constant('none'))();
+  TextColumn get riskFactors => text().withDefault(const Constant(''))();
+  TextColumn get safetyPlan => text().withDefault(const Constant(''))();
+  
+  // Signatures
+  TextColumn get signedBy => text().withDefault(const Constant(''))();
+  DateTimeColumn get signedAt => dateTime().nullable()();
+  BoolColumn get isLocked => boolean().withDefault(const Constant(false))();
+  
+  DateTimeColumn get createdAt => dateTime().withDefault(currentDateAndTime)();
+}
+
+/// Encounter Diagnoses - Links encounters to diagnoses addressed during the visit
+class EncounterDiagnoses extends Table {
+  IntColumn get id => integer().autoIncrement()();
+  IntColumn get encounterId => integer().references(Encounters, #id)();
+  IntColumn get diagnosisId => integer().references(Diagnoses, #id)();
+  
+  BoolColumn get isNewDiagnosis => boolean().withDefault(const Constant(false))();
+  TextColumn get encounterStatus => text().withDefault(const Constant('addressed'))();
+  // Status: 'addressed', 'monitored', 'worsened', 'improved', 'resolved'
+  
+  TextColumn get notes => text().withDefault(const Constant(''))();
+}
+
+@DriftDatabase(tables: [Patients, Appointments, Prescriptions, MedicalRecords, Invoices, VitalSigns, TreatmentOutcomes, ScheduledFollowUps, TreatmentSessions, MedicationResponses, TreatmentGoals, AuditLogs, Encounters, Diagnoses, ClinicalNotes, EncounterDiagnoses])
 class DoctorDatabase extends _$DoctorDatabase {
-  DoctorDatabase() : super(impl.openConnection());
+  /// Singleton instance
+  static DoctorDatabase? _instance;
+  
+  /// Get the singleton instance of the database
+  static DoctorDatabase get instance {
+    _instance ??= DoctorDatabase._internal();
+    return _instance!;
+  }
+  
+  /// Private constructor for singleton
+  DoctorDatabase._internal() : super(impl.openConnection());
+  
+  /// Factory constructor that returns the singleton
+  factory DoctorDatabase() => instance;
   
   /// Constructor for testing with a custom executor.
   /// Use this with NativeDatabase.memory() for in-memory testing.
   DoctorDatabase.forTesting(super.e);
 
   @override
-  int get schemaVersion => 5;
+  int get schemaVersion => 7;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -313,6 +448,27 @@ class DoctorDatabase extends _$DoctorDatabase {
         // Add audit logging table for HIPAA compliance
         await m.createTable(auditLogs);
       }
+      if (from < 6) {
+        // Schema V2: Encounter-based clinical data model
+        // Add new tables for unified workflow
+        await m.createTable(encounters);
+        await m.createTable(diagnoses);
+        await m.createTable(clinicalNotes);
+        await m.createTable(encounterDiagnoses);
+        
+        // Add encounterId to VitalSigns for linking vitals to encounters
+        await m.addColumn(vitalSigns, vitalSigns.encounterId);
+      }
+      if (from < 7) {
+        // Schema V2.1: Normalize data by linking more tables to Encounters
+        // Add encounterId to Prescriptions, MedicalRecords, TreatmentSessions
+        await m.addColumn(prescriptions, prescriptions.encounterId);
+        await m.addColumn(prescriptions, prescriptions.primaryDiagnosisId);
+        await m.addColumn(medicalRecords, medicalRecords.encounterId);
+        await m.addColumn(treatmentSessions, treatmentSessions.encounterId);
+        // Note: Old duplicate fields (diagnosis, chiefComplaint, vitalsJson) kept for compatibility
+        // but marked @Deprecated - use Encounters/Diagnoses/VitalSigns tables instead
+      }
     },
   );
 
@@ -323,6 +479,95 @@ class DoctorDatabase extends _$DoctorDatabase {
   Future<bool> updatePatient(Insertable<Patient> p) => update(patients).replace(p);
   Future<int> deletePatient(int id) => (delete(patients)..where((t) => t.id.equals(id))).go();
 
+  /// Get paginated patients with optional search and filter
+  /// Returns a tuple of (patients, totalCount)
+  Future<(List<Patient>, int)> getPatientsPaginated({
+    int offset = 0,
+    int limit = 20,
+    String? searchQuery,
+    int? riskLevel, // null = all, 1 = low, 2 = medium, 3 = high
+  }) async {
+    // Build query
+    var query = select(patients);
+    
+    // Apply filters
+    if (searchQuery != null && searchQuery.isNotEmpty) {
+      final lowerQuery = '%${searchQuery.toLowerCase()}%';
+      query = query..where((p) =>
+          p.firstName.lower().like(lowerQuery) |
+          p.lastName.lower().like(lowerQuery) |
+          p.phone.lower().like(lowerQuery));
+    }
+    
+    if (riskLevel != null) {
+      switch (riskLevel) {
+        case 1: // Low Risk: 0-2
+          query = query..where((p) => p.riskLevel.isSmallerOrEqualValue(2));
+        case 2: // Medium Risk: 3-4
+          query = query..where((p) => p.riskLevel.isBiggerThanValue(2) & p.riskLevel.isSmallerOrEqualValue(4));
+        case 3: // High Risk: 5+
+          query = query..where((p) => p.riskLevel.isBiggerThanValue(4));
+      }
+    }
+
+    // Get total count (without limit/offset)
+    final allMatchingPatients = await query.get();
+    final totalCount = allMatchingPatients.length;
+
+    // Apply pagination
+    query = query
+      ..orderBy([(p) => OrderingTerm.desc(p.createdAt)])
+      ..limit(limit, offset: offset);
+
+    final paginatedPatients = await query.get();
+    
+    return (paginatedPatients, totalCount);
+  }
+  
+  /// Find potential duplicate patients by name or phone
+  Future<List<Patient>> findPotentialDuplicates({
+    required String firstName,
+    required String lastName,
+    String? phone,
+    int? excludePatientId,
+  }) async {
+    final allPatients = await getAllPatients();
+    final lowerFirst = firstName.toLowerCase().trim();
+    final lowerLast = lastName.toLowerCase().trim();
+    final cleanPhone = phone?.replaceAll(RegExp(r'[^\d]'), '');
+    
+    return allPatients.where((p) {
+      // Exclude current patient when editing
+      if (excludePatientId != null && p.id == excludePatientId) return false;
+      
+      // Check for name match
+      final nameMatch = p.firstName.toLowerCase().trim() == lowerFirst &&
+                        p.lastName.toLowerCase().trim() == lowerLast;
+      
+      // Check for phone match (if phone provided)
+      bool phoneMatch = false;
+      if (cleanPhone != null && cleanPhone.length >= 7) {
+        final patientPhone = p.phone.replaceAll(RegExp(r'[^\d]'), '');
+        phoneMatch = patientPhone.isNotEmpty && patientPhone == cleanPhone;
+      }
+      
+      return nameMatch || phoneMatch;
+    }).toList();
+  }
+  
+  /// Quick patient lookup by phone number
+  Future<Patient?> findPatientByPhone(String phone) async {
+    final cleanPhone = phone.replaceAll(RegExp(r'[^\d]'), '');
+    if (cleanPhone.length < 7) return null;
+    
+    final allPatients = await getAllPatients();
+    for (final p in allPatients) {
+      final patientPhone = p.phone.replaceAll(RegExp(r'[^\d]'), '');
+      if (patientPhone == cleanPhone) return p;
+    }
+    return null;
+  }
+
   // Appointment CRUD
   Future<int> insertAppointment(Insertable<Appointment> a) => into(appointments).insert(a);
   Future<List<Appointment>> getAllAppointments() => select(appointments).get();
@@ -331,7 +576,28 @@ class DoctorDatabase extends _$DoctorDatabase {
     final end = start.add(const Duration(days: 1));
     return (select(appointments)..where((a) => a.appointmentDateTime.isBetweenValues(start, end))).get();
   }
+  Future<Appointment?> getAppointmentById(int id) =>
+    (select(appointments)..where((a) => a.id.equals(id))).getSingleOrNull();
+  Future<bool> updateAppointment(Insertable<Appointment> a) => update(appointments).replace(a);
   Future<int> deleteAppointment(int id) => (delete(appointments)..where((t) => t.id.equals(id))).go();
+  
+  /// Quick method to update appointment status
+  Future<void> updateAppointmentStatus(int id, String status) async {
+    final appt = await getAppointmentById(id);
+    if (appt != null) {
+      await updateAppointment(AppointmentsCompanion(
+        id: Value(appt.id),
+        patientId: Value(appt.patientId),
+        appointmentDateTime: Value(appt.appointmentDateTime),
+        durationMinutes: Value(appt.durationMinutes),
+        reason: Value(appt.reason),
+        status: Value(status),
+        notes: Value(appt.notes),
+        reminderAt: Value(appt.reminderAt),
+        medicalRecordId: Value(appt.medicalRecordId),
+      ));
+    }
+  }
 
   // Prescription CRUD
   Future<int> insertPrescription(Insertable<Prescription> p) => into(prescriptions).insert(p);
@@ -346,6 +612,9 @@ class DoctorDatabase extends _$DoctorDatabase {
       ..limit(1))
       .getSingleOrNull();
   }
+  Future<Prescription?> getPrescriptionById(int id) =>
+    (select(prescriptions)..where((p) => p.id.equals(id))).getSingleOrNull();
+  Future<bool> updatePrescription(Insertable<Prescription> p) => update(prescriptions).replace(p);
   Future<int> deletePrescription(int id) => (delete(prescriptions)..where((t) => t.id.equals(id))).go();
 
   // Medical Record CRUD
@@ -1014,6 +1283,8 @@ class DoctorDatabase extends _$DoctorDatabase {
   // Audit Log CRUD
   Future<int> insertAuditLog(Insertable<AuditLog> log) => into(auditLogs).insert(log);
 
+  Future<List<AuditLog>> getAllAuditLogs() => select(auditLogs).get();
+
   Future<List<AuditLog>> getAuditLogsForPatient(int patientId, {int limit = 100}) {
     return (select(auditLogs)
       ..where((log) => log.patientId.equals(patientId))
@@ -1068,5 +1339,335 @@ class DoctorDatabase extends _$DoctorDatabase {
       'dataModifications': logs.where((l) => l.action.contains('UPDATE') | l.action.contains('CREATE') | l.action.contains('DELETE')).length,
       'failedAttempts': logs.where((l) => l.result == 'DENIED' || l.result == 'FAILURE').length,
     };
+  }
+
+  // ═══════════════════════════════════════════════════════════════════════════════
+  // ENCOUNTER CRUD - Central hub for patient visits
+  // ═══════════════════════════════════════════════════════════════════════════════
+
+  Future<int> insertEncounter(Insertable<Encounter> e) => into(encounters).insert(e);
+  
+  Future<List<Encounter>> getAllEncounters() => select(encounters).get();
+  
+  Future<Encounter?> getEncounterById(int id) => 
+      (select(encounters)..where((t) => t.id.equals(id))).getSingleOrNull();
+  
+  Future<bool> updateEncounter(Insertable<Encounter> e) => update(encounters).replace(e);
+  
+  Future<int> deleteEncounter(int id) => 
+      (delete(encounters)..where((t) => t.id.equals(id))).go();
+
+  /// Get encounters for a specific patient
+  Future<List<Encounter>> getEncountersForPatient(int patientId) {
+    return (select(encounters)
+      ..where((e) => e.patientId.equals(patientId))
+      ..orderBy([(e) => OrderingTerm.desc(e.encounterDate)]))
+      .get();
+  }
+
+  /// Get encounters by status (in_progress, completed, etc.)
+  Future<List<Encounter>> getEncountersByStatus(String status) {
+    return (select(encounters)
+      ..where((e) => e.status.equals(status))
+      ..orderBy([(e) => OrderingTerm.desc(e.encounterDate)]))
+      .get();
+  }
+
+  /// Get today's encounters
+  Future<List<Encounter>> getTodaysEncounters() {
+    final today = DateTime.now();
+    final startOfDay = DateTime(today.year, today.month, today.day);
+    final endOfDay = startOfDay.add(const Duration(days: 1));
+    
+    return (select(encounters)
+      ..where((e) => e.encounterDate.isBetweenValues(startOfDay, endOfDay))
+      ..orderBy([(e) => OrderingTerm.asc(e.encounterDate)]))
+      .get();
+  }
+
+  /// Get active/in-progress encounters
+  Future<List<Encounter>> getActiveEncounters() {
+    return (select(encounters)
+      ..where((e) => e.status.equals('in_progress') | e.status.equals('checked_in'))
+      ..orderBy([(e) => OrderingTerm.desc(e.encounterDate)]))
+      .get();
+  }
+
+  /// Get encounter with all related data (joins)
+  Future<Encounter?> getEncounterByAppointmentId(int appointmentId) {
+    return (select(encounters)
+      ..where((e) => e.appointmentId.equals(appointmentId)))
+      .getSingleOrNull();
+  }
+
+  /// Start an encounter from an appointment
+  Future<int> startEncounterFromAppointment(int appointmentId, int patientId, {String? chiefComplaint}) async {
+    final now = DateTime.now();
+    return into(encounters).insert(EncountersCompanion.insert(
+      patientId: patientId,
+      appointmentId: Value(appointmentId),
+      encounterDate: now,
+      encounterType: const Value('outpatient'),
+      status: const Value('in_progress'),
+      chiefComplaint: Value(chiefComplaint ?? ''),
+      checkInTime: Value(now),
+    ));
+  }
+
+  /// Complete an encounter
+  Future<bool> completeEncounter(int encounterId) async {
+    final encounter = await getEncounterById(encounterId);
+    if (encounter == null) return false;
+    
+    return update(encounters).replace(
+      EncountersCompanion(
+        id: Value(encounterId),
+        patientId: Value(encounter.patientId),
+        appointmentId: Value(encounter.appointmentId),
+        encounterDate: Value(encounter.encounterDate),
+        encounterType: Value(encounter.encounterType),
+        status: const Value('completed'),
+        chiefComplaint: Value(encounter.chiefComplaint),
+        providerName: Value(encounter.providerName),
+        providerType: Value(encounter.providerType),
+        isBillable: Value(encounter.isBillable),
+        invoiceId: Value(encounter.invoiceId),
+        checkInTime: Value(encounter.checkInTime),
+        checkOutTime: Value(DateTime.now()),
+      ),
+    );
+  }
+
+  // ═══════════════════════════════════════════════════════════════════════════════
+  // DIAGNOSIS CRUD - Normalized diagnosis tracking
+  // ═══════════════════════════════════════════════════════════════════════════════
+
+  Future<int> insertDiagnosis(Insertable<Diagnose> d) => into(diagnoses).insert(d);
+  
+  Future<List<Diagnose>> getAllDiagnoses() => select(diagnoses).get();
+  
+  Future<Diagnose?> getDiagnosisById(int id) => 
+      (select(diagnoses)..where((t) => t.id.equals(id))).getSingleOrNull();
+  
+  Future<bool> updateDiagnosis(Insertable<Diagnose> d) => update(diagnoses).replace(d);
+  
+  Future<int> deleteDiagnosis(int id) => 
+      (delete(diagnoses)..where((t) => t.id.equals(id))).go();
+
+  /// Get diagnoses for a specific patient
+  Future<List<Diagnose>> getDiagnosesForPatient(int patientId) {
+    return (select(diagnoses)
+      ..where((d) => d.patientId.equals(patientId))
+      ..orderBy([
+        (d) => OrderingTerm.desc(d.isPrimary),
+        (d) => OrderingTerm.asc(d.displayOrder),
+      ]))
+      .get();
+  }
+
+  /// Get active diagnoses for a patient
+  Future<List<Diagnose>> getActiveDiagnosesForPatient(int patientId) {
+    return (select(diagnoses)
+      ..where((d) => d.patientId.equals(patientId) & d.diagnosisStatus.equals('active'))
+      ..orderBy([
+        (d) => OrderingTerm.desc(d.isPrimary),
+        (d) => OrderingTerm.asc(d.displayOrder),
+      ]))
+      .get();
+  }
+
+  /// Get primary diagnosis for a patient
+  Future<Diagnose?> getPrimaryDiagnosisForPatient(int patientId) {
+    return (select(diagnoses)
+      ..where((d) => d.patientId.equals(patientId) & d.isPrimary.equals(true) & d.diagnosisStatus.equals('active')))
+      .getSingleOrNull();
+  }
+
+  /// Search diagnoses by ICD code or description
+  Future<List<Diagnose>> searchDiagnoses(String query) {
+    return (select(diagnoses)
+      ..where((d) => d.icdCode.like('%$query%') | d.description.like('%$query%'))
+      ..orderBy([(d) => OrderingTerm.asc(d.description)]))
+      .get();
+  }
+
+  /// Get diagnoses by category
+  Future<List<Diagnose>> getDiagnosesByCategory(int patientId, String category) {
+    return (select(diagnoses)
+      ..where((d) => d.patientId.equals(patientId) & d.category.equals(category)))
+      .get();
+  }
+
+  // ═══════════════════════════════════════════════════════════════════════════════
+  // CLINICAL NOTES CRUD - SOAP notes and assessments
+  // ═══════════════════════════════════════════════════════════════════════════════
+
+  Future<int> insertClinicalNote(Insertable<ClinicalNote> n) => into(clinicalNotes).insert(n);
+  
+  Future<List<ClinicalNote>> getAllClinicalNotes() => select(clinicalNotes).get();
+  
+  Future<ClinicalNote?> getClinicalNoteById(int id) => 
+      (select(clinicalNotes)..where((t) => t.id.equals(id))).getSingleOrNull();
+  
+  Future<bool> updateClinicalNote(Insertable<ClinicalNote> n) => update(clinicalNotes).replace(n);
+  
+  Future<int> deleteClinicalNote(int id) => 
+      (delete(clinicalNotes)..where((t) => t.id.equals(id))).go();
+
+  /// Get clinical notes for a specific encounter
+  Future<List<ClinicalNote>> getClinicalNotesForEncounter(int encounterId) {
+    return (select(clinicalNotes)
+      ..where((n) => n.encounterId.equals(encounterId))
+      ..orderBy([(n) => OrderingTerm.desc(n.createdAt)]))
+      .get();
+  }
+
+  /// Get clinical notes for a specific patient
+  Future<List<ClinicalNote>> getClinicalNotesForPatient(int patientId) {
+    return (select(clinicalNotes)
+      ..where((n) => n.patientId.equals(patientId))
+      ..orderBy([(n) => OrderingTerm.desc(n.createdAt)]))
+      .get();
+  }
+
+  /// Get clinical notes by type
+  Future<List<ClinicalNote>> getClinicalNotesByType(int patientId, String noteType) {
+    return (select(clinicalNotes)
+      ..where((n) => n.patientId.equals(patientId) & n.noteType.equals(noteType))
+      ..orderBy([(n) => OrderingTerm.desc(n.createdAt)]))
+      .get();
+  }
+
+  /// Get unsigned clinical notes
+  Future<List<ClinicalNote>> getUnsignedClinicalNotes() {
+    return (select(clinicalNotes)
+      ..where((n) => n.signedBy.equals(''))
+      ..orderBy([(n) => OrderingTerm.desc(n.createdAt)]))
+      .get();
+  }
+
+  /// Sign a clinical note
+  Future<bool> signClinicalNote(int noteId, String signedBy) async {
+    final note = await getClinicalNoteById(noteId);
+    if (note == null) return false;
+    
+    return update(clinicalNotes).replace(
+      ClinicalNotesCompanion(
+        id: Value(noteId),
+        encounterId: Value(note.encounterId),
+        patientId: Value(note.patientId),
+        noteType: Value(note.noteType),
+        subjective: Value(note.subjective),
+        objective: Value(note.objective),
+        assessment: Value(note.assessment),
+        plan: Value(note.plan),
+        mentalStatusExam: Value(note.mentalStatusExam),
+        riskLevel: Value(note.riskLevel),
+        riskFactors: Value(note.riskFactors),
+        safetyPlan: Value(note.safetyPlan),
+        signedBy: Value(signedBy),
+        signedAt: Value(DateTime.now()),
+        isLocked: const Value(true),
+      ),
+    );
+  }
+
+  // ═══════════════════════════════════════════════════════════════════════════════
+  // ENCOUNTER DIAGNOSES CRUD - Links encounters to diagnoses
+  // ═══════════════════════════════════════════════════════════════════════════════
+
+  Future<int> insertEncounterDiagnosis(Insertable<EncounterDiagnose> ed) => 
+      into(encounterDiagnoses).insert(ed);
+  
+  Future<List<EncounterDiagnose>> getAllEncounterDiagnoses() => 
+      select(encounterDiagnoses).get();
+  
+  Future<EncounterDiagnose?> getEncounterDiagnosisById(int id) => 
+      (select(encounterDiagnoses)..where((t) => t.id.equals(id))).getSingleOrNull();
+  
+  Future<bool> updateEncounterDiagnosis(Insertable<EncounterDiagnose> ed) => 
+      update(encounterDiagnoses).replace(ed);
+  
+  Future<int> deleteEncounterDiagnosis(int id) => 
+      (delete(encounterDiagnoses)..where((t) => t.id.equals(id))).go();
+
+  /// Get diagnoses addressed in a specific encounter
+  Future<List<EncounterDiagnose>> getDiagnosesForEncounter(int encounterId) {
+    return (select(encounterDiagnoses)
+      ..where((ed) => ed.encounterId.equals(encounterId)))
+      .get();
+  }
+
+  /// Get encounters where a specific diagnosis was addressed
+  Future<List<EncounterDiagnose>> getEncountersForDiagnosis(int diagnosisId) {
+    return (select(encounterDiagnoses)
+      ..where((ed) => ed.diagnosisId.equals(diagnosisId)))
+      .get();
+  }
+
+  /// Link a diagnosis to an encounter
+  Future<int> linkDiagnosisToEncounter(int encounterId, int diagnosisId, {bool isNew = false, String status = 'addressed'}) {
+    return into(encounterDiagnoses).insert(EncounterDiagnosesCompanion.insert(
+      encounterId: encounterId,
+      diagnosisId: diagnosisId,
+      isNewDiagnosis: Value(isNew),
+      encounterStatus: Value(status),
+    ));
+  }
+
+  /// Get all diagnoses with full details for an encounter
+  Future<List<Diagnose>> getFullDiagnosesForEncounter(int encounterId) async {
+    final links = await getDiagnosesForEncounter(encounterId);
+    final diagnosisIds = links.map((l) => l.diagnosisId).toList();
+    
+    if (diagnosisIds.isEmpty) return [];
+    
+    return (select(diagnoses)
+      ..where((d) => d.id.isIn(diagnosisIds)))
+      .get();
+  }
+
+  // ═══════════════════════════════════════════════════════════════════════════════
+  // VITAL SIGNS - Updated to support encounter linking
+  // ═══════════════════════════════════════════════════════════════════════════════
+
+  /// Get vital signs for a specific encounter
+  Future<List<VitalSign>> getVitalSignsForEncounter(int encounterId) {
+    return (select(vitalSigns)
+      ..where((v) => v.encounterId.equals(encounterId))
+      ..orderBy([(v) => OrderingTerm.desc(v.recordedAt)]))
+      .get();
+  }
+
+  /// Get latest vital signs for an encounter
+  Future<VitalSign?> getLatestVitalSignsForEncounter(int encounterId) {
+    return (select(vitalSigns)
+      ..where((v) => v.encounterId.equals(encounterId))
+      ..orderBy([(v) => OrderingTerm.desc(v.recordedAt)])
+      ..limit(1))
+      .getSingleOrNull();
+  }
+
+  /// Record vital signs for an encounter
+  Future<int> recordVitalSignsForEncounter(int encounterId, int patientId, Insertable<VitalSign> vitals) async {
+    // Create a companion with the encounter ID
+    final companion = vitals as VitalSignsCompanion;
+    return into(vitalSigns).insert(VitalSignsCompanion(
+      patientId: companion.patientId,
+      encounterId: Value(encounterId),
+      recordedAt: companion.recordedAt,
+      systolicBp: companion.systolicBp,
+      diastolicBp: companion.diastolicBp,
+      heartRate: companion.heartRate,
+      temperature: companion.temperature,
+      respiratoryRate: companion.respiratoryRate,
+      oxygenSaturation: companion.oxygenSaturation,
+      weight: companion.weight,
+      height: companion.height,
+      bmi: companion.bmi,
+      painLevel: companion.painLevel,
+      bloodGlucose: companion.bloodGlucose,
+      notes: companion.notes,
+    ));
   }
 }

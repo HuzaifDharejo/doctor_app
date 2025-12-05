@@ -168,6 +168,7 @@ class _CommunicationsScreenState extends ConsumerState<CommunicationsScreen>
     final textColor = isDark ? AppColors.darkTextPrimary : AppColors.textPrimary;
 
     return ListView(
+      primary: false,
       children: [
         // Active conversations
         Padding(
@@ -204,7 +205,6 @@ class _CommunicationsScreenState extends ConsumerState<CommunicationsScreen>
   }
 
   List<Widget> _buildConversationCards(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
     final conversations = [
       {
         'name': 'Ahmed Hassan',
@@ -351,6 +351,7 @@ class _CommunicationsScreenState extends ConsumerState<CommunicationsScreen>
 
   Widget _buildHistoryTab(BuildContext context) {
     return SingleChildScrollView(
+      primary: false,
       padding: const EdgeInsets.all(AppSpacing.lg),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,

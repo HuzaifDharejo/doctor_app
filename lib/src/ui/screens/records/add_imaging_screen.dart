@@ -9,6 +9,7 @@ import '../../../services/suggestions_service.dart';
 import '../../../theme/app_theme.dart';
 import '../../../core/theme/design_tokens.dart';
 import '../../widgets/suggestion_text_field.dart';
+import 'components/record_components.dart';
 import 'record_form_widgets.dart';
 
 /// Screen for adding an Imaging/Radiology medical record
@@ -30,6 +31,11 @@ class _AddImagingScreenState extends ConsumerState<AddImagingScreen> {
   final _formKey = GlobalKey<FormState>();
   final _scrollController = ScrollController();
   bool _isSaving = false;
+
+  // Theme colors for this record type
+  static const _primaryColor = Color(0xFF6366F1); // Patient Indigo
+  static const _secondaryColor = Color(0xFF4F46E5);
+  static const _gradientColors = [_primaryColor, _secondaryColor];
 
   // Common fields
   int? _selectedPatientId;
@@ -144,6 +150,8 @@ class _AddImagingScreenState extends ConsumerState<AddImagingScreen> {
         recordDate: _recordDate,
       );
 
+      MedicalRecord? resultRecord;
+      
       if (widget.existingRecord != null) {
         final updatedRecord = MedicalRecord(
           id: widget.existingRecord!.id,
@@ -163,8 +171,10 @@ class _AddImagingScreenState extends ConsumerState<AddImagingScreen> {
           createdAt: widget.existingRecord!.createdAt,
         );
         await db.updateMedicalRecord(updatedRecord);
+        resultRecord = updatedRecord;
       } else {
-        await db.insertMedicalRecord(companion);
+        final recordId = await db.insertMedicalRecord(companion);
+        resultRecord = await db.getMedicalRecordById(recordId);
       }
 
       if (mounted) {
@@ -174,7 +184,7 @@ class _AddImagingScreenState extends ConsumerState<AddImagingScreen> {
               ? 'Imaging record updated successfully!' 
               : 'Imaging record saved successfully!',
         );
-        Navigator.pop(context, true);
+        Navigator.pop(context, resultRecord);
       }
     } catch (e) {
       if (mounted) {
@@ -194,24 +204,13 @@ class _AddImagingScreenState extends ConsumerState<AddImagingScreen> {
     final padding = isCompact ? 12.0 : 20.0;
 
     return Scaffold(
-      backgroundColor: isDark ? AppColors.darkBackground : AppColors.background,
+      backgroundColor: isDark ? const Color(0xFF0F0F0F) : const Color(0xFFF8FAFC),
       body: dbAsync.when(
         data: (db) => CustomScrollView(
           controller: _scrollController,
+          physics: const BouncingScrollPhysics(),
           slivers: [
-            // Gradient Header
-            SliverToBoxAdapter(
-              child: RecordFormWidgets.buildGradientHeader(
-                context: context,
-                title: widget.existingRecord != null 
-                    ? 'Edit Imaging Record' 
-                    : 'Imaging / Radiology',
-                subtitle: DateFormat('EEEE, dd MMMM yyyy').format(_recordDate),
-                icon: Icons.image_rounded,
-                gradientColors: [const Color(0xFF6366F1), const Color(0xFF4F46E5)], // Patient Indigo
-              ),
-            ),
-            // Body Content
+            _buildSliverAppBar(context, isDark, isCompact),
             SliverPadding(
               padding: EdgeInsets.all(padding),
               sliver: SliverList(
@@ -223,9 +222,108 @@ class _AddImagingScreenState extends ConsumerState<AddImagingScreen> {
           ],
         ),
         loading: () => const Center(
-          child: CircularProgressIndicator(color: AppColors.primary),
+          child: CircularProgressIndicator(color: _primaryColor),
         ),
         error: (err, stack) => Center(child: Text('Error: $err')),
+      ),
+    );
+  }
+
+  Widget _buildSliverAppBar(BuildContext context, bool isDark, bool isCompact) {
+    return SliverAppBar(
+      expandedHeight: 160,
+      floating: false,
+      pinned: true,
+      elevation: 0,
+      backgroundColor: _primaryColor,
+      surfaceTintColor: Colors.transparent,
+      leading: Padding(
+        padding: const EdgeInsets.all(8.0),
+        child: GestureDetector(
+          onTap: () => Navigator.pop(context),
+          child: Container(
+            decoration: BoxDecoration(
+              color: Colors.white.withValues(alpha: 0.2),
+              borderRadius: BorderRadius.circular(12),
+            ),
+            child: const Icon(
+              Icons.arrow_back_ios_new_rounded,
+              size: 18,
+              color: Colors.white,
+            ),
+          ),
+        ),
+      ),
+      flexibleSpace: FlexibleSpaceBar(
+        background: Container(
+          decoration: BoxDecoration(
+            gradient: LinearGradient(
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+              colors: _gradientColors,
+            ),
+          ),
+          child: SafeArea(
+            child: Padding(
+              padding: EdgeInsets.fromLTRB(
+                isCompact ? 16 : 24,
+                50,
+                isCompact ? 16 : 24,
+                20,
+              ),
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.center,
+                children: [
+                  Container(
+                    padding: const EdgeInsets.all(16),
+                    decoration: BoxDecoration(
+                      color: Colors.white.withValues(alpha: 0.2),
+                      borderRadius: BorderRadius.circular(18),
+                    ),
+                    child: const Icon(
+                      Icons.image_rounded,
+                      color: Colors.white,
+                      size: 28,
+                    ),
+                  ),
+                  const SizedBox(width: 16),
+                  Expanded(
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          widget.existingRecord != null 
+                              ? 'Edit Imaging' 
+                              : 'Imaging / Radiology',
+                          style: TextStyle(
+                            fontSize: isCompact ? 20 : 24,
+                            fontWeight: FontWeight.w700,
+                            color: Colors.white,
+                          ),
+                        ),
+                        const SizedBox(height: 4),
+                        Row(
+                          children: [
+                            const Icon(Icons.calendar_today, color: Colors.white70, size: 14),
+                            const SizedBox(width: 6),
+                            Text(
+                              DateFormat('EEEE, dd MMM yyyy').format(_recordDate),
+                              style: TextStyle(
+                                fontSize: isCompact ? 12 : 14,
+                                color: Colors.white.withValues(alpha: 0.9),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ),
       ),
     );
   }
@@ -237,206 +335,227 @@ class _AddImagingScreenState extends ConsumerState<AddImagingScreen> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           // Patient Selection
-          RecordFormWidgets.buildSectionHeader(
-            context, 'Patient', Icons.person_outline,
+          RecordFormSection(
+            title: 'Patient Information',
+            icon: Icons.person_outline,
+            accentColor: _primaryColor,
+            child: PatientSelectorCard(
+              db: db,
+              selectedPatientId: _selectedPatientId,
+              onPatientSelected: (patient) {
+                setState(() => _selectedPatientId = patient?.id);
+              },
+              label: 'Select Patient',
+            ),
           ),
-          const SizedBox(height: 12),
-          RecordFormWidgets.buildPatientSelector(
-            context: context,
-            db: db,
-            selectedPatientId: _selectedPatientId,
-            onChanged: (id) => setState(() => _selectedPatientId = id),
-          ),
-          const SizedBox(height: 20),
+          const SizedBox(height: 16),
 
-          // Date Selection
-          RecordFormWidgets.buildSectionHeader(
-            context, 'Study Date', Icons.calendar_today,
+          // Date and Title Section
+          RecordFormSection(
+            title: 'Record Details',
+            icon: Icons.event_note,
+            accentColor: _primaryColor,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                DatePickerCard(
+                  selectedDate: _recordDate,
+                  onDateSelected: (date) => setState(() => _recordDate = date),
+                  label: 'Study Date',
+                  accentColor: _primaryColor,
+                ),
+                const SizedBox(height: 16),
+                RecordTextField(
+                  controller: _titleController,
+                  label: 'Title',
+                  hint: 'Enter record title (optional)...',
+                  prefixIcon: Icons.title,
+                  accentColor: _primaryColor,
+                ),
+              ],
+            ),
           ),
-          const SizedBox(height: 12),
-          RecordFormWidgets.buildDateSelector(
-            context: context,
-            selectedDate: _recordDate,
-            onDateSelected: (date) => setState(() => _recordDate = date),
-          ),
-          const SizedBox(height: 20),
-
-          // Title
-          RecordFormWidgets.buildSectionHeader(context, 'Title', Icons.title),
-          const SizedBox(height: 12),
-          RecordFormWidgets.buildTextField(
-            context: context,
-            controller: _titleController,
-            hint: 'Enter record title (optional)...',
-          ),
-          const SizedBox(height: 20),
+          const SizedBox(height: 16),
 
           // Study Information Section
-          RecordFormWidgets.buildSectionCard(
-            context: context,
+          RecordFormSection(
             title: 'Study Information',
             icon: Icons.camera_alt_outlined,
             accentColor: const Color(0xFF7C3AED),
-            children: [
-              SuggestionTextField(
-                controller: _imagingTypeController,
-                label: 'Imaging Type',
-                hint: 'e.g., X-Ray, CT Scan, MRI...',
-                prefixIcon: Icons.image_outlined,
-                suggestions: MedicalRecordSuggestions.imagingTypes,
-              ),
-              const SizedBox(height: 12),
-              SuggestionTextField(
-                controller: _bodyPartController,
-                label: 'Body Part / Region',
-                hint: 'e.g., Chest, Abdomen, Brain...',
-                prefixIcon: Icons.accessibility_new_outlined,
-                suggestions: const [
-                  'Chest',
-                  'Abdomen',
-                  'Pelvis',
-                  'Head / Brain',
-                  'Spine - Cervical',
-                  'Spine - Thoracic',
-                  'Spine - Lumbar',
-                  'Upper Extremity',
-                  'Lower Extremity',
-                  'Neck',
-                  'Knee',
-                  'Shoulder',
-                  'Hip',
-                  'Hand/Wrist',
-                  'Foot/Ankle',
-                  'Whole Body',
-                ],
-              ),
-              const SizedBox(height: 12),
-              RecordFormWidgets.buildTextField(
-                context: context,
-                controller: _indicationController,
-                hint: 'Clinical indication for study...',
-                maxLines: 2,
-              ),
-              const SizedBox(height: 12),
-              Row(
-                children: [
-                  Expanded(
-                    child: _buildUrgencySelector(isDark),
-                  ),
-                  const SizedBox(width: 16),
-                  Expanded(
-                    child: _buildContrastToggle(isDark),
-                  ),
-                ],
-              ),
-            ],
+            child: Column(
+              children: [
+                SuggestionTextField(
+                  controller: _imagingTypeController,
+                  label: 'Imaging Type',
+                  hint: 'e.g., X-Ray, CT Scan, MRI...',
+                  prefixIcon: Icons.image_outlined,
+                  suggestions: MedicalRecordSuggestions.imagingTypes,
+                ),
+                const SizedBox(height: 12),
+                SuggestionTextField(
+                  controller: _bodyPartController,
+                  label: 'Body Part / Region',
+                  hint: 'e.g., Chest, Abdomen, Brain...',
+                  prefixIcon: Icons.accessibility_new_outlined,
+                  suggestions: const [
+                    'Chest',
+                    'Abdomen',
+                    'Pelvis',
+                    'Head / Brain',
+                    'Spine - Cervical',
+                    'Spine - Thoracic',
+                    'Spine - Lumbar',
+                    'Upper Extremity',
+                    'Lower Extremity',
+                    'Neck',
+                    'Knee',
+                    'Shoulder',
+                    'Hip',
+                    'Hand/Wrist',
+                    'Foot/Ankle',
+                    'Whole Body',
+                  ],
+                ),
+                const SizedBox(height: 12),
+                RecordTextField(
+                  controller: _indicationController,
+                  hint: 'Clinical indication for study...',
+                  maxLines: 2,
+                  accentColor: const Color(0xFF7C3AED),
+                ),
+                const SizedBox(height: 12),
+                Row(
+                  children: [
+                    Expanded(
+                      child: _buildUrgencySelector(isDark),
+                    ),
+                    const SizedBox(width: 16),
+                    Expanded(
+                      child: ToggleOptionRow(
+                        label: 'Contrast Used',
+                        value: _contrastUsed,
+                        onChanged: (v) => setState(() => _contrastUsed = v),
+                        icon: Icons.opacity,
+                        accentColor: _primaryColor,
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+            ),
           ),
-          const SizedBox(height: 20),
+          const SizedBox(height: 16),
 
           // Technique
-          RecordFormWidgets.buildSectionHeader(
-            context, 'Technique', Icons.settings_outlined,
+          RecordFormSection(
+            title: 'Technique',
+            icon: Icons.settings_outlined,
+            accentColor: Colors.orange,
+            collapsible: true,
+            child: RecordTextField(
+              controller: _techniqueController,
+              hint: 'Describe imaging technique used...',
+              maxLines: 3,
+              accentColor: Colors.orange,
+            ),
           ),
-          const SizedBox(height: 12),
-          RecordFormWidgets.buildTextField(
-            context: context,
-            controller: _techniqueController,
-            hint: 'Describe imaging technique used...',
-            maxLines: 3,
-          ),
-          const SizedBox(height: 20),
+          const SizedBox(height: 16),
 
           // Findings
-          RecordFormWidgets.buildSectionHeader(
-            context, 'Findings', Icons.find_in_page,
+          RecordFormSection(
+            title: 'Findings',
+            icon: Icons.find_in_page,
+            accentColor: Colors.teal,
+            child: SuggestionTextField(
+              controller: _findingsController,
+              label: 'Findings',
+              hint: 'Describe imaging findings in detail...',
+              prefixIcon: Icons.find_in_page_outlined,
+              maxLines: 6,
+              suggestions: MedicalRecordSuggestions.imagingFindings,
+              separator: '. ',
+            ),
           ),
-          const SizedBox(height: 12),
-          SuggestionTextField(
-            controller: _findingsController,
-            label: 'Findings',
-            hint: 'Describe imaging findings in detail...',
-            prefixIcon: Icons.find_in_page_outlined,
-            maxLines: 6,
-            suggestions: MedicalRecordSuggestions.imagingFindings,
-            separator: '. ',
-          ),
-          const SizedBox(height: 20),
+          const SizedBox(height: 16),
 
           // Impression
-          RecordFormWidgets.buildSectionHeader(
-            context, 'Impression / Diagnosis', Icons.analytics,
+          RecordFormSection(
+            title: 'Impression / Diagnosis',
+            icon: Icons.analytics,
+            accentColor: Colors.purple,
+            child: RecordTextField(
+              controller: _impressionController,
+              hint: 'Radiological impression and diagnosis...',
+              maxLines: 4,
+              accentColor: Colors.purple,
+            ),
           ),
-          const SizedBox(height: 12),
-          RecordFormWidgets.buildTextField(
-            context: context,
-            controller: _impressionController,
-            hint: 'Radiological impression and diagnosis...',
-            maxLines: 4,
-          ),
-          const SizedBox(height: 20),
+          const SizedBox(height: 16),
 
           // Recommendations
-          RecordFormWidgets.buildSectionHeader(
-            context, 'Recommendations', Icons.recommend,
+          RecordFormSection(
+            title: 'Recommendations',
+            icon: Icons.recommend,
+            accentColor: _primaryColor,
+            collapsible: true,
+            child: RecordTextField(
+              controller: _recommendationsController,
+              hint: 'Follow-up recommendations...',
+              maxLines: 3,
+              accentColor: _primaryColor,
+            ),
           ),
-          const SizedBox(height: 12),
-          RecordFormWidgets.buildTextField(
-            context: context,
-            controller: _recommendationsController,
-            hint: 'Follow-up recommendations...',
-            maxLines: 3,
-          ),
-          const SizedBox(height: 20),
+          const SizedBox(height: 16),
 
           // Reporting Details
-          RecordFormWidgets.buildSectionCard(
-            context: context,
+          RecordFormSection(
             title: 'Reporting Details',
             icon: Icons.person_outline,
-            children: [
-              Row(
-                children: [
-                  Expanded(
-                    child: RecordFormWidgets.buildTextField(
-                      context: context,
-                      controller: _radiologistController,
-                      hint: 'Radiologist name...',
-                    ),
-                  ),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: RecordFormWidgets.buildTextField(
-                      context: context,
-                      controller: _facilityController,
-                      hint: 'Facility name...',
-                    ),
-                  ),
-                ],
-              ),
-            ],
+            accentColor: Colors.blueGrey,
+            collapsible: true,
+            initiallyExpanded: false,
+            child: RecordFieldGrid(
+              children: [
+                CompactTextField(
+                  controller: _radiologistController,
+                  label: 'Radiologist',
+                  hint: 'Name...',
+                  accentColor: Colors.blueGrey,
+                ),
+                CompactTextField(
+                  controller: _facilityController,
+                  label: 'Facility',
+                  hint: 'Name...',
+                  accentColor: Colors.blueGrey,
+                ),
+              ],
+            ),
           ),
-          const SizedBox(height: 20),
+          const SizedBox(height: 16),
 
           // Clinical Notes
-          RecordFormWidgets.buildSectionHeader(
-            context, 'Clinical Notes', Icons.note_alt,
-          ),
-          const SizedBox(height: 12),
-          RecordFormWidgets.buildTextField(
-            context: context,
-            controller: _clinicalNotesController,
-            hint: 'Additional clinical notes...',
-            maxLines: 4,
+          RecordFormSection(
+            title: 'Clinical Notes',
+            icon: Icons.note_alt,
+            accentColor: Colors.indigo,
+            collapsible: true,
+            initiallyExpanded: false,
+            child: RecordNotesField(
+              controller: _clinicalNotesController,
+              label: '',
+              hint: 'Additional clinical notes...',
+              accentColor: Colors.indigo,
+            ),
           ),
           const SizedBox(height: 32),
 
-          // Save Button
-          RecordFormWidgets.buildSaveButton(
-            context: context,
-            isSaving: _isSaving,
-            label: widget.existingRecord != null ? 'Update Imaging Record' : 'Save Imaging Record',
-            onPressed: () => _saveRecord(db),
-            gradientColors: [const Color(0xFF6366F1), const Color(0xFF4F46E5)], // Patient Indigo
+          // Action Buttons
+          RecordActionButtons(
+            onSave: () => _saveRecord(db),
+            onCancel: () => Navigator.pop(context),
+            saveLabel: widget.existingRecord != null ? 'Update Imaging Record' : 'Save Imaging Record',
+            isLoading: _isSaving,
+            canSave: _selectedPatientId != null,
           ),
           const SizedBox(height: 40),
         ],
@@ -505,56 +624,4 @@ class _AddImagingScreenState extends ConsumerState<AddImagingScreen> {
       ],
     );
   }
-
-  Widget _buildContrastToggle(bool isDark) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(
-          'Contrast Used',
-          style: TextStyle(
-            fontSize: 12,
-            fontWeight: FontWeight.w500,
-            color: isDark ? AppColors.darkTextSecondary : AppColors.textSecondary,
-          ),
-        ),
-        const SizedBox(height: 8),
-        Container(
-          padding: const EdgeInsets.symmetric(horizontal: AppSpacing.md, vertical: AppSpacing.sm),
-          decoration: BoxDecoration(
-            color: Theme.of(context).colorScheme.surface,
-            borderRadius: BorderRadius.circular(12),
-            border: Border.all(
-              color: isDark ? AppColors.darkDivider : AppColors.divider,
-            ),
-          ),
-          child: Row(
-            children: [
-              Icon(
-                _contrastUsed ? Icons.check_circle : Icons.circle_outlined,
-                color: _contrastUsed ? AppColors.primary : AppColors.textSecondary,
-                size: 20,
-              ),
-              const SizedBox(width: 8),
-              Expanded(
-                child: Text(
-                  _contrastUsed ? 'Yes' : 'No',
-                  style: TextStyle(
-                    fontWeight: FontWeight.w500,
-                    color: isDark ? AppColors.darkTextPrimary : AppColors.textPrimary,
-                  ),
-                ),
-              ),
-              Switch(
-                value: _contrastUsed,
-                onChanged: (v) => setState(() => _contrastUsed = v),
-                activeColor: AppColors.primary,
-              ),
-            ],
-          ),
-        ),
-      ],
-    );
-  }
 }
-

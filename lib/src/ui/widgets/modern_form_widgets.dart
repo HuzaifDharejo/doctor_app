@@ -470,8 +470,6 @@ class ModernFormWidgets {
     required String unit,
     required Color color,
   }) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-    
     return Container(
       padding: const EdgeInsets.all(AppSpacing.md),
       decoration: BoxDecoration(

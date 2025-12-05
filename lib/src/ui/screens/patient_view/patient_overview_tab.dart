@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../db/doctor_db.dart';
 import '../../../theme/app_theme.dart';
 import '../../../core/theme/design_tokens.dart';
+import '../diagnoses_screen.dart';
 import '../follow_ups_screen.dart';
 import '../lab_results_screen.dart';
 import '../treatment_outcomes_screen.dart';
@@ -55,6 +56,7 @@ class _PatientOverviewTabState extends ConsumerState<PatientOverviewTab> {
     final borderColor = isDark ? AppColors.darkDivider : AppColors.divider;
 
     return SingleChildScrollView(
+      primary: false,
       padding: const EdgeInsets.only(
         left: AppSpacing.lg,
         right: AppSpacing.lg,
@@ -92,30 +94,74 @@ class _PatientOverviewTabState extends ConsumerState<PatientOverviewTab> {
       child: Row(
         children: [
           Expanded(
-            child: ElevatedButton.icon(
-              onPressed: widget.isSaving ? null : widget.onSave,
-              style: ElevatedButton.styleFrom(
-                backgroundColor: AppColors.primary,
-                foregroundColor: Colors.white,
-                padding: const EdgeInsets.symmetric(vertical: 12),
+            child: Container(
+              decoration: BoxDecoration(
+                gradient: AppColors.primaryGradient,
+                borderRadius: BorderRadius.circular(14),
+                boxShadow: [
+                  BoxShadow(
+                    color: AppColors.primary.withValues(alpha: 0.4),
+                    blurRadius: 12,
+                    offset: const Offset(0, 4),
+                  ),
+                ],
               ),
-              icon: widget.isSaving
-                  ? const SizedBox(
-                      width: 20,
-                      height: 20,
-                      child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
-                    )
-                  : const Icon(Icons.save),
-              label: Text(widget.isSaving ? 'Saving...' : 'Save Changes'),
+              child: ElevatedButton.icon(
+                onPressed: widget.isSaving ? null : widget.onSave,
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Colors.transparent,
+                  foregroundColor: Colors.white,
+                  shadowColor: Colors.transparent,
+                  padding: const EdgeInsets.symmetric(vertical: 14),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(14),
+                  ),
+                ),
+                icon: widget.isSaving
+                    ? const SizedBox(
+                        width: 20,
+                        height: 20,
+                        child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
+                      )
+                    : const Icon(Icons.save_rounded),
+                label: Text(
+                  widget.isSaving ? 'Saving...' : 'Save Changes',
+                  style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 15),
+                ),
+              ),
             ),
           ),
           const SizedBox(width: 12),
-          OutlinedButton(
-            onPressed: widget.onDiscard,
-            style: OutlinedButton.styleFrom(
-              padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 24),
+          Container(
+            decoration: BoxDecoration(
+              color: Theme.of(context).brightness == Brightness.dark 
+                  ? AppColors.darkSurface 
+                  : Colors.white,
+              borderRadius: BorderRadius.circular(14),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withValues(alpha: 0.08),
+                  blurRadius: 8,
+                  offset: const Offset(0, 2),
+                ),
+              ],
             ),
-            child: const Text('Cancel'),
+            child: OutlinedButton(
+              onPressed: widget.onDiscard,
+              style: OutlinedButton.styleFrom(
+                padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 24),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(14),
+                ),
+                side: BorderSide(
+                  color: AppColors.primary.withValues(alpha: 0.3),
+                ),
+              ),
+              child: const Text(
+                'Cancel',
+                style: TextStyle(fontWeight: FontWeight.w600),
+              ),
+            ),
           ),
         ],
       ),
@@ -126,25 +172,54 @@ class _PatientOverviewTabState extends ConsumerState<PatientOverviewTab> {
     final patient = widget.patient;
     
     return Container(
-      padding: const EdgeInsets.all(AppSpacing.lg),
+      padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
         color: cardColor,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: widget.isEditing ? AppColors.primary.withValues(alpha: 0.5) : borderColor),
+        borderRadius: BorderRadius.circular(20),
+        border: widget.isEditing 
+            ? Border.all(color: AppColors.primary.withValues(alpha: 0.5), width: 2) 
+            : null,
+        boxShadow: [
+          BoxShadow(
+            color: AppColors.primary.withValues(alpha: isDark ? 0.1 : 0.08),
+            blurRadius: 16,
+            offset: const Offset(0, 6),
+          ),
+          BoxShadow(
+            color: Colors.black.withValues(alpha: isDark ? 0.25 : 0.04),
+            blurRadius: 8,
+            offset: const Offset(0, 2),
+          ),
+        ],
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(
             children: [
-              Icon(Icons.contact_phone_rounded, color: AppColors.primary, size: 20),
-              const SizedBox(width: 8),
+              Container(
+                padding: const EdgeInsets.all(10),
+                decoration: BoxDecoration(
+                  gradient: AppColors.primaryGradient,
+                  borderRadius: BorderRadius.circular(12),
+                  boxShadow: [
+                    BoxShadow(
+                      color: AppColors.primary.withValues(alpha: 0.4),
+                      blurRadius: 8,
+                      offset: const Offset(0, 3),
+                    ),
+                  ],
+                ),
+                child: const Icon(Icons.contact_phone_rounded, color: Colors.white, size: 18),
+              ),
+              const SizedBox(width: 12),
               Text(
                 'Contact Information',
                 style: TextStyle(
-                  fontSize: 16,
-                  fontWeight: FontWeight.bold,
+                  fontSize: 17,
+                  fontWeight: FontWeight.w700,
                   color: textColor,
+                  letterSpacing: -0.3,
                 ),
               ),
               const Spacer(),
@@ -271,40 +346,95 @@ class _PatientOverviewTabState extends ConsumerState<PatientOverviewTab> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(
-          'Medical History',
-          style: Theme.of(context).textTheme.titleMedium?.copyWith(
-            fontWeight: FontWeight.bold,
-            color: textColor,
-          ),
-        ),
-        const SizedBox(height: 8),
-        if (widget.isEditing)
-          TextField(
-            controller: widget.medicalHistoryController,
-            maxLines: 4,
-            decoration: InputDecoration(
-              hintText: 'Enter medical history...',
-              border: OutlineInputBorder(
+        Row(
+          children: [
+            Container(
+              padding: const EdgeInsets.all(10),
+              decoration: BoxDecoration(
+                gradient: const LinearGradient(
+                  colors: [Color(0xFF10B981), Color(0xFF059669)],
+                ),
                 borderRadius: BorderRadius.circular(12),
+                boxShadow: [
+                  BoxShadow(
+                    color: const Color(0xFF10B981).withValues(alpha: 0.4),
+                    blurRadius: 8,
+                    offset: const Offset(0, 3),
+                  ),
+                ],
               ),
-              contentPadding: const EdgeInsets.all(16),
+              child: const Icon(Icons.history_rounded, color: Colors.white, size: 18),
+            ),
+            const SizedBox(width: 12),
+            Text(
+              'Medical History',
+              style: TextStyle(
+                fontSize: 17,
+                fontWeight: FontWeight.w700,
+                color: textColor,
+                letterSpacing: -0.3,
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: 14),
+        if (widget.isEditing)
+          Container(
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(16),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withValues(alpha: isDark ? 0.2 : 0.04),
+                  blurRadius: 8,
+                  offset: const Offset(0, 2),
+                ),
+              ],
+            ),
+            child: TextField(
+              controller: widget.medicalHistoryController,
+              maxLines: 4,
+              decoration: InputDecoration(
+                hintText: 'Enter medical history...',
+                filled: true,
+                fillColor: cardColor,
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(16),
+                  borderSide: BorderSide.none,
+                ),
+                enabledBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(16),
+                  borderSide: BorderSide.none,
+                ),
+                focusedBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(16),
+                  borderSide: const BorderSide(color: AppColors.primary, width: 2),
+                ),
+                contentPadding: const EdgeInsets.all(16),
+              ),
             ),
           )
         else
           Container(
             width: double.infinity,
-            padding: const EdgeInsets.all(AppSpacing.md),
+            padding: const EdgeInsets.all(18),
             decoration: BoxDecoration(
-              border: Border.all(color: borderColor),
-              borderRadius: BorderRadius.circular(12),
               color: cardColor,
+              borderRadius: BorderRadius.circular(18),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withValues(alpha: isDark ? 0.25 : 0.04),
+                  blurRadius: 12,
+                  offset: const Offset(0, 4),
+                ),
+              ],
             ),
             child: Text(
               patient.medicalHistory.isEmpty
                   ? 'No medical history recorded'
                   : patient.medicalHistory,
               style: TextStyle(
+                fontSize: 14,
+                height: 1.5,
                 color: patient.medicalHistory.isEmpty
                     ? (isDark ? AppColors.darkTextSecondary : AppColors.textSecondary)
                     : textColor,
@@ -322,14 +452,38 @@ class _PatientOverviewTabState extends ConsumerState<PatientOverviewTab> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(
-          'Clinical Features',
-          style: Theme.of(context).textTheme.titleMedium?.copyWith(
-            fontWeight: FontWeight.bold,
-            color: textColor,
-          ),
+        Row(
+          children: [
+            Container(
+              padding: const EdgeInsets.all(10),
+              decoration: BoxDecoration(
+                gradient: const LinearGradient(
+                  colors: [Color(0xFF8B5CF6), Color(0xFF7C3AED)],
+                ),
+                borderRadius: BorderRadius.circular(12),
+                boxShadow: [
+                  BoxShadow(
+                    color: const Color(0xFF8B5CF6).withValues(alpha: 0.4),
+                    blurRadius: 8,
+                    offset: const Offset(0, 3),
+                  ),
+                ],
+              ),
+              child: const Icon(Icons.medical_services_rounded, color: Colors.white, size: 18),
+            ),
+            const SizedBox(width: 12),
+            Text(
+              'Clinical Features',
+              style: TextStyle(
+                fontSize: 17,
+                fontWeight: FontWeight.w700,
+                color: textColor,
+                letterSpacing: -0.3,
+              ),
+            ),
+          ],
         ),
-        const SizedBox(height: 8),
+        const SizedBox(height: 14),
         Row(
           children: [
             Expanded(
@@ -410,20 +564,44 @@ class _PatientOverviewTabState extends ConsumerState<PatientOverviewTab> {
           ],
         ),
         const SizedBox(height: 12),
-        QuickActionCard(
-          icon: Icons.trending_up_rounded,
-          title: 'Treatment Progress',
-          subtitle: 'View sessions, medications & goals',
-          color: const Color(0xFF8B5CF6),
-          onTap: () => Navigator.push(
-            context,
-            MaterialPageRoute(
-              builder: (context) => TreatmentProgressScreen(
-                patientId: patient.id,
-                patientName: patientName,
+        Row(
+          children: [
+            Expanded(
+              child: QuickActionCard(
+                icon: Icons.medical_information_rounded,
+                title: 'Diagnoses',
+                subtitle: 'View all diagnoses',
+                color: Colors.indigo,
+                onTap: () => Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => DiagnosesScreen(
+                      patientId: patient.id,
+                      patientName: patientName,
+                    ),
+                  ),
+                ),
               ),
             ),
-          ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: QuickActionCard(
+                icon: Icons.trending_up_rounded,
+                title: 'Treatment Progress',
+                subtitle: 'Sessions & goals',
+                color: const Color(0xFF8B5CF6),
+                onTap: () => Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => TreatmentProgressScreen(
+                      patientId: patient.id,
+                      patientName: patientName,
+                    ),
+                  ),
+                ),
+              ),
+            ),
+          ],
         ),
       ],
     );

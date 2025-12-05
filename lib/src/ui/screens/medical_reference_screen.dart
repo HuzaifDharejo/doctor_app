@@ -200,6 +200,7 @@ class _MedicalReferenceScreenState
 
   Widget _buildDrugsTab() {
     return SingleChildScrollView(
+      primary: false,
       padding: const EdgeInsets.all(AppSpacing.lg),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -440,6 +441,7 @@ class _MedicalReferenceScreenState
 
   Widget _buildInteractionsTab() {
     return SingleChildScrollView(
+      primary: false,
       padding: const EdgeInsets.all(AppSpacing.lg),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -555,6 +557,7 @@ class _MedicalReferenceScreenState
 
   Widget _buildWarningsTab() {
     return SingleChildScrollView(
+      primary: false,
       padding: const EdgeInsets.all(AppSpacing.lg),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,

@@ -56,6 +56,9 @@ class DatabaseSeedingService {
 
     // Seed invoices
     await _seedInvoices(patientIds, appointmentIds);
+
+    // Seed encounters, diagnoses, and clinical notes
+    await _seedEncounters(patientIds, appointmentIds);
   }
 
   /// Seed patient records with varied psychiatric conditions
@@ -724,6 +727,302 @@ class DatabaseSeedingService {
 
     for (final invoice in invoices) {
       await db.into(db.invoices).insert(invoice);
+    }
+  }
+
+  /// Seed encounters with related diagnoses and clinical notes
+  Future<void> _seedEncounters(List<int> patientIds, List<int> appointmentIds) async {
+    final now = DateTime.now();
+
+    // Create encounter data with diagnoses and clinical notes
+    final encounterData = [
+      // Patient 1 (Ahmed Khan) - Depression and Anxiety
+      {
+        'encounter': EncountersCompanion(
+          patientId: drift.Value(patientIds[0]),
+          appointmentId: drift.Value(appointmentIds[0]),
+          encounterDate: drift.Value(now.subtract(const Duration(days: 14))),
+          encounterType: const drift.Value('outpatient'),
+          status: const drift.Value('completed'),
+          chiefComplaint: const drift.Value('Persistent sadness and difficulty sleeping for 3 weeks'),
+          providerName: const drift.Value('Dr. Aisha Rahman'),
+          providerType: const drift.Value('psychiatrist'),
+          checkInTime: drift.Value(now.subtract(const Duration(days: 14, hours: 2))),
+          checkOutTime: drift.Value(now.subtract(const Duration(days: 14, hours: 1))),
+        ),
+        'diagnoses': [
+          {
+            'icdCode': 'F32.1',
+            'description': 'Major depressive disorder, single episode, moderate',
+            'category': 'psychiatric',
+            'severity': 'moderate',
+            'isPrimary': true,
+          },
+          {
+            'icdCode': 'F41.1',
+            'description': 'Generalized anxiety disorder',
+            'category': 'psychiatric',
+            'severity': 'mild',
+            'isPrimary': false,
+          },
+        ],
+        'note': {
+          'noteType': 'progress',
+          'subjective': 'Patient reports persistent low mood, anhedonia, and difficulty sleeping for the past 3 weeks. '
+              'Denies suicidal ideation. Reports increased work stress. Appetite decreased.',
+          'objective': 'Appearance: Well-groomed. Behavior: Cooperative, good eye contact. '
+              'Speech: Normal rate and volume. Mood: "Down". Affect: Constricted. '
+              'Thought process: Linear and goal-directed. No delusions or hallucinations. '
+              'Cognition: Alert and oriented x3. Insight and judgment: Fair.',
+          'assessment': 'Major depressive disorder, single episode, moderate severity. '
+              'Patient is exhibiting classic symptoms of depression with associated anxiety features. '
+              'No immediate safety concerns.',
+          'plan': '1. Start Sertraline 50mg daily\n'
+              '2. Sleep hygiene counseling provided\n'
+              '3. Recommend psychotherapy (CBT)\n'
+              '4. Follow-up in 2 weeks to assess medication response\n'
+              '5. Return sooner if symptoms worsen or suicidal thoughts develop',
+          'riskLevel': 'low',
+        },
+      },
+
+      // Patient 2 (Fatima Ali) - Bipolar follow-up
+      {
+        'encounter': EncountersCompanion(
+          patientId: drift.Value(patientIds[1]),
+          appointmentId: drift.Value(appointmentIds[1]),
+          encounterDate: drift.Value(now.subtract(const Duration(days: 7))),
+          encounterType: const drift.Value('follow_up'),
+          status: const drift.Value('completed'),
+          chiefComplaint: const drift.Value('Medication review and mood check'),
+          providerName: const drift.Value('Dr. Aisha Rahman'),
+          providerType: const drift.Value('psychiatrist'),
+          checkInTime: drift.Value(now.subtract(const Duration(days: 7, hours: 3))),
+          checkOutTime: drift.Value(now.subtract(const Duration(days: 7, hours: 2))),
+        ),
+        'diagnoses': [
+          {
+            'icdCode': 'F31.31',
+            'description': 'Bipolar disorder, current episode depressed, mild',
+            'category': 'psychiatric',
+            'severity': 'mild',
+            'isPrimary': true,
+          },
+        ],
+        'note': {
+          'noteType': 'medication_review',
+          'subjective': 'Patient reports stable mood on current medication regimen. '
+              'Sleeping well, 7-8 hours nightly. Energy levels improved. '
+              'Denies any manic or hypomanic symptoms. No side effects reported.',
+          'objective': 'Appearance: Appropriate dress. Behavior: Pleasant and engaged. '
+              'Mood: "Good, better". Affect: Euthymic, appropriate range. '
+              'Speech: Normal. Thought process: Coherent. No psychotic features.',
+          'assessment': 'Bipolar disorder, currently stable on Lithium 900mg and Lamotrigine 200mg. '
+              'Patient demonstrates good medication compliance and insight.',
+          'plan': '1. Continue Lithium 900mg daily\n'
+              '2. Continue Lamotrigine 200mg daily\n'
+              '3. Lithium level to be checked in 1 month\n'
+              '4. Continue mood tracking\n'
+              '5. Follow-up in 4 weeks',
+          'riskLevel': 'none',
+        },
+      },
+
+      // Patient 3 (Muhammad Hassan) - PTSD
+      {
+        'encounter': EncountersCompanion(
+          patientId: drift.Value(patientIds[2]),
+          appointmentId: drift.Value(appointmentIds[2]),
+          encounterDate: drift.Value(now.subtract(const Duration(days: 5))),
+          encounterType: const drift.Value('outpatient'),
+          status: const drift.Value('completed'),
+          chiefComplaint: const drift.Value('Nightmares and flashbacks worsening'),
+          providerName: const drift.Value('Dr. Aisha Rahman'),
+          providerType: const drift.Value('psychiatrist'),
+          checkInTime: drift.Value(now.subtract(const Duration(days: 5, hours: 4))),
+          checkOutTime: drift.Value(now.subtract(const Duration(days: 5, hours: 3))),
+        ),
+        'diagnoses': [
+          {
+            'icdCode': 'F43.10',
+            'description': 'Post-traumatic stress disorder, unspecified',
+            'category': 'psychiatric',
+            'severity': 'moderate',
+            'isPrimary': true,
+          },
+          {
+            'icdCode': 'G47.00',
+            'description': 'Insomnia, unspecified',
+            'category': 'neurological',
+            'severity': 'moderate',
+            'isPrimary': false,
+          },
+        ],
+        'note': {
+          'noteType': 'progress',
+          'subjective': 'Patient reports increased frequency of nightmares over past 2 weeks, '
+              'now occurring 4-5 times weekly (previously 1-2 times). Flashbacks triggered by loud noises. '
+              'Hypervigilant in crowded places. Sleep averaging 4 hours nightly.',
+          'objective': 'Appearance: Tired-appearing, but groomed. Behavior: Restless, scanning room. '
+              'Mood: "On edge". Affect: Anxious, hypervigilant. '
+              'Speech: Slightly pressured. No psychotic features. Insight: Good.',
+          'assessment': 'PTSD with exacerbation of symptoms, likely triggered by anniversary of trauma. '
+              'Associated significant sleep disruption. No active suicidal ideation.',
+          'plan': '1. Increase Prazosin from 2mg to 4mg at bedtime for nightmares\n'
+              '2. Continue Sertraline 100mg\n'
+              '3. Refer to trauma-focused CBT therapist\n'
+              '4. Grounding techniques reviewed\n'
+              '5. Follow-up in 1 week to assess response',
+          'riskLevel': 'moderate',
+        },
+      },
+
+      // Patient 4 (Zainab Malik) - OCD
+      {
+        'encounter': EncountersCompanion(
+          patientId: drift.Value(patientIds[3]),
+          appointmentId: drift.Value(appointmentIds[3]),
+          encounterDate: drift.Value(now.subtract(const Duration(days: 3))),
+          encounterType: const drift.Value('follow_up'),
+          status: const drift.Value('completed'),
+          chiefComplaint: const drift.Value('Follow-up on OCD treatment progress'),
+          providerName: const drift.Value('Dr. Aisha Rahman'),
+          providerType: const drift.Value('psychiatrist'),
+          checkInTime: drift.Value(now.subtract(const Duration(days: 3, hours: 2))),
+          checkOutTime: drift.Value(now.subtract(const Duration(days: 3, hours: 1))),
+        ),
+        'diagnoses': [
+          {
+            'icdCode': 'F42.2',
+            'description': 'Obsessive-compulsive disorder, mixed obsessional thoughts and acts',
+            'category': 'psychiatric',
+            'severity': 'mild',
+            'isPrimary': true,
+          },
+        ],
+        'note': {
+          'noteType': 'progress',
+          'subjective': 'Patient reports improvement in hand-washing compulsions. '
+              'Now washing 8-10 times daily (previously 25-30 times). '
+              'Contamination fears still present but more manageable. ERP therapy going well.',
+          'objective': 'Appearance: Well-groomed, no visible skin irritation on hands. '
+              'Behavior: Calm, less distressed when discussing contamination. '
+              'Mood: "Better". Affect: Brighter than previous visits.',
+          'assessment': 'OCD responding well to combined SSRI and ERP therapy. '
+              'Y-BOCS score decreased from 28 to 18.',
+          'plan': '1. Continue Fluvoxamine 200mg daily\n'
+              '2. Continue weekly ERP sessions\n'
+              '3. Encourage continued exposure homework\n'
+              '4. Follow-up in 4 weeks',
+          'riskLevel': 'none',
+        },
+      },
+
+      // Patient 5 (Imran Shah) - Initial Assessment
+      {
+        'encounter': EncountersCompanion(
+          patientId: drift.Value(patientIds[4]),
+          appointmentId: drift.Value(appointmentIds[4]),
+          encounterDate: drift.Value(now.subtract(const Duration(days: 1))),
+          encounterType: const drift.Value('outpatient'),
+          status: const drift.Value('completed'),
+          chiefComplaint: const drift.Value('New patient: panic attacks and social anxiety'),
+          providerName: const drift.Value('Dr. Aisha Rahman'),
+          providerType: const drift.Value('psychiatrist'),
+          checkInTime: drift.Value(now.subtract(const Duration(days: 1, hours: 3))),
+          checkOutTime: drift.Value(now.subtract(const Duration(days: 1, hours: 1))),
+        ),
+        'diagnoses': [
+          {
+            'icdCode': 'F41.0',
+            'description': 'Panic disorder without agoraphobia',
+            'category': 'psychiatric',
+            'severity': 'moderate',
+            'isPrimary': true,
+          },
+          {
+            'icdCode': 'F40.10',
+            'description': 'Social anxiety disorder, unspecified',
+            'category': 'psychiatric',
+            'severity': 'moderate',
+            'isPrimary': false,
+          },
+        ],
+        'note': {
+          'noteType': 'initial_assessment',
+          'subjective': 'New patient presenting with panic attacks occurring 2-3 times weekly for past 6 months. '
+              'Describes sudden onset of palpitations, chest tightness, dizziness, and fear of dying. '
+              'Episodes last 10-15 minutes. Also reports significant anxiety in social situations, '
+              'avoiding meetings and public speaking.',
+          'objective': 'Appearance: Anxious-appearing. Behavior: Fidgeting, good eye contact when comfortable. '
+              'Mood: "Anxious". Affect: Apprehensive. Speech: Slightly rapid. '
+              'No psychotic features. Cardiac exam unremarkable. PHQ-9: 12. GAD-7: 16.',
+          'assessment': 'Panic disorder with comorbid social anxiety disorder. '
+              'No evidence of underlying cardiac pathology based on history. '
+              'Symptoms significantly impacting work performance.',
+          'plan': '1. Start Escitalopram 5mg daily, increase to 10mg after 1 week\n'
+              '2. Educate on panic disorder and nature of panic attacks\n'
+              '3. Teach breathing exercises for acute panic\n'
+              '4. Consider beta-blocker PRN for performance anxiety\n'
+              '5. Refer for CBT\n'
+              '6. Follow-up in 2 weeks',
+          'riskLevel': 'low',
+        },
+      },
+    ];
+
+    // Insert encounters with their diagnoses and notes
+    for (final data in encounterData) {
+      // Insert encounter
+      final encounterId = await db.into(db.encounters).insert(
+        data['encounter'] as EncountersCompanion,
+      );
+
+      // Insert diagnoses and link to encounter
+      final diagnosisList = data['diagnoses'] as List<Map<String, dynamic>>;
+      for (final diagData in diagnosisList) {
+        final diagnosisId = await db.into(db.diagnoses).insert(
+          DiagnosesCompanion(
+            patientId: (data['encounter'] as EncountersCompanion).patientId,
+            encounterId: drift.Value(encounterId),
+            icdCode: drift.Value(diagData['icdCode'] as String),
+            description: drift.Value(diagData['description'] as String),
+            category: drift.Value(diagData['category'] as String),
+            severity: drift.Value(diagData['severity'] as String),
+            diagnosisStatus: const drift.Value('active'),
+            diagnosedDate: (data['encounter'] as EncountersCompanion).encounterDate,
+            isPrimary: drift.Value(diagData['isPrimary'] as bool),
+          ),
+        );
+
+        // Link diagnosis to encounter
+        await db.into(db.encounterDiagnoses).insert(
+          EncounterDiagnosesCompanion(
+            encounterId: drift.Value(encounterId),
+            diagnosisId: drift.Value(diagnosisId),
+            isNewDiagnosis: const drift.Value(true),
+            encounterStatus: const drift.Value('addressed'),
+          ),
+        );
+      }
+
+      // Insert clinical note
+      final noteData = data['note'] as Map<String, dynamic>;
+      await db.into(db.clinicalNotes).insert(
+        ClinicalNotesCompanion(
+          encounterId: drift.Value(encounterId),
+          patientId: (data['encounter'] as EncountersCompanion).patientId,
+          noteType: drift.Value(noteData['noteType'] as String),
+          subjective: drift.Value(noteData['subjective'] as String),
+          objective: drift.Value(noteData['objective'] as String),
+          assessment: drift.Value(noteData['assessment'] as String),
+          plan: drift.Value(noteData['plan'] as String),
+          riskLevel: drift.Value(noteData['riskLevel'] as String),
+          signedBy: const drift.Value('Dr. Aisha Rahman'),
+          signedAt: (data['encounter'] as EncountersCompanion).checkOutTime,
+          isLocked: const drift.Value(true),
+        ),
+      );
     }
   }
 }

@@ -4,21 +4,16 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 import '../../core/theme/design_tokens.dart';
-import '../../core/extensions/context_extensions.dart';
-import '../../core/widgets/app_header.dart';
 import '../../core/widgets/app_card.dart';
-import '../../core/widgets/shimmer_loading.dart';
-import '../../core/widgets/error_display.dart';
 import '../../core/widgets/loading_state.dart';
 import '../../core/widgets/error_state.dart';
-import '../../core/widgets/empty_state.dart';
-import '../../core/constants/app_strings.dart';
 import '../../core/components/app_button.dart';
 import '../../db/doctor_db.dart';
 import '../../providers/db_provider.dart';
 import '../../services/pdf_service.dart';
 import '../../services/whatsapp_service.dart';
 import '../../theme/app_theme.dart';
+import 'edit_prescription_screen.dart';
 
 class PrescriptionsScreen extends ConsumerWidget {
   const PrescriptionsScreen({super.key});
@@ -934,9 +929,31 @@ class PrescriptionsScreen extends ConsumerWidget {
                       ),
                     ],
                     const SizedBox(height: 16),
-                    // Action buttons
+                    // Action buttons - Row 1
                     Row(
                       children: [
+                        Expanded(
+                          child: AppButton.tertiary(
+                            label: 'Edit',
+                            icon: Icons.edit,
+                            onPressed: () async {
+                              Navigator.pop(context);
+                              final result = await Navigator.push<bool>(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (context) => EditPrescriptionScreen(
+                                    prescription: prescription,
+                                    patient: patient,
+                                  ),
+                                ),
+                              );
+                              if (result == true) {
+                                ref.invalidate(doctorDbProvider);
+                              }
+                            },
+                          ),
+                        ),
+                        const SizedBox(width: 8),
                         Expanded(
                           child: AppButton.tertiary(
                             label: 'Refill',
@@ -947,7 +964,12 @@ class PrescriptionsScreen extends ConsumerWidget {
                             },
                           ),
                         ),
-                        const SizedBox(width: 8),
+                      ],
+                    ),
+                    const SizedBox(height: 8),
+                    // Action buttons - Row 2
+                    Row(
+                      children: [
                         Expanded(
                           child: AppButton(
                             label: 'WhatsApp',
@@ -1003,6 +1025,17 @@ class PrescriptionsScreen extends ConsumerWidget {
                         ),
                       ],
                     ),
+                    const SizedBox(height: 8),
+                    // Delete button
+                    AppButton.danger(
+                      label: 'Delete Prescription',
+                      icon: Icons.delete_outline,
+                      fullWidth: true,
+                      onPressed: () {
+                        Navigator.pop(context);
+                        _showDeleteConfirmation(context, ref, prescription);
+                      },
+                    ),
                     const SizedBox(height: 24),
                   ],
                   ),
@@ -1011,6 +1044,59 @@ class PrescriptionsScreen extends ConsumerWidget {
             ],
           ),
         ),
+      ),
+    );
+  }
+
+  void _showDeleteConfirmation(BuildContext context, WidgetRef ref, Prescription prescription) {
+    showDialog<void>(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        title: const Row(
+          children: [
+            Icon(Icons.warning_amber_rounded, color: AppColors.error),
+            SizedBox(width: 12),
+            Text('Delete Prescription'),
+          ],
+        ),
+        content: const Text('Are you sure you want to delete this prescription? This action cannot be undone.'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(dialogContext),
+            child: const Text('Cancel'),
+          ),
+          TextButton(
+            onPressed: () async {
+              Navigator.pop(dialogContext);
+              try {
+                final db = await ref.read(doctorDbProvider.future);
+                await db.deletePrescription(prescription.id);
+                ref.invalidate(doctorDbProvider);
+                if (context.mounted) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(
+                      content: Text('Prescription deleted successfully'),
+                      backgroundColor: AppColors.success,
+                      behavior: SnackBarBehavior.floating,
+                    ),
+                  );
+                }
+              } catch (e) {
+                if (context.mounted) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                      content: Text('Failed to delete prescription: $e'),
+                      backgroundColor: AppColors.error,
+                      behavior: SnackBarBehavior.floating,
+                    ),
+                  );
+                }
+              }
+            },
+            style: TextButton.styleFrom(foregroundColor: AppColors.error),
+            child: const Text('Delete'),
+          ),
+        ],
       ),
     );
   }

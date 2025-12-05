@@ -30,8 +30,6 @@ class _ExportFormatSelectorState extends State<ExportFormatSelector> {
 
   @override
   Widget build(BuildContext context) {
-    final isDarkMode = Theme.of(context).brightness == Brightness.dark;
-
     return Card(
       elevation: 2,
       child: Padding(
@@ -148,8 +146,6 @@ class _ReportTypeSelectorState extends State<ReportTypeSelector> {
   }
 
   Widget _buildReportOption(String label, String value, IconData icon) {
-    final isSelected = _selectedReportType == value;
-
     return RadioListTile<String>(
       title: Row(
         children: [
@@ -438,8 +434,6 @@ class ExportSummary extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final isDarkMode = Theme.of(context).brightness == Brightness.dark;
-
     return Card(
       elevation: 2,
       color: Theme.of(context).primaryColor.withValues(alpha: 0.1),

@@ -18,7 +18,7 @@ class QuickVitalEntryModal {
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
       ),
-      builder: (context) => DraggableScrollableSheet(
+      builder: (bottomSheetContext) => DraggableScrollableSheet(
         expand: false,
         initialChildSize: 0.85,
         minChildSize: 0.5,
@@ -26,7 +26,7 @@ class QuickVitalEntryModal {
         builder: (context, scrollController) => QuickVitalEntryForm(
           patientId: patientId,
           patientName: patientName,
-          onSaved: onSaved,
+          onSaved: onSaved, // Don't auto-close - let user close when done
         ),
       ),
     );
@@ -53,10 +53,7 @@ class QuickVitalEntryModal {
           body: QuickVitalEntryForm(
             patientId: patientId,
             patientName: patientName,
-            onSaved: () {
-              onSaved?.call();
-              Navigator.pop(context);
-            },
+            onSaved: onSaved, // Don't auto-close - let user close when done
           ),
         ),
       ),
@@ -94,10 +91,7 @@ class QuickVitalEntryModal {
             body: QuickVitalEntryForm(
               patientId: patientId,
               patientName: patientName,
-              onSaved: () {
-                onSaved?.call();
-                Navigator.pop(context);
-              },
+              onSaved: onSaved, // Don't auto-close - let user close when done
             ),
           ),
         ),

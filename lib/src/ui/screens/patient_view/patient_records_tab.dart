@@ -47,6 +47,7 @@ class PatientRecordsTab extends ConsumerWidget {
           records.sort((a, b) => b.recordDate.compareTo(a.recordDate));
 
           return ListView.builder(
+            primary: false,
             padding: const EdgeInsets.all(AppSpacing.lg),
             itemCount: records.length,
             itemBuilder: (context, index) => _MedicalRecordCard(

@@ -168,7 +168,6 @@ class _AllergyManagementScreenState extends ConsumerState<AllergyManagementScree
   }
 
   Widget _buildHighRiskTab() {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
     return FutureBuilder<DoctorDatabase>(
       future: ref.watch(doctorDbProvider.future),
       builder: (context, dbSnapshot) {
@@ -211,6 +210,7 @@ class _AllergyManagementScreenState extends ConsumerState<AllergyManagementScree
             final patients = snapshot.data!;
 
             return ListView.builder(
+              primary: false,
               padding: const EdgeInsets.all(AppSpacing.lg),
               itemCount: patients.length,
               itemBuilder: (context, index) {
@@ -307,6 +307,7 @@ class _AllergyManagementScreenState extends ConsumerState<AllergyManagementScree
                   }
 
                   return ListView.builder(
+                    primary: false,
                     padding: const EdgeInsets.all(AppSpacing.lg),
                     itemCount: patients.length,
                     itemBuilder: (context, index) {
@@ -345,6 +346,7 @@ class _AllergyManagementScreenState extends ConsumerState<AllergyManagementScree
             final isDark = Theme.of(context).brightness == Brightness.dark;
 
             return ListView(
+              primary: false,
               padding: const EdgeInsets.all(AppSpacing.lg),
               children: [
                 // Statistics cards

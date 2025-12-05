@@ -7,8 +7,6 @@ import '../../core/widgets/app_card.dart';
 import '../../core/components/app_button.dart';
 import '../../core/widgets/loading_state.dart';
 import '../../core/widgets/error_state.dart';
-import '../../core/widgets/app_header.dart';
-import '../../core/constants/app_strings.dart';
 import '../../db/doctor_db.dart';
 import '../../providers/db_provider.dart';
 import '../../services/pdf_service.dart';

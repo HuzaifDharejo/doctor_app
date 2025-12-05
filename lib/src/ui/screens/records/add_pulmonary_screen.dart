@@ -10,6 +10,7 @@ import '../../../theme/app_theme.dart';
 import '../../../core/theme/design_tokens.dart';
 import '../../widgets/suggestion_text_field.dart';
 import 'record_form_widgets.dart';
+import 'components/record_components.dart';
 
 /// Screen for adding a Pulmonary Evaluation medical record
 class AddPulmonaryScreen extends ConsumerStatefulWidget {
@@ -232,6 +233,8 @@ class _AddPulmonaryScreenState extends ConsumerState<AddPulmonaryScreen> {
         recordDate: _recordDate,
       );
 
+      MedicalRecord? resultRecord;
+      
       if (widget.existingRecord != null) {
         final updatedRecord = MedicalRecord(
           id: widget.existingRecord!.id,
@@ -249,8 +252,10 @@ class _AddPulmonaryScreenState extends ConsumerState<AddPulmonaryScreen> {
           createdAt: widget.existingRecord!.createdAt,
         );
         await db.updateMedicalRecord(updatedRecord);
+        resultRecord = updatedRecord;
       } else {
-        await db.insertMedicalRecord(companion);
+        final recordId = await db.insertMedicalRecord(companion);
+        resultRecord = await db.getMedicalRecordById(recordId);
       }
 
       if (mounted) {
@@ -260,7 +265,7 @@ class _AddPulmonaryScreenState extends ConsumerState<AddPulmonaryScreen> {
               ? 'Pulmonary evaluation updated successfully!' 
               : 'Pulmonary evaluation saved successfully!',
         );
-        Navigator.pop(context, true);
+        Navigator.pop(context, resultRecord);
       }
     } catch (e) {
       if (mounted) {
@@ -275,39 +280,17 @@ class _AddPulmonaryScreenState extends ConsumerState<AddPulmonaryScreen> {
   Widget build(BuildContext context) {
     final dbAsync = ref.watch(doctorDbProvider);
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    final screenWidth = MediaQuery.of(context).size.width;
-    final isCompact = screenWidth < 400;
-    final padding = isCompact ? 12.0 : 20.0;
 
-    return Scaffold(
-      backgroundColor: isDark ? AppColors.darkBackground : AppColors.background,
+    return RecordFormScaffold(
+      title: widget.existingRecord != null 
+          ? 'Edit Pulmonary Evaluation' 
+          : 'Pulmonary Evaluation',
+      subtitle: DateFormat('EEEE, dd MMMM yyyy').format(_recordDate),
+      icon: Icons.air_rounded,
+      gradientColors: [const Color(0xFF06B6D4), const Color(0xFF0891B2)], // Info Cyan
+      scrollController: _scrollController,
       body: dbAsync.when(
-        data: (db) => CustomScrollView(
-          controller: _scrollController,
-          slivers: [
-            // Gradient Header
-            SliverToBoxAdapter(
-              child: RecordFormWidgets.buildGradientHeader(
-                context: context,
-                title: widget.existingRecord != null 
-                    ? 'Edit Pulmonary Evaluation' 
-                    : 'Pulmonary Evaluation',
-                subtitle: DateFormat('EEEE, dd MMMM yyyy').format(_recordDate),
-                icon: Icons.air_rounded,
-                gradientColors: [const Color(0xFF06B6D4), const Color(0xFF0891B2)], // Info Cyan
-              ),
-            ),
-            // Body Content
-            SliverPadding(
-              padding: EdgeInsets.all(padding),
-              sliver: SliverList(
-                delegate: SliverChildListDelegate([
-                  _buildFormContent(context, db, isDark),
-                ]),
-              ),
-            ),
-          ],
-        ),
+        data: (db) => _buildFormContent(context, db, isDark),
         loading: () => const Center(
           child: CircularProgressIndicator(color: AppColors.primary),
         ),
@@ -533,463 +516,408 @@ class _AddPulmonaryScreenState extends ConsumerState<AddPulmonaryScreen> {
         children: [
           // Quick Fill Templates
           _buildQuickFillSection(context, isDark),
-          const SizedBox(height: 20),
+          const SizedBox(height: AppSpacing.lg),
 
           // Patient Selection
-          RecordFormWidgets.buildSectionHeader(
-            context, 'Patient', Icons.person_outline,
-          ),
-          const SizedBox(height: 12),
-          RecordFormWidgets.buildPatientSelector(
-            context: context,
+          PatientSelectorCard(
             db: db,
             selectedPatientId: _selectedPatientId,
             onChanged: (id) => setState(() => _selectedPatientId = id),
           ),
-          const SizedBox(height: 20),
+          const SizedBox(height: AppSpacing.lg),
 
           // Date Selection
-          RecordFormWidgets.buildSectionHeader(
-            context, 'Evaluation Date', Icons.calendar_today,
-          ),
-          const SizedBox(height: 12),
-          RecordFormWidgets.buildDateSelector(
-            context: context,
+          DatePickerCard(
+            label: 'Evaluation Date',
             selectedDate: _recordDate,
             onDateSelected: (date) => setState(() => _recordDate = date),
           ),
-          const SizedBox(height: 20),
+          const SizedBox(height: AppSpacing.lg),
 
           // Title
-          RecordFormWidgets.buildSectionHeader(context, 'Title', Icons.title),
-          const SizedBox(height: 12),
-          RecordFormWidgets.buildTextField(
-            context: context,
-            controller: _titleController,
-            hint: 'Enter record title (optional)...',
+          RecordFormSection(
+            title: 'Title',
+            icon: Icons.title,
+            child: RecordTextField(
+              controller: _titleController,
+              hint: 'Enter record title (optional)...',
+            ),
           ),
-          const SizedBox(height: 20),
+          const SizedBox(height: AppSpacing.lg),
 
           // Chief Complaint
-          RecordFormWidgets.buildSectionHeader(
-            context, 'Presenting Complaint', Icons.air,
-          ),
-          const SizedBox(height: 12),
-          SuggestionTextField(
-            controller: _chiefComplaintController,
-            label: 'Chief Complaint',
-            hint: 'Describe the main respiratory complaint...',
-            prefixIcon: Icons.air,
-            maxLines: 3,
-            suggestions: PulmonarySuggestions.chiefComplaints,
-          ),
-          const SizedBox(height: 12),
-          Row(
-            children: [
-              Expanded(
-                child: SuggestionTextField(
-                  controller: _durationController,
-                  label: 'Duration',
-                  hint: 'How long?',
-                  prefixIcon: Icons.schedule,
-                  suggestions: PulmonarySuggestions.durations,
+          RecordFormSection(
+            title: 'Presenting Complaint',
+            icon: Icons.air,
+            child: Column(
+              children: [
+                SuggestionTextField(
+                  controller: _chiefComplaintController,
+                  label: 'Chief Complaint',
+                  hint: 'Describe the main respiratory complaint...',
+                  prefixIcon: Icons.air,
+                  maxLines: 3,
+                  suggestions: PulmonarySuggestions.chiefComplaints,
                 ),
-              ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: SuggestionTextField(
-                  controller: _symptomCharacterController,
-                  label: 'Character',
-                  hint: 'Type of symptom',
-                  prefixIcon: Icons.description_outlined,
-                  suggestions: PulmonarySuggestions.symptomCharacters,
+                const SizedBox(height: AppSpacing.md),
+                Row(
+                  children: [
+                    Expanded(
+                      child: SuggestionTextField(
+                        controller: _durationController,
+                        label: 'Duration',
+                        hint: 'How long?',
+                        prefixIcon: Icons.schedule,
+                        suggestions: PulmonarySuggestions.durations,
+                      ),
+                    ),
+                    const SizedBox(width: AppSpacing.md),
+                    Expanded(
+                      child: SuggestionTextField(
+                        controller: _symptomCharacterController,
+                        label: 'Character',
+                        hint: 'Type of symptom',
+                        prefixIcon: Icons.description_outlined,
+                        suggestions: PulmonarySuggestions.symptomCharacters,
+                      ),
+                    ),
+                  ],
                 ),
-              ),
-            ],
+              ],
+            ),
           ),
-          const SizedBox(height: 20),
+          const SizedBox(height: AppSpacing.lg),
 
           // Systemic Symptoms
-          RecordFormWidgets.buildSectionHeader(
-            context, 'Systemic Symptoms', Icons.thermostat_outlined,
-          ),
-          const SizedBox(height: 12),
-          RecordFormWidgets.buildChipSelector(
-            context: context,
+          ChipSelectorSection(
+            title: 'Systemic Symptoms',
+            icon: Icons.thermostat_outlined,
             options: PulmonarySuggestions.systemicSymptoms,
             selectedOptions: _selectedSystemicSymptoms,
             onChanged: (list) => setState(() => _selectedSystemicSymptoms = list),
-            color: AppColors.warning,
+            chipColor: AppColors.warning,
           ),
-          const SizedBox(height: 20),
+          const SizedBox(height: AppSpacing.lg),
 
           // Red Flags
-          RecordFormWidgets.buildSectionHeader(
-            context, 'Red Flags', Icons.warning_amber_rounded,
-          ),
-          const SizedBox(height: 12),
-          RecordFormWidgets.buildChipSelector(
-            context: context,
+          ChipSelectorSection(
+            title: 'Red Flags',
+            icon: Icons.warning_amber_rounded,
             options: PulmonarySuggestions.redFlags,
             selectedOptions: _selectedRedFlags,
             onChanged: (list) => setState(() => _selectedRedFlags = list),
-            color: AppColors.error,
+            chipColor: AppColors.error,
           ),
-          const SizedBox(height: 20),
+          const SizedBox(height: AppSpacing.lg),
 
           // Clinical History
-          RecordFormWidgets.buildSectionCard(
-            context: context,
+          RecordFormSection(
             title: 'Clinical History',
             icon: Icons.history,
             accentColor: const Color(0xFF3B82F6),
-            children: [
-              SuggestionTextField(
-                controller: _pastPulmonaryHistoryController,
-                label: 'Past Pulmonary History',
-                hint: 'Previous respiratory conditions...',
-                prefixIcon: Icons.history,
-                maxLines: 2,
-                suggestions: PulmonarySuggestions.pastPulmonaryHistory,
-              ),
-              const SizedBox(height: 12),
-              SuggestionTextField(
-                controller: _exposureHistoryController,
-                label: 'Exposure History',
-                hint: 'Smoking, occupational, environmental...',
-                prefixIcon: Icons.smoke_free,
-                maxLines: 2,
-                suggestions: PulmonarySuggestions.exposureHistory,
-              ),
-              const SizedBox(height: 12),
-              SuggestionTextField(
-                controller: _allergyHistoryController,
-                label: 'Allergy/Atopy History',
-                hint: 'Allergies, eczema, rhinitis...',
-                prefixIcon: Icons.spa_outlined,
-                maxLines: 2,
-                suggestions: PulmonarySuggestions.allergyHistory,
-              ),
-              const SizedBox(height: 12),
-              RecordFormWidgets.buildTextField(
-                context: context,
-                controller: _currentMedicationsController,
-                hint: 'Current medications (comma-separated)...',
-                maxLines: 2,
-              ),
-            ],
+            child: Column(
+              children: [
+                SuggestionTextField(
+                  controller: _pastPulmonaryHistoryController,
+                  label: 'Past Pulmonary History',
+                  hint: 'Previous respiratory conditions...',
+                  prefixIcon: Icons.history,
+                  maxLines: 2,
+                  suggestions: PulmonarySuggestions.pastPulmonaryHistory,
+                ),
+                const SizedBox(height: AppSpacing.md),
+                SuggestionTextField(
+                  controller: _exposureHistoryController,
+                  label: 'Exposure History',
+                  hint: 'Smoking, occupational, environmental...',
+                  prefixIcon: Icons.smoke_free,
+                  maxLines: 2,
+                  suggestions: PulmonarySuggestions.exposureHistory,
+                ),
+                const SizedBox(height: AppSpacing.md),
+                SuggestionTextField(
+                  controller: _allergyHistoryController,
+                  label: 'Allergy/Atopy History',
+                  hint: 'Allergies, eczema, rhinitis...',
+                  prefixIcon: Icons.spa_outlined,
+                  maxLines: 2,
+                  suggestions: PulmonarySuggestions.allergyHistory,
+                ),
+                const SizedBox(height: AppSpacing.md),
+                RecordTextField(
+                  controller: _currentMedicationsController,
+                  hint: 'Current medications (comma-separated)...',
+                  maxLines: 2,
+                ),
+              ],
+            ),
           ),
-          const SizedBox(height: 20),
+          const SizedBox(height: AppSpacing.lg),
 
           // Comorbidities
-          RecordFormWidgets.buildSectionHeader(
-            context, 'Comorbidities', Icons.medical_services_outlined,
-          ),
-          const SizedBox(height: 12),
-          RecordFormWidgets.buildChipSelector(
-            context: context,
+          ChipSelectorSection(
+            title: 'Comorbidities',
+            icon: Icons.medical_services_outlined,
             options: PulmonarySuggestions.comorbidities,
             selectedOptions: _selectedComorbidities,
             onChanged: (list) => setState(() => _selectedComorbidities = list),
-            color: AppColors.info,
+            chipColor: AppColors.info,
           ),
-          const SizedBox(height: 20),
+          const SizedBox(height: AppSpacing.lg),
 
           // Vital Signs
-          RecordFormWidgets.buildSectionCard(
-            context: context,
+          RecordFormSection(
             title: 'Vital Signs',
             icon: Icons.favorite_outline,
             accentColor: const Color(0xFF3B82F6),
-            children: [
-              Row(
-                children: [
-                  Expanded(
-                    child: RecordFormWidgets.buildVitalField(
-                      context: context,
+            child: Column(
+              children: [
+                RecordFieldGrid(
+                  children: [
+                    CompactTextField(
                       controller: _bpController,
                       label: 'BP',
-                      unit: 'mmHg',
                       hint: '120/80',
+                      suffix: 'mmHg',
                     ),
-                  ),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: RecordFormWidgets.buildVitalField(
-                      context: context,
+                    CompactTextField(
                       controller: _pulseController,
                       label: 'Pulse',
-                      unit: 'bpm',
                       hint: '72',
+                      suffix: 'bpm',
                     ),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 12),
-              Row(
-                children: [
-                  Expanded(
-                    child: RecordFormWidgets.buildVitalField(
-                      context: context,
+                  ],
+                ),
+                const SizedBox(height: AppSpacing.md),
+                RecordFieldGrid(
+                  children: [
+                    CompactTextField(
                       controller: _tempController,
                       label: 'Temp',
-                      unit: '°F',
                       hint: '98.6',
+                      suffix: '°F',
                     ),
-                  ),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: RecordFormWidgets.buildVitalField(
-                      context: context,
+                    CompactTextField(
                       controller: _respiratoryRateController,
                       label: 'RR',
-                      unit: '/min',
                       hint: '16',
+                      suffix: '/min',
                     ),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 12),
-              Row(
-                children: [
-                  Expanded(
-                    child: RecordFormWidgets.buildVitalField(
-                      context: context,
+                  ],
+                ),
+                const SizedBox(height: AppSpacing.md),
+                RecordFieldGrid(
+                  children: [
+                    CompactTextField(
                       controller: _spo2Controller,
                       label: 'SpO₂',
-                      unit: '%',
                       hint: '98',
+                      suffix: '%',
                     ),
-                  ),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: RecordFormWidgets.buildVitalField(
-                      context: context,
+                    CompactTextField(
                       controller: _peakFlowController,
                       label: 'PEFR',
-                      unit: 'L/min',
                       hint: '350',
+                      suffix: 'L/min',
                     ),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 12),
-              RecordFormWidgets.buildVitalField(
-                context: context,
-                controller: _weightController,
-                label: 'Weight',
-                unit: 'kg',
-                hint: '70',
-              ),
-            ],
+                  ],
+                ),
+                const SizedBox(height: AppSpacing.md),
+                CompactTextField(
+                  controller: _weightController,
+                  label: 'Weight',
+                  hint: '70',
+                  suffix: 'kg',
+                ),
+              ],
+            ),
           ),
-          const SizedBox(height: 20),
+          const SizedBox(height: AppSpacing.lg),
 
           // Chest Auscultation
-          RecordFormWidgets.buildSectionCard(
-            context: context,
+          RecordFormSection(
             title: 'Chest Auscultation',
             icon: Icons.hearing,
             accentColor: const Color(0xFF3B82F6),
-            children: [
-              SuggestionTextField(
-                controller: _breathSoundsController,
-                label: 'Breath Sounds',
-                hint: 'Type of breath sounds...',
-                prefixIcon: Icons.hearing,
-                suggestions: PulmonarySuggestions.breathSounds,
-              ),
-              const SizedBox(height: 12),
-              Text(
-                'Added Sounds',
-                style: TextStyle(
-                  fontSize: 14,
-                  fontWeight: FontWeight.w600,
-                  color: isDark ? AppColors.darkTextPrimary : AppColors.textPrimary,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                SuggestionTextField(
+                  controller: _breathSoundsController,
+                  label: 'Breath Sounds',
+                  hint: 'Type of breath sounds...',
+                  prefixIcon: Icons.hearing,
+                  suggestions: PulmonarySuggestions.breathSounds,
                 ),
-              ),
-              const SizedBox(height: 8),
-              RecordFormWidgets.buildChipSelector(
-                context: context,
-                options: PulmonarySuggestions.addedSounds,
-                selectedOptions: _selectedAddedSounds,
-                onChanged: (list) => setState(() => _selectedAddedSounds = list),
-                color: AppColors.accent,
-              ),
-              const SizedBox(height: 16),
-              Text(
-                'Zone-wise Findings',
-                style: TextStyle(
-                  fontSize: 14,
-                  fontWeight: FontWeight.w600,
-                  color: isDark ? AppColors.darkTextPrimary : AppColors.textPrimary,
+                const SizedBox(height: AppSpacing.md),
+                Text(
+                  'Added Sounds',
+                  style: TextStyle(
+                    fontSize: 14,
+                    fontWeight: FontWeight.w600,
+                    color: isDark ? AppColors.darkTextPrimary : AppColors.textPrimary,
+                  ),
                 ),
-              ),
-              const SizedBox(height: 8),
-              Row(
-                children: [
-                  Expanded(
-                    child: SuggestionTextField(
+                const SizedBox(height: AppSpacing.sm),
+                RecordFormWidgets.buildChipSelector(
+                  context: context,
+                  options: PulmonarySuggestions.addedSounds,
+                  selectedOptions: _selectedAddedSounds,
+                  onChanged: (list) => setState(() => _selectedAddedSounds = list),
+                  color: AppColors.accent,
+                ),
+                const SizedBox(height: AppSpacing.lg),
+                Text(
+                  'Zone-wise Findings',
+                  style: TextStyle(
+                    fontSize: 14,
+                    fontWeight: FontWeight.w600,
+                    color: isDark ? AppColors.darkTextPrimary : AppColors.textPrimary,
+                  ),
+                ),
+                const SizedBox(height: AppSpacing.sm),
+                RecordFieldGrid(
+                  children: [
+                    SuggestionTextField(
                       controller: _rightUpperZoneController,
                       label: 'R. Upper',
                       hint: 'Findings...',
                       suggestions: PulmonarySuggestions.zoneFindings,
                     ),
-                  ),
-                  const SizedBox(width: 8),
-                  Expanded(
-                    child: SuggestionTextField(
+                    SuggestionTextField(
                       controller: _leftUpperZoneController,
                       label: 'L. Upper',
                       hint: 'Findings...',
                       suggestions: PulmonarySuggestions.zoneFindings,
                     ),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 8),
-              Row(
-                children: [
-                  Expanded(
-                    child: SuggestionTextField(
+                  ],
+                ),
+                const SizedBox(height: AppSpacing.sm),
+                RecordFieldGrid(
+                  children: [
+                    SuggestionTextField(
                       controller: _rightMiddleZoneController,
                       label: 'R. Middle',
                       hint: 'Findings...',
                       suggestions: PulmonarySuggestions.zoneFindings,
                     ),
-                  ),
-                  const SizedBox(width: 8),
-                  Expanded(
-                    child: SuggestionTextField(
+                    SuggestionTextField(
                       controller: _leftMiddleZoneController,
                       label: 'L. Middle',
                       hint: 'Findings...',
                       suggestions: PulmonarySuggestions.zoneFindings,
                     ),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 8),
-              Row(
-                children: [
-                  Expanded(
-                    child: SuggestionTextField(
+                  ],
+                ),
+                const SizedBox(height: AppSpacing.sm),
+                RecordFieldGrid(
+                  children: [
+                    SuggestionTextField(
                       controller: _rightLowerZoneController,
                       label: 'R. Lower',
                       hint: 'Findings...',
                       suggestions: PulmonarySuggestions.zoneFindings,
                     ),
-                  ),
-                  const SizedBox(width: 8),
-                  Expanded(
-                    child: SuggestionTextField(
+                    SuggestionTextField(
                       controller: _leftLowerZoneController,
                       label: 'L. Lower',
                       hint: 'Findings...',
                       suggestions: PulmonarySuggestions.zoneFindings,
                     ),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 12),
-              RecordFormWidgets.buildTextField(
-                context: context,
-                controller: _additionalFindingsController,
-                hint: 'Additional auscultation findings...',
-                maxLines: 2,
-              ),
-            ],
+                  ],
+                ),
+                const SizedBox(height: AppSpacing.md),
+                RecordTextField(
+                  controller: _additionalFindingsController,
+                  hint: 'Additional auscultation findings...',
+                  maxLines: 2,
+                ),
+              ],
+            ),
           ),
-          const SizedBox(height: 20),
+          const SizedBox(height: AppSpacing.lg),
 
           // Investigations
-          RecordFormWidgets.buildSectionHeader(
-            context, 'Investigations Required', Icons.biotech,
-          ),
-          const SizedBox(height: 12),
-          RecordFormWidgets.buildChipSelector(
-            context: context,
+          ChipSelectorSection(
+            title: 'Investigations Required',
+            icon: Icons.biotech,
             options: PulmonarySuggestions.investigations,
             selectedOptions: _selectedInvestigations,
             onChanged: (list) => setState(() => _selectedInvestigations = list),
           ),
-          const SizedBox(height: 20),
+          const SizedBox(height: AppSpacing.lg),
 
           // Diagnosis
-          RecordFormWidgets.buildSectionHeader(
-            context, 'Diagnosis', Icons.medical_information,
+          RecordFormSection(
+            title: 'Diagnosis',
+            icon: Icons.medical_information,
+            child: SuggestionTextField(
+              controller: _diagnosisController,
+              label: 'Diagnosis',
+              hint: 'Enter diagnosis...',
+              prefixIcon: Icons.medical_information_outlined,
+              maxLines: 3,
+              suggestions: const [
+                'Bronchial Asthma',
+                'COPD',
+                'Acute Bronchitis',
+                'Pneumonia',
+                'Pulmonary Tuberculosis',
+                'Interstitial Lung Disease',
+                'Bronchiectasis',
+                'Pleural Effusion',
+                'Allergic Rhinitis',
+                'Upper Respiratory Tract Infection',
+                'Lower Respiratory Tract Infection',
+              ],
+            ),
           ),
-          const SizedBox(height: 12),
-          SuggestionTextField(
-            controller: _diagnosisController,
-            label: 'Diagnosis',
-            hint: 'Enter diagnosis...',
-            prefixIcon: Icons.medical_information_outlined,
-            maxLines: 3,
-            suggestions: const [
-              'Bronchial Asthma',
-              'COPD',
-              'Acute Bronchitis',
-              'Pneumonia',
-              'Pulmonary Tuberculosis',
-              'Interstitial Lung Disease',
-              'Bronchiectasis',
-              'Pleural Effusion',
-              'Allergic Rhinitis',
-              'Upper Respiratory Tract Infection',
-              'Lower Respiratory Tract Infection',
-            ],
-          ),
-          const SizedBox(height: 20),
+          const SizedBox(height: AppSpacing.lg),
 
           // Treatment Plan
-          RecordFormWidgets.buildSectionHeader(
-            context, 'Treatment Plan', Icons.healing,
+          RecordFormSection(
+            title: 'Treatment Plan',
+            icon: Icons.healing,
+            child: RecordNotesField(
+              controller: _treatmentController,
+              hint: 'Enter treatment plan...',
+              maxLines: 4,
+            ),
           ),
-          const SizedBox(height: 12),
-          RecordFormWidgets.buildTextField(
-            context: context,
-            controller: _treatmentController,
-            hint: 'Enter treatment plan...',
-            maxLines: 4,
-          ),
-          const SizedBox(height: 20),
+          const SizedBox(height: AppSpacing.lg),
 
           // Follow-up Plan
-          RecordFormWidgets.buildSectionHeader(
-            context, 'Follow-up Plan', Icons.event_note,
+          RecordFormSection(
+            title: 'Follow-up Plan',
+            icon: Icons.event_note,
+            child: RecordNotesField(
+              controller: _followUpPlanController,
+              hint: 'Follow-up instructions and plan...',
+              maxLines: 3,
+            ),
           ),
-          const SizedBox(height: 12),
-          RecordFormWidgets.buildTextField(
-            context: context,
-            controller: _followUpPlanController,
-            hint: 'Follow-up instructions and plan...',
-            maxLines: 3,
-          ),
-          const SizedBox(height: 20),
+          const SizedBox(height: AppSpacing.lg),
 
           // Clinical Notes
-          RecordFormWidgets.buildSectionHeader(
-            context, 'Additional Notes', Icons.note_alt,
+          RecordFormSection(
+            title: 'Additional Notes',
+            icon: Icons.note_alt,
+            child: RecordNotesField(
+              controller: _clinicalNotesController,
+              hint: 'Additional clinical notes...',
+              maxLines: 4,
+            ),
           ),
-          const SizedBox(height: 12),
-          RecordFormWidgets.buildTextField(
-            context: context,
-            controller: _clinicalNotesController,
-            hint: 'Additional clinical notes...',
-            maxLines: 4,
-          ),
-          const SizedBox(height: 32),
+          const SizedBox(height: AppSpacing.xl),
 
           // Save Button
-          RecordFormWidgets.buildSaveButton(
-            context: context,
+          RecordSaveButton(
             isSaving: _isSaving,
             label: widget.existingRecord != null ? 'Update Evaluation' : 'Save Evaluation',
             onPressed: () => _saveRecord(db),
             gradientColors: [const Color(0xFF06B6D4), const Color(0xFF0891B2)], // Info Cyan
           ),
-          const SizedBox(height: 40),
+          const SizedBox(height: AppSpacing.xxl),
         ],
       ),
     );
