@@ -283,7 +283,9 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen>
 
   @override
   Widget build(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+    final textTheme = theme.textTheme;
     final calendarState = ref.watch(googleCalendarProvider);
     
     // Update signed in state from provider
@@ -292,7 +294,7 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen>
     }
 
     return Scaffold(
-      backgroundColor: isDark ? AppColors.darkBackground : AppColors.background,
+      backgroundColor: theme.scaffoldBackgroundColor,
       body: SafeArea(
         child: Column(
           children: [
@@ -311,18 +313,18 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen>
                       height: isCurrent ? 6 : 4,
                       decoration: BoxDecoration(
                         gradient: isActive 
-                            ? const LinearGradient(
-                                colors: [AppColors.primary, AppColors.primaryLight],
+                            ? LinearGradient(
+                                colors: [colorScheme.primary, colorScheme.primary.withValues(alpha: 0.7)],
                               )
                             : null,
                         color: isActive 
                             ? null 
-                            : (isDark ? AppColors.darkDivider : AppColors.divider),
+                            : theme.dividerColor,
                         borderRadius: BorderRadius.circular(3),
                         boxShadow: isCurrent
                             ? [
                                 BoxShadow(
-                                  color: AppColors.primary.withValues(alpha: 0.4),
+                                  color: colorScheme.primary.withValues(alpha: 0.4),
                                   blurRadius: 8,
                                   offset: const Offset(0, 2),
                                 ),
@@ -342,9 +344,9 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen>
                 onPageChanged: (index) => setState(() => _currentPage = index),
                 physics: const NeverScrollableScrollPhysics(),
                 children: [
-                  _buildWelcomePage(isDark, calendarState),
-                  _buildProfilePage(isDark),
-                  _buildCompletionPage(isDark, calendarState),
+                  _buildWelcomePage(calendarState, theme, colorScheme, textTheme),
+                  _buildProfilePage(theme, colorScheme, textTheme),
+                  _buildCompletionPage(calendarState, theme, colorScheme, textTheme),
                 ],
               ),
             ),
@@ -386,7 +388,7 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen>
     );
   }
 
-  Widget _buildWelcomePage(bool isDark, GoogleCalendarState calendarState) {
+  Widget _buildWelcomePage(GoogleCalendarState calendarState, ThemeData theme, ColorScheme colorScheme, TextTheme textTheme) {
     return FadeTransition(
       opacity: _fadeInAnimation,
       child: SingleChildScrollView(
@@ -405,11 +407,15 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen>
                     child: Container(
                       padding: const EdgeInsets.all(AppSpacing.xxl),
                       decoration: BoxDecoration(
-                        gradient: AppColors.primaryGradient,
+                        gradient: LinearGradient(
+                          colors: [colorScheme.primary, colorScheme.secondary],
+                          begin: Alignment.topLeft,
+                          end: Alignment.bottomRight,
+                        ),
                         shape: BoxShape.circle,
                         boxShadow: [
                           BoxShadow(
-                            color: AppColors.primary.withValues(alpha: 0.4),
+                            color: colorScheme.primary.withValues(alpha: 0.4),
                             blurRadius: 30,
                             offset: const Offset(0, 15),
                           ),
@@ -442,10 +448,9 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen>
               },
               child: Text(
                 'Welcome to Doctor App',
-                style: TextStyle(
-                  fontSize: 28,
+                style: textTheme.headlineMedium?.copyWith(
                   fontWeight: FontWeight.bold,
-                  color: isDark ? AppColors.darkTextPrimary : AppColors.textPrimary,
+                  color: colorScheme.onSurface,
                 ),
                 textAlign: TextAlign.center,
               ),
@@ -466,9 +471,8 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen>
               },
               child: Text(
                 'Your complete clinic management solution',
-                style: TextStyle(
-                  fontSize: 16,
-                  color: isDark ? AppColors.darkTextSecondary : AppColors.textSecondary,
+                style: textTheme.bodyLarge?.copyWith(
+                  color: colorScheme.onSurfaceVariant,
                 ),
                 textAlign: TextAlign.center,
               ),
@@ -479,12 +483,12 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen>
           Container(
             padding: const EdgeInsets.all(AppSpacing.xxl),
             decoration: BoxDecoration(
-              color: isDark ? AppColors.darkSurface : Colors.white,
+              color: theme.cardColor,
               borderRadius: BorderRadius.circular(20),
               border: Border.all(
                 color: _isSignedIn 
                     ? AppColors.success.withValues(alpha: 0.5)
-                    : (isDark ? AppColors.darkDivider : AppColors.divider),
+                    : theme.dividerColor,
                 width: _isSignedIn ? 2 : 1,
               ),
               boxShadow: [
@@ -501,17 +505,16 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen>
                   // Signed in state
                   CircleAvatar(
                     radius: 36,
-                    backgroundColor: AppColors.primary.withValues(alpha: 0.1),
+                    backgroundColor: colorScheme.primary.withValues(alpha: 0.1),
                     backgroundImage: _googleUserInfo!.photoUrl != null
                         ? NetworkImage(_googleUserInfo!.photoUrl!)
                         : null,
                     child: _googleUserInfo!.photoUrl == null
                         ? Text(
                             _googleUserInfo!.displayName?.substring(0, 1).toUpperCase() ?? 'U',
-                            style: const TextStyle(
-                              fontSize: 28,
+                            style: textTheme.headlineSmall?.copyWith(
                               fontWeight: FontWeight.bold,
-                              color: AppColors.primary,
+                              color: colorScheme.primary,
                             ),
                           )
                         : null,
@@ -524,10 +527,9 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen>
                       const SizedBox(width: 8),
                       Text(
                         'Signed in with Google',
-                        style: TextStyle(
-                          fontSize: 16,
+                        style: textTheme.titleMedium?.copyWith(
                           fontWeight: FontWeight.w600,
-                          color: isDark ? AppColors.darkTextPrimary : AppColors.textPrimary,
+                          color: colorScheme.onSurface,
                         ),
                       ),
                     ],
@@ -535,38 +537,35 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen>
                   const SizedBox(height: 8),
                   Text(
                     _googleUserInfo!.displayName ?? '',
-                    style: TextStyle(
-                      fontSize: 18,
+                    style: textTheme.titleLarge?.copyWith(
                       fontWeight: FontWeight.bold,
-                      color: isDark ? AppColors.darkTextPrimary : AppColors.textPrimary,
+                      color: colorScheme.onSurface,
                     ),
                   ),
                   const SizedBox(height: 4),
                   Text(
                     _googleUserInfo!.email,
-                    style: TextStyle(
-                      fontSize: 14,
-                      color: isDark ? AppColors.darkTextSecondary : AppColors.textSecondary,
+                    style: textTheme.bodyMedium?.copyWith(
+                      color: colorScheme.onSurfaceVariant,
                     ),
                   ),
                   const SizedBox(height: 8),
                   Container(
                     padding: const EdgeInsets.symmetric(horizontal: AppSpacing.md, vertical: AppSpacing.xs),
                     decoration: BoxDecoration(
-                      color: AppColors.appointments.withValues(alpha: 0.1),
+                      color: colorScheme.secondary.withValues(alpha: 0.1),
                       borderRadius: BorderRadius.circular(20),
                     ),
-                    child: const Row(
+                    child: Row(
                       mainAxisSize: MainAxisSize.min,
                       children: [
-                        Icon(Icons.calendar_month, size: 16, color: AppColors.appointments),
-                        SizedBox(width: 6),
+                        Icon(Icons.calendar_month, size: 16, color: colorScheme.secondary),
+                        const SizedBox(width: 6),
                         Text(
                           'Google Calendar Connected',
-                          style: TextStyle(
-                            fontSize: 12,
+                          style: textTheme.labelSmall?.copyWith(
                             fontWeight: FontWeight.w500,
-                            color: AppColors.appointments,
+                            color: colorScheme.secondary,
                           ),
                         ),
                       ],
@@ -589,18 +588,15 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen>
                   const SizedBox(height: 16),
                   Text(
                     'Sign in with Google',
-                    style: TextStyle(
-                      fontSize: 20,
+                    style: textTheme.titleLarge?.copyWith(
                       fontWeight: FontWeight.bold,
-                      color: isDark ? AppColors.darkTextPrimary : AppColors.textPrimary,
                     ),
                   ),
                   const SizedBox(height: 8),
                   Text(
                     'Quick setup with your Google account.\nAuto-fills your profile and syncs your calendar.',
-                    style: TextStyle(
-                      fontSize: 14,
-                      color: isDark ? AppColors.darkTextSecondary : AppColors.textSecondary,
+                    style: textTheme.bodyMedium?.copyWith(
+                      color: colorScheme.onSurfaceVariant,
                       height: 1.4,
                     ),
                     textAlign: TextAlign.center,
@@ -655,7 +651,7 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen>
               children: [
                 Expanded(
                   child: Divider(
-                    color: isDark ? AppColors.darkDivider : AppColors.divider,
+                    color: theme.dividerColor,
                   ),
                 ),
                 Padding(
@@ -663,14 +659,14 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen>
                   child: Text(
                     'OR',
                     style: TextStyle(
-                      color: isDark ? AppColors.darkTextHint : AppColors.textHint,
+                      color: colorScheme.outline,
                       fontWeight: FontWeight.w500,
                     ),
                   ),
                 ),
                 Expanded(
                   child: Divider(
-                    color: isDark ? AppColors.darkDivider : AppColors.divider,
+                    color: theme.dividerColor,
                   ),
                 ),
               ],
@@ -685,7 +681,7 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen>
               'You can connect Google Calendar later from Settings',
               style: TextStyle(
                 fontSize: 12,
-                color: isDark ? AppColors.darkTextHint : AppColors.textHint,
+                color: colorScheme.outline,
               ),
               textAlign: TextAlign.center,
             ),
@@ -709,10 +705,8 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen>
             },
             child: Text(
               'Key Features',
-              style: TextStyle(
-                fontSize: 16,
+              style: textTheme.titleMedium?.copyWith(
                 fontWeight: FontWeight.w600,
-                color: isDark ? AppColors.darkTextPrimary : AppColors.textPrimary,
               ),
             ),
           ),
@@ -720,10 +714,10 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen>
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceEvenly,
             children: [
-              _buildMiniFeatureAnimated(Icons.people_rounded, 'Patients', AppColors.patients, isDark, 0),
-              _buildMiniFeatureAnimated(Icons.calendar_month_rounded, 'Appointments', AppColors.appointments, isDark, 1),
-              _buildMiniFeatureAnimated(Icons.medication_rounded, 'Prescriptions', AppColors.prescriptions, isDark, 2),
-              _buildMiniFeatureAnimated(Icons.receipt_long_rounded, 'Billing', AppColors.billing, isDark, 3),
+              _buildMiniFeatureAnimated(Icons.people_rounded, 'Patients', AppColors.patients, textTheme, 0),
+              _buildMiniFeatureAnimated(Icons.calendar_month_rounded, 'Appointments', AppColors.appointments, textTheme, 1),
+              _buildMiniFeatureAnimated(Icons.medication_rounded, 'Prescriptions', AppColors.prescriptions, textTheme, 2),
+              _buildMiniFeatureAnimated(Icons.receipt_long_rounded, 'Billing', AppColors.billing, textTheme, 3),
             ],
           ),
         ],
@@ -731,7 +725,7 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen>
     ),);
   }
 
-  Widget _buildMiniFeatureAnimated(IconData icon, String label, Color color, bool isDark, int index) {
+  Widget _buildMiniFeatureAnimated(IconData icon, String label, Color color, TextTheme textTheme, int index) {
     return TweenAnimationBuilder<double>(
       tween: Tween(begin: 0, end: 1),
       duration: Duration(milliseconds: 500 + (index * 100)),
@@ -745,11 +739,11 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen>
           ),
         );
       },
-      child: _buildMiniFeature(icon, label, color, isDark),
+      child: _buildMiniFeature(icon, label, color, textTheme),
     );
   }
 
-  Widget _buildMiniFeature(IconData icon, String label, Color color, bool isDark) {
+  Widget _buildMiniFeature(IconData icon, String label, Color color, TextTheme textTheme) {
     return Column(
       children: [
         Container(
@@ -763,17 +757,15 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen>
         const SizedBox(height: 8),
         Text(
           label,
-          style: TextStyle(
-            fontSize: 11,
+          style: textTheme.labelSmall?.copyWith(
             fontWeight: FontWeight.w500,
-            color: isDark ? AppColors.darkTextSecondary : AppColors.textSecondary,
           ),
         ),
       ],
     );
   }
 
-  Widget _buildProfilePage(bool isDark) {
+  Widget _buildProfilePage(ThemeData theme, ColorScheme colorScheme, TextTheme textTheme) {
     return SingleChildScrollView(
       padding: const EdgeInsets.all(AppSpacing.xxl),
       child: Column(
@@ -794,22 +786,21 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen>
                   Container(
                     padding: const EdgeInsets.all(AppSpacing.xl),
                     decoration: BoxDecoration(
-                      color: AppColors.primary.withValues(alpha: 0.1),
+                      color: colorScheme.primary.withValues(alpha: 0.1),
                       shape: BoxShape.circle,
                     ),
-                    child: const Icon(
+                    child: Icon(
                       Icons.person_rounded,
                       size: 48,
-                      color: AppColors.primary,
+                      color: colorScheme.primary,
                     ),
                   ),
                 const SizedBox(height: 20),
                 Text(
                   'Complete Your Profile',
-                  style: TextStyle(
-                    fontSize: 24,
+                  style: textTheme.headlineSmall?.copyWith(
                     fontWeight: FontWeight.bold,
-                    color: isDark ? AppColors.darkTextPrimary : AppColors.textPrimary,
+                    color: colorScheme.onSurface,
                   ),
                   textAlign: TextAlign.center,
                 ),
@@ -818,9 +809,8 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen>
                   _isSignedIn 
                       ? "We've filled in some details from your Google account.\nAdd your professional info below."
                       : 'This information will appear on prescriptions and invoices',
-                  style: TextStyle(
-                    fontSize: 14,
-                    color: isDark ? AppColors.darkTextSecondary : AppColors.textSecondary,
+                  style: textTheme.bodyMedium?.copyWith(
+                    color: colorScheme.onSurfaceVariant,
                     height: 1.4,
                   ),
                   textAlign: TextAlign.center,
@@ -882,42 +872,7 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen>
     );
   }
 
-  Widget _buildTextField({
-    required TextEditingController controller,
-    required String label,
-    required String hint,
-    required IconData icon,
-    required bool isDark,
-    TextInputType? keyboardType,
-    bool readOnly = false,
-    IconData? suffixIcon,
-  }) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(
-          label,
-          style: TextStyle(
-            fontSize: 14,
-            fontWeight: FontWeight.w600,
-            color: isDark ? AppColors.darkTextPrimary : AppColors.textPrimary,
-          ),
-        ),
-        const SizedBox(height: 8),
-        AppInput(
-          controller: controller,
-          hint: hint,
-          prefixIcon: icon,
-          suffixIcon: suffixIcon,
-          keyboardType: keyboardType ?? TextInputType.text,
-          enabled: !readOnly,
-          onChanged: (_) => setState(() {}),
-        ),
-      ],
-    );
-  }
-
-  Widget _buildCompletionPage(bool isDark, GoogleCalendarState calendarState) {
+  Widget _buildCompletionPage(GoogleCalendarState calendarState, ThemeData theme, ColorScheme colorScheme, TextTheme textTheme) {
     return SingleChildScrollView(
       padding: const EdgeInsets.all(AppSpacing.xxl),
       child: Column(
@@ -992,10 +947,9 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen>
             },
             child: Text(
               "You're All Set!",
-              style: TextStyle(
-                fontSize: 28,
+              style: textTheme.headlineMedium?.copyWith(
                 fontWeight: FontWeight.bold,
-                color: isDark ? AppColors.darkTextPrimary : AppColors.textPrimary,
+                color: colorScheme.onSurface,
               ),
               textAlign: TextAlign.center,
             ),
@@ -1013,9 +967,8 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen>
             },
             child: Text(
               'Your clinic management system is ready to use',
-              style: TextStyle(
-                fontSize: 16,
-                color: isDark ? AppColors.darkTextSecondary : AppColors.textSecondary,
+              style: textTheme.bodyLarge?.copyWith(
+                color: colorScheme.onSurfaceVariant,
               ),
               textAlign: TextAlign.center,
             ),
@@ -1026,10 +979,10 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen>
           Container(
             padding: const EdgeInsets.all(AppSpacing.xl),
             decoration: BoxDecoration(
-              color: isDark ? AppColors.darkSurface : Colors.white,
+              color: theme.cardColor,
               borderRadius: BorderRadius.circular(16),
               border: Border.all(
-                color: isDark ? AppColors.darkDivider : AppColors.divider,
+                color: theme.dividerColor,
               ),
             ),
             child: Column(
@@ -1038,7 +991,8 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen>
                   Icons.person,
                   'Name',
                   _nameController.text.isNotEmpty ? _nameController.text : 'Not set',
-                  isDark,
+                  colorScheme,
+                  textTheme,
                 ),
                 if (_emailController.text.isNotEmpty) ...[
                   const SizedBox(height: 12),
@@ -1046,7 +1000,8 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen>
                     Icons.email,
                     'Email',
                     _emailController.text,
-                    isDark,
+                    colorScheme,
+                    textTheme,
                   ),
                 ],
                 if (_specializationController.text.isNotEmpty) ...[
@@ -1055,7 +1010,8 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen>
                     Icons.medical_services,
                     'Specialization',
                     _specializationController.text,
-                    isDark,
+                    colorScheme,
+                    textTheme,
                   ),
                 ],
                 if (_clinicController.text.isNotEmpty) ...[
@@ -1064,7 +1020,8 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen>
                     Icons.local_hospital,
                     'Clinic',
                     _clinicController.text,
-                    isDark,
+                    colorScheme,
+                    textTheme,
                   ),
                 ],
                 const SizedBox(height: 12),
@@ -1074,10 +1031,11 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen>
                   Icons.calendar_month,
                   'Google Calendar',
                   calendarState.isConnected ? 'Connected' : 'Not connected',
-                  isDark,
-                  valueColor: calendarState.isConnected ? AppColors.success : AppColors.textHint,
+                  colorScheme,
+                  textTheme,
+                  valueColor: calendarState.isConnected ? AppColors.success : colorScheme.outline,
                   icon2: calendarState.isConnected ? Icons.check_circle : Icons.remove_circle_outline,
-                  icon2Color: calendarState.isConnected ? AppColors.success : AppColors.textHint,
+                  icon2Color: calendarState.isConnected ? AppColors.success : colorScheme.outline,
                 ),
               ],
             ),
@@ -1088,10 +1046,8 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen>
           // Quick tips
           Text(
             'Quick Tips to Get Started',
-            style: TextStyle(
-              fontSize: 16,
+            style: textTheme.titleMedium?.copyWith(
               fontWeight: FontWeight.w600,
-              color: isDark ? AppColors.darkTextPrimary : AppColors.textPrimary,
             ),
           ),
           const SizedBox(height: 16),
@@ -1099,19 +1055,22 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen>
             '1',
             'Add your first patient from the Patients tab',
             AppColors.patients,
-            isDark,
+            theme,
+            textTheme,
           ),
           _buildTipItem(
             '2',
             'Schedule appointments using the calendar',
             AppColors.appointments,
-            isDark,
+            theme,
+            textTheme,
           ),
           _buildTipItem(
             '3',
             'Create digital prescriptions with signature',
             AppColors.prescriptions,
-            isDark,
+            theme,
+            textTheme,
           ),
         ],
       ),
@@ -1122,30 +1081,29 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen>
     IconData icon,
     String label,
     String value,
-    bool isDark, {
+    ColorScheme colorScheme,
+    TextTheme textTheme, {
     Color? valueColor,
     IconData? icon2,
     Color? icon2Color,
   }) {
     return Row(
       children: [
-        Icon(icon, size: 20, color: AppColors.primary),
+        Icon(icon, size: 20, color: colorScheme.primary),
         const SizedBox(width: 12),
         Text(
           '$label:',
-          style: TextStyle(
-            fontSize: 14,
-            color: isDark ? AppColors.darkTextSecondary : AppColors.textSecondary,
+          style: textTheme.bodyMedium?.copyWith(
+            color: colorScheme.onSurfaceVariant,
           ),
         ),
         const SizedBox(width: 8),
         Expanded(
           child: Text(
             value,
-            style: TextStyle(
-              fontSize: 14,
+            style: textTheme.bodyMedium?.copyWith(
               fontWeight: FontWeight.w600,
-              color: valueColor ?? (isDark ? AppColors.darkTextPrimary : AppColors.textPrimary),
+              color: valueColor ?? colorScheme.onSurface,
             ),
             textAlign: TextAlign.right,
           ),
@@ -1158,13 +1116,13 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen>
     );
   }
 
-  Widget _buildTipItem(String number, String text, Color color, bool isDark) {
+  Widget _buildTipItem(String number, String text, Color color, ThemeData theme, TextTheme textTheme) {
     return AppCard(
       margin: const EdgeInsets.only(bottom: 12),
       padding: const EdgeInsets.all(AppSpacing.lg),
-      color: isDark ? AppColors.darkSurface : Colors.white,
+      color: theme.cardColor,
       borderRadius: BorderRadius.circular(12),
-      borderColor: isDark ? AppColors.darkDivider : AppColors.divider,
+      borderColor: theme.dividerColor,
       borderWidth: 1,
       child: Row(
         children: [
@@ -1189,10 +1147,7 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen>
           Expanded(
             child: Text(
               text,
-              style: TextStyle(
-                fontSize: 14,
-                color: isDark ? AppColors.darkTextPrimary : AppColors.textPrimary,
-              ),
+              style: textTheme.bodyMedium,
             ),
           ),
         ],
