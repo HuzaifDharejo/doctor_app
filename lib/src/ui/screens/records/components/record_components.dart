@@ -29,3 +29,12 @@ export 'chip_selectors.dart';
 
 // Vital signs input
 export 'vitals_input_section.dart';
+
+// Quick fill templates
+export 'quick_fill_templates.dart';
+
+// Form progress indicator
+export 'form_progress_indicator.dart';
+
+// Auto-save / draft service
+export '../../../../services/form_draft_service.dart';

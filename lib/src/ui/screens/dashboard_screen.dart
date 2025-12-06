@@ -6,7 +6,6 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 
 import '../../core/extensions/context_extensions.dart';
-import '../../core/routing/app_router.dart';
 import '../../core/theme/design_tokens.dart';
 import '../../core/widgets/error_state.dart';
 import '../../core/widgets/loading_state.dart';
@@ -21,7 +20,6 @@ import '../widgets/wait_time_stats.dart';
 import 'add_appointment_screen.dart';
 import 'add_patient_screen.dart';
 import 'add_prescription_screen.dart';
-import 'encounter_screen.dart';
 import 'follow_ups_screen.dart';
 import 'patients_screen.dart';
 import 'workflow_wizard_screen.dart';
@@ -807,22 +805,32 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                               ),
                             ),
                             const SizedBox(height: 4),
-                            Row(
+                            Wrap(
+                              spacing: 12,
+                              runSpacing: 4,
                               children: [
-                                if (age != null) ...[
-                                  Icon(Icons.person_outline, size: 14, color: Colors.white.withValues(alpha: 0.8)),
-                                  const SizedBox(width: 4),
-                                  Text(
-                                    '$age yrs',
-                                    style: TextStyle(fontSize: 13, color: Colors.white.withValues(alpha: 0.8)),
+                                if (age != null)
+                                  Row(
+                                    mainAxisSize: MainAxisSize.min,
+                                    children: [
+                                      Icon(Icons.person_outline, size: 14, color: Colors.white.withValues(alpha: 0.8)),
+                                      const SizedBox(width: 4),
+                                      Text(
+                                        '$age yrs',
+                                        style: TextStyle(fontSize: 13, color: Colors.white.withValues(alpha: 0.8)),
+                                      ),
+                                    ],
                                   ),
-                                  const SizedBox(width: 12),
-                                ],
-                                Icon(Icons.access_time_rounded, size: 14, color: Colors.white.withValues(alpha: 0.8)),
-                                const SizedBox(width: 4),
-                                Text(
-                                  timeFormat.format(currentAppt.appointmentDateTime),
-                                  style: TextStyle(fontSize: 13, color: Colors.white.withValues(alpha: 0.8)),
+                                Row(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    Icon(Icons.access_time_rounded, size: 14, color: Colors.white.withValues(alpha: 0.8)),
+                                    const SizedBox(width: 4),
+                                    Text(
+                                      timeFormat.format(currentAppt.appointmentDateTime),
+                                      style: TextStyle(fontSize: 13, color: Colors.white.withValues(alpha: 0.8)),
+                                    ),
+                                  ],
                                 ),
                               ],
                             ),
@@ -937,7 +945,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
             SizedBox(width: isCompact ? 10 : 12),
             Expanded(child: _buildActionTile(
               icon: Icons.medical_services_rounded,
-              label: 'Encounter',
+              label: 'Clinical Visit',
               color: const Color(0xFFEC4899),
               onTap: () => _startNewEncounter(context, db),
               isCompact: isCompact,
@@ -1391,174 +1399,189 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                   : (isDark ? Colors.white.withValues(alpha: 0.1) : Colors.grey.withValues(alpha: 0.15)),
             ),
           ),
-          child: Row(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // Position Number
-              Container(
-                width: 32, height: 32,
-                decoration: BoxDecoration(
-                  color: position == 1 
-                      ? const Color(0xFF6366F1) 
-                      : (isDark ? Colors.white.withValues(alpha: 0.1) : Colors.grey.withValues(alpha: 0.15)),
-                  borderRadius: BorderRadius.circular(8),
-                ),
-                child: Center(
-                  child: Text(
-                    '$position',
-                    style: TextStyle(
-                      fontSize: 14,
-                      fontWeight: FontWeight.w700,
-                      color: position == 1 ? Colors.white : (isDark ? Colors.white : AppColors.textPrimary),
+              // Main row: Position, Patient Info, Time
+              Row(
+                children: [
+                  // Position Number
+                  Container(
+                    width: 32, height: 32,
+                    decoration: BoxDecoration(
+                      color: position == 1 
+                          ? const Color(0xFF6366F1) 
+                          : (isDark ? Colors.white.withValues(alpha: 0.1) : Colors.grey.withValues(alpha: 0.15)),
+                      borderRadius: BorderRadius.circular(8),
                     ),
-                  ),
-                ),
-              ),
-              const SizedBox(width: 12),
-              // Patient Info
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      patientName,
-                      style: TextStyle(
-                        fontSize: isCompact ? 14 : 15,
-                        fontWeight: FontWeight.w600,
-                        color: isDark ? Colors.white : AppColors.textPrimary,
+                    child: Center(
+                      child: Text(
+                        '$position',
+                        style: TextStyle(
+                          fontSize: 14,
+                          fontWeight: FontWeight.w700,
+                          color: position == 1 ? Colors.white : (isDark ? Colors.white : AppColors.textPrimary),
+                        ),
                       ),
                     ),
-                    const SizedBox(height: 2),
-                    Text(
-                      appt.reason.isNotEmpty ? appt.reason : 'Consultation',
+                  ),
+                  const SizedBox(width: 12),
+                  // Patient Info
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          patientName,
+                          style: TextStyle(
+                            fontSize: isCompact ? 14 : 15,
+                            fontWeight: FontWeight.w600,
+                            color: isDark ? Colors.white : AppColors.textPrimary,
+                          ),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                        const SizedBox(height: 2),
+                        Text(
+                          appt.reason.isNotEmpty ? appt.reason : 'Consultation',
+                          style: TextStyle(
+                            fontSize: 12,
+                            color: isDark ? AppColors.darkTextSecondary : AppColors.textSecondary,
+                          ),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ],
+                    ),
+                  ),
+                  // Time
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                    decoration: BoxDecoration(
+                      color: isDark ? Colors.white.withValues(alpha: 0.08) : Colors.grey.withValues(alpha: 0.1),
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: Text(
+                      timeFormat.format(appt.appointmentDateTime),
                       style: TextStyle(
                         fontSize: 12,
+                        fontWeight: FontWeight.w600,
                         color: isDark ? AppColors.darkTextSecondary : AppColors.textSecondary,
                       ),
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
                     ),
+                  ),
+                ],
+              ),
+              // Action buttons row (shown below main row)
+              if (appt.status.toLowerCase() == 'in_progress' || (position == 1 && patient != null && appt.status.toLowerCase() != 'in_progress')) ...[
+                const SizedBox(height: 10),
+                Wrap(
+                  spacing: 8,
+                  runSpacing: 8,
+                  children: [
+                    // Status indicator
+                    if (appt.status.toLowerCase() == 'in_progress')
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                        decoration: BoxDecoration(
+                          color: const Color(0xFFFBBF24).withValues(alpha: 0.15),
+                          borderRadius: BorderRadius.circular(6),
+                        ),
+                        child: const Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Icon(Icons.pending_rounded, color: Color(0xFFFBBF24), size: 12),
+                            SizedBox(width: 4),
+                            Text('In Progress', style: TextStyle(color: Color(0xFFFBBF24), fontSize: 10, fontWeight: FontWeight.w600)),
+                          ],
+                        ),
+                      ),
+                    // Complete button for in_progress appointments
+                    if (appt.status.toLowerCase() == 'in_progress')
+                      GestureDetector(
+                        onTap: () async {
+                          HapticFeedback.mediumImpact();
+                          await db.updateAppointmentStatus(appt.id, 'completed');
+                          if (context.mounted) {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(
+                                content: Text('Visit completed for $patientName'),
+                                backgroundColor: const Color(0xFF10B981),
+                                behavior: SnackBarBehavior.floating,
+                              ),
+                            );
+                            setState(() {}); // Refresh the list
+                          }
+                        },
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                          decoration: BoxDecoration(
+                            gradient: const LinearGradient(
+                              colors: [Color(0xFF10B981), Color(0xFF059669)],
+                            ),
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                          child: const Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Icon(Icons.check_circle_rounded, color: Colors.white, size: 16),
+                              SizedBox(width: 4),
+                              Text(
+                                'Complete',
+                                style: TextStyle(
+                                  color: Colors.white,
+                                  fontSize: 12,
+                                  fontWeight: FontWeight.w600,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                    // Start button for first in queue
+                    if (position == 1 && patient != null && appt.status.toLowerCase() != 'in_progress')
+                      GestureDetector(
+                        onTap: () async {
+                          HapticFeedback.mediumImpact();
+                          await db.updateAppointmentStatus(appt.id, 'in_progress');
+                          if (context.mounted) {
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (_) => WorkflowWizardScreen(
+                                  existingPatient: patient,
+                                  existingAppointment: appt,
+                                ),
+                              ),
+                            );
+                          }
+                        },
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                          decoration: BoxDecoration(
+                            gradient: const LinearGradient(
+                              colors: [Color(0xFF10B981), Color(0xFF059669)],
+                            ),
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                          child: const Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Icon(Icons.play_arrow_rounded, color: Colors.white, size: 16),
+                              SizedBox(width: 4),
+                              Text(
+                                'Start',
+                                style: TextStyle(
+                                  color: Colors.white,
+                                  fontSize: 12,
+                                  fontWeight: FontWeight.w600,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
                   ],
-                ),
-              ),
-              // Time
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-                decoration: BoxDecoration(
-                  color: isDark ? Colors.white.withValues(alpha: 0.08) : Colors.grey.withValues(alpha: 0.1),
-                  borderRadius: BorderRadius.circular(8),
-                ),
-                child: Text(
-                  timeFormat.format(appt.appointmentDateTime),
-                  style: TextStyle(
-                    fontSize: 12,
-                    fontWeight: FontWeight.w600,
-                    color: isDark ? AppColors.darkTextSecondary : AppColors.textSecondary,
-                  ),
-                ),
-              ),
-              // Status indicator
-              if (appt.status.toLowerCase() == 'in_progress') ...[                Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                  decoration: BoxDecoration(
-                    color: const Color(0xFFFBBF24).withValues(alpha: 0.15),
-                    borderRadius: BorderRadius.circular(6),
-                  ),
-                  child: const Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Icon(Icons.pending_rounded, color: Color(0xFFFBBF24), size: 12),
-                      SizedBox(width: 4),
-                      Text('In Progress', style: TextStyle(color: Color(0xFFFBBF24), fontSize: 10, fontWeight: FontWeight.w600)),
-                    ],
-                  ),
-                ),
-                const SizedBox(width: 8),
-                // Complete button for in_progress appointments
-                GestureDetector(
-                  onTap: () async {
-                    HapticFeedback.mediumImpact();
-                    await db.updateAppointmentStatus(appt.id, 'completed');
-                    if (context.mounted) {
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        SnackBar(
-                          content: Text('Visit completed for $patientName'),
-                          backgroundColor: const Color(0xFF10B981),
-                          behavior: SnackBarBehavior.floating,
-                        ),
-                      );
-                      setState(() {}); // Refresh the list
-                    }
-                  },
-                  child: Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                    decoration: BoxDecoration(
-                      gradient: const LinearGradient(
-                        colors: [Color(0xFF10B981), Color(0xFF059669)],
-                      ),
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                    child: const Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Icon(Icons.check_circle_rounded, color: Colors.white, size: 16),
-                        SizedBox(width: 4),
-                        Text(
-                          'Complete',
-                          style: TextStyle(
-                            color: Colors.white,
-                            fontSize: 12,
-                            fontWeight: FontWeight.w600,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
-              ],
-              // Start button for first in queue
-              if (position == 1 && patient != null && appt.status.toLowerCase() != 'in_progress') ...[
-                const SizedBox(width: 8),
-                GestureDetector(
-                  onTap: () async {
-                    HapticFeedback.mediumImpact();
-                    // Update status to in_progress
-                    await db.updateAppointmentStatus(appt.id, 'in_progress');
-                    if (context.mounted) {
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (_) => WorkflowWizardScreen(
-                            existingPatient: patient,
-                            existingAppointment: appt,
-                          ),
-                        ),
-                      );
-                    }
-                  },
-                  child: Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                    decoration: BoxDecoration(
-                      gradient: const LinearGradient(
-                        colors: [Color(0xFF10B981), Color(0xFF059669)],
-                      ),
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                    child: const Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Icon(Icons.play_arrow_rounded, color: Colors.white, size: 16),
-                        SizedBox(width: 4),
-                        Text(
-                          'Start',
-                          style: TextStyle(
-                            color: Colors.white,
-                            fontSize: 12,
-                            fontWeight: FontWeight.w600,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
                 ),
               ],
             ],
@@ -1651,12 +1674,14 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
       children: [
         Icon(icon, size: 18, color: color),
         const SizedBox(width: 8),
-        Text(
-          title,
-          style: TextStyle(
-            fontSize: isCompact ? 14 : 15,
-            fontWeight: FontWeight.w600,
-            color: isDark ? Colors.white : AppColors.textPrimary,
+        Expanded(
+          child: Text(
+            title,
+            style: TextStyle(
+              fontSize: isCompact ? 14 : 15,
+              fontWeight: FontWeight.w600,
+              color: isDark ? Colors.white : AppColors.textPrimary,
+            ),
           ),
         ),
         const SizedBox(width: 8),
@@ -1785,12 +1810,14 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
             children: [
               Icon(Icons.account_balance_wallet_rounded, color: const Color(0xFF10B981), size: 22),
               const SizedBox(width: 10),
-              Text(
-                "Today's Revenue",
-                style: TextStyle(
-                  fontSize: isCompact ? 16 : 18,
-                  fontWeight: FontWeight.w700,
-                  color: isDark ? Colors.white : AppColors.textPrimary,
+              Expanded(
+                child: Text(
+                  "Today's Revenue",
+                  style: TextStyle(
+                    fontSize: isCompact ? 16 : 18,
+                    fontWeight: FontWeight.w700,
+                    color: isDark ? Colors.white : AppColors.textPrimary,
+                  ),
                 ),
               ),
             ],

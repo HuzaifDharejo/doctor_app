@@ -75,7 +75,7 @@ class PatientEncountersTab extends ConsumerWidget {
           ),
           const SizedBox(height: 24),
           Text(
-            'No Encounters Yet',
+            'No Visits Yet',
             style: TextStyle(
               fontSize: 20,
               fontWeight: FontWeight.bold,
@@ -84,7 +84,7 @@ class PatientEncountersTab extends ConsumerWidget {
           ),
           const SizedBox(height: 8),
           Text(
-            'Encounters will appear here when the patient\nhas clinical visits recorded',
+            'Visits will appear here when the patient\nhas clinical visits recorded',
             textAlign: TextAlign.center,
             style: TextStyle(
               fontSize: 14,
@@ -177,7 +177,7 @@ class _EncounterCard extends StatelessWidget {
                         ),
                         const SizedBox(height: 2),
                         Text(
-                          'Encounter #${encounter.id}',
+                          'Visit #${encounter.id}',
                           style: TextStyle(
                             fontSize: 13,
                             color: isDark

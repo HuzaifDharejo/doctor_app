@@ -52,16 +52,22 @@ class _WorkflowWizardScreenState extends ConsumerState<WorkflowWizardScreen> {
   Appointment? _appointment;
   Encounter? _encounter; // New: Central encounter for this workflow
   MedicalRecord? _medicalRecord;
+  TreatmentOutcome? _treatmentPlan; // Treatment plan for this visit
   Prescription? _prescription;
   ScheduledFollowUp? _followUp;
   Invoice? _invoice;
+  
+  // Diagnosis data (shared between steps)
+  String _currentDiagnosis = '';
+  List<String> _currentDiagnoses = [];
   
   // Step completion status
   final Map<int, bool> _completedSteps = {};
   
   // Optional steps
   bool _skipVitals = false;
-  bool _skipMedicalRecord = false;
+  bool _skipDiagnosis = false;
+  bool _skipTreatmentPlan = false;
   bool _skipPrescription = false;
   bool _skipFollowUp = true; // Default skip
   
@@ -95,15 +101,22 @@ class _WorkflowWizardScreenState extends ConsumerState<WorkflowWizardScreen> {
       isRequired: false,
     ),
     _WorkflowStep(
-      title: 'Add Medical Record',
-      subtitle: 'Diagnosis and findings',
+      title: 'Add Diagnosis',
+      subtitle: 'Document diagnoses and findings',
       icon: Icons.medical_information_rounded,
       color: const Color(0xFF10B981),
       isRequired: false,
     ),
     _WorkflowStep(
+      title: 'Treatment Plan',
+      subtitle: 'Plan treatment and medications',
+      icon: Icons.assignment_rounded,
+      color: const Color(0xFF8B5CF6),
+      isRequired: false,
+    ),
+    _WorkflowStep(
       title: 'Create Prescription',
-      subtitle: 'Medications and instructions',
+      subtitle: 'Medications with diagnosis',
       icon: Icons.medication_rounded,
       color: AppColors.warning,
       isRequired: false,
@@ -150,10 +163,11 @@ class _WorkflowWizardScreenState extends ConsumerState<WorkflowWizardScreen> {
 
   bool _isStepSkipped(int index) {
     switch (index) {
-      case 3: return _skipVitals;
-      case 4: return _skipMedicalRecord;
-      case 5: return _skipPrescription;
-      case 6: return _skipFollowUp;
+      case 3: return _skipVitals;          // Vitals step
+      case 4: return _skipDiagnosis;       // Diagnosis step
+      case 5: return _skipTreatmentPlan;   // Treatment Plan step
+      case 6: return _skipPrescription;    // Prescription step
+      case 7: return _skipFollowUp;        // Follow-up step
       default: return false;
     }
   }
@@ -273,7 +287,7 @@ class _WorkflowWizardScreenState extends ConsumerState<WorkflowWizardScreen> {
       appBar: AppBar(
         backgroundColor: surfaceColor,
         elevation: 0,
-        title: const Text('Patient Workflow'),
+        title: const Text('Consult a Patient'),
         leading: IconButton(
           icon: const Icon(Icons.close_rounded),
           onPressed: () => _showExitConfirmation(context),
@@ -468,12 +482,14 @@ class _WorkflowWizardScreenState extends ConsumerState<WorkflowWizardScreen> {
       case 3:
         return _buildVitalsStep(isDark);
       case 4:
-        return _buildMedicalRecordStep(isDark);
+        return _buildDiagnosisStep(isDark);
       case 5:
-        return _buildPrescriptionStep(isDark);
+        return _buildTreatmentPlanStep(isDark);
       case 6:
-        return _buildFollowUpStep(isDark);
+        return _buildPrescriptionStep(isDark);
       case 7:
+        return _buildFollowUpStep(isDark);
+      case 8:
         return _buildInvoiceStep(isDark);
       default:
         return const SizedBox.shrink();
@@ -565,7 +581,7 @@ class _WorkflowWizardScreenState extends ConsumerState<WorkflowWizardScreen> {
             icon: Icons.login_rounded,
             color: const Color(0xFF8B5CF6),
             details: [
-              'Encounter #${_encounter!.id}',
+              'Visit #${_encounter!.id}',
               'Status: ${_encounter!.status}',
               'Started: ${DateFormat('h:mm a').format(checkInTime)}',
               if (_encounter!.chiefComplaint.isNotEmpty) 
@@ -573,10 +589,10 @@ class _WorkflowWizardScreenState extends ConsumerState<WorkflowWizardScreen> {
             ],
           ),
           const SizedBox(height: 16),
-          // Open full encounter screen
+          // Open full visit screen
           _buildActionCard(
             isDark: isDark,
-            title: 'Open Encounter Workstation',
+            title: 'Open Visit Workstation',
             subtitle: 'Full clinical workflow with vitals, notes & diagnoses',
             icon: Icons.medical_services_rounded,
             color: const Color(0xFF8B5CF6),
@@ -673,29 +689,63 @@ class _WorkflowWizardScreenState extends ConsumerState<WorkflowWizardScreen> {
     );
   }
 
-  // Step 5: Medical Record
-  Widget _buildMedicalRecordStep(bool isDark) {
+  // Step 5: Diagnosis
+  Widget _buildDiagnosisStep(bool isDark) {
     return Column(
       children: [
         _buildSkipOption(
           isDark: isDark,
-          title: 'Skip Medical Record',
-          value: _skipMedicalRecord,
+          title: 'Skip Diagnosis',
+          value: _skipDiagnosis,
           onChanged: (value) => setState(() {
-            _skipMedicalRecord = value;
+            _skipDiagnosis = value;
             if (value) _completedSteps[4] = true;
           }),
         ),
         const SizedBox(height: 16),
         
-        if (!_skipMedicalRecord) ...[
+        if (!_skipDiagnosis) ...[
+          // Show current diagnoses if any
+          if (_currentDiagnoses.isNotEmpty) ...[
+            _buildCompletedCard(
+              isDark: isDark,
+              title: 'Diagnoses Added',
+              subtitle: '${_currentDiagnoses.length} diagnosis(es)',
+              icon: Icons.medical_information_rounded,
+              color: const Color(0xFF10B981),
+              onEdit: () => _addDiagnosis(),
+              details: _currentDiagnoses.take(3).toList(),
+            ),
+            const SizedBox(height: 12),
+            _buildActionCard(
+              isDark: isDark,
+              title: 'Add More Diagnoses',
+              subtitle: 'Add additional diagnoses',
+              icon: Icons.add_circle_outline_rounded,
+              color: const Color(0xFF10B981),
+              onTap: () => _addDiagnosis(),
+            ),
+          ] else ...[
+            _buildActionCard(
+              isDark: isDark,
+              title: 'Add Diagnosis',
+              subtitle: 'Document patient diagnoses (ICD-10)',
+              icon: Icons.medical_information_rounded,
+              color: const Color(0xFF10B981),
+              onTap: () => _addDiagnosis(),
+            ),
+          ],
+          
+          const SizedBox(height: 16),
+          
+          // Also allow adding a medical record for detailed findings
           if (_medicalRecord != null)
             _buildCompletedCard(
               isDark: isDark,
               title: _medicalRecord!.recordType,
               subtitle: 'Medical record added',
-              icon: Icons.medical_information_rounded,
-              color: const Color(0xFF10B981),
+              icon: Icons.folder_rounded,
+              color: Colors.teal,
               onEdit: () => _addMedicalRecord(),
               details: [
                 'Date: ${DateFormat('MMM d, yyyy').format(_medicalRecord!.recordDate)}',
@@ -705,9 +755,9 @@ class _WorkflowWizardScreenState extends ConsumerState<WorkflowWizardScreen> {
             _buildActionCard(
               isDark: isDark,
               title: 'Add Medical Record',
-              subtitle: 'Document diagnosis and findings',
-              icon: Icons.medical_information_rounded,
-              color: const Color(0xFF10B981),
+              subtitle: 'Document detailed findings (optional)',
+              icon: Icons.folder_rounded,
+              color: Colors.teal,
               onTap: () => _addMedicalRecord(),
             ),
         ],
@@ -715,7 +765,63 @@ class _WorkflowWizardScreenState extends ConsumerState<WorkflowWizardScreen> {
     );
   }
 
-  // Step 6: Prescription
+  // Step 6: Treatment Plan
+  Widget _buildTreatmentPlanStep(bool isDark) {
+    return Column(
+      children: [
+        _buildSkipOption(
+          isDark: isDark,
+          title: 'Skip Treatment Plan',
+          value: _skipTreatmentPlan,
+          onChanged: (value) => setState(() {
+            _skipTreatmentPlan = value;
+            if (value) _completedSteps[5] = true;
+          }),
+        ),
+        const SizedBox(height: 16),
+        
+        // Show diagnosis summary if available
+        if (_currentDiagnoses.isNotEmpty) ...[
+          _buildInfoCard(
+            isDark: isDark,
+            title: 'Diagnoses for Treatment',
+            message: _currentDiagnoses.join(', '),
+            icon: Icons.medical_information_rounded,
+            color: const Color(0xFF10B981),
+          ),
+          const SizedBox(height: 16),
+        ],
+        
+        if (!_skipTreatmentPlan) ...[
+          if (_treatmentPlan != null)
+            _buildCompletedCard(
+              isDark: isDark,
+              title: 'Treatment Plan Created',
+              subtitle: _treatmentPlan!.treatmentDescription,
+              icon: Icons.assignment_rounded,
+              color: const Color(0xFF8B5CF6),
+              onEdit: () => _addTreatmentPlan(),
+              details: [
+                'Status: ${_treatmentPlan!.outcome}',
+                if (_treatmentPlan!.startDate != null)
+                  'Started: ${DateFormat('MMM d, yyyy').format(_treatmentPlan!.startDate!)}',
+              ],
+            )
+          else
+            _buildActionCard(
+              isDark: isDark,
+              title: 'Create Treatment Plan',
+              subtitle: 'Define treatment goals and medications',
+              icon: Icons.assignment_rounded,
+              color: const Color(0xFF8B5CF6),
+              onTap: () => _addTreatmentPlan(),
+            ),
+        ],
+      ],
+    );
+  }
+
+  // Step 7: Prescription
   Widget _buildPrescriptionStep(bool isDark) {
     return Column(
       children: [
@@ -725,10 +831,58 @@ class _WorkflowWizardScreenState extends ConsumerState<WorkflowWizardScreen> {
           value: _skipPrescription,
           onChanged: (value) => setState(() {
             _skipPrescription = value;
-            if (value) _completedSteps[5] = true;
+            if (value) _completedSteps[6] = true;
           }),
         ),
         const SizedBox(height: 16),
+        
+        // Show diagnosis and treatment plan summary
+        if (_currentDiagnoses.isNotEmpty || _treatmentPlan != null) ...[
+          Container(
+            padding: const EdgeInsets.all(12),
+            decoration: BoxDecoration(
+              color: const Color(0xFF10B981).withValues(alpha: 0.1),
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(color: const Color(0xFF10B981).withValues(alpha: 0.3)),
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    Icon(Icons.info_outline, size: 18, color: const Color(0xFF10B981)),
+                    const SizedBox(width: 8),
+                    Text(
+                      'Prescription will include:',
+                      style: TextStyle(
+                        fontWeight: FontWeight.w600,
+                        color: const Color(0xFF10B981),
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 8),
+                if (_currentDiagnoses.isNotEmpty)
+                  Padding(
+                    padding: const EdgeInsets.only(left: 26),
+                    child: Text(
+                      '• Diagnosis: ${_currentDiagnoses.join(", ")}',
+                      style: TextStyle(fontSize: 13, color: isDark ? Colors.white70 : Colors.black87),
+                    ),
+                  ),
+                if (_treatmentPlan != null)
+                  Padding(
+                    padding: const EdgeInsets.only(left: 26),
+                    child: Text(
+                      '• Treatment: ${_treatmentPlan!.treatmentDescription}',
+                      style: TextStyle(fontSize: 13, color: isDark ? Colors.white70 : Colors.black87),
+                    ),
+                  ),
+              ],
+            ),
+          ),
+          const SizedBox(height: 16),
+        ],
         
         if (!_skipPrescription) ...[
           // Allergy warning if patient has allergies
@@ -764,7 +918,7 @@ class _WorkflowWizardScreenState extends ConsumerState<WorkflowWizardScreen> {
     );
   }
 
-  // Step 7: Follow-Up
+  // Step 8: Follow-Up
   Widget _buildFollowUpStep(bool isDark) {
     return Column(
       children: [
@@ -774,7 +928,7 @@ class _WorkflowWizardScreenState extends ConsumerState<WorkflowWizardScreen> {
           value: _skipFollowUp,
           onChanged: (value) => setState(() {
             _skipFollowUp = value;
-            if (value) _completedSteps[6] = true;
+            if (value) _completedSteps[7] = true;
           }),
         ),
         const SizedBox(height: 16),
@@ -806,7 +960,7 @@ class _WorkflowWizardScreenState extends ConsumerState<WorkflowWizardScreen> {
     );
   }
 
-  // Step 8: Invoice
+  // Step 9: Invoice
   Widget _buildInvoiceStep(bool isDark) {
     return Column(
       children: [
@@ -844,7 +998,8 @@ class _WorkflowWizardScreenState extends ConsumerState<WorkflowWizardScreen> {
     final items = <String>[];
     if (_patient != null) items.add('Patient: ${_patient!.firstName} ${_patient!.lastName}');
     if (_appointment != null) items.add('Reason: ${_appointment!.reason}');
-    if (_medicalRecord != null) items.add('Record: ${_medicalRecord!.recordType}');
+    if (_currentDiagnoses.isNotEmpty) items.add('Diagnosis: ${_currentDiagnoses.join(", ")}');
+    if (_treatmentPlan != null) items.add('Treatment: ${_treatmentPlan!.treatmentDescription}');
     if (_prescription != null) items.add('Prescription: Created');
     if (_followUp != null) items.add('Follow-up: ${DateFormat('MMM d').format(_followUp!.scheduledDate)}');
 
@@ -888,11 +1043,13 @@ class _WorkflowWizardScreenState extends ConsumerState<WorkflowWizardScreen> {
                   color: AppColors.success,
                 ),
                 const SizedBox(width: 8),
-                Text(
-                  item,
-                  style: TextStyle(
-                    color: isDark ? Colors.grey[300] : Colors.grey[700],
-                    fontSize: 13,
+                Expanded(
+                  child: Text(
+                    item,
+                    style: TextStyle(
+                      color: isDark ? Colors.grey[300] : Colors.grey[700],
+                      fontSize: 13,
+                    ),
                   ),
                 ),
               ],
@@ -1208,10 +1365,12 @@ class _WorkflowWizardScreenState extends ConsumerState<WorkflowWizardScreen> {
             onChanged: (v) => onChanged(v ?? false),
             activeColor: AppColors.primary,
           ),
-          Text(
-            title,
-            style: TextStyle(
-              color: isDark ? Colors.grey[300] : Colors.grey[700],
+          Expanded(
+            child: Text(
+              title,
+              style: TextStyle(
+                color: isDark ? Colors.grey[300] : Colors.grey[700],
+              ),
             ),
           ),
         ],
@@ -1457,7 +1616,11 @@ class _WorkflowWizardScreenState extends ConsumerState<WorkflowWizardScreen> {
     final result = await Navigator.push<MedicalRecord>(
       context,
       MaterialPageRoute(
-        builder: (_) => SelectRecordTypeScreen(preselectedPatient: _patient),
+        builder: (_) => SelectRecordTypeScreen(
+          preselectedPatient: _patient,
+          encounterId: _encounter?.id,
+          appointmentId: _appointment?.id,
+        ),
       ),
     );
     
@@ -1469,10 +1632,176 @@ class _WorkflowWizardScreenState extends ConsumerState<WorkflowWizardScreen> {
       });
       setState(() {
         _medicalRecord = result;
-        _completedSteps[4] = true;
+        // Extract diagnosis from medical record if available
+        if (result.diagnosis.isNotEmpty && !_currentDiagnoses.contains(result.diagnosis)) {
+          _currentDiagnoses.add(result.diagnosis);
+          _currentDiagnosis = result.diagnosis;
+        }
       });
     } else {
       log.d('WORKFLOW', 'Medical record creation cancelled');
+    }
+  }
+
+  Future<void> _addDiagnosis() async {
+    if (_patient == null) {
+      log.w('WORKFLOW', 'Cannot add diagnosis - no patient selected');
+      return;
+    }
+    
+    log.d('WORKFLOW', 'Opening diagnosis picker');
+    
+    // Show diagnosis picker modal
+    final result = await showModalBottomSheet<Map<String, dynamic>>(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (context) => _DiagnosisEntryModal(
+        patientId: _patient!.id,
+        encounterId: _encounter?.id,
+        existingDiagnoses: _currentDiagnoses,
+      ),
+    );
+    
+    if (result != null && mounted) {
+      final diagnoses = result['diagnoses'] as List<String>? ?? [];
+      log.i('WORKFLOW', 'Diagnoses added', extra: {
+        'count': diagnoses.length,
+        'diagnoses': diagnoses,
+      });
+      
+      // Save diagnoses to database if encounter exists
+      if (_encounter != null && diagnoses.isNotEmpty) {
+        try {
+          final db = await ref.read(doctorDbProvider.future);
+          for (final diagnosisName in diagnoses) {
+            // First, check if diagnosis already exists for this patient
+            final existingDiagnoses = await db.getDiagnosesForPatient(_patient!.id);
+            var diagnosis = existingDiagnoses.where(
+              (d) => d.description.toLowerCase() == diagnosisName.toLowerCase()
+            ).firstOrNull;
+            
+            // If not exists, create new diagnosis
+            if (diagnosis == null) {
+              final diagnosisId = await db.insertDiagnosis(DiagnosesCompanion.insert(
+                patientId: _patient!.id,
+                description: diagnosisName,
+                category: const Value('general'),
+                diagnosisStatus: const Value('active'),
+                diagnosedDate: DateTime.now(),
+              ));
+              diagnosis = await (db.select(db.diagnoses)
+                ..where((d) => d.id.equals(diagnosisId)))
+                .getSingleOrNull();
+            }
+            
+            // Link diagnosis to encounter
+            if (diagnosis != null) {
+              await db.into(db.encounterDiagnoses).insert(
+                EncounterDiagnosesCompanion.insert(
+                  encounterId: _encounter!.id,
+                  diagnosisId: diagnosis.id,
+                  isNewDiagnosis: const Value(true),
+                  encounterStatus: const Value('addressed'),
+                ),
+              );
+            }
+          }
+          log.i('WORKFLOW', 'Diagnoses saved to database');
+        } catch (e) {
+          log.e('WORKFLOW', 'Failed to save diagnoses', error: e);
+        }
+      }
+      
+      setState(() {
+        _currentDiagnoses = diagnoses;
+        if (diagnoses.isNotEmpty) {
+          _currentDiagnosis = diagnoses.first;
+          _completedSteps[4] = true;
+        }
+      });
+    } else {
+      log.d('WORKFLOW', 'Diagnosis entry cancelled');
+    }
+  }
+
+  Future<void> _addTreatmentPlan() async {
+    if (_patient == null) {
+      log.w('WORKFLOW', 'Cannot add treatment plan - no patient selected');
+      return;
+    }
+    
+    log.d('WORKFLOW', 'Opening treatment plan form');
+    
+    // Show treatment plan modal
+    final result = await showModalBottomSheet<Map<String, dynamic>>(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (context) => _TreatmentPlanModal(
+        patientId: _patient!.id,
+        encounterId: _encounter?.id,
+        diagnoses: _currentDiagnoses,
+      ),
+    );
+    
+    if (result != null && mounted) {
+      final description = result['description'] as String? ?? '';
+      final goals = result['goals'] as String? ?? '';
+      final instructions = result['instructions'] as String? ?? '';
+      final diagnosis = result['diagnosis'] as String? ?? '';
+      
+      log.i('WORKFLOW', 'Treatment plan created', extra: {
+        'description': description,
+        'diagnosis': diagnosis,
+      });
+      
+      // Save treatment plan to database if patient exists
+      if (_patient != null) {
+        try {
+          final db = await ref.read(doctorDbProvider.future);
+          await db.insertTreatmentOutcome(
+            TreatmentOutcomesCompanion.insert(
+              patientId: _patient!.id,
+              treatmentType: 'combination',
+              treatmentDescription: description,
+              providerType: const Value('psychiatrist'),
+              providerName: const Value(''),
+              diagnosis: Value(diagnosis),
+              startDate: DateTime.now(),
+              outcome: const Value('ongoing'),
+              notes: Value('Goals: $goals\n\nPatient Instructions: $instructions'),
+            ),
+          );
+          
+          // Reload the treatment outcome for display
+          final outcomes = await db.getTreatmentOutcomesForPatient(_patient!.id);
+          if (outcomes.isNotEmpty && mounted) {
+            setState(() {
+              _treatmentPlan = outcomes.last;
+              _completedSteps[5] = true;
+            });
+          } else if (mounted) {
+            setState(() {
+              _completedSteps[5] = true;
+            });
+          }
+        } catch (e) {
+          log.e('WORKFLOW', 'Failed to save treatment plan', error: e);
+          if (mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(content: Text('Failed to save treatment plan: $e')),
+            );
+          }
+        }
+      } else {
+        // Just mark as completed without saving to DB
+        setState(() {
+          _completedSteps[5] = true;
+        });
+      }
+    } else {
+      log.d('WORKFLOW', 'Treatment plan creation cancelled');
     }
   }
 
@@ -1482,11 +1811,20 @@ class _WorkflowWizardScreenState extends ConsumerState<WorkflowWizardScreen> {
       return;
     }
     
-    log.d('WORKFLOW', 'Opening prescription form');
+    log.d('WORKFLOW', 'Opening prescription form with diagnosis', extra: {
+      'diagnoses': _currentDiagnoses,
+      'encounterId': _encounter?.id,
+    });
+    
     final result = await Navigator.push<Prescription>(
       context,
       MaterialPageRoute(
-        builder: (_) => AddPrescriptionScreen(preselectedPatient: _patient),
+        builder: (_) => AddPrescriptionScreen(
+          preselectedPatient: _patient,
+          encounterId: _encounter?.id,
+          appointmentId: _appointment?.id,
+          diagnosis: _currentDiagnoses.isNotEmpty ? _currentDiagnoses.join(', ') : null,
+        ),
       ),
     );
     
@@ -1497,7 +1835,7 @@ class _WorkflowWizardScreenState extends ConsumerState<WorkflowWizardScreen> {
       });
       setState(() {
         _prescription = result;
-        _completedSteps[5] = true;
+        _completedSteps[6] = true;
       });
     } else {
       log.d('WORKFLOW', 'Prescription creation cancelled');
@@ -1511,20 +1849,30 @@ class _WorkflowWizardScreenState extends ConsumerState<WorkflowWizardScreen> {
     }
     
     log.d('WORKFLOW', 'Opening follow-up scheduler');
-    final result = await Navigator.push<ScheduledFollowUp>(
-      context,
-      MaterialPageRoute(
-        builder: (_) => AddFollowUpScreen(preselectedPatient: _patient),
+    
+    // Use a modal for scheduling follow-up
+    final result = await showModalBottomSheet<ScheduledFollowUp>(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (context) => _FollowUpSchedulerModal(
+        patientId: _patient!.id,
+        appointmentId: _appointment?.id,
+        diagnosis: _currentDiagnoses.isNotEmpty ? _currentDiagnoses.join(', ') : null,
+        treatmentPlan: _treatmentPlan?.treatmentDescription,
+        reason: _appointment?.reason,
       ),
     );
     
     if (result != null && mounted) {
       log.i('WORKFLOW', 'Follow-up scheduled', extra: {
+        'followUpId': result.id,
+        'scheduledDate': result.scheduledDate.toIso8601String(),
         'patientId': _patient!.id,
       });
       setState(() {
         _followUp = result;
-        _completedSteps[6] = true;
+        _completedSteps[7] = true;
       });
     } else {
       log.d('WORKFLOW', 'Follow-up scheduling cancelled');
@@ -1544,6 +1892,11 @@ class _WorkflowWizardScreenState extends ConsumerState<WorkflowWizardScreen> {
         builder: (_) => AddInvoiceScreen(
           patientId: _patient?.id,
           patientName: _patient != null ? '${_patient!.firstName} ${_patient!.lastName}' : null,
+          preselectedPatient: _patient,
+          encounterId: _encounter?.id,
+          appointmentId: _appointment?.id,
+          prescriptionId: _prescription?.id,
+          diagnosis: _currentDiagnoses.isNotEmpty ? _currentDiagnoses.join(', ') : null,
         ),
       ),
     );
@@ -1557,7 +1910,7 @@ class _WorkflowWizardScreenState extends ConsumerState<WorkflowWizardScreen> {
       });
       setState(() {
         _invoice = result;
-        _completedSteps[7] = true;
+        _completedSteps[8] = true;
       });
     } else {
       log.d('WORKFLOW', 'Invoice creation cancelled');
@@ -1834,7 +2187,7 @@ class _WorkflowCompleteDialog extends StatelessWidget {
               child: Column(
                 children: [
                   if (encounter != null)
-                    _buildSummaryRow(Icons.medical_services_rounded, 'Encounter #${encounter!.id} completed'),
+                    _buildSummaryRow(Icons.medical_services_rounded, 'Visit #${encounter!.id} completed'),
                   if (appointment != null)
                     _buildSummaryRow(Icons.calendar_month_rounded, 'Appointment completed'),
                   if (prescription != null)
@@ -1872,7 +2225,808 @@ class _WorkflowCompleteDialog extends StatelessWidget {
         children: [
           Icon(icon, size: 18, color: AppColors.success),
           const SizedBox(width: 12),
-          Text(text, style: const TextStyle(fontSize: 14)),
+          Expanded(
+            child: Text(
+              text,
+              style: const TextStyle(fontSize: 14),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+/// Modal for entering diagnoses in the workflow
+class _DiagnosisEntryModal extends StatefulWidget {
+  final int patientId;
+  final int? encounterId;
+  final List<String> existingDiagnoses;
+  
+  const _DiagnosisEntryModal({
+    required this.patientId,
+    this.encounterId,
+    required this.existingDiagnoses,
+  });
+  
+  @override
+  State<_DiagnosisEntryModal> createState() => _DiagnosisEntryModalState();
+}
+
+class _DiagnosisEntryModalState extends State<_DiagnosisEntryModal> {
+  final _controller = TextEditingController();
+  late List<String> _diagnoses;
+  
+  // Common diagnoses for quick selection
+  static const _commonDiagnoses = [
+    'Hypertension',
+    'Type 2 Diabetes Mellitus',
+    'Upper Respiratory Tract Infection',
+    'Gastroesophageal Reflux Disease',
+    'Migraine',
+    'Low Back Pain',
+    'Anxiety Disorder',
+    'Depression',
+    'Allergic Rhinitis',
+    'Asthma',
+    'Urinary Tract Infection',
+    'Osteoarthritis',
+    'Hypothyroidism',
+    'Hyperlipidemia',
+    'Anemia',
+  ];
+  
+  @override
+  void initState() {
+    super.initState();
+    _diagnoses = List.from(widget.existingDiagnoses);
+  }
+  
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+  
+  void _addDiagnosis(String diagnosis) {
+    final trimmed = diagnosis.trim();
+    if (trimmed.isNotEmpty && !_diagnoses.contains(trimmed)) {
+      setState(() {
+        _diagnoses.add(trimmed);
+        _controller.clear();
+      });
+    }
+  }
+  
+  void _removeDiagnosis(String diagnosis) {
+    setState(() {
+      _diagnoses.remove(diagnosis);
+    });
+  }
+  
+  @override
+  Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final bottomPadding = MediaQuery.of(context).viewInsets.bottom;
+    
+    return Container(
+      height: MediaQuery.of(context).size.height * 0.75,
+      padding: EdgeInsets.only(bottom: bottomPadding),
+      decoration: BoxDecoration(
+        color: isDark ? const Color(0xFF1E1E1E) : Colors.white,
+        borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      child: Column(
+        children: [
+          // Handle bar
+          Container(
+            margin: const EdgeInsets.only(top: 12),
+            width: 40,
+            height: 4,
+            decoration: BoxDecoration(
+              color: Colors.grey.shade400,
+              borderRadius: BorderRadius.circular(2),
+            ),
+          ),
+          
+          // Header
+          Padding(
+            padding: const EdgeInsets.all(16),
+            child: Row(
+              children: [
+                Icon(
+                  Icons.medical_information_rounded,
+                  color: AppColors.primary,
+                  size: 24,
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const Text(
+                        'Add Diagnoses',
+                        style: TextStyle(
+                          fontSize: 18,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                      Text(
+                        '${_diagnoses.length} diagnosis(es) added',
+                        style: TextStyle(
+                          fontSize: 13,
+                          color: isDark ? Colors.grey.shade400 : Colors.grey.shade600,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                TextButton(
+                  onPressed: () => Navigator.pop(context, {'diagnoses': _diagnoses}),
+                  child: Text(
+                    'Done',
+                    style: TextStyle(
+                      color: AppColors.primary,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+          
+          const Divider(height: 1),
+          
+          // Input field
+          Padding(
+            padding: const EdgeInsets.all(16),
+            child: Row(
+              children: [
+                Expanded(
+                  child: TextField(
+                    controller: _controller,
+                    decoration: InputDecoration(
+                      hintText: 'Enter diagnosis or select below...',
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      contentPadding: const EdgeInsets.symmetric(
+                        horizontal: 16,
+                        vertical: 12,
+                      ),
+                    ),
+                    onSubmitted: _addDiagnosis,
+                  ),
+                ),
+                const SizedBox(width: 12),
+                IconButton.filled(
+                  onPressed: () => _addDiagnosis(_controller.text),
+                  icon: const Icon(Icons.add),
+                  style: IconButton.styleFrom(
+                    backgroundColor: AppColors.primary,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          
+          // Current diagnoses
+          if (_diagnoses.isNotEmpty)
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 16),
+              width: double.infinity,
+              child: Wrap(
+                spacing: 8,
+                runSpacing: 8,
+                children: _diagnoses.map((d) => Chip(
+                  label: Text(d),
+                  deleteIcon: const Icon(Icons.close, size: 16),
+                  onDeleted: () => _removeDiagnosis(d),
+                  backgroundColor: AppColors.primary.withOpacity(0.1),
+                  side: BorderSide(color: AppColors.primary.withOpacity(0.3)),
+                )).toList(),
+              ),
+            ),
+          
+          if (_diagnoses.isNotEmpty)
+            const SizedBox(height: 16),
+          
+          // Common diagnoses
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 16),
+            child: Row(
+              children: [
+                Text(
+                  'Common Diagnoses',
+                  style: TextStyle(
+                    fontSize: 14,
+                    fontWeight: FontWeight.w600,
+                    color: isDark ? Colors.grey.shade300 : Colors.grey.shade700,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(height: 8),
+          
+          Expanded(
+            child: ListView.builder(
+              padding: const EdgeInsets.symmetric(horizontal: 16),
+              itemCount: _commonDiagnoses.length,
+              itemBuilder: (context, index) {
+                final diagnosis = _commonDiagnoses[index];
+                final isSelected = _diagnoses.contains(diagnosis);
+                
+                return ListTile(
+                  dense: true,
+                  leading: Icon(
+                    isSelected ? Icons.check_circle : Icons.add_circle_outline,
+                    color: isSelected ? AppColors.success : AppColors.primary,
+                    size: 20,
+                  ),
+                  title: Text(diagnosis),
+                  onTap: () {
+                    if (isSelected) {
+                      _removeDiagnosis(diagnosis);
+                    } else {
+                      _addDiagnosis(diagnosis);
+                    }
+                  },
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  tileColor: isSelected
+                      ? AppColors.success.withOpacity(0.1)
+                      : null,
+                );
+              },
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+/// Modal for entering treatment plan in the workflow
+class _TreatmentPlanModal extends StatefulWidget {
+  final int patientId;
+  final int? encounterId;
+  final List<String> diagnoses;
+  
+  const _TreatmentPlanModal({
+    required this.patientId,
+    this.encounterId,
+    required this.diagnoses,
+  });
+  
+  @override
+  State<_TreatmentPlanModal> createState() => _TreatmentPlanModalState();
+}
+
+class _TreatmentPlanModalState extends State<_TreatmentPlanModal> {
+  final _formKey = GlobalKey<FormState>();
+  final _descriptionController = TextEditingController();
+  final _goalsController = TextEditingController();
+  final _instructionsController = TextEditingController();
+  
+  String _selectedDiagnosis = '';
+  
+  @override
+  void initState() {
+    super.initState();
+    if (widget.diagnoses.isNotEmpty) {
+      _selectedDiagnosis = widget.diagnoses.first;
+    }
+  }
+  
+  @override
+  void dispose() {
+    _descriptionController.dispose();
+    _goalsController.dispose();
+    _instructionsController.dispose();
+    super.dispose();
+  }
+  
+  @override
+  Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final bottomPadding = MediaQuery.of(context).viewInsets.bottom;
+    
+    return Container(
+      height: MediaQuery.of(context).size.height * 0.85,
+      padding: EdgeInsets.only(bottom: bottomPadding),
+      decoration: BoxDecoration(
+        color: isDark ? const Color(0xFF1E1E1E) : Colors.white,
+        borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      child: Form(
+        key: _formKey,
+        child: Column(
+          children: [
+            // Handle bar
+            Container(
+              margin: const EdgeInsets.only(top: 12),
+              width: 40,
+              height: 4,
+              decoration: BoxDecoration(
+                color: Colors.grey.shade400,
+                borderRadius: BorderRadius.circular(2),
+              ),
+            ),
+            
+            // Header
+            Padding(
+              padding: const EdgeInsets.all(16),
+              child: Row(
+                children: [
+                  Icon(
+                    Icons.assignment_rounded,
+                    color: AppColors.primary,
+                    size: 24,
+                  ),
+                  const SizedBox(width: 12),
+                  const Expanded(
+                    child: Text(
+                      'Create Treatment Plan',
+                      style: TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  ),
+                  TextButton(
+                    onPressed: () => Navigator.pop(context),
+                    child: const Text('Cancel'),
+                  ),
+                ],
+              ),
+            ),
+            
+            const Divider(height: 1),
+            
+            Expanded(
+              child: SingleChildScrollView(
+                padding: const EdgeInsets.all(16),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    // Link to diagnosis
+                    if (widget.diagnoses.isNotEmpty) ...[
+                      Text(
+                        'For Diagnosis',
+                        style: TextStyle(
+                          fontSize: 14,
+                          fontWeight: FontWeight.w600,
+                          color: isDark ? Colors.grey.shade300 : Colors.grey.shade700,
+                        ),
+                      ),
+                      const SizedBox(height: 8),
+                      DropdownButtonFormField<String>(
+                        value: _selectedDiagnosis.isEmpty ? null : _selectedDiagnosis,
+                        decoration: InputDecoration(
+                          border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          contentPadding: const EdgeInsets.symmetric(
+                            horizontal: 16,
+                            vertical: 12,
+                          ),
+                        ),
+                        items: widget.diagnoses.map((d) => DropdownMenuItem(
+                          value: d,
+                          child: Text(d),
+                        )).toList(),
+                        onChanged: (value) {
+                          setState(() => _selectedDiagnosis = value ?? '');
+                        },
+                      ),
+                      const SizedBox(height: 20),
+                    ],
+                    
+                    // Treatment Description (main content)
+                    TextFormField(
+                      controller: _descriptionController,
+                      maxLines: 3,
+                      decoration: InputDecoration(
+                        labelText: 'Treatment Plan*',
+                        hintText: 'e.g., Start Amlodipine 5mg daily, lifestyle modifications...',
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                      ),
+                      validator: (value) {
+                        if (value == null || value.trim().isEmpty) {
+                          return 'Please describe the treatment plan';
+                        }
+                        return null;
+                      },
+                    ),
+                    const SizedBox(height: 16),
+                    
+                    // Goals
+                    TextFormField(
+                      controller: _goalsController,
+                      maxLines: 2,
+                      decoration: InputDecoration(
+                        labelText: 'Treatment Goals',
+                        hintText: 'e.g., Maintain BP below 130/80',
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 16),
+                    
+                    // Instructions
+                    TextFormField(
+                      controller: _instructionsController,
+                      maxLines: 3,
+                      decoration: InputDecoration(
+                        labelText: 'Patient Instructions',
+                        hintText: 'Instructions for the patient...',
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+            
+            // Save button
+            Padding(
+              padding: const EdgeInsets.all(16),
+              child: SizedBox(
+                width: double.infinity,
+                child: ElevatedButton(
+                  onPressed: () {
+                    if (_formKey.currentState!.validate()) {
+                      Navigator.pop(context, {
+                        'description': _descriptionController.text.trim(),
+                        'goals': _goalsController.text.trim(),
+                        'instructions': _instructionsController.text.trim(),
+                        'diagnosis': _selectedDiagnosis,
+                      });
+                    }
+                  },
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: AppColors.primary,
+                    foregroundColor: Colors.white,
+                    padding: const EdgeInsets.symmetric(vertical: 14),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                  ),
+                  child: const Text(
+                    'Create Treatment Plan',
+                    style: TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+/// Modal for scheduling follow-up in the workflow
+class _FollowUpSchedulerModal extends ConsumerStatefulWidget {
+  final int patientId;
+  final int? appointmentId;
+  final String? diagnosis;
+  final String? treatmentPlan;
+  final String? reason;
+  
+  const _FollowUpSchedulerModal({
+    required this.patientId,
+    this.appointmentId,
+    this.diagnosis,
+    this.treatmentPlan,
+    this.reason,
+  });
+  
+  @override
+  ConsumerState<_FollowUpSchedulerModal> createState() => _FollowUpSchedulerModalState();
+}
+
+class _FollowUpSchedulerModalState extends ConsumerState<_FollowUpSchedulerModal> {
+  final _reasonController = TextEditingController();
+  final _notesController = TextEditingController();
+  DateTime _scheduledDate = DateTime.now().add(const Duration(days: 7));
+  bool _isSaving = false;
+  
+  // Common follow-up intervals
+  static const _intervals = [
+    {'label': '1 Week', 'days': 7},
+    {'label': '2 Weeks', 'days': 14},
+    {'label': '1 Month', 'days': 30},
+    {'label': '3 Months', 'days': 90},
+    {'label': '6 Months', 'days': 180},
+  ];
+  
+  @override
+  void initState() {
+    super.initState();
+    // Pre-fill reason based on context
+    if (widget.reason != null && widget.reason!.isNotEmpty) {
+      _reasonController.text = 'Follow-up for: ${widget.reason}';
+    } else if (widget.diagnosis != null && widget.diagnosis!.isNotEmpty) {
+      _reasonController.text = 'Follow-up for: ${widget.diagnosis}';
+    }
+    // Pre-fill notes with treatment context
+    if (widget.treatmentPlan != null && widget.treatmentPlan!.isNotEmpty) {
+      _notesController.text = 'Treatment: ${widget.treatmentPlan}';
+    }
+  }
+  
+  @override
+  void dispose() {
+    _reasonController.dispose();
+    _notesController.dispose();
+    super.dispose();
+  }
+  
+  void _selectInterval(int days) {
+    setState(() {
+      _scheduledDate = DateTime.now().add(Duration(days: days));
+    });
+  }
+  
+  Future<void> _pickDate() async {
+    final picked = await showDatePicker(
+      context: context,
+      initialDate: _scheduledDate,
+      firstDate: DateTime.now(),
+      lastDate: DateTime.now().add(const Duration(days: 365)),
+    );
+    if (picked != null) {
+      setState(() => _scheduledDate = picked);
+    }
+  }
+  
+  Future<void> _save() async {
+    if (_reasonController.text.trim().isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Please enter a reason for follow-up')),
+      );
+      return;
+    }
+    
+    setState(() => _isSaving = true);
+    
+    try {
+      final db = await ref.read(doctorDbProvider.future);
+      final id = await db.insertScheduledFollowUp(
+        ScheduledFollowUpsCompanion.insert(
+          patientId: widget.patientId,
+          scheduledDate: _scheduledDate,
+          reason: _reasonController.text.trim(),
+          sourceAppointmentId: Value(widget.appointmentId),
+          status: const Value('pending'),
+          notes: Value(_notesController.text.trim()),
+        ),
+      );
+      
+      // Fetch the created follow-up
+      final followUp = await (db.select(db.scheduledFollowUps)
+        ..where((f) => f.id.equals(id)))
+        .getSingleOrNull();
+      
+      if (mounted) {
+        Navigator.pop(context, followUp);
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Error: $e')),
+        );
+        setState(() => _isSaving = false);
+      }
+    }
+  }
+  
+  @override
+  Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final bottomPadding = MediaQuery.of(context).viewInsets.bottom;
+    
+    return Container(
+      height: MediaQuery.of(context).size.height * 0.7,
+      padding: EdgeInsets.only(bottom: bottomPadding),
+      decoration: BoxDecoration(
+        color: isDark ? const Color(0xFF1E1E1E) : Colors.white,
+        borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      child: Column(
+        children: [
+          // Handle bar
+          Container(
+            margin: const EdgeInsets.only(top: 12),
+            width: 40,
+            height: 4,
+            decoration: BoxDecoration(
+              color: Colors.grey.shade400,
+              borderRadius: BorderRadius.circular(2),
+            ),
+          ),
+          
+          // Header
+          Padding(
+            padding: const EdgeInsets.all(16),
+            child: Row(
+              children: [
+                Icon(
+                  Icons.event_repeat_rounded,
+                  color: Colors.orange,
+                  size: 24,
+                ),
+                const SizedBox(width: 12),
+                const Expanded(
+                  child: Text(
+                    'Schedule Follow-Up',
+                    style: TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                ),
+                TextButton(
+                  onPressed: () => Navigator.pop(context),
+                  child: const Text('Cancel'),
+                ),
+              ],
+            ),
+          ),
+          
+          const Divider(height: 1),
+          
+          Expanded(
+            child: SingleChildScrollView(
+              padding: const EdgeInsets.all(16),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  // Quick intervals
+                  Text(
+                    'Quick Select',
+                    style: TextStyle(
+                      fontSize: 14,
+                      fontWeight: FontWeight.w600,
+                      color: isDark ? Colors.grey.shade300 : Colors.grey.shade700,
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  Wrap(
+                    spacing: 8,
+                    runSpacing: 8,
+                    children: _intervals.map((interval) {
+                      final days = interval['days'] as int;
+                      final isSelected = _scheduledDate.difference(DateTime.now()).inDays == days;
+                      return FilterChip(
+                        label: Text(interval['label'] as String),
+                        selected: isSelected,
+                        onSelected: (_) => _selectInterval(days),
+                        selectedColor: Colors.orange.withOpacity(0.2),
+                        checkmarkColor: Colors.orange,
+                      );
+                    }).toList(),
+                  ),
+                  const SizedBox(height: 16),
+                  
+                  // Date picker
+                  InkWell(
+                    onTap: _pickDate,
+                    borderRadius: BorderRadius.circular(12),
+                    child: Container(
+                      padding: const EdgeInsets.all(16),
+                      decoration: BoxDecoration(
+                        border: Border.all(color: Colors.grey.shade400),
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: Row(
+                        children: [
+                          Icon(Icons.calendar_today, color: Colors.orange),
+                          const SizedBox(width: 12),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  'Scheduled Date',
+                                  style: TextStyle(
+                                    fontSize: 12,
+                                    color: isDark ? Colors.grey.shade400 : Colors.grey.shade600,
+                                  ),
+                                ),
+                                Text(
+                                  DateFormat('EEEE, MMMM d, yyyy').format(_scheduledDate),
+                                  style: const TextStyle(
+                                    fontSize: 16,
+                                    fontWeight: FontWeight.w500,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                          Icon(Icons.chevron_right, color: Colors.grey.shade400),
+                        ],
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+                  
+                  // Reason
+                  TextField(
+                    controller: _reasonController,
+                    decoration: InputDecoration(
+                      labelText: 'Reason for Follow-Up*',
+                      hintText: 'e.g., Check medication response',
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                    ),
+                    maxLines: 2,
+                  ),
+                  const SizedBox(height: 16),
+                  
+                  // Notes
+                  TextField(
+                    controller: _notesController,
+                    decoration: InputDecoration(
+                      labelText: 'Notes',
+                      hintText: 'Additional notes...',
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                    ),
+                    maxLines: 2,
+                  ),
+                ],
+              ),
+            ),
+          ),
+          
+          // Save button
+          Padding(
+            padding: const EdgeInsets.all(16),
+            child: SizedBox(
+              width: double.infinity,
+              child: ElevatedButton(
+                onPressed: _isSaving ? null : _save,
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Colors.orange,
+                  foregroundColor: Colors.white,
+                  padding: const EdgeInsets.symmetric(vertical: 14),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                ),
+                child: _isSaving
+                    ? const SizedBox(
+                        width: 20,
+                        height: 20,
+                        child: CircularProgressIndicator(
+                          strokeWidth: 2,
+                          color: Colors.white,
+                        ),
+                      )
+                    : const Text(
+                        'Schedule Follow-Up',
+                        style: TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+              ),
+            ),
+          ),
         ],
       ),
     );

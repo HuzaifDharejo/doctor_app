@@ -31,7 +31,6 @@ class _EditMedicalRecordScreenState extends ConsumerState<EditMedicalRecordScree
   // Common fields
   late DateTime _recordDate;
   late String _recordType;
-  final _titleController = TextEditingController();
   final _descriptionController = TextEditingController();
   final _diagnosisController = TextEditingController();
   final _treatmentController = TextEditingController();
@@ -69,7 +68,6 @@ class _EditMedicalRecordScreenState extends ConsumerState<EditMedicalRecordScree
   void _loadRecordData() {
     _recordDate = widget.record.recordDate;
     _recordType = widget.record.recordType;
-    _titleController.text = widget.record.title;
     _descriptionController.text = widget.record.description;
     _diagnosisController.text = widget.record.diagnosis;
     _treatmentController.text = widget.record.treatment;
@@ -86,7 +84,6 @@ class _EditMedicalRecordScreenState extends ConsumerState<EditMedicalRecordScree
   @override
   void dispose() {
     _scrollController.dispose();
-    _titleController.dispose();
     _descriptionController.dispose();
     _diagnosisController.dispose();
     _treatmentController.dispose();
@@ -137,22 +134,11 @@ class _EditMedicalRecordScreenState extends ConsumerState<EditMedicalRecordScree
                     icon: Icons.description_rounded,
                     iconColor: const Color(0xFF6366F1),
                     isDark: isDark,
-                    child: Column(
-                      children: [
-                        TextFormField(
-                          controller: _titleController,
-                          decoration: _inputDecoration('Title', 'Enter record title...', isDark),
-                          style: TextStyle(color: isDark ? Colors.white : Colors.black87),
-                          validator: (v) => v?.isEmpty == true ? 'Title is required' : null,
-                        ),
-                        const SizedBox(height: 16),
-                        TextFormField(
-                          controller: _descriptionController,
-                          maxLines: 3,
-                          decoration: _inputDecoration('Description', 'Enter description...', isDark),
-                          style: TextStyle(color: isDark ? Colors.white : Colors.black87),
-                        ),
-                      ],
+                    child: TextFormField(
+                      controller: _descriptionController,
+                      maxLines: 3,
+                      decoration: _inputDecoration('Description', 'Enter description...', isDark),
+                      style: TextStyle(color: isDark ? Colors.white : Colors.black87),
                     ),
                   ),
                   const SizedBox(height: 16),
@@ -717,7 +703,9 @@ class _EditMedicalRecordScreenState extends ConsumerState<EditMedicalRecordScree
         id: Value(widget.record.id),
         patientId: Value(widget.record.patientId),
         recordType: Value(_recordType),
-        title: Value(_titleController.text),
+        title: Value(_diagnosisController.text.isNotEmpty 
+            ? '${_recordTypeLabels[_recordType] ?? 'Record'}: ${_diagnosisController.text}'
+            : '${_recordTypeLabels[_recordType] ?? 'Medical Record'} - ${DateFormat('MMM d, yyyy').format(_recordDate)}'),
         description: Value(_descriptionController.text),
         dataJson: Value(jsonEncode(_additionalData)),
         diagnosis: Value(_diagnosisController.text),

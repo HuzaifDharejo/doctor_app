@@ -67,7 +67,7 @@ class _QuickCheckInDialogState extends State<QuickCheckInDialog> {
           success: true,
           encounterId: encounterId,
           message: _autoCreateEncounter 
-              ? 'Patient checked in and encounter started'
+              ? 'Patient checked in and visit started'
               : 'Patient checked in',
         ));
       }
@@ -304,7 +304,7 @@ class _QuickCheckInDialogState extends State<QuickCheckInDialog> {
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
                               const Text(
-                                'Auto-start encounter',
+                                'Auto-start visit',
                                 style: TextStyle(
                                   fontSize: 14,
                                   fontWeight: FontWeight.w600,
@@ -312,7 +312,7 @@ class _QuickCheckInDialogState extends State<QuickCheckInDialog> {
                               ),
                               const SizedBox(height: 2),
                               Text(
-                                'Create encounter record on check-in',
+                                'Create visit record on check-in',
                                 style: TextStyle(
                                   fontSize: 12,
                                   color: isDark ? Colors.white54 : Colors.black45,

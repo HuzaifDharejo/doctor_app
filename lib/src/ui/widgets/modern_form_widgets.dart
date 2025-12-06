@@ -670,36 +670,46 @@ class ModernFormWidgets {
                   ),
                 ),
                 const SizedBox(height: 4),
-                Row(
+                Wrap(
+                  spacing: 12,
+                  runSpacing: 4,
                   children: [
-                    if (patient.dateOfBirth != null) ...[
-                      Icon(
-                        Icons.cake_rounded,
-                        size: 14,
-                        color: Colors.white.withValues(alpha: 0.8),
+                    if (patient.dateOfBirth != null)
+                      Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Icon(
+                            Icons.cake_rounded,
+                            size: 14,
+                            color: Colors.white.withValues(alpha: 0.8),
+                          ),
+                          const SizedBox(width: 4),
+                          Text(
+                            '${DateTime.now().year - patient.dateOfBirth!.year} yrs',
+                            style: TextStyle(
+                              color: Colors.white.withValues(alpha: 0.9),
+                              fontSize: 13,
+                            ),
+                          ),
+                        ],
                       ),
-                      const SizedBox(width: 4),
-                      Text(
-                        '${DateTime.now().year - patient.dateOfBirth!.year} yrs',
-                        style: TextStyle(
-                          color: Colors.white.withValues(alpha: 0.9),
-                          fontSize: 13,
+                    Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Icon(
+                          Icons.badge_rounded,
+                          size: 14,
+                          color: Colors.white.withValues(alpha: 0.8),
                         ),
-                      ),
-                      const SizedBox(width: 12),
-                    ],
-                    Icon(
-                      Icons.badge_rounded,
-                      size: 14,
-                      color: Colors.white.withValues(alpha: 0.8),
-                    ),
-                    const SizedBox(width: 4),
-                    Text(
-                      'ID: ${patient.id}',
-                      style: TextStyle(
-                        color: Colors.white.withValues(alpha: 0.9),
-                        fontSize: 13,
-                      ),
+                        const SizedBox(width: 4),
+                        Text(
+                          'ID: ${patient.id}',
+                          style: TextStyle(
+                            color: Colors.white.withValues(alpha: 0.9),
+                            fontSize: 13,
+                          ),
+                        ),
+                      ],
                     ),
                   ],
                 ),

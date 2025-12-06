@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:convert';
 import 'package:drift/drift.dart' hide Column;
 import 'package:flutter/material.dart';
@@ -31,6 +32,12 @@ class _AddLabResultScreenState extends ConsumerState<AddLabResultScreen> {
   final _scrollController = ScrollController();
   bool _isSaving = false;
 
+  // Auto-save state
+  Timer? _autoSaveTimer;
+  DateTime? _lastSaved;
+  bool _isAutoSaving = false;
+  static const _autoSaveInterval = Duration(seconds: 30);
+
   // Theme colors for this record type
   static const _primaryColor = Color(0xFF14B8A6); // Lab Teal
   static const _secondaryColor = Color(0xFF0D9488);
@@ -39,7 +46,6 @@ class _AddLabResultScreenState extends ConsumerState<AddLabResultScreen> {
   // Common fields
   int? _selectedPatientId;
   DateTime _recordDate = DateTime.now();
-  final _titleController = TextEditingController();
 
   // Lab Result specific fields
   final _testNameController = TextEditingController();
@@ -62,12 +68,15 @@ class _AddLabResultScreenState extends ConsumerState<AddLabResultScreen> {
     
     if (widget.existingRecord != null) {
       _loadExistingRecord();
+    } else {
+      WidgetsBinding.instance.addPostFrameCallback((_) => _checkForDraft());
     }
+    
+    _autoSaveTimer = Timer.periodic(_autoSaveInterval, (_) => _autoSave());
   }
 
   void _loadExistingRecord() {
     final record = widget.existingRecord!;
-    _titleController.text = record.title;
     _recordDate = record.recordDate;
     _clinicalNotesController.text = record.doctorNotes ?? '';
     
@@ -90,8 +99,8 @@ class _AddLabResultScreenState extends ConsumerState<AddLabResultScreen> {
 
   @override
   void dispose() {
+    _autoSaveTimer?.cancel();
     _scrollController.dispose();
-    _titleController.dispose();
     _testNameController.dispose();
     _testCategoryController.dispose();
     _resultController.dispose();
@@ -103,6 +112,147 @@ class _AddLabResultScreenState extends ConsumerState<AddLabResultScreen> {
     _clinicalNotesController.dispose();
     _interpretationController.dispose();
     super.dispose();
+  }
+
+  // Auto-save methods
+  Future<void> _checkForDraft() async {
+    final draft = await FormDraftService.loadDraft(
+      formType: 'lab_result',
+      patientId: _selectedPatientId,
+    );
+    if (draft != null && mounted) {
+      _showRestoreDraftDialog(draft);
+    }
+  }
+
+  void _showRestoreDraftDialog(FormDraft draft) {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        title: Row(
+          children: [
+            Container(
+              padding: const EdgeInsets.all(8),
+              decoration: BoxDecoration(
+                color: Colors.amber.shade100,
+                borderRadius: BorderRadius.circular(10),
+              ),
+              child: Icon(Icons.restore, color: Colors.amber.shade700),
+            ),
+            const SizedBox(width: 12),
+            const Text('Restore Draft?'),
+          ],
+        ),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Text('A previous draft was found for this form.'),
+            const SizedBox(height: 8),
+            Container(
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: Colors.grey.shade100,
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: Row(
+                children: [
+                  Icon(Icons.access_time, size: 16, color: Colors.grey.shade600),
+                  const SizedBox(width: 8),
+                  Text('Saved ${draft.timeAgo}', style: TextStyle(color: Colors.grey.shade700)),
+                ],
+              ),
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () {
+              Navigator.pop(context);
+              FormDraftService.clearDraft(formType: 'lab_result', patientId: _selectedPatientId);
+            },
+            child: Text('Discard', style: TextStyle(color: Colors.grey.shade600)),
+          ),
+          ElevatedButton(
+            onPressed: () {
+              Navigator.pop(context);
+              _restoreFromDraft(draft.data);
+            },
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Colors.amber.shade600,
+              foregroundColor: Colors.white,
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+            ),
+            child: const Text('Restore'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _restoreFromDraft(Map<String, dynamic> data) {
+    setState(() {
+      _testNameController.text = (data['test_name'] as String?) ?? '';
+      _testCategoryController.text = (data['test_category'] as String?) ?? '';
+      _resultController.text = (data['result'] as String?) ?? '';
+      _referenceRangeController.text = (data['reference_range'] as String?) ?? '';
+      _unitsController.text = (data['units'] as String?) ?? '';
+      _specimenController.text = (data['specimen'] as String?) ?? '';
+      _labNameController.text = (data['lab_name'] as String?) ?? '';
+      _orderingPhysicianController.text = (data['ordering_physician'] as String?) ?? '';
+      _clinicalNotesController.text = (data['clinical_notes'] as String?) ?? '';
+      _interpretationController.text = (data['interpretation'] as String?) ?? '';
+      _resultStatus = (data['result_status'] as String?) ?? 'Normal';
+      if (data['record_date'] != null) {
+        _recordDate = DateTime.parse(data['record_date'] as String);
+      }
+    });
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: const Row(children: [Icon(Icons.check_circle, color: Colors.white, size: 18), SizedBox(width: 8), Text('Draft restored')]),
+        backgroundColor: Colors.green.shade600,
+        behavior: SnackBarBehavior.floating,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+        duration: const Duration(seconds: 2),
+      ),
+    );
+  }
+
+  Map<String, dynamic> _buildDraftData() => {
+    'test_name': _testNameController.text,
+    'test_category': _testCategoryController.text,
+    'result': _resultController.text,
+    'reference_range': _referenceRangeController.text,
+    'units': _unitsController.text,
+    'specimen': _specimenController.text,
+    'lab_name': _labNameController.text,
+    'ordering_physician': _orderingPhysicianController.text,
+    'clinical_notes': _clinicalNotesController.text,
+    'interpretation': _interpretationController.text,
+    'result_status': _resultStatus,
+    'record_date': _recordDate.toIso8601String(),
+  };
+
+  bool _hasAnyContent() =>
+    _testNameController.text.isNotEmpty ||
+    _resultController.text.isNotEmpty ||
+    _interpretationController.text.isNotEmpty ||
+    _clinicalNotesController.text.isNotEmpty;
+
+  Future<void> _autoSave() async {
+    if (!mounted || !_hasAnyContent()) return;
+    setState(() => _isAutoSaving = true);
+    try {
+      await FormDraftService.saveDraft(formType: 'lab_result', patientId: _selectedPatientId, data: _buildDraftData());
+      if (mounted) setState(() { _lastSaved = DateTime.now(); _isAutoSaving = false; });
+    } catch (_) {
+      if (mounted) setState(() => _isAutoSaving = false);
+    }
+  }
+
+  Future<void> _clearDraftOnSuccess() async {
+    await FormDraftService.clearDraft(formType: 'lab_result', patientId: _selectedPatientId);
   }
 
   Map<String, dynamic> _buildDataJson() {
@@ -133,11 +283,9 @@ class _AddLabResultScreenState extends ConsumerState<AddLabResultScreen> {
       final companion = MedicalRecordsCompanion.insert(
         patientId: _selectedPatientId!,
         recordType: 'lab_result',
-        title: _titleController.text.isNotEmpty 
-            ? _titleController.text 
-            : _testNameController.text.isNotEmpty 
-                ? 'Lab: ${_testNameController.text}'
-                : 'Lab Result',
+        title: _testNameController.text.isNotEmpty 
+            ? 'Lab: ${_testNameController.text} - ${DateFormat('MMM d').format(_recordDate)}'
+            : 'Lab Result - ${DateFormat('MMM d, yyyy').format(_recordDate)}',
         description: Value(_resultController.text),
         dataJson: Value(jsonEncode(_buildDataJson())),
         diagnosis: Value(_interpretationController.text),
@@ -153,11 +301,9 @@ class _AddLabResultScreenState extends ConsumerState<AddLabResultScreen> {
           id: widget.existingRecord!.id,
           patientId: _selectedPatientId!,
           recordType: 'lab_result',
-          title: _titleController.text.isNotEmpty 
-              ? _titleController.text 
-              : _testNameController.text.isNotEmpty 
-                  ? 'Lab: ${_testNameController.text}'
-                  : 'Lab Result',
+          title: _testNameController.text.isNotEmpty 
+              ? 'Lab: ${_testNameController.text} - ${DateFormat('MMM d').format(_recordDate)}'
+              : 'Lab Result - ${DateFormat('MMM d, yyyy').format(_recordDate)}',
           description: _resultController.text,
           dataJson: jsonEncode(_buildDataJson()),
           diagnosis: _interpretationController.text,
@@ -174,6 +320,7 @@ class _AddLabResultScreenState extends ConsumerState<AddLabResultScreen> {
       }
 
       if (mounted) {
+        await _clearDraftOnSuccess();
         RecordFormWidgets.showSuccessSnackbar(
           context, 
           widget.existingRecord != null 
@@ -191,34 +338,57 @@ class _AddLabResultScreenState extends ConsumerState<AddLabResultScreen> {
     }
   }
 
+  int _calculateCompletedSections() {
+    int completed = 0;
+    if (_selectedPatientId != null) completed++;
+    if (_testNameController.text.isNotEmpty) completed++;
+    if (_resultController.text.isNotEmpty) completed++;
+    if (_referenceRangeController.text.isNotEmpty) completed++;
+    if (_interpretationController.text.isNotEmpty) completed++;
+    return completed;
+  }
+
+  void _applyTemplate(QuickFillTemplate template) {
+    final data = template.data;
+    setState(() {
+      if (data['test_name'] != null) {
+        _testNameController.text = data['test_name'] as String;
+      }
+      if (data['category'] != null) {
+        _testCategoryController.text = data['category'] as String;
+      }
+      if (data['specimen'] != null) {
+        _specimenController.text = data['specimen'] as String;
+      }
+      if (data['reference_range'] != null) {
+        _referenceRangeController.text = data['reference_range'] as String;
+      }
+      if (data['units'] != null) {
+        _unitsController.text = data['units'] as String;
+      }
+    });
+    showTemplateAppliedSnackbar(context, template.label);
+  }
+
   @override
   Widget build(BuildContext context) {
     final dbAsync = ref.watch(doctorDbProvider);
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    final screenWidth = MediaQuery.of(context).size.width;
-    final isCompact = screenWidth < 400;
-    final padding = isCompact ? 12.0 : 20.0;
 
-    return Scaffold(
-      backgroundColor: isDark ? const Color(0xFF0F0F0F) : const Color(0xFFF8FAFC),
+    return RecordFormScaffold(
+      title: widget.existingRecord != null 
+          ? 'Edit Lab Result' 
+          : 'Lab Result',
+      subtitle: DateFormat('EEEE, dd MMMM yyyy').format(_recordDate),
+      icon: Icons.science_rounded,
+      gradientColors: _gradientColors,
+      scrollController: _scrollController,
+      trailing: AutoSaveIndicator(
+        isSaving: _isAutoSaving,
+        lastSaved: _lastSaved,
+      ),
       body: dbAsync.when(
-        data: (db) => CustomScrollView(
-          controller: _scrollController,
-          physics: const BouncingScrollPhysics(),
-          slivers: [
-            // Modern Sliver App Bar
-            _buildSliverAppBar(context, isDark, isCompact),
-            // Body Content
-            SliverPadding(
-              padding: EdgeInsets.all(padding),
-              sliver: SliverList(
-                delegate: SliverChildListDelegate([
-                  _buildFormContent(context, db, isDark),
-                ]),
-              ),
-            ),
-          ],
-        ),
+        data: (db) => _buildFormContent(context, db, isDark),
         loading: () => const Center(
           child: CircularProgressIndicator(color: _primaryColor),
         ),
@@ -227,113 +397,32 @@ class _AddLabResultScreenState extends ConsumerState<AddLabResultScreen> {
     );
   }
 
-  Widget _buildSliverAppBar(BuildContext context, bool isDark, bool isCompact) {
-    return SliverAppBar(
-      expandedHeight: 160,
-      floating: false,
-      pinned: true,
-      elevation: 0,
-      backgroundColor: _primaryColor,
-      surfaceTintColor: Colors.transparent,
-      leading: Padding(
-        padding: const EdgeInsets.all(8.0),
-        child: GestureDetector(
-          onTap: () => Navigator.pop(context),
-          child: Container(
-            decoration: BoxDecoration(
-              color: Colors.white.withValues(alpha: 0.2),
-              borderRadius: BorderRadius.circular(12),
-            ),
-            child: const Icon(
-              Icons.arrow_back_ios_new_rounded,
-              size: 18,
-              color: Colors.white,
-            ),
-          ),
-        ),
-      ),
-      flexibleSpace: FlexibleSpaceBar(
-        background: Container(
-          decoration: BoxDecoration(
-            gradient: LinearGradient(
-              begin: Alignment.topLeft,
-              end: Alignment.bottomRight,
-              colors: _gradientColors,
-            ),
-          ),
-          child: SafeArea(
-            child: Padding(
-              padding: EdgeInsets.fromLTRB(
-                isCompact ? 16 : 24,
-                50,
-                isCompact ? 16 : 24,
-                20,
-              ),
-              child: Row(
-                crossAxisAlignment: CrossAxisAlignment.center,
-                children: [
-                  // Icon Container
-                  Container(
-                    padding: const EdgeInsets.all(16),
-                    decoration: BoxDecoration(
-                      color: Colors.white.withValues(alpha: 0.2),
-                      borderRadius: BorderRadius.circular(18),
-                    ),
-                    child: const Icon(
-                      Icons.science_rounded,
-                      color: Colors.white,
-                      size: 28,
-                    ),
-                  ),
-                  const SizedBox(width: 16),
-                  // Title and Subtitle
-                  Expanded(
-                    child: Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          widget.existingRecord != null 
-                              ? 'Edit Lab Result' 
-                              : 'Lab Result',
-                          style: TextStyle(
-                            fontSize: isCompact ? 20 : 24,
-                            fontWeight: FontWeight.w700,
-                            color: Colors.white,
-                          ),
-                        ),
-                        const SizedBox(height: 4),
-                        Row(
-                          children: [
-                            const Icon(Icons.calendar_today, color: Colors.white70, size: 14),
-                            const SizedBox(width: 6),
-                            Text(
-                              DateFormat('EEEE, dd MMM yyyy').format(_recordDate),
-                              style: TextStyle(
-                                fontSize: isCompact ? 12 : 14,
-                                color: Colors.white.withValues(alpha: 0.9),
-                              ),
-                            ),
-                          ],
-                        ),
-                      ],
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ),
-        ),
-      ),
-    );
-  }
-
   Widget _buildFormContent(BuildContext context, DoctorDatabase db, bool isDark) {
+    // Calculate form completion
+    final completedSections = _calculateCompletedSections();
+    const totalSections = 5; // Patient, Test Name, Result, Reference, Interpretation
+
     return Form(
       key: _formKey,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
+          // Progress Indicator
+          FormProgressIndicator(
+            completedSections: completedSections,
+            totalSections: totalSections,
+            accentColor: _primaryColor,
+          ),
+          const SizedBox(height: 16),
+
+          // Quick Fill Templates
+          QuickFillSection(
+            title: 'Common Lab Tests',
+            templates: LabResultTemplates.templates,
+            onTemplateSelected: _applyTemplate,
+          ),
+          const SizedBox(height: 16),
+
           // Patient Selection
           RecordFormSection(
             title: 'Patient Information',
@@ -362,14 +451,6 @@ class _AddLabResultScreenState extends ConsumerState<AddLabResultScreen> {
                   selectedDate: _recordDate,
                   onDateSelected: (date) => setState(() => _recordDate = date),
                   label: 'Test Date',
-                  accentColor: _primaryColor,
-                ),
-                const SizedBox(height: 16),
-                RecordTextField(
-                  controller: _titleController,
-                  label: 'Title',
-                  hint: 'Enter record title (optional)...',
-                  prefixIcon: Icons.title,
                   accentColor: _primaryColor,
                 ),
               ],

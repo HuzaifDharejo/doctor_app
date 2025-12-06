@@ -315,7 +315,7 @@ class LocalNotificationService {
         if (patient != null) {
           await scheduleAppointmentReminder(
             appointmentId: apt.id,
-            patientName: '${patient.firstName} ${patient.lastName ?? ''}'.trim(),
+            patientName: '${patient.firstName} ${patient.lastName}'.trim(),
             appointmentTime: apt.appointmentDateTime,
             reason: apt.reason,
             reminderBefore: reminderBefore,
@@ -345,7 +345,7 @@ class LocalNotificationService {
         if (patient != null) {
           await scheduleFollowUpReminder(
             followUpId: followUp.id,
-            patientName: '${patient.firstName} ${patient.lastName ?? ''}'.trim(),
+            patientName: '${patient.firstName} ${patient.lastName}'.trim(),
             followUpDate: followUp.scheduledDate,
             reason: followUp.reason,
             reminderBefore: reminderBefore,

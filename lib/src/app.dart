@@ -6,7 +6,6 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'core/core.dart';
 import 'core/theme/design_tokens.dart';
 import 'core/routing/app_router.dart';
-import 'db/doctor_db.dart';
 import 'providers/app_lock_provider.dart';
 import 'providers/audit_provider.dart';
 import 'providers/db_provider.dart';
@@ -612,7 +611,7 @@ class _HomeShellState extends ConsumerState<HomeShell> {
                       context.pop<void>();
                       Navigator.push(
                         context,
-                        MaterialPageRoute(
+                        MaterialPageRoute<void>(
                           builder: (_) => const WorkflowWizardScreen(),
                         ),
                       );
@@ -623,8 +622,8 @@ class _HomeShellState extends ConsumerState<HomeShell> {
                   
                   _buildModernDrawerItem(
                     icon: Icons.medical_services_rounded,
-                    title: 'New Encounter',
-                    subtitle: 'Start clinical encounter',
+                    title: 'New Visit',
+                    subtitle: 'Start clinical visit',
                     onTap: () {
                       context.pop<void>();
                       _startNewEncounterFromDrawer(context, ref);
@@ -641,7 +640,7 @@ class _HomeShellState extends ConsumerState<HomeShell> {
                       context.pop<void>();
                       Navigator.push(
                         context,
-                        MaterialPageRoute(
+                        MaterialPageRoute<void>(
                           builder: (_) => const GlobalSearchScreen(),
                         ),
                       );

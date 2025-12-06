@@ -7,7 +7,6 @@ import '../../db/doctor_db.dart';
 import '../../providers/db_provider.dart';
 import '../../theme/app_theme.dart';
 import '../../core/theme/design_tokens.dart';
-import '../../core/widgets/app_card.dart';
 import '../../core/components/app_button.dart';
 import '../widgets/medical_record_widgets.dart';
 import 'medical_record_detail_screen.dart';
@@ -155,13 +154,28 @@ class _Header extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return DecoratedBox(
-      decoration: const BoxDecoration(
-        gradient: AppColors.primaryGradient,
-        borderRadius: BorderRadius.only(
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    
+    return Container(
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: isDark
+              ? [const Color(0xFF1A1A1A), const Color(0xFF0F0F0F)]
+              : [Colors.white, const Color(0xFFF8FAFC)],
+        ),
+        borderRadius: const BorderRadius.only(
           bottomLeft: Radius.circular(MedicalRecordConstants.radiusHeader),
           bottomRight: Radius.circular(MedicalRecordConstants.radiusHeader),
         ),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: isDark ? 0.3 : 0.08),
+            blurRadius: 20,
+            offset: const Offset(0, 4),
+          ),
+        ],
       ),
       child: SafeArea(
         bottom: false,
@@ -169,9 +183,11 @@ class _Header extends StatelessWidget {
           padding: const EdgeInsets.all(MedicalRecordConstants.paddingXLarge),
           child: Column(
             children: [
-              _buildAppBar(context),
+              _buildAppBar(context, isDark),
               const SizedBox(height: MedicalRecordConstants.paddingXLarge),
-              _buildSearchBar(),
+              _buildTitleSection(isDark),
+              const SizedBox(height: MedicalRecordConstants.paddingXLarge),
+              _buildSearchBar(isDark),
               const SizedBox(height: MedicalRecordConstants.paddingLarge),
             ],
           ),
@@ -180,47 +196,115 @@ class _Header extends StatelessWidget {
     );
   }
 
-  Widget _buildAppBar(BuildContext context) {
+  Widget _buildAppBar(BuildContext context, bool isDark) {
     return Row(
       children: [
-        HeaderIconButton(
-          icon: Icons.arrow_back,
-          onTap: () => Navigator.pop(context),
-          semanticLabel: 'Go back',
-        ),
-        const Expanded(
-          child: Text(
-            'Medical Records',
-            textAlign: TextAlign.center,
-            style: TextStyle(
-              color: Colors.white,
-              fontSize: MedicalRecordConstants.fontHeader,
-              fontWeight: FontWeight.bold,
+        Container(
+          decoration: BoxDecoration(
+            color: isDark ? Colors.white.withValues(alpha: 0.1) : Colors.grey.shade100,
+            borderRadius: BorderRadius.circular(12),
+          ),
+          child: IconButton(
+            icon: Icon(
+              Icons.arrow_back_ios_new_rounded,
+              size: 18,
+              color: isDark ? Colors.white : Colors.black87,
             ),
+            onPressed: () => Navigator.of(context).pop(),
           ),
         ),
-        const SizedBox(width: 40), // Balance for back button
+        const Spacer(),
       ],
     );
   }
 
-  Widget _buildSearchBar() {
-    return AppCard(
+  Widget _buildTitleSection(bool isDark) {
+    return Row(
+      children: [
+        Container(
+          padding: const EdgeInsets.all(16),
+          decoration: BoxDecoration(
+            gradient: const LinearGradient(
+              colors: [Color(0xFF10B981), Color(0xFF059669)],
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+            ),
+            borderRadius: BorderRadius.circular(20),
+            boxShadow: [
+              BoxShadow(
+                color: const Color(0xFF10B981).withValues(alpha: 0.4),
+                blurRadius: 20,
+                offset: const Offset(0, 8),
+              ),
+            ],
+          ),
+          child: const Icon(
+            Icons.folder_special_rounded,
+            color: Colors.white,
+            size: 32,
+          ),
+        ),
+        const SizedBox(width: 16),
+        Expanded(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                'Medical Records',
+                style: TextStyle(
+                  fontSize: 28,
+                  fontWeight: FontWeight.w800,
+                  color: isDark ? Colors.white : const Color(0xFF1E293B),
+                  letterSpacing: -0.5,
+                ),
+              ),
+              const SizedBox(height: 4),
+              Text(
+                'Patient histories & clinical documents',
+                style: TextStyle(
+                  fontSize: 14,
+                  color: isDark 
+                      ? Colors.white.withValues(alpha: 0.6) 
+                      : const Color(0xFF64748B),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildSearchBar(bool isDark) {
+    return Container(
       padding: const EdgeInsets.symmetric(horizontal: MedicalRecordConstants.paddingLarge),
-      color: Colors.white.withValues(alpha: 0.2),
-      borderRadius: BorderRadius.circular(MedicalRecordConstants.radiusLarge),
-      hasBorder: false,
+      decoration: BoxDecoration(
+        color: isDark ? Colors.white.withValues(alpha: 0.1) : Colors.grey.shade100,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(
+          color: isDark ? Colors.white.withValues(alpha: 0.1) : Colors.grey.shade200,
+        ),
+      ),
       child: TextField(
         controller: searchController,
-        style: const TextStyle(color: Colors.white),
+        style: TextStyle(color: isDark ? Colors.white : Colors.black87),
         decoration: InputDecoration(
           hintText: 'Search records...',
-          hintStyle: TextStyle(color: Colors.white.withValues(alpha: 0.7)),
+          hintStyle: TextStyle(
+            color: isDark ? Colors.white.withValues(alpha: 0.5) : Colors.grey.shade500,
+          ),
           border: InputBorder.none,
-          icon: Icon(Icons.search, color: Colors.white.withValues(alpha: 0.7)),
+          icon: Icon(
+            Icons.search,
+            color: isDark ? Colors.white.withValues(alpha: 0.5) : Colors.grey.shade500,
+          ),
           suffixIcon: searchQuery.isNotEmpty
               ? IconButton(
-                  icon: const Icon(Icons.clear, color: Colors.white),
+                  icon: Icon(
+                    Icons.clear,
+                    color: isDark ? Colors.white70 : Colors.grey.shade600,
+                  ),
                   onPressed: onClearSearch,
                   tooltip: 'Clear search',
                 )
@@ -517,19 +601,24 @@ class _RecordCard extends StatelessWidget {
         margin: const EdgeInsets.only(bottom: MedicalRecordConstants.paddingMedium),
         decoration: BoxDecoration(
           color: isDark ? AppColors.darkSurface : Colors.white,
-          borderRadius: BorderRadius.circular(MedicalRecordConstants.radiusLarge),
+          borderRadius: BorderRadius.circular(18),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withValues(alpha: 0.05),
-              blurRadius: 10,
-              offset: const Offset(0, 4),
+              color: recordInfo.color.withValues(alpha: isDark ? 0.15 : 0.08),
+              blurRadius: 16,
+              offset: const Offset(0, 6),
+            ),
+            BoxShadow(
+              color: Colors.black.withValues(alpha: isDark ? 0.2 : 0.04),
+              blurRadius: 8,
+              offset: const Offset(0, 2),
             ),
           ],
         ),
         child: Material(
           color: Colors.transparent,
           child: InkWell(
-            borderRadius: BorderRadius.circular(MedicalRecordConstants.radiusLarge),
+            borderRadius: BorderRadius.circular(18),
             onTap: () => _navigateToDetail(context),
             child: Padding(
               padding: const EdgeInsets.all(MedicalRecordConstants.paddingLarge),
@@ -553,12 +642,23 @@ class _RecordCard extends StatelessWidget {
       width: 56,
       height: 56,
       decoration: BoxDecoration(
-        color: recordInfo.color.withValues(alpha: 0.1),
+        gradient: LinearGradient(
+          colors: [recordInfo.color, recordInfo.color.withValues(alpha: 0.8)],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+        ),
         borderRadius: BorderRadius.circular(14),
+        boxShadow: [
+          BoxShadow(
+            color: recordInfo.color.withValues(alpha: 0.3),
+            blurRadius: 8,
+            offset: const Offset(0, 4),
+          ),
+        ],
       ),
       child: Icon(
         recordInfo.icon,
-        color: recordInfo.color,
+        color: Colors.white,
         size: MedicalRecordConstants.iconXLarge,
       ),
     );
@@ -618,15 +718,15 @@ class _RecordCard extends StatelessWidget {
 
   Widget _buildArrow() {
     return Container(
-      padding: const EdgeInsets.all(MedicalRecordConstants.paddingSmall),
+      padding: const EdgeInsets.all(10),
       decoration: BoxDecoration(
-        color: isDark ? AppColors.darkBackground : AppColors.background,
-        borderRadius: BorderRadius.circular(10),
+        color: AppColors.primary.withValues(alpha: isDark ? 0.2 : 0.1),
+        borderRadius: BorderRadius.circular(12),
       ),
       child: Icon(
-        Icons.arrow_forward_ios,
-        size: MedicalRecordConstants.iconSmall,
-        color: isDark ? AppColors.darkTextSecondary : AppColors.textSecondary,
+        Icons.arrow_forward_ios_rounded,
+        size: 16,
+        color: AppColors.primary,
       ),
     );
   }

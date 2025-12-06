@@ -18,10 +18,22 @@ class AddFollowUpScreen extends ConsumerStatefulWidget {
     super.key,
     this.preselectedPatient,
     this.existingRecord,
+    this.encounterId,
+    this.diagnosis,
+    this.treatmentPlan,
+    this.reason,
   });
 
   final Patient? preselectedPatient;
   final MedicalRecord? existingRecord;
+  /// Associated encounter ID from workflow
+  final int? encounterId;
+  /// Diagnosis context from workflow
+  final String? diagnosis;
+  /// Treatment plan context from workflow
+  final String? treatmentPlan;
+  /// Reason for follow-up
+  final String? reason;
 
   @override
   ConsumerState<AddFollowUpScreen> createState() => _AddFollowUpScreenState();
@@ -35,7 +47,6 @@ class _AddFollowUpScreenState extends ConsumerState<AddFollowUpScreen> {
   // Common fields
   int? _selectedPatientId;
   DateTime _recordDate = DateTime.now();
-  final _titleController = TextEditingController();
 
   // Follow-up specific fields
   final _progressNotesController = TextEditingController();
@@ -66,12 +77,19 @@ class _AddFollowUpScreenState extends ConsumerState<AddFollowUpScreen> {
     
     if (widget.existingRecord != null) {
       _loadExistingRecord();
+    } else {
+      // Initialize from workflow context
+      if (widget.diagnosis != null && widget.diagnosis!.isNotEmpty) {
+        _assessmentController.text = widget.diagnosis!;
+      }
+      if (widget.treatmentPlan != null && widget.treatmentPlan!.isNotEmpty) {
+        _planController.text = widget.treatmentPlan!;
+      }
     }
   }
 
   void _loadExistingRecord() {
     final record = widget.existingRecord!;
-    _titleController.text = record.title;
     _recordDate = record.recordDate;
     _clinicalNotesController.text = record.doctorNotes ?? '';
     _assessmentController.text = record.diagnosis ?? '';
@@ -108,7 +126,6 @@ class _AddFollowUpScreenState extends ConsumerState<AddFollowUpScreen> {
   @override
   void dispose() {
     _scrollController.dispose();
-    _titleController.dispose();
     _progressNotesController.dispose();
     _symptomsController.dispose();
     _complianceController.dispose();
@@ -161,9 +178,7 @@ class _AddFollowUpScreenState extends ConsumerState<AddFollowUpScreen> {
       final companion = MedicalRecordsCompanion.insert(
         patientId: _selectedPatientId!,
         recordType: 'follow_up',
-        title: _titleController.text.isNotEmpty 
-            ? _titleController.text 
-            : 'Follow-up Visit - ${DateFormat('MMM d, yyyy').format(_recordDate)}',
+        title: 'Follow-up Visit - ${DateFormat('MMM d, yyyy').format(_recordDate)}',
         description: Value(_progressNotesController.text),
         dataJson: Value(jsonEncode(_buildDataJson())),
         diagnosis: Value(_assessmentController.text),
@@ -180,9 +195,7 @@ class _AddFollowUpScreenState extends ConsumerState<AddFollowUpScreen> {
           id: widget.existingRecord!.id,
           patientId: _selectedPatientId!,
           recordType: 'follow_up',
-          title: _titleController.text.isNotEmpty 
-              ? _titleController.text 
-              : 'Follow-up Visit - ${DateFormat('MMM d, yyyy').format(_recordDate)}',
+          title: 'Follow-up Visit - ${DateFormat('MMM d, yyyy').format(_recordDate)}',
           description: _progressNotesController.text,
           dataJson: jsonEncode(_buildDataJson()),
           diagnosis: _assessmentController.text,
@@ -331,17 +344,6 @@ class _AddFollowUpScreenState extends ConsumerState<AddFollowUpScreen> {
             label: 'Visit Date',
             selectedDate: _recordDate,
             onDateSelected: (date) => setState(() => _recordDate = date),
-          ),
-          const SizedBox(height: AppSpacing.lg),
-
-          // Title
-          RecordFormSection(
-            title: 'Title',
-            icon: Icons.title,
-            child: RecordTextField(
-              controller: _titleController,
-              hint: 'Enter record title (optional)...',
-            ),
           ),
           const SizedBox(height: AppSpacing.lg),
 

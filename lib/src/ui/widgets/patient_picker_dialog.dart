@@ -254,15 +254,15 @@ Future<void> startNewEncounterWithPicker(
     context: context,
     builder: (context) => PatientPickerDialog(
       patients: patients,
-      title: 'New Encounter',
-      subtitle: 'Choose a patient to start a new encounter',
+      title: 'New Visit',
+      subtitle: 'Choose a patient to start a clinical visit',
       icon: Icons.medical_services_rounded,
     ),
   );
 
   if (selectedPatient == null || !context.mounted) return;
 
-  // Create encounter
+  // Create visit (encounter behind the scenes)
   final encounterService = EncounterService(db: db);
   try {
     final encounterId = await encounterService.startEncounter(
@@ -273,7 +273,7 @@ Future<void> startNewEncounterWithPicker(
 
     if (!context.mounted) return;
     
-    // Navigate to encounter screen
+    // Navigate to visit screen
     Navigator.push(
       context,
       MaterialPageRoute(
@@ -286,7 +286,7 @@ Future<void> startNewEncounterWithPicker(
   } catch (e) {
     if (!context.mounted) return;
     ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text('Failed to create encounter: $e')),
+      SnackBar(content: Text('Failed to create visit: $e')),
     );
   }
 }

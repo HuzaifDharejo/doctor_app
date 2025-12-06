@@ -125,6 +125,23 @@ abstract class MedicalSuggestions {
   static const List<String> heightCm = [
     '150', '155', '160', '165', '170', '175', '180', '185',
   ];
+
+  static const List<String> bloodGlucose = [
+    '70', '80', '90', '100', '110', '120', '140', '160', '180', '200', '250', '300',
+  ];
+
+  // Vital signs notes/observations
+  static const List<String> vitalNotes = [
+    'Vitals within normal limits', 'Vitals stable', 'BP elevated - advised salt restriction',
+    'Tachycardia noted - monitor', 'Bradycardia noted', 'Fever present - antipyretics given',
+    'Low SpO2 - oxygen supplementation advised', 'Hypertensive urgency - medication adjusted',
+    'Hypotensive - IV fluids started', 'Weight gain noted', 'Weight loss noted',
+    'High BMI - dietary counseling given', 'Irregular pulse - ECG advised',
+    'Respiratory distress - nebulization given', 'Patient appears dehydrated',
+    'Blood glucose high - diabetes management reviewed', 'Fasting sample',
+    'Post-prandial reading', 'After medication', 'Before medication',
+    'At rest', 'After exertion', 'Standing', 'Lying down', 'Sitting',
+  ];
 }
 
 /// Prescription-related suggestions

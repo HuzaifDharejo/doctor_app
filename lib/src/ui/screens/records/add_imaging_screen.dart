@@ -40,7 +40,6 @@ class _AddImagingScreenState extends ConsumerState<AddImagingScreen> {
   // Common fields
   int? _selectedPatientId;
   DateTime _recordDate = DateTime.now();
-  final _titleController = TextEditingController();
 
   // Imaging specific fields
   final _imagingTypeController = TextEditingController();
@@ -69,7 +68,6 @@ class _AddImagingScreenState extends ConsumerState<AddImagingScreen> {
 
   void _loadExistingRecord() {
     final record = widget.existingRecord!;
-    _titleController.text = record.title;
     _recordDate = record.recordDate;
     _clinicalNotesController.text = record.doctorNotes ?? '';
     
@@ -94,7 +92,6 @@ class _AddImagingScreenState extends ConsumerState<AddImagingScreen> {
   @override
   void dispose() {
     _scrollController.dispose();
-    _titleController.dispose();
     _imagingTypeController.dispose();
     _bodyPartController.dispose();
     _indicationController.dispose();
@@ -137,11 +134,11 @@ class _AddImagingScreenState extends ConsumerState<AddImagingScreen> {
       final companion = MedicalRecordsCompanion.insert(
         patientId: _selectedPatientId!,
         recordType: 'imaging',
-        title: _titleController.text.isNotEmpty 
-            ? _titleController.text 
+        title: _imagingTypeController.text.isNotEmpty && _bodyPartController.text.isNotEmpty
+            ? '${_imagingTypeController.text}: ${_bodyPartController.text}'
             : _imagingTypeController.text.isNotEmpty 
-                ? '${_imagingTypeController.text} - ${_bodyPartController.text}'
-                : 'Imaging Study',
+                ? _imagingTypeController.text
+                : 'Imaging Study - ${DateFormat('MMM d, yyyy').format(_recordDate)}',
         description: Value(_findingsController.text),
         dataJson: Value(jsonEncode(_buildDataJson())),
         diagnosis: Value(_impressionController.text),
@@ -157,11 +154,11 @@ class _AddImagingScreenState extends ConsumerState<AddImagingScreen> {
           id: widget.existingRecord!.id,
           patientId: _selectedPatientId!,
           recordType: 'imaging',
-          title: _titleController.text.isNotEmpty 
-              ? _titleController.text 
+          title: _imagingTypeController.text.isNotEmpty && _bodyPartController.text.isNotEmpty
+              ? '${_imagingTypeController.text}: ${_bodyPartController.text}'
               : _imagingTypeController.text.isNotEmpty 
-                  ? '${_imagingTypeController.text} - ${_bodyPartController.text}'
-                  : 'Imaging Study',
+                  ? _imagingTypeController.text
+                  : 'Imaging Study - ${DateFormat('MMM d, yyyy').format(_recordDate)}',
           description: _findingsController.text,
           dataJson: jsonEncode(_buildDataJson()),
           diagnosis: _impressionController.text,
@@ -199,131 +196,21 @@ class _AddImagingScreenState extends ConsumerState<AddImagingScreen> {
   Widget build(BuildContext context) {
     final dbAsync = ref.watch(doctorDbProvider);
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    final screenWidth = MediaQuery.of(context).size.width;
-    final isCompact = screenWidth < 400;
-    final padding = isCompact ? 12.0 : 20.0;
 
-    return Scaffold(
-      backgroundColor: isDark ? const Color(0xFF0F0F0F) : const Color(0xFFF8FAFC),
+    return RecordFormScaffold(
+      title: widget.existingRecord != null 
+          ? 'Edit Imaging' 
+          : 'Imaging / Radiology',
+      subtitle: DateFormat('EEEE, dd MMMM yyyy').format(_recordDate),
+      icon: Icons.image_rounded,
+      gradientColors: _gradientColors,
+      scrollController: _scrollController,
       body: dbAsync.when(
-        data: (db) => CustomScrollView(
-          controller: _scrollController,
-          physics: const BouncingScrollPhysics(),
-          slivers: [
-            _buildSliverAppBar(context, isDark, isCompact),
-            SliverPadding(
-              padding: EdgeInsets.all(padding),
-              sliver: SliverList(
-                delegate: SliverChildListDelegate([
-                  _buildFormContent(context, db, isDark),
-                ]),
-              ),
-            ),
-          ],
-        ),
+        data: (db) => _buildFormContent(context, db, isDark),
         loading: () => const Center(
           child: CircularProgressIndicator(color: _primaryColor),
         ),
         error: (err, stack) => Center(child: Text('Error: $err')),
-      ),
-    );
-  }
-
-  Widget _buildSliverAppBar(BuildContext context, bool isDark, bool isCompact) {
-    return SliverAppBar(
-      expandedHeight: 160,
-      floating: false,
-      pinned: true,
-      elevation: 0,
-      backgroundColor: _primaryColor,
-      surfaceTintColor: Colors.transparent,
-      leading: Padding(
-        padding: const EdgeInsets.all(8.0),
-        child: GestureDetector(
-          onTap: () => Navigator.pop(context),
-          child: Container(
-            decoration: BoxDecoration(
-              color: Colors.white.withValues(alpha: 0.2),
-              borderRadius: BorderRadius.circular(12),
-            ),
-            child: const Icon(
-              Icons.arrow_back_ios_new_rounded,
-              size: 18,
-              color: Colors.white,
-            ),
-          ),
-        ),
-      ),
-      flexibleSpace: FlexibleSpaceBar(
-        background: Container(
-          decoration: BoxDecoration(
-            gradient: LinearGradient(
-              begin: Alignment.topLeft,
-              end: Alignment.bottomRight,
-              colors: _gradientColors,
-            ),
-          ),
-          child: SafeArea(
-            child: Padding(
-              padding: EdgeInsets.fromLTRB(
-                isCompact ? 16 : 24,
-                50,
-                isCompact ? 16 : 24,
-                20,
-              ),
-              child: Row(
-                crossAxisAlignment: CrossAxisAlignment.center,
-                children: [
-                  Container(
-                    padding: const EdgeInsets.all(16),
-                    decoration: BoxDecoration(
-                      color: Colors.white.withValues(alpha: 0.2),
-                      borderRadius: BorderRadius.circular(18),
-                    ),
-                    child: const Icon(
-                      Icons.image_rounded,
-                      color: Colors.white,
-                      size: 28,
-                    ),
-                  ),
-                  const SizedBox(width: 16),
-                  Expanded(
-                    child: Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          widget.existingRecord != null 
-                              ? 'Edit Imaging' 
-                              : 'Imaging / Radiology',
-                          style: TextStyle(
-                            fontSize: isCompact ? 20 : 24,
-                            fontWeight: FontWeight.w700,
-                            color: Colors.white,
-                          ),
-                        ),
-                        const SizedBox(height: 4),
-                        Row(
-                          children: [
-                            const Icon(Icons.calendar_today, color: Colors.white70, size: 14),
-                            const SizedBox(width: 6),
-                            Text(
-                              DateFormat('EEEE, dd MMM yyyy').format(_recordDate),
-                              style: TextStyle(
-                                fontSize: isCompact ? 12 : 14,
-                                color: Colors.white.withValues(alpha: 0.9),
-                              ),
-                            ),
-                          ],
-                        ),
-                      ],
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ),
-        ),
       ),
     );
   }
@@ -355,24 +242,11 @@ class _AddImagingScreenState extends ConsumerState<AddImagingScreen> {
             title: 'Record Details',
             icon: Icons.event_note,
             accentColor: _primaryColor,
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                DatePickerCard(
-                  selectedDate: _recordDate,
-                  onDateSelected: (date) => setState(() => _recordDate = date),
-                  label: 'Study Date',
-                  accentColor: _primaryColor,
-                ),
-                const SizedBox(height: 16),
-                RecordTextField(
-                  controller: _titleController,
-                  label: 'Title',
-                  hint: 'Enter record title (optional)...',
-                  prefixIcon: Icons.title,
-                  accentColor: _primaryColor,
-                ),
-              ],
+            child: DatePickerCard(
+              selectedDate: _recordDate,
+              onDateSelected: (date) => setState(() => _recordDate = date),
+              label: 'Study Date',
+              accentColor: _primaryColor,
             ),
           ),
           const SizedBox(height: 16),

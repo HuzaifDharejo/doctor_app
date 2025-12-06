@@ -293,6 +293,7 @@ class RecordFormScaffold extends StatelessWidget {
     required this.body,
     this.gradientColors,
     this.scrollController,
+    this.trailing,
   });
 
   final String title;
@@ -301,6 +302,7 @@ class RecordFormScaffold extends StatelessWidget {
   final Widget body;
   final List<Color>? gradientColors;
   final ScrollController? scrollController;
+  final Widget? trailing;
 
   @override
   Widget build(BuildContext context) {
@@ -312,13 +314,14 @@ class RecordFormScaffold extends StatelessWidget {
     final colors = gradientColors ?? [AppColors.primary, AppColors.primaryDark];
 
     return Scaffold(
-      backgroundColor: isDark ? AppColors.darkBackground : AppColors.background,
+      backgroundColor: isDark ? const Color(0xFF0F0F0F) : const Color(0xFFF8FAFC),
       body: CustomScrollView(
         controller: scrollController,
+        physics: const BouncingScrollPhysics(),
         slivers: [
           // Gradient Header
           SliverToBoxAdapter(
-            child: _buildGradientHeader(context, colors),
+            child: _buildGradientHeader(context, colors, isCompact),
           ),
           // Body Content
           SliverPadding(
@@ -332,13 +335,13 @@ class RecordFormScaffold extends StatelessWidget {
     );
   }
 
-  Widget _buildGradientHeader(BuildContext context, List<Color> colors) {
+  Widget _buildGradientHeader(BuildContext context, List<Color> colors, bool isCompact) {
     return Container(
       padding: EdgeInsets.only(
         top: MediaQuery.of(context).padding.top + 16,
-        left: 20,
-        right: 20,
-        bottom: 24,
+        left: isCompact ? 16 : 24,
+        right: isCompact ? 16 : 24,
+        bottom: 28,
       ),
       decoration: BoxDecoration(
         gradient: LinearGradient(
@@ -352,9 +355,9 @@ class RecordFormScaffold extends StatelessWidget {
         ),
         boxShadow: [
           BoxShadow(
-            color: colors.first.withValues(alpha: 0.3),
-            blurRadius: 20,
-            offset: const Offset(0, 10),
+            color: colors.first.withValues(alpha: 0.4),
+            blurRadius: 24,
+            offset: const Offset(0, 12),
           ),
         ],
       ),
@@ -377,12 +380,19 @@ class RecordFormScaffold extends StatelessWidget {
             ),
           ),
           const SizedBox(width: 16),
-          // Icon
+          // Icon with enhanced shadow
           Container(
-            padding: const EdgeInsets.all(12),
+            padding: const EdgeInsets.all(14),
             decoration: BoxDecoration(
-              color: Colors.white.withValues(alpha: 0.2),
+              color: Colors.white.withValues(alpha: 0.25),
               borderRadius: BorderRadius.circular(16),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withValues(alpha: 0.15),
+                  blurRadius: 12,
+                  offset: const Offset(0, 6),
+                ),
+              ],
             ),
             child: Icon(icon, color: Colors.white, size: 28),
           ),
@@ -394,23 +404,43 @@ class RecordFormScaffold extends StatelessWidget {
               children: [
                 Text(
                   title,
-                  style: const TextStyle(
-                    fontSize: 20,
+                  style: TextStyle(
+                    fontSize: isCompact ? 20 : 24,
                     fontWeight: FontWeight.bold,
                     color: Colors.white,
+                    letterSpacing: -0.5,
                   ),
                 ),
-                const SizedBox(height: 4),
-                Text(
-                  subtitle,
-                  style: TextStyle(
-                    fontSize: 13,
-                    color: Colors.white.withValues(alpha: 0.85),
-                  ),
+                const SizedBox(height: 6),
+                Row(
+                  children: [
+                    Icon(
+                      Icons.calendar_today_rounded, 
+                      color: Colors.white.withValues(alpha: 0.85), 
+                      size: 14,
+                    ),
+                    const SizedBox(width: 6),
+                    Expanded(
+                      child: Text(
+                        subtitle,
+                        style: TextStyle(
+                          fontSize: isCompact ? 12 : 14,
+                          color: Colors.white.withValues(alpha: 0.9),
+                          fontWeight: FontWeight.w500,
+                        ),
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ),
+                  ],
                 ),
               ],
             ),
           ),
+          // Trailing widget (e.g., auto-save indicator)
+          if (trailing != null) ...[
+            const SizedBox(width: 8),
+            trailing!,
+          ],
         ],
       ),
     );

@@ -1121,8 +1121,6 @@ class PdfService {
                 children: [
                   _buildInfoRow('Name', '${patient.firstName} ${patient.lastName ?? ''}'),
                   if (age.isNotEmpty) _buildInfoRow('Age', age),
-                  if (patient.dateOfBirth != null) 
-                    _buildInfoRow('Date of Birth', _formatDate(patient.dateOfBirth!)),
                   if (patient.phone.isNotEmpty) _buildInfoRow('Phone', patient.phone),
                   if (patient.email.isNotEmpty) _buildInfoRow('Email', patient.email),
                   if (patient.address.isNotEmpty) _buildInfoRow('Address', patient.address),

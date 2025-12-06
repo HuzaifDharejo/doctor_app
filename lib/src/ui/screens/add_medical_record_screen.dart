@@ -37,7 +37,6 @@ class _AddMedicalRecordScreenState extends ConsumerState<AddMedicalRecordScreen>
   int? _selectedPatientId;
   DateTime _recordDate = DateTime.now();
   String _recordType = 'general';
-  final _titleController = TextEditingController();
   final _descriptionController = TextEditingController();
   final _diagnosisController = TextEditingController();
   final _treatmentController = TextEditingController();
@@ -223,7 +222,6 @@ class _AddMedicalRecordScreenState extends ConsumerState<AddMedicalRecordScreen>
   @override
   void dispose() {
     _scrollController.dispose();
-    _titleController.dispose();
     _descriptionController.dispose();
     _diagnosisController.dispose();
     _treatmentController.dispose();
@@ -412,9 +410,9 @@ class _AddMedicalRecordScreenState extends ConsumerState<AddMedicalRecordScreen>
       final recordId = await db.insertMedicalRecord(MedicalRecordsCompanion.insert(
         patientId: _selectedPatientId!,
         recordType: _recordType,
-        title: _titleController.text.isNotEmpty 
-            ? _titleController.text 
-            : _recordTypeLabels[_recordType] ?? 'Medical Record',
+        title: _diagnosisController.text.isNotEmpty 
+            ? '${_recordTypeLabels[_recordType] ?? 'Record'}: ${_diagnosisController.text}'
+            : '${_recordTypeLabels[_recordType] ?? 'Medical Record'} - ${DateFormat('MMM d, yyyy').format(_recordDate)}',
         description: Value(_descriptionController.text),
         dataJson: Value(jsonEncode(_buildDataJson())),
         diagnosis: Value(_diagnosisController.text),
@@ -593,15 +591,6 @@ class _AddMedicalRecordScreenState extends ConsumerState<AddMedicalRecordScreen>
 
             // Document Data Extractor Toggle/Widget
             _buildExtractFromDocumentSection(),
-            const SizedBox(height: 20),
-
-            // Title
-            _buildSectionHeader('Title', Icons.title),
-            const SizedBox(height: 12),
-            _buildTextField(
-              controller: _titleController,
-              hint: 'Enter record title...',
-            ),
             const SizedBox(height: 20),
 
             // Type-specific fields

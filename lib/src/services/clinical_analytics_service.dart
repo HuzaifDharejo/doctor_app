@@ -13,7 +13,7 @@ class ClinicalAnalyticsService {
     DateTime? startDate,
     DateTime? endDate,
   }) async {
-    await Future.delayed(const Duration(milliseconds: 300));
+    await Future<void>.delayed(const Duration(milliseconds: 300));
 
     var trends = _diagnosisTrendDatabase;
 
@@ -34,25 +34,25 @@ class ClinicalAnalyticsService {
 
   /// Get success rates by specialty
   Future<List<SpecialtySuccessRate>> getSuccessRatesBySpecialty() async {
-    await Future.delayed(const Duration(milliseconds: 250));
+    await Future<void>.delayed(const Duration(milliseconds: 250));
     return _specialtySuccessRateDatabase;
   }
 
   /// Get overall treatment outcomes
   Future<TreatmentOutcomes> getTreatmentOutcomes() async {
-    await Future.delayed(const Duration(milliseconds: 200));
+    await Future<void>.delayed(const Duration(milliseconds: 200));
     return _treatmentOutcomesData;
   }
 
   /// Get patient demographics data
   Future<PatientDemographics> getPatientDemographics() async {
-    await Future.delayed(const Duration(milliseconds: 200));
+    await Future<void>.delayed(const Duration(milliseconds: 200));
     return _patientDemographicsData;
   }
 
   /// Get detailed metrics for a specific diagnosis
   Future<DiagnosisMetrics?> getDiagnosisMetrics(String diagnosis) async {
-    await Future.delayed(const Duration(milliseconds: 200));
+    await Future<void>.delayed(const Duration(milliseconds: 200));
     return _diagnosisMetricsDatabase.firstWhere(
       (m) => m.diagnosis.toLowerCase() == diagnosis.toLowerCase(),
       orElse: () => DiagnosisMetrics(
@@ -68,7 +68,7 @@ class ClinicalAnalyticsService {
 
   /// Get specialties comparison data
   Future<SpecialtyComparison> getSpecialtiesComparison() async {
-    await Future.delayed(const Duration(milliseconds: 250));
+    await Future<void>.delayed(const Duration(milliseconds: 250));
     return SpecialtyComparison(
       specialties: _specialtySuccessRateDatabase,
       topPerforming: _specialtySuccessRateDatabase.where((s) => s.successRate >= 85).toList(),

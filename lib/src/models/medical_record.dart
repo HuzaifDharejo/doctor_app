@@ -1,5 +1,12 @@
 import 'dart:convert';
 
+/// Status for medical record lifecycle
+enum MedicalRecordStatus {
+  draft,
+  finalized,
+  archived,
+}
+
 /// Medical record type enum
 enum MedicalRecordType {
   general('general', 'General Consultation', 'General clinical notes and consultation'),
@@ -38,6 +45,11 @@ class MedicalRecordModel { // File paths or URLs
     this.doctorNotes = '',
     this.createdAt,
     this.attachments,
+    this.createdBy = '',
+    this.lastUpdated,
+    this.status = MedicalRecordStatus.finalized,
+    this.source = '',
+    this.relatedRecordIds = const [],
   });
 
   /// Create from JSON map
@@ -76,6 +88,21 @@ class MedicalRecordModel { // File paths or URLs
               ? DateTime.tryParse(json['created_at'] as String)
               : null,
       attachments: (json['attachments'] as List<dynamic>?)?.cast<String>(),
+        createdBy: json['createdBy'] as String? ?? json['created_by'] as String? ?? '',
+        lastUpdated: json['lastUpdated'] != null
+            ? DateTime.tryParse(json['lastUpdated'] as String)
+            : json['last_updated'] != null
+                ? DateTime.tryParse(json['last_updated'] as String)
+                : null,
+        status: json['status'] != null
+            ? MedicalRecordStatus.values.firstWhere(
+                (s) => s.name == (json['status'] as String).toLowerCase(),
+                orElse: () => MedicalRecordStatus.finalized)
+            : MedicalRecordStatus.finalized,
+        source: json['source'] as String? ?? '',
+        relatedRecordIds: (json['relatedRecordIds'] as List<dynamic>? ?? json['related_record_ids'] as List<dynamic>? ?? [])
+            .map((e) => e as int)
+            .toList(),
     );
   }
 
@@ -96,6 +123,11 @@ class MedicalRecordModel { // File paths or URLs
   final DateTime recordDate;
   final DateTime? createdAt;
   final List<String>? attachments;
+    final String createdBy;
+    final DateTime? lastUpdated;
+    final MedicalRecordStatus status;
+    final String source;
+    final List<int> relatedRecordIds;
 
   /// Get formatted record date
   String get formattedDate {
@@ -138,6 +170,11 @@ class MedicalRecordModel { // File paths or URLs
       'recordDate': recordDate.toIso8601String(),
       if (createdAt != null) 'createdAt': createdAt!.toIso8601String(),
       if (attachments != null) 'attachments': attachments,
+        'createdBy': createdBy,
+        if (lastUpdated != null) 'lastUpdated': lastUpdated!.toIso8601String(),
+        'status': status.name,
+        'source': source,
+        'relatedRecordIds': relatedRecordIds,
     };
   }
 
@@ -159,6 +196,11 @@ class MedicalRecordModel { // File paths or URLs
     DateTime? recordDate,
     DateTime? createdAt,
     List<String>? attachments,
+      String? createdBy,
+      DateTime? lastUpdated,
+      MedicalRecordStatus? status,
+      String? source,
+      List<int>? relatedRecordIds,
   }) {
     return MedicalRecordModel(
       id: id ?? this.id,
@@ -174,6 +216,11 @@ class MedicalRecordModel { // File paths or URLs
       recordDate: recordDate ?? this.recordDate,
       createdAt: createdAt ?? this.createdAt,
       attachments: attachments ?? this.attachments,
+        createdBy: createdBy ?? this.createdBy,
+        lastUpdated: lastUpdated ?? this.lastUpdated,
+        status: status ?? this.status,
+        source: source ?? this.source,
+        relatedRecordIds: relatedRecordIds ?? this.relatedRecordIds,
     );
   }
 

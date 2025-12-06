@@ -99,7 +99,7 @@ class _PatientTimelineTabState extends ConsumerState<PatientTimelineTab> {
     final filters = [
       ('all', 'All', Icons.timeline),
       ('appointments', 'Appointments', Icons.event),
-      ('encounters', 'Encounters', Icons.medical_services),
+      ('encounters', 'Visits', Icons.medical_services),
       ('prescriptions', 'Prescriptions', Icons.medication),
       ('records', 'Records', Icons.folder),
       ('vitals', 'Vitals', Icons.favorite),
@@ -395,14 +395,14 @@ class _PatientTimelineTabState extends ConsumerState<PatientTimelineTab> {
       ));
     }
     
-    // Load encounters
+    // Load encounters (shown as visits)
     final encounters = await db.getEncountersForPatient(patientId);
     for (final enc in encounters) {
       events.add(_TimelineEvent(
         type: 'encounters',
-        typeLabel: 'Encounter',
+        typeLabel: 'Visit',
         dateTime: enc.encounterDate,
-        title: enc.chiefComplaint.isNotEmpty ? enc.chiefComplaint : 'Clinical Encounter',
+        title: enc.chiefComplaint.isNotEmpty ? enc.chiefComplaint : 'Clinical Visit',
         subtitle: '${enc.encounterType} • ${enc.status}',
         icon: Icons.medical_services,
         color: const Color(0xFFEC4899),

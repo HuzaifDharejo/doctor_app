@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:convert';
 import 'package:drift/drift.dart' hide Column;
 import 'package:flutter/material.dart';
@@ -32,6 +33,12 @@ class _AddProcedureScreenState extends ConsumerState<AddProcedureScreen> {
   final _scrollController = ScrollController();
   bool _isSaving = false;
 
+  // Auto-save state
+  Timer? _autoSaveTimer;
+  DateTime? _lastSaved;
+  bool _isAutoSaving = false;
+  static const _autoSaveInterval = Duration(seconds: 30);
+
   // Theme colors for this record type
   static const _primaryColor = Color(0xFFEC4899); // Medication Pink
   static const _secondaryColor = Color(0xFFDB2777);
@@ -40,7 +47,6 @@ class _AddProcedureScreenState extends ConsumerState<AddProcedureScreen> {
   // Common fields
   int? _selectedPatientId;
   DateTime _recordDate = DateTime.now();
-  final _titleController = TextEditingController();
 
   // Procedure specific fields
   final _procedureNameController = TextEditingController();
@@ -75,12 +81,15 @@ class _AddProcedureScreenState extends ConsumerState<AddProcedureScreen> {
     
     if (widget.existingRecord != null) {
       _loadExistingRecord();
+    } else {
+      WidgetsBinding.instance.addPostFrameCallback((_) => _checkForDraft());
     }
+    
+    _autoSaveTimer = Timer.periodic(_autoSaveInterval, (_) => _autoSave());
   }
 
   void _loadExistingRecord() {
     final record = widget.existingRecord!;
-    _titleController.text = record.title;
     _recordDate = record.recordDate;
     _clinicalNotesController.text = record.doctorNotes ?? '';
     
@@ -115,8 +124,8 @@ class _AddProcedureScreenState extends ConsumerState<AddProcedureScreen> {
 
   @override
   void dispose() {
+    _autoSaveTimer?.cancel();
     _scrollController.dispose();
-    _titleController.dispose();
     _procedureNameController.dispose();
     _procedureCodeController.dispose();
     _indicationController.dispose();
@@ -136,6 +145,134 @@ class _AddProcedureScreenState extends ConsumerState<AddProcedureScreen> {
     _pulsePostController.dispose();
     _spo2PostController.dispose();
     super.dispose();
+  }
+
+  // Auto-save methods
+  Future<void> _checkForDraft() async {
+    final draft = await FormDraftService.loadDraft(formType: 'procedure', patientId: _selectedPatientId);
+    if (draft != null && mounted) _showRestoreDraftDialog(draft);
+  }
+
+  void _showRestoreDraftDialog(FormDraft draft) {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        title: Row(
+          children: [
+            Container(
+              padding: const EdgeInsets.all(8),
+              decoration: BoxDecoration(color: Colors.amber.shade100, borderRadius: BorderRadius.circular(10)),
+              child: Icon(Icons.restore, color: Colors.amber.shade700),
+            ),
+            const SizedBox(width: 12),
+            const Text('Restore Draft?'),
+          ],
+        ),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Text('A previous draft was found for this form.'),
+            const SizedBox(height: 8),
+            Container(
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(color: Colors.grey.shade100, borderRadius: BorderRadius.circular(8)),
+              child: Row(
+                children: [
+                  Icon(Icons.access_time, size: 16, color: Colors.grey.shade600),
+                  const SizedBox(width: 8),
+                  Text('Saved ${draft.timeAgo}', style: TextStyle(color: Colors.grey.shade700)),
+                ],
+              ),
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () { Navigator.pop(context); FormDraftService.clearDraft(formType: 'procedure', patientId: _selectedPatientId); },
+            child: Text('Discard', style: TextStyle(color: Colors.grey.shade600)),
+          ),
+          ElevatedButton(
+            onPressed: () { Navigator.pop(context); _restoreFromDraft(draft.data); },
+            style: ElevatedButton.styleFrom(backgroundColor: Colors.amber.shade600, foregroundColor: Colors.white, shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8))),
+            child: const Text('Restore'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _restoreFromDraft(Map<String, dynamic> data) {
+    setState(() {
+      _procedureNameController.text = (data['procedure_name'] as String?) ?? '';
+      _procedureCodeController.text = (data['procedure_code'] as String?) ?? '';
+      _indicationController.text = (data['indication'] as String?) ?? '';
+      _anesthesiaController.text = (data['anesthesia'] as String?) ?? '';
+      _procedureNotesController.text = (data['procedure_notes'] as String?) ?? '';
+      _findingsController.text = (data['findings'] as String?) ?? '';
+      _complicationsController.text = (data['complications'] as String?) ?? '';
+      _specimenController.text = (data['specimen'] as String?) ?? '';
+      _postOpInstructionsController.text = (data['post_op_instructions'] as String?) ?? '';
+      _performedByController.text = (data['performed_by'] as String?) ?? '';
+      _assistedByController.text = (data['assisted_by'] as String?) ?? '';
+      _clinicalNotesController.text = (data['clinical_notes'] as String?) ?? '';
+      _procedureStatus = (data['procedure_status'] as String?) ?? 'Completed';
+      if (data['record_date'] != null) _recordDate = DateTime.parse(data['record_date'] as String);
+      
+      final vitals = data['vitals'] as Map<String, dynamic>?;
+      if (vitals != null) {
+        _bpPreController.text = (vitals['bp_pre'] as String?) ?? '';
+        _pulsePreController.text = (vitals['pulse_pre'] as String?) ?? '';
+        _spo2PreController.text = (vitals['spo2_pre'] as String?) ?? '';
+        _bpPostController.text = (vitals['bp_post'] as String?) ?? '';
+        _pulsePostController.text = (vitals['pulse_post'] as String?) ?? '';
+        _spo2PostController.text = (vitals['spo2_post'] as String?) ?? '';
+      }
+    });
+    ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+      content: const Row(children: [Icon(Icons.check_circle, color: Colors.white, size: 18), SizedBox(width: 8), Text('Draft restored')]),
+      backgroundColor: Colors.green.shade600, behavior: SnackBarBehavior.floating,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)), duration: const Duration(seconds: 2),
+    ));
+  }
+
+  Map<String, dynamic> _buildDraftData() => {
+    'procedure_name': _procedureNameController.text,
+    'procedure_code': _procedureCodeController.text,
+    'indication': _indicationController.text,
+    'anesthesia': _anesthesiaController.text,
+    'procedure_notes': _procedureNotesController.text,
+    'findings': _findingsController.text,
+    'complications': _complicationsController.text,
+    'specimen': _specimenController.text,
+    'post_op_instructions': _postOpInstructionsController.text,
+    'performed_by': _performedByController.text,
+    'assisted_by': _assistedByController.text,
+    'clinical_notes': _clinicalNotesController.text,
+    'procedure_status': _procedureStatus,
+    'record_date': _recordDate.toIso8601String(),
+    'vitals': {
+      'bp_pre': _bpPreController.text, 'pulse_pre': _pulsePreController.text, 'spo2_pre': _spo2PreController.text,
+      'bp_post': _bpPostController.text, 'pulse_post': _pulsePostController.text, 'spo2_post': _spo2PostController.text,
+    },
+  };
+
+  bool _hasAnyContent() =>
+    _procedureNameController.text.isNotEmpty || _indicationController.text.isNotEmpty ||
+    _procedureNotesController.text.isNotEmpty || _findingsController.text.isNotEmpty;
+
+  Future<void> _autoSave() async {
+    if (!mounted || !_hasAnyContent()) return;
+    setState(() => _isAutoSaving = true);
+    try {
+      await FormDraftService.saveDraft(formType: 'procedure', patientId: _selectedPatientId, data: _buildDraftData());
+      if (mounted) setState(() { _lastSaved = DateTime.now(); _isAutoSaving = false; });
+    } catch (_) { if (mounted) setState(() => _isAutoSaving = false); }
+  }
+
+  Future<void> _clearDraftOnSuccess() async {
+    await FormDraftService.clearDraft(formType: 'procedure', patientId: _selectedPatientId);
   }
 
   Map<String, dynamic> _buildDataJson() {
@@ -178,11 +315,9 @@ class _AddProcedureScreenState extends ConsumerState<AddProcedureScreen> {
       final companion = MedicalRecordsCompanion.insert(
         patientId: _selectedPatientId!,
         recordType: 'procedure',
-        title: _titleController.text.isNotEmpty 
-            ? _titleController.text 
-            : _procedureNameController.text.isNotEmpty 
-                ? 'Procedure: ${_procedureNameController.text}'
-                : 'Medical Procedure',
+        title: _procedureNameController.text.isNotEmpty 
+            ? 'Procedure: ${_procedureNameController.text}'
+            : 'Medical Procedure - ${DateFormat('MMM d, yyyy').format(_recordDate)}',
         description: Value(_procedureNotesController.text),
         dataJson: Value(jsonEncode(_buildDataJson())),
         diagnosis: Value(_findingsController.text),
@@ -199,11 +334,9 @@ class _AddProcedureScreenState extends ConsumerState<AddProcedureScreen> {
           id: widget.existingRecord!.id,
           patientId: _selectedPatientId!,
           recordType: 'procedure',
-          title: _titleController.text.isNotEmpty 
-              ? _titleController.text 
-              : _procedureNameController.text.isNotEmpty 
-                  ? 'Procedure: ${_procedureNameController.text}'
-                  : 'Medical Procedure',
+          title: _procedureNameController.text.isNotEmpty 
+              ? 'Procedure: ${_procedureNameController.text}'
+              : 'Medical Procedure - ${DateFormat('MMM d, yyyy').format(_recordDate)}',
           description: _procedureNotesController.text,
           dataJson: jsonEncode(_buildDataJson()),
           diagnosis: _findingsController.text,
@@ -234,6 +367,7 @@ class _AddProcedureScreenState extends ConsumerState<AddProcedureScreen> {
       await _saveProcedureTreatmentOutcome(db, recordId);
 
       if (mounted) {
+        await _clearDraftOnSuccess();
         RecordFormWidgets.showSuccessSnackbar(
           context, 
           widget.existingRecord != null 
@@ -340,32 +474,60 @@ class _AddProcedureScreenState extends ConsumerState<AddProcedureScreen> {
     ));
   }
 
+  int _calculateCompletedSections() {
+    int completed = 0;
+    if (_selectedPatientId != null) completed++;
+    if (_procedureNameController.text.isNotEmpty) completed++;
+    if (_indicationController.text.isNotEmpty) completed++;
+    if (_procedureNotesController.text.isNotEmpty) completed++;
+    if (_postOpInstructionsController.text.isNotEmpty) completed++;
+    return completed;
+  }
+
+  void _applyTemplate(QuickFillTemplate template) {
+    final data = template.data;
+    setState(() {
+      if (data['procedure_name'] != null) {
+        _procedureNameController.text = data['procedure_name'] as String;
+      }
+      if (data['indication'] != null) {
+        _indicationController.text = data['indication'] as String;
+      }
+      if (data['anesthesia'] != null) {
+        _anesthesiaController.text = data['anesthesia'] as String;
+      }
+      if (data['procedure_notes'] != null) {
+        _procedureNotesController.text = data['procedure_notes'] as String;
+      }
+      if (data['post_op_instructions'] != null) {
+        _postOpInstructionsController.text = data['post_op_instructions'] as String;
+      }
+      if (data['specimen'] != null) {
+        _specimenController.text = data['specimen'] as String;
+      }
+    });
+    showTemplateAppliedSnackbar(context, template.label);
+  }
+
   @override
   Widget build(BuildContext context) {
     final dbAsync = ref.watch(doctorDbProvider);
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    final screenWidth = MediaQuery.of(context).size.width;
-    final isCompact = screenWidth < 400;
-    final padding = isCompact ? 12.0 : 20.0;
 
-    return Scaffold(
-      backgroundColor: isDark ? const Color(0xFF0F0F0F) : const Color(0xFFF8FAFC),
+    return RecordFormScaffold(
+      title: widget.existingRecord != null 
+          ? 'Edit Procedure' 
+          : 'Medical Procedure',
+      subtitle: DateFormat('EEEE, dd MMMM yyyy').format(_recordDate),
+      icon: Icons.healing_rounded,
+      gradientColors: _gradientColors,
+      scrollController: _scrollController,
+      trailing: AutoSaveIndicator(
+        isSaving: _isAutoSaving,
+        lastSaved: _lastSaved,
+      ),
       body: dbAsync.when(
-        data: (db) => CustomScrollView(
-          controller: _scrollController,
-          physics: const BouncingScrollPhysics(),
-          slivers: [
-            _buildSliverAppBar(context, isDark, isCompact),
-            SliverPadding(
-              padding: EdgeInsets.all(padding),
-              sliver: SliverList(
-                delegate: SliverChildListDelegate([
-                  _buildFormContent(context, db, isDark),
-                ]),
-              ),
-            ),
-          ],
-        ),
+        data: (db) => _buildFormContent(context, db, isDark),
         loading: () => const Center(
           child: CircularProgressIndicator(color: _primaryColor),
         ),
@@ -374,111 +536,32 @@ class _AddProcedureScreenState extends ConsumerState<AddProcedureScreen> {
     );
   }
 
-  Widget _buildSliverAppBar(BuildContext context, bool isDark, bool isCompact) {
-    return SliverAppBar(
-      expandedHeight: 160,
-      floating: false,
-      pinned: true,
-      elevation: 0,
-      backgroundColor: _primaryColor,
-      surfaceTintColor: Colors.transparent,
-      leading: Padding(
-        padding: const EdgeInsets.all(8.0),
-        child: GestureDetector(
-          onTap: () => Navigator.pop(context),
-          child: Container(
-            decoration: BoxDecoration(
-              color: Colors.white.withValues(alpha: 0.2),
-              borderRadius: BorderRadius.circular(12),
-            ),
-            child: const Icon(
-              Icons.arrow_back_ios_new_rounded,
-              size: 18,
-              color: Colors.white,
-            ),
-          ),
-        ),
-      ),
-      flexibleSpace: FlexibleSpaceBar(
-        background: Container(
-          decoration: BoxDecoration(
-            gradient: LinearGradient(
-              begin: Alignment.topLeft,
-              end: Alignment.bottomRight,
-              colors: _gradientColors,
-            ),
-          ),
-          child: SafeArea(
-            child: Padding(
-              padding: EdgeInsets.fromLTRB(
-                isCompact ? 16 : 24,
-                50,
-                isCompact ? 16 : 24,
-                20,
-              ),
-              child: Row(
-                crossAxisAlignment: CrossAxisAlignment.center,
-                children: [
-                  Container(
-                    padding: const EdgeInsets.all(16),
-                    decoration: BoxDecoration(
-                      color: Colors.white.withValues(alpha: 0.2),
-                      borderRadius: BorderRadius.circular(18),
-                    ),
-                    child: const Icon(
-                      Icons.healing_rounded,
-                      color: Colors.white,
-                      size: 28,
-                    ),
-                  ),
-                  const SizedBox(width: 16),
-                  Expanded(
-                    child: Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          widget.existingRecord != null 
-                              ? 'Edit Procedure' 
-                              : 'Medical Procedure',
-                          style: TextStyle(
-                            fontSize: isCompact ? 20 : 24,
-                            fontWeight: FontWeight.w700,
-                            color: Colors.white,
-                          ),
-                        ),
-                        const SizedBox(height: 4),
-                        Row(
-                          children: [
-                            const Icon(Icons.calendar_today, color: Colors.white70, size: 14),
-                            const SizedBox(width: 6),
-                            Text(
-                              DateFormat('EEEE, dd MMM yyyy').format(_recordDate),
-                              style: TextStyle(
-                                fontSize: isCompact ? 12 : 14,
-                                color: Colors.white.withValues(alpha: 0.9),
-                              ),
-                            ),
-                          ],
-                        ),
-                      ],
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ),
-        ),
-      ),
-    );
-  }
-
   Widget _buildFormContent(BuildContext context, DoctorDatabase db, bool isDark) {
+    // Calculate form completion
+    final completedSections = _calculateCompletedSections();
+    const totalSections = 5; // Patient, Procedure Name, Indication, Notes, Post-op
+
     return Form(
       key: _formKey,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
+          // Progress Indicator
+          FormProgressIndicator(
+            completedSections: completedSections,
+            totalSections: totalSections,
+            accentColor: _primaryColor,
+          ),
+          const SizedBox(height: 16),
+
+          // Quick Fill Templates
+          QuickFillSection(
+            title: 'Common Procedures',
+            templates: ProcedureTemplates.templates,
+            onTemplateSelected: _applyTemplate,
+          ),
+          const SizedBox(height: 16),
+
           // Patient Selection
           RecordFormSection(
             title: 'Patient Information',
@@ -500,24 +583,11 @@ class _AddProcedureScreenState extends ConsumerState<AddProcedureScreen> {
             title: 'Record Details',
             icon: Icons.event_note,
             accentColor: _primaryColor,
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                DatePickerCard(
-                  selectedDate: _recordDate,
-                  onDateSelected: (date) => setState(() => _recordDate = date),
-                  label: 'Procedure Date',
-                  accentColor: _primaryColor,
-                ),
-                const SizedBox(height: 16),
-                RecordTextField(
-                  controller: _titleController,
-                  label: 'Title',
-                  hint: 'Enter record title (optional)...',
-                  prefixIcon: Icons.title,
-                  accentColor: _primaryColor,
-                ),
-              ],
+            child: DatePickerCard(
+              selectedDate: _recordDate,
+              onDateSelected: (date) => setState(() => _recordDate = date),
+              label: 'Procedure Date',
+              accentColor: _primaryColor,
             ),
           ),
           const SizedBox(height: 16),

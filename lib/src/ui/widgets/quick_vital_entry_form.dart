@@ -45,7 +45,6 @@ class _QuickVitalEntryFormState extends ConsumerState<QuickVitalEntryForm> {
   late TextEditingController _glucoseController;
 
   bool _isSaving = false;
-  bool _autoSaveEnabled = true;
   String _lastSavedTime = '';
   Map<String, bool> _alertFlags = {};
 
@@ -65,15 +64,6 @@ class _QuickVitalEntryFormState extends ConsumerState<QuickVitalEntryForm> {
     _weightController = TextEditingController();
     _painLevelController = TextEditingController();
     _glucoseController = TextEditingController();
-
-    // Add listeners for auto-save
-    _systolicController.addListener(_checkAndAutoSave);
-    _diastolicController.addListener(_checkAndAutoSave);
-    _hrController.addListener(_checkAndAutoSave);
-    _tempController.addListener(_checkAndAutoSave);
-    _respRateController.addListener(_checkAndAutoSave);
-    _spo2Controller.addListener(_checkAndAutoSave);
-    _weightController.addListener(_checkAndAutoSave);
   }
 
   @override
@@ -88,22 +78,6 @@ class _QuickVitalEntryFormState extends ConsumerState<QuickVitalEntryForm> {
     _painLevelController.dispose();
     _glucoseController.dispose();
     super.dispose();
-  }
-
-  void _checkAndAutoSave() {
-    if (_autoSaveEnabled && _hasAnyInput()) {
-      _autoSaveVitals();
-    }
-  }
-
-  bool _hasAnyInput() {
-    return _systolicController.text.isNotEmpty ||
-        _diastolicController.text.isNotEmpty ||
-        _hrController.text.isNotEmpty ||
-        _tempController.text.isNotEmpty ||
-        _respRateController.text.isNotEmpty ||
-        _spo2Controller.text.isNotEmpty ||
-        _weightController.text.isNotEmpty;
   }
 
   void _setPreset(String field, String value) {
@@ -144,7 +118,7 @@ class _QuickVitalEntryFormState extends ConsumerState<QuickVitalEntryForm> {
     _spo2Controller.text = '98';
   }
 
-  Future<void> _autoSaveVitals() async {
+  Future<void> _saveVitals() async {
     if (_isSaving) return;
     setState(() => _isSaving = true);
 
@@ -507,7 +481,7 @@ class _QuickVitalEntryFormState extends ConsumerState<QuickVitalEntryForm> {
                 child: ElevatedButton.icon(
                   icon: const Icon(Icons.save_rounded),
                   label: const Text('Save Vitals'),
-                  onPressed: _isSaving ? null : _autoSaveVitals,
+                  onPressed: _isSaving ? null : _saveVitals,
                   style: ElevatedButton.styleFrom(
                     padding: const EdgeInsets.symmetric(vertical: AppSpacing.lg),
                   ),

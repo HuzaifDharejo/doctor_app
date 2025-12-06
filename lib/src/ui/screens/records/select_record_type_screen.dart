@@ -17,9 +17,15 @@ class SelectRecordTypeScreen extends StatefulWidget {
   const SelectRecordTypeScreen({
     super.key,
     this.preselectedPatient,
+    this.encounterId,
+    this.appointmentId,
   });
 
   final Patient? preselectedPatient;
+  /// Associated encounter ID from workflow
+  final int? encounterId;
+  /// Associated appointment ID from workflow
+  final int? appointmentId;
 
   @override
   State<SelectRecordTypeScreen> createState() => _SelectRecordTypeScreenState();

@@ -123,7 +123,7 @@ class _EncounterScreenState extends ConsumerState<EncounterScreen> {
       backgroundColor: AppColors.primary,
       flexibleSpace: FlexibleSpaceBar(
         title: Text(
-          'Encounter #${summary.encounter.id}',
+          'Visit #${summary.encounter.id}',
           style: const TextStyle(fontWeight: FontWeight.bold),
         ),
         background: Container(
@@ -137,7 +137,7 @@ class _EncounterScreenState extends ConsumerState<EncounterScreen> {
           IconButton(
             icon: const Icon(Icons.check_circle_outline),
             onPressed: () => _completeEncounter(summary),
-            tooltip: 'Complete Encounter',
+            tooltip: 'Complete Visit',
           ),
         IconButton(
           icon: const Icon(Icons.more_vert),
@@ -151,6 +151,18 @@ class _EncounterScreenState extends ConsumerState<EncounterScreen> {
   Widget _buildPatientHeader(BuildContext context, EncounterSummary summary) {
     final patient = summary.patient ?? widget.patient;
     if (patient == null) return const SizedBox.shrink();
+
+    // Calculate age if DOB available
+    String? ageText;
+    if (patient.dateOfBirth != null) {
+      final age = DateTime.now().difference(patient.dateOfBirth!).inDays ~/ 365;
+      ageText = '$age yrs';
+    }
+
+    // Check for allergies
+    final hasAllergies = patient.allergies.isNotEmpty && 
+        patient.allergies.toLowerCase() != 'none' &&
+        patient.allergies.toLowerCase() != 'nkda';
 
     return Container(
       margin: const EdgeInsets.all(16),
@@ -166,69 +178,156 @@ class _EncounterScreenState extends ConsumerState<EncounterScreen> {
           ),
         ],
       ),
-      child: Row(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          CircleAvatar(
-            radius: 30,
-            backgroundColor: AppColors.patients.withValues(alpha: 0.1),
-            child: Text(
-              '${patient.firstName[0]}${patient.lastName.isNotEmpty ? patient.lastName[0] : ''}',
-              style: TextStyle(
-                fontSize: 20,
-                fontWeight: FontWeight.bold,
-                color: AppColors.patients,
-              ),
-            ),
-          ),
-          const SizedBox(width: 16),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  '${patient.firstName} ${patient.lastName}',
-                  style: const TextStyle(
-                    fontSize: 18,
+          // Patient basic info row
+          Row(
+            children: [
+              CircleAvatar(
+                radius: 30,
+                backgroundColor: AppColors.patients.withValues(alpha: 0.1),
+                child: Text(
+                  '${patient.firstName[0]}${patient.lastName.isNotEmpty ? patient.lastName[0] : ''}',
+                  style: TextStyle(
+                    fontSize: 20,
                     fontWeight: FontWeight.bold,
-                    color: AppColors.textPrimary,
+                    color: AppColors.patients,
                   ),
                 ),
-                const SizedBox(height: 4),
-                if (patient.dateOfBirth != null)
-                  Text(
-                    'DOB: ${DateFormat('MMM d, yyyy').format(patient.dateOfBirth!)}',
-                    style: const TextStyle(
-                      fontSize: 14,
-                      color: AppColors.textSecondary,
+              ),
+              const SizedBox(width: 16),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      '${patient.firstName} ${patient.lastName}',
+                      style: const TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.bold,
+                        color: AppColors.textPrimary,
+                      ),
                     ),
-                  ),
-                if (summary.encounter.chiefComplaint.isNotEmpty) ...[
+                    const SizedBox(height: 4),
+                    Row(
+                      children: [
+                        if (ageText != null) ...[
+                          Text(
+                            ageText,
+                            style: const TextStyle(
+                              fontSize: 14,
+                              color: AppColors.textSecondary,
+                            ),
+                          ),
+                          const Text(' • ', style: TextStyle(color: AppColors.textSecondary)),
+                        ],
+                        if (patient.gender.isNotEmpty)
+                          Text(
+                            patient.gender,
+                            style: const TextStyle(
+                              fontSize: 14,
+                              color: AppColors.textSecondary,
+                            ),
+                          ),
+                        if (patient.bloodType.isNotEmpty) ...[
+                          const Text(' • ', style: TextStyle(color: AppColors.textSecondary)),
+                          Text(
+                            patient.bloodType,
+                            style: const TextStyle(
+                              fontSize: 14,
+                              fontWeight: FontWeight.w600,
+                              color: AppColors.error,
+                            ),
+                          ),
+                        ],
+                      ],
+                    ),
+                    if (summary.encounter.chiefComplaint.isNotEmpty) ...[
+                      const SizedBox(height: 4),
+                      Text(
+                        'CC: ${summary.encounter.chiefComplaint}',
+                        style: const TextStyle(
+                          fontSize: 14,
+                          color: AppColors.textSecondary,
+                          fontStyle: FontStyle.italic,
+                        ),
+                      ),
+                    ],
+                  ],
+                ),
+              ),
+              Column(
+                children: [
+                  _buildStatusChip(summary.encounter.status),
                   const SizedBox(height: 4),
                   Text(
-                    'CC: ${summary.encounter.chiefComplaint}',
+                    DateFormat('h:mm a').format(summary.encounter.encounterDate),
                     style: const TextStyle(
-                      fontSize: 14,
+                      fontSize: 12,
                       color: AppColors.textSecondary,
-                      fontStyle: FontStyle.italic,
                     ),
                   ),
                 ],
-              ],
-            ),
-          ),
-          Column(
-            children: [
-              _buildStatusChip(summary.encounter.status),
-              const SizedBox(height: 4),
-              Text(
-                DateFormat('h:mm a').format(summary.encounter.encounterDate),
-                style: const TextStyle(
-                  fontSize: 12,
-                  color: AppColors.textSecondary,
-                ),
               ),
             ],
           ),
+          
+          // Allergies alert (if any)
+          if (hasAllergies) ...[
+            const SizedBox(height: 12),
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+              decoration: BoxDecoration(
+                color: AppColors.error.withValues(alpha: 0.1),
+                borderRadius: BorderRadius.circular(8),
+                border: Border.all(color: AppColors.error.withValues(alpha: 0.3)),
+              ),
+              child: Row(
+                children: [
+                  const Icon(Icons.warning_amber_rounded, color: AppColors.error, size: 20),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: Text(
+                      'Allergies: ${patient.allergies}',
+                      style: const TextStyle(
+                        fontSize: 13,
+                        fontWeight: FontWeight.w600,
+                        color: AppColors.error,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+          
+          // Chronic conditions (if any)
+          if (patient.chronicConditions.isNotEmpty && patient.chronicConditions.toLowerCase() != 'none') ...[
+            const SizedBox(height: 8),
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+              decoration: BoxDecoration(
+                color: AppColors.warning.withValues(alpha: 0.1),
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: Row(
+                children: [
+                  Icon(Icons.medical_information_outlined, color: AppColors.warning, size: 20),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: Text(
+                      'Chronic: ${patient.chronicConditions}',
+                      style: TextStyle(
+                        fontSize: 13,
+                        color: AppColors.warning,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
         ],
       ),
     );
@@ -790,15 +889,15 @@ class _EncounterScreenState extends ConsumerState<EncounterScreen> {
         ),
         _buildActionTile(
           'Generate Invoice',
-          'Bill for this encounter',
+          'Bill for this visit',
           Icons.receipt_long_rounded,
           AppColors.billing,
           () => _generateInvoice(summary),
         ),
         if (summary.encounter.status != 'completed')
           _buildActionTile(
-            'Complete Encounter',
-            'Finish and lock this encounter',
+            'Complete Visit',
+            'Finish and lock this visit',
             Icons.check_circle_rounded,
             AppColors.success,
             () => _completeEncounter(summary),
@@ -1092,9 +1191,9 @@ class _EncounterScreenState extends ConsumerState<EncounterScreen> {
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('Complete Encounter?'),
+        title: const Text('Complete Visit?'),
         content: const Text(
-          'This will mark the encounter as completed. '
+          'This will mark the visit as completed. '
           'Clinical notes will be locked and cannot be edited.',
         ),
         actions: [
@@ -1119,7 +1218,7 @@ class _EncounterScreenState extends ConsumerState<EncounterScreen> {
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(
-              content: Text('Encounter completed successfully'),
+              content: Text('Visit completed successfully'),
               backgroundColor: AppColors.success,
             ),
           );

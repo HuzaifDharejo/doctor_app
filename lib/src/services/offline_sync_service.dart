@@ -225,7 +225,7 @@ class OfflineSyncService extends ChangeNotifier {
 
     try {
       // Simulate sync process
-      await Future.delayed(const Duration(milliseconds: 500));
+      await Future<void>.delayed(const Duration(milliseconds: 500));
 
       // Process sync queue
       final itemsToRemove = <SyncQueueItem>[];
@@ -247,7 +247,7 @@ class OfflineSyncService extends ChangeNotifier {
           // Retry logic
           if (item.retryCount < maxRetries) {
             item.retryCount++;
-            await Future.delayed(retryDelay * (1 << (item.retryCount - 1)));
+            await Future<void>.delayed(retryDelay * (1 << (item.retryCount - 1)));
           } else {
             // Max retries exceeded
             _lastError = 'Sync failed for ${item.entityType}:${item.entityId}';
@@ -287,7 +287,7 @@ class OfflineSyncService extends ChangeNotifier {
 
   Future<void> _syncItem(SyncQueueItem item) async {
     // Simulate server sync operation
-    await Future.delayed(const Duration(milliseconds: 100));
+    await Future<void>.delayed(const Duration(milliseconds: 100));
 
     // In real implementation, this would make API calls
     // For now, it simulates successful sync

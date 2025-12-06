@@ -3,7 +3,9 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../providers/encounter_provider.dart';
+import '../../services/suggestions_service.dart';
 import '../../theme/app_theme.dart';
+import 'suggestion_text_field.dart';
 
 /// Quick Vitals Entry Modal for recording vitals during an encounter
 class VitalsEntryModal extends ConsumerStatefulWidget {
@@ -174,54 +176,70 @@ class _VitalsEntryModalState extends ConsumerState<VitalsEntryModal> {
       title: 'Blood Pressure',
       icon: Icons.favorite,
       iconColor: const Color(0xFFEF4444),
-      child: Row(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Expanded(
-            child: _buildVitalField(
-              controller: _systolicController,
-              label: 'Systolic',
-              hint: '120',
-              suffix: 'mmHg',
-              keyboardType: TextInputType.number,
-              validator: (value) {
-                if (value != null && value.isNotEmpty) {
-                  final num = int.tryParse(value);
-                  if (num == null || num < 50 || num > 300) {
-                    return 'Invalid';
-                  }
-                }
-                return null;
-              },
-            ),
-          ),
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 12),
-            child: const Text(
-              '/',
-              style: TextStyle(
-                fontSize: 24,
-                fontWeight: FontWeight.bold,
-                color: AppColors.textSecondary,
+          Row(
+            children: [
+              Expanded(
+                child: _buildVitalField(
+                  controller: _systolicController,
+                  label: 'Systolic',
+                  hint: '120',
+                  suffix: 'mmHg',
+                  keyboardType: TextInputType.number,
+                  validator: (value) {
+                    if (value != null && value.isNotEmpty) {
+                      final num = int.tryParse(value);
+                      if (num == null || num < 50 || num > 300) {
+                        return 'Invalid';
+                      }
+                    }
+                    return null;
+                  },
+                ),
               ),
-            ),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 12),
+                child: const Text(
+                  '/',
+                  style: TextStyle(
+                    fontSize: 24,
+                    fontWeight: FontWeight.bold,
+                    color: AppColors.textSecondary,
+                  ),
+                ),
+              ),
+              Expanded(
+                child: _buildVitalField(
+                  controller: _diastolicController,
+                  label: 'Diastolic',
+                  hint: '80',
+                  suffix: 'mmHg',
+                  keyboardType: TextInputType.number,
+                  validator: (value) {
+                    if (value != null && value.isNotEmpty) {
+                      final num = int.tryParse(value);
+                      if (num == null || num < 30 || num > 200) {
+                        return 'Invalid';
+                      }
+                    }
+                    return null;
+                  },
+                ),
+              ),
+            ],
           ),
-          Expanded(
-            child: _buildVitalField(
-              controller: _diastolicController,
-              label: 'Diastolic',
-              hint: '80',
-              suffix: 'mmHg',
-              keyboardType: TextInputType.number,
-              validator: (value) {
-                if (value != null && value.isNotEmpty) {
-                  final num = int.tryParse(value);
-                  if (num == null || num < 30 || num > 200) {
-                    return 'Invalid';
-                  }
-                }
-                return null;
-              },
-            ),
+          const SizedBox(height: 12),
+          _buildQuickSelectChips(
+            suggestions: MedicalSuggestions.bloodPressure,
+            onSelected: (bp) {
+              final parts = bp.split('/');
+              if (parts.length == 2) {
+                _systolicController.text = parts[0];
+                _diastolicController.text = parts[1];
+              }
+            },
           ),
         ],
       ),
@@ -236,21 +254,32 @@ class _VitalsEntryModalState extends ConsumerState<VitalsEntryModal> {
             title: 'Heart Rate',
             icon: Icons.timeline,
             iconColor: const Color(0xFFEC4899),
-            child: _buildVitalField(
-              controller: _heartRateController,
-              label: '',
-              hint: '72',
-              suffix: 'bpm',
-              keyboardType: TextInputType.number,
-              validator: (value) {
-                if (value != null && value.isNotEmpty) {
-                  final num = int.tryParse(value);
-                  if (num == null || num < 30 || num > 250) {
-                    return 'Invalid';
-                  }
-                }
-                return null;
-              },
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                _buildVitalField(
+                  controller: _heartRateController,
+                  label: '',
+                  hint: '72',
+                  suffix: 'bpm',
+                  keyboardType: TextInputType.number,
+                  validator: (value) {
+                    if (value != null && value.isNotEmpty) {
+                      final num = int.tryParse(value);
+                      if (num == null || num < 30 || num > 250) {
+                        return 'Invalid';
+                      }
+                    }
+                    return null;
+                  },
+                ),
+                const SizedBox(height: 8),
+                _buildQuickSelectChips(
+                  suggestions: MedicalSuggestions.pulseRate.take(5).toList(),
+                  onSelected: (v) => _heartRateController.text = v,
+                  compact: true,
+                ),
+              ],
             ),
           ),
         ),
@@ -260,21 +289,32 @@ class _VitalsEntryModalState extends ConsumerState<VitalsEntryModal> {
             title: 'Temperature',
             icon: Icons.thermostat,
             iconColor: const Color(0xFFF59E0B),
-            child: _buildVitalField(
-              controller: _temperatureController,
-              label: '',
-              hint: '37.0',
-              suffix: '°C',
-              keyboardType: const TextInputType.numberWithOptions(decimal: true),
-              validator: (value) {
-                if (value != null && value.isNotEmpty) {
-                  final num = double.tryParse(value);
-                  if (num == null || num < 34 || num > 43) {
-                    return 'Invalid';
-                  }
-                }
-                return null;
-              },
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                _buildVitalField(
+                  controller: _temperatureController,
+                  label: '',
+                  hint: '37.0',
+                  suffix: '°C',
+                  keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                  validator: (value) {
+                    if (value != null && value.isNotEmpty) {
+                      final num = double.tryParse(value);
+                      if (num == null || num < 34 || num > 43) {
+                        return 'Invalid';
+                      }
+                    }
+                    return null;
+                  },
+                ),
+                const SizedBox(height: 8),
+                _buildQuickSelectChips(
+                  suggestions: MedicalSuggestions.temperatureCelsius.take(5).toList(),
+                  onSelected: (v) => _temperatureController.text = v,
+                  compact: true,
+                ),
+              ],
             ),
           ),
         ),
@@ -290,12 +330,23 @@ class _VitalsEntryModalState extends ConsumerState<VitalsEntryModal> {
             title: 'Respiratory Rate',
             icon: Icons.air,
             iconColor: const Color(0xFF14B8A6),
-            child: _buildVitalField(
-              controller: _respiratoryRateController,
-              label: '',
-              hint: '16',
-              suffix: '/min',
-              keyboardType: TextInputType.number,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                _buildVitalField(
+                  controller: _respiratoryRateController,
+                  label: '',
+                  hint: '16',
+                  suffix: '/min',
+                  keyboardType: TextInputType.number,
+                ),
+                const SizedBox(height: 8),
+                _buildQuickSelectChips(
+                  suggestions: MedicalSuggestions.respiratoryRate.take(5).toList(),
+                  onSelected: (v) => _respiratoryRateController.text = v,
+                  compact: true,
+                ),
+              ],
             ),
           ),
         ),
@@ -305,21 +356,32 @@ class _VitalsEntryModalState extends ConsumerState<VitalsEntryModal> {
             title: 'SpO2',
             icon: Icons.water_drop,
             iconColor: const Color(0xFF0EA5E9),
-            child: _buildVitalField(
-              controller: _oxygenSatController,
-              label: '',
-              hint: '98',
-              suffix: '%',
-              keyboardType: TextInputType.number,
-              validator: (value) {
-                if (value != null && value.isNotEmpty) {
-                  final num = double.tryParse(value);
-                  if (num == null || num < 50 || num > 100) {
-                    return 'Invalid';
-                  }
-                }
-                return null;
-              },
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                _buildVitalField(
+                  controller: _oxygenSatController,
+                  label: '',
+                  hint: '98',
+                  suffix: '%',
+                  keyboardType: TextInputType.number,
+                  validator: (value) {
+                    if (value != null && value.isNotEmpty) {
+                      final num = double.tryParse(value);
+                      if (num == null || num < 50 || num > 100) {
+                        return 'Invalid';
+                      }
+                    }
+                    return null;
+                  },
+                ),
+                const SizedBox(height: 8),
+                _buildQuickSelectChips(
+                  suggestions: MedicalSuggestions.oxygenSaturation.take(5).toList(),
+                  onSelected: (v) => _oxygenSatController.text = v,
+                  compact: true,
+                ),
+              ],
             ),
           ),
         ),
@@ -337,24 +399,46 @@ class _VitalsEntryModalState extends ConsumerState<VitalsEntryModal> {
           Row(
             children: [
               Expanded(
-                child: _buildVitalField(
-                  controller: _weightController,
-                  label: 'Weight',
-                  hint: '70',
-                  suffix: 'kg',
-                  keyboardType: const TextInputType.numberWithOptions(decimal: true),
-                  onChanged: (_) => _calculateBMI(),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    _buildVitalField(
+                      controller: _weightController,
+                      label: 'Weight',
+                      hint: '70',
+                      suffix: 'kg',
+                      keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                      onChanged: (_) => _calculateBMI(),
+                    ),
+                    const SizedBox(height: 6),
+                    _buildQuickSelectChips(
+                      suggestions: MedicalSuggestions.weightKg.take(6).toList(),
+                      onSelected: (v) { _weightController.text = v; _calculateBMI(); },
+                      compact: true,
+                    ),
+                  ],
                 ),
               ),
               const SizedBox(width: 12),
               Expanded(
-                child: _buildVitalField(
-                  controller: _heightController,
-                  label: 'Height',
-                  hint: '170',
-                  suffix: 'cm',
-                  keyboardType: const TextInputType.numberWithOptions(decimal: true),
-                  onChanged: (_) => _calculateBMI(),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    _buildVitalField(
+                      controller: _heightController,
+                      label: 'Height',
+                      hint: '170',
+                      suffix: 'cm',
+                      keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                      onChanged: (_) => _calculateBMI(),
+                    ),
+                    const SizedBox(height: 6),
+                    _buildQuickSelectChips(
+                      suggestions: MedicalSuggestions.heightCm.take(6).toList(),
+                      onSelected: (v) { _heightController.text = v; _calculateBMI(); },
+                      compact: true,
+                    ),
+                  ],
                 ),
               ),
             ],
@@ -404,6 +488,12 @@ class _VitalsEntryModalState extends ConsumerState<VitalsEntryModal> {
             hint: '100',
             suffix: 'mg/dL',
             keyboardType: TextInputType.number,
+          ),
+          const SizedBox(height: 6),
+          _buildQuickSelectChips(
+            suggestions: MedicalSuggestions.bloodGlucose.take(6).toList(),
+            onSelected: (v) => _bloodGlucoseController.text = v,
+            compact: true,
           ),
         ],
       ),
@@ -492,19 +582,43 @@ class _VitalsEntryModalState extends ConsumerState<VitalsEntryModal> {
       title: 'Notes',
       icon: Icons.notes,
       iconColor: AppColors.textSecondary,
-      child: TextField(
+      child: SuggestionTextField(
         controller: _notesController,
+        label: '',
+        hint: 'Additional notes about vitals...',
         maxLines: 3,
-        decoration: InputDecoration(
-          hintText: 'Additional notes about vitals...',
-          filled: true,
-          fillColor: AppColors.background,
-          border: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(12),
-            borderSide: BorderSide.none,
-          ),
-        ),
+        suggestions: MedicalSuggestions.vitalNotes,
+        separator: '\n',
       ),
+    );
+  }
+
+  Widget _buildQuickSelectChips({
+    required List<String> suggestions,
+    required void Function(String) onSelected,
+    bool compact = false,
+  }) {
+    return Wrap(
+      spacing: 6,
+      runSpacing: 4,
+      children: suggestions.map((s) {
+        return ActionChip(
+          label: Text(
+            s,
+            style: TextStyle(
+              fontSize: compact ? 11 : 12,
+              color: AppColors.textSecondary,
+            ),
+          ),
+          padding: compact 
+              ? const EdgeInsets.symmetric(horizontal: 4, vertical: 0)
+              : const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+          backgroundColor: AppColors.background,
+          side: BorderSide(color: AppColors.divider.withValues(alpha: 0.5)),
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+          onPressed: () => onSelected(s),
+        );
+      }).toList(),
     );
   }
 

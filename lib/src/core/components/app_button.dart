@@ -223,7 +223,7 @@ class AppButton extends StatelessWidget {
         width: buttonHeight * 0.5,
         child: CircularProgressIndicator(
           strokeWidth: 2,
-          valueColor: AlwaysStoppedAnimation<Color>(fgColor ?? colorScheme.primary),
+          valueColor: AlwaysStoppedAnimation<Color>(fgColor),
         ),
       );
     } else if (icon != null && label != null) {

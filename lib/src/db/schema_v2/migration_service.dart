@@ -2,9 +2,8 @@
 //
 // This service handles the database migration in phases to avoid data loss.
 
-import 'package:drift/drift.dart';
 import '../doctor_db.dart';
-import '../services/logger_service.dart';
+import '../../services/logger_service.dart';
 
 /// Migration phases for transforming to encounter-based model
 enum MigrationPhase {

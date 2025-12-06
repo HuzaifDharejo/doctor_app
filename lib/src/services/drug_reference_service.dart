@@ -20,7 +20,7 @@ class DrugReferenceService {
     int limit = 20,
   }) async {
     // Simulate network delay
-    await Future.delayed(const Duration(milliseconds: 200));
+    await Future<void>.delayed(const Duration(milliseconds: 200));
 
     final lowerQuery = query.toLowerCase();
     final results = _drugDatabase
@@ -36,7 +36,7 @@ class DrugReferenceService {
 
   /// Get detailed drug information
   Future<DrugInfo?> getDrugInfo(String drugId) async {
-    await Future.delayed(const Duration(milliseconds: 100));
+    await Future<void>.delayed(const Duration(milliseconds: 100));
     try {
       return _drugDatabase.firstWhere((drug) => drug.id == drugId);
     } catch (e) {
@@ -49,7 +49,7 @@ class DrugReferenceService {
     List<String> drugIds, {
     bool includeLowRisk = false,
   }) async {
-    await Future.delayed(const Duration(milliseconds: 300));
+    await Future<void>.delayed(const Duration(milliseconds: 300));
 
     final interactions = <DrugInteraction>[];
 
@@ -79,7 +79,7 @@ class DrugReferenceService {
     String drugId,
     List<String> allergyList,
   ) async {
-    await Future.delayed(const Duration(milliseconds: 200));
+    await Future<void>.delayed(const Duration(milliseconds: 200));
 
     final drug = _drugDatabase.firstWhere((d) => d.id == drugId);
     final warnings = <DrugAllergyWarning>[];
@@ -106,7 +106,7 @@ class DrugReferenceService {
 
   /// Get FDA warnings for a drug
   Future<List<FDAWarning>> getFDAWarnings(String drugId) async {
-    await Future.delayed(const Duration(milliseconds: 150));
+    await Future<void>.delayed(const Duration(milliseconds: 150));
 
     return _fdaWarnings
         .where((warning) => warning.drugId == drugId)
@@ -115,7 +115,7 @@ class DrugReferenceService {
 
   /// Get black box warnings (most serious)
   Future<List<BlackBoxWarning>> getBlackBoxWarnings(String drugId) async {
-    await Future.delayed(const Duration(milliseconds: 150));
+    await Future<void>.delayed(const Duration(milliseconds: 150));
 
     return _blackBoxWarnings
         .where((warning) => warning.drugId == drugId)
@@ -124,7 +124,7 @@ class DrugReferenceService {
 
   /// Get contraindications for a drug
   Future<List<Contraindication>> getContraindications(String drugId) async {
-    await Future.delayed(const Duration(milliseconds: 100));
+    await Future<void>.delayed(const Duration(milliseconds: 100));
 
     final drug = _drugDatabase.firstWhere((d) => d.id == drugId);
     return drug.contraindications;
@@ -137,7 +137,7 @@ class DrugReferenceService {
     String? renalFunction,
     String? hepaticFunction,
   }) async {
-    await Future.delayed(const Duration(milliseconds: 100));
+    await Future<void>.delayed(const Duration(milliseconds: 100));
 
     try {
       final drug = _drugDatabase.firstWhere((d) => d.id == drugId);
@@ -152,7 +152,7 @@ class DrugReferenceService {
     DrugInfo drug,
     List<String> allergyList,
   ) async {
-    await Future.delayed(const Duration(milliseconds: 200));
+    await Future<void>.delayed(const Duration(milliseconds: 200));
 
     return _drugDatabase
         .where((alternative) =>
@@ -168,7 +168,7 @@ class DrugReferenceService {
     String drugId,
     List<String> diagnosesList,
   ) async {
-    await Future.delayed(const Duration(milliseconds: 200));
+    await Future<void>.delayed(const Duration(milliseconds: 200));
 
     final drug = _drugDatabase.firstWhere((d) => d.id == drugId);
     final contraindications = <DiseaseContraindication>[];

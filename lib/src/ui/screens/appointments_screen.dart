@@ -735,56 +735,59 @@ class _AppointmentsScreenState extends ConsumerState<AppointmentsScreen> {
                           horizontal: isCompact ? AppSpacing.sm : AppSpacing.md,
                           vertical: AppSpacing.sm,
                         ),
-                        child: Row(
-                          children: [
-                            if (patient.phone.isNotEmpty) ...[
+                        child: SingleChildScrollView(
+                          scrollDirection: Axis.horizontal,
+                          child: Row(
+                            children: [
+                              if (patient.phone.isNotEmpty) ...[
+                                _buildQuickAction(
+                                  context,
+                                  icon: Icons.phone_rounded,
+                                  label: 'Call',
+                                  color: AppColors.success,
+                                  onTap: () => _callPatient(patient.phone),
+                                ),
+                                const SizedBox(width: AppSpacing.sm),
+                                _buildQuickAction(
+                                  context,
+                                  icon: Icons.message_rounded,
+                                  label: 'SMS',
+                                  color: AppColors.info,
+                                  onTap: () => _messagePatient(patient.phone),
+                                ),
+                                const SizedBox(width: AppSpacing.sm),
+                              ],
                               _buildQuickAction(
                                 context,
-                                icon: Icons.phone_rounded,
-                                label: 'Call',
-                                color: AppColors.success,
-                                onTap: () => _callPatient(patient.phone),
+                                icon: Icons.edit_calendar_rounded,
+                                label: 'Reschedule',
+                                color: AppColors.warning,
+                                onTap: () => _showRescheduleDialog(context, db, appt),
                               ),
                               const SizedBox(width: AppSpacing.sm),
                               _buildQuickAction(
                                 context,
-                                icon: Icons.message_rounded,
-                                label: 'SMS',
-                                color: AppColors.info,
-                                onTap: () => _messagePatient(patient.phone),
+                                icon: Icons.how_to_reg_rounded,
+                                label: 'Check-In',
+                                color: const Color(0xFF10B981),
+                                onTap: () => _quickCheckIn(context, db, appt, patient),
                               ),
                               const SizedBox(width: AppSpacing.sm),
+                              _buildQuickAction(
+                                context,
+                                icon: Icons.play_circle_rounded,
+                                label: 'Start',
+                                color: const Color(0xFF059669),
+                                onTap: () => _startConsultation(context, db, appt, patient),
+                              ),
+                              const SizedBox(width: AppSpacing.sm),
+                              Icon(
+                                Icons.arrow_forward_ios_rounded,
+                                size: 14,
+                                color: isDark ? AppColors.darkTextHint : AppColors.textHint,
+                              ),
                             ],
-                            _buildQuickAction(
-                              context,
-                              icon: Icons.edit_calendar_rounded,
-                              label: 'Reschedule',
-                              color: AppColors.warning,
-                              onTap: () => _showRescheduleDialog(context, db, appt),
-                            ),
-                            const SizedBox(width: AppSpacing.sm),
-                            _buildQuickAction(
-                              context,
-                              icon: Icons.how_to_reg_rounded,
-                              label: 'Check-In',
-                              color: const Color(0xFF10B981),
-                              onTap: () => _quickCheckIn(context, db, appt, patient),
-                            ),
-                            const SizedBox(width: AppSpacing.sm),
-                            _buildQuickAction(
-                              context,
-                              icon: Icons.play_circle_rounded,
-                              label: 'Start',
-                              color: const Color(0xFF059669),
-                              onTap: () => _startConsultation(context, db, appt, patient),
-                            ),
-                            const Spacer(),
-                            Icon(
-                              Icons.arrow_forward_ios_rounded,
-                              size: 14,
-                              color: isDark ? AppColors.darkTextHint : AppColors.textHint,
-                            ),
-                          ],
+                          ),
                         ),
                       ),
                   ],
@@ -1578,7 +1581,7 @@ class _AppointmentsScreenState extends ConsumerState<AppointmentsScreen> {
         await db.updateAppointment(updatedAppointment);
         setState(() {});
         if (mounted) {
-          ScaffoldMessenger.of(parentContext).showSnackBar(
+          ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(
               content: Text('Appointment cancelled successfully'),
               behavior: SnackBarBehavior.floating,
@@ -1588,7 +1591,7 @@ class _AppointmentsScreenState extends ConsumerState<AppointmentsScreen> {
         }
       } catch (e) {
         if (mounted) {
-          ScaffoldMessenger.of(parentContext).showSnackBar(
+          ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
               content: Text('Failed to cancel appointment: $e'),
               behavior: SnackBarBehavior.floating,
@@ -1618,7 +1621,7 @@ class _AppointmentsScreenState extends ConsumerState<AppointmentsScreen> {
       await db.updateAppointment(updatedAppointment);
       setState(() {});
       if (mounted) {
-        ScaffoldMessenger.of(parentContext).showSnackBar(
+        ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
             content: Text('Appointment marked as completed'),
             behavior: SnackBarBehavior.floating,
@@ -1628,7 +1631,7 @@ class _AppointmentsScreenState extends ConsumerState<AppointmentsScreen> {
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(parentContext).showSnackBar(
+        ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text('Failed to update appointment: $e'),
             behavior: SnackBarBehavior.floating,
@@ -1672,7 +1675,7 @@ class _AppointmentsScreenState extends ConsumerState<AppointmentsScreen> {
         await db.deleteAppointment(appointment.id);
         setState(() {});
         if (mounted) {
-          ScaffoldMessenger.of(parentContext).showSnackBar(
+          ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(
               content: Text('Appointment deleted successfully'),
               behavior: SnackBarBehavior.floating,
@@ -1682,7 +1685,7 @@ class _AppointmentsScreenState extends ConsumerState<AppointmentsScreen> {
         }
       } catch (e) {
         if (mounted) {
-          ScaffoldMessenger.of(parentContext).showSnackBar(
+          ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
               content: Text('Failed to delete appointment: $e'),
               behavior: SnackBarBehavior.floating,

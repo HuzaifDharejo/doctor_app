@@ -29,10 +29,20 @@ class AddPrescriptionScreen extends ConsumerStatefulWidget {
     this.patientId,
     this.patientName,
     this.preselectedPatient,
+    this.appointmentId,
+    this.encounterId,
+    this.diagnosis,
+    this.symptoms,
   });
   final int? patientId;
   final String? patientName;
   final Patient? preselectedPatient;
+  final int? appointmentId;
+  final int? encounterId;
+  /// Pre-filled diagnosis from workflow
+  final String? diagnosis;
+  /// Pre-filled symptoms from workflow
+  final String? symptoms;
 
   @override
   ConsumerState<AddPrescriptionScreen> createState() => _AddPrescriptionScreenState();
@@ -101,6 +111,13 @@ class _AddPrescriptionScreenState extends ConsumerState<AddPrescriptionScreen> {
       _selectedPatientId = widget.preselectedPatient?.id;
       _selectedPatient = widget.preselectedPatient;
     }
+    // Pre-fill diagnosis and symptoms from workflow if provided
+    if (widget.diagnosis != null && widget.diagnosis!.isNotEmpty) {
+      _diagnosisController.text = widget.diagnosis!;
+    }
+    if (widget.symptoms != null && widget.symptoms!.isNotEmpty) {
+      _symptomsController.text = widget.symptoms!;
+    }
     // Add one empty medication entry by default
     _medications.add(MedicationEntry());
     _loadPatients();
@@ -124,21 +141,41 @@ class _AddPrescriptionScreenState extends ConsumerState<AddPrescriptionScreen> {
     setState(() => _loadingVitals = true);
     try {
       final db = await ref.read(doctorDbProvider.future);
-      final lastPrescription = await db.getLastPrescriptionForPatient(patientId);
       
-      if (lastPrescription != null) {
-        final data = jsonDecode(lastPrescription.itemsJson) as Map<String, dynamic>;
+      // Load actual latest vitals from vitals table (not from prescription)
+      final latestVitals = await db.getLatestVitalSignsForPatient(patientId);
+      
+      if (latestVitals != null) {
         setState(() {
-          _lastVisitVitals = data['vitals'] as Map<String, dynamic>?;
-          _lastVisitDate = lastPrescription.createdAt;
+          _lastVisitVitals = {
+            'bp': '${latestVitals.systolicBp?.toInt() ?? '-'}/${latestVitals.diastolicBp?.toInt() ?? '-'}',
+            'pulse': latestVitals.heartRate?.toString() ?? '-',
+            'temperature': latestVitals.temperature?.toStringAsFixed(1) ?? '-',
+            'weight': latestVitals.weight?.toStringAsFixed(1) ?? '-',
+            'height': latestVitals.height?.toStringAsFixed(1) ?? '-',
+            'respiratoryRate': latestVitals.respiratoryRate?.toString() ?? '-',
+            'oxygenSaturation': latestVitals.oxygenSaturation?.toStringAsFixed(0) ?? '-',
+          };
+          _lastVisitDate = latestVitals.recordedAt;
           _loadingVitals = false;
         });
       } else {
-        setState(() {
-          _lastVisitVitals = null;
-          _lastVisitDate = null;
-          _loadingVitals = false;
-        });
+        // Fallback: try getting from last prescription if no vitals in table
+        final lastPrescription = await db.getLastPrescriptionForPatient(patientId);
+        if (lastPrescription != null) {
+          final data = jsonDecode(lastPrescription.itemsJson) as Map<String, dynamic>;
+          setState(() {
+            _lastVisitVitals = data['vitals'] as Map<String, dynamic>?;
+            _lastVisitDate = lastPrescription.createdAt;
+            _loadingVitals = false;
+          });
+        } else {
+          setState(() {
+            _lastVisitVitals = null;
+            _lastVisitDate = null;
+            _loadingVitals = false;
+          });
+        }
       }
       
       // Load patient allergies from medical history
@@ -592,6 +629,8 @@ class _AddPrescriptionScreenState extends ConsumerState<AddPrescriptionScreen> {
             diagnosis: Value(jsonData['diagnosis'] as String? ?? ''),
             chiefComplaint: Value(jsonData['symptoms'] as String? ?? ''),
             vitalsJson: Value(jsonEncode(jsonData['vitals'] ?? {})),
+            appointmentId: Value(widget.appointmentId),
+            encounterId: Value(widget.encounterId),
           ),
         );
         

@@ -145,7 +145,6 @@ class AppHeader extends StatelessWidget {
         textColor = context.onSurfaceColor;
         break;
       case AppHeaderVariant.standard:
-      default:
         decoration = null;
         textColor = context.onSurfaceColor;
     }
@@ -195,7 +194,7 @@ class AppHeader extends StatelessWidget {
                       fontSize: isCompact ? AppFontSize.smCompact : AppFontSize.md,
                       color: variant == AppHeaderVariant.standard
                           ? (isDark ? AppColors.darkTextSecondary : AppColors.textSecondary)
-                          : textColor?.withValues(alpha: 0.9) ?? Colors.white.withValues(alpha: 0.9),
+                          : textColor.withValues(alpha: 0.9),
                     ),
                   ),
                 ],

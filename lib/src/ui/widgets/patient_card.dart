@@ -292,49 +292,50 @@ class _PatientCardState extends State<PatientCard>
                               
                               // Last visit / Next appointment info
                               if (widget.lastVisit != null || widget.nextAppointment != null)
-                                Row(
+                                Wrap(
+                                  spacing: 8,
+                                  runSpacing: 4,
+                                  crossAxisAlignment: WrapCrossAlignment.center,
                                   children: [
-                                    if (widget.lastVisit != null) ...[
-                                      Icon(
-                                        Icons.history_rounded,
-                                        size: 12,
-                                        color: isDark ? AppColors.darkTextHint : AppColors.textHint,
+                                    if (widget.lastVisit != null)
+                                      Row(
+                                        mainAxisSize: MainAxisSize.min,
+                                        children: [
+                                          Icon(
+                                            Icons.history_rounded,
+                                            size: 12,
+                                            color: isDark ? AppColors.darkTextHint : AppColors.textHint,
+                                          ),
+                                          const SizedBox(width: 4),
+                                          Text(
+                                            _formatRelativeDate(widget.lastVisit!),
+                                            style: TextStyle(
+                                              fontSize: 11,
+                                              color: isDark ? AppColors.darkTextSecondary : AppColors.textSecondary,
+                                            ),
+                                          ),
+                                        ],
                                       ),
-                                      const SizedBox(width: 4),
-                                      Text(
-                                        _formatRelativeDate(widget.lastVisit!),
-                                        style: TextStyle(
-                                          fontSize: 11,
-                                          color: isDark ? AppColors.darkTextSecondary : AppColors.textSecondary,
-                                        ),
-                                      ),
-                                    ],
-                                    if (widget.lastVisit != null && widget.nextAppointment != null)
-                                      Container(
-                                        margin: const EdgeInsets.symmetric(horizontal: AppSpacing.sm),
-                                        width: 1,
-                                        height: 12,
-                                        color: isDark ? AppColors.darkDivider : AppColors.divider,
-                                      ),
-                                    if (widget.nextAppointment != null) ...[
-                                      const Icon(
-                                        Icons.event_rounded,
-                                        size: 12,
-                                        color: AppColors.appointments,
-                                      ),
-                                      const SizedBox(width: 4),
-                                      Flexible(
-                                        child: Text(
-                                          _formatUpcomingDate(widget.nextAppointment!),
-                                          style: const TextStyle(
-                                            fontSize: 11,
-                                            fontWeight: FontWeight.w500,
+                                    if (widget.nextAppointment != null)
+                                      Row(
+                                        mainAxisSize: MainAxisSize.min,
+                                        children: [
+                                          const Icon(
+                                            Icons.event_rounded,
+                                            size: 12,
                                             color: AppColors.appointments,
                                           ),
-                                          overflow: TextOverflow.ellipsis,
-                                        ),
+                                          const SizedBox(width: 4),
+                                          Text(
+                                            _formatUpcomingDate(widget.nextAppointment!),
+                                            style: const TextStyle(
+                                              fontSize: 11,
+                                              fontWeight: FontWeight.w500,
+                                              color: AppColors.appointments,
+                                            ),
+                                          ),
+                                        ],
                                       ),
-                                    ],
                                   ],
                                 )
                               else

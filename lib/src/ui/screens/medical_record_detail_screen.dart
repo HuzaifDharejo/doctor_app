@@ -135,17 +135,28 @@ class _Header extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return DecoratedBox(
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    
+    return Container(
       decoration: BoxDecoration(
         gradient: LinearGradient(
-          colors: [recordInfo.color, recordInfo.color.withValues(alpha: 0.7)],
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
+          colors: isDark
+              ? [const Color(0xFF1A1A1A), const Color(0xFF0F0F0F)]
+              : [Colors.white, const Color(0xFFF8FAFC)],
         ),
         borderRadius: const BorderRadius.only(
           bottomLeft: Radius.circular(MedicalRecordConstants.radiusHeader),
           bottomRight: Radius.circular(MedicalRecordConstants.radiusHeader),
         ),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: isDark ? 0.3 : 0.08),
+            blurRadius: 20,
+            offset: const Offset(0, 4),
+          ),
+        ],
       ),
       child: SafeArea(
         bottom: false,
@@ -154,13 +165,9 @@ class _Header extends StatelessWidget {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              _buildAppBar(context),
+              _buildAppBar(context, isDark),
               const SizedBox(height: 24),
-              _buildRecordIcon(),
-              const SizedBox(height: MedicalRecordConstants.paddingLarge),
-              _buildTitle(),
-              const SizedBox(height: MedicalRecordConstants.paddingSmall),
-              _buildMetadata(),
+              _buildTitleSection(isDark),
               const SizedBox(height: MedicalRecordConstants.paddingLarge),
             ],
           ),
@@ -169,98 +176,146 @@ class _Header extends StatelessWidget {
     );
   }
 
-  Widget _buildAppBar(BuildContext context) {
+  Widget _buildAppBar(BuildContext context, bool isDark) {
     return Row(
       children: [
-        HeaderIconButton(
-          icon: Icons.arrow_back,
-          onTap: () => Navigator.pop(context),
-          semanticLabel: 'Go back',
+        Container(
+          decoration: BoxDecoration(
+            color: isDark ? Colors.white.withValues(alpha: 0.1) : Colors.grey.shade100,
+            borderRadius: BorderRadius.circular(12),
+          ),
+          child: IconButton(
+            icon: Icon(
+              Icons.arrow_back_ios_new_rounded,
+              size: 18,
+              color: isDark ? Colors.white : Colors.black87,
+            ),
+            onPressed: () => Navigator.of(context).pop(),
+          ),
         ),
         const Spacer(),
-        HeaderIconButton(
-          icon: Icons.share_outlined,
-          onTap: () => _handleShare(context),
-          semanticLabel: 'Share record',
+        Container(
+          decoration: BoxDecoration(
+            color: isDark ? Colors.white.withValues(alpha: 0.1) : Colors.grey.shade100,
+            borderRadius: BorderRadius.circular(12),
+          ),
+          child: IconButton(
+            icon: Icon(
+              Icons.share_outlined,
+              size: 20,
+              color: isDark ? Colors.white : Colors.black87,
+            ),
+            onPressed: () => _handleShare(context),
+            tooltip: 'Share record',
+          ),
         ),
-        const SizedBox(width: MedicalRecordConstants.paddingSmall),
-        HeaderIconButton(
-          icon: Icons.print_outlined,
-          onTap: () => _handlePrint(context),
-          semanticLabel: 'Print record',
+        const SizedBox(width: 8),
+        Container(
+          decoration: BoxDecoration(
+            color: isDark ? Colors.white.withValues(alpha: 0.1) : Colors.grey.shade100,
+            borderRadius: BorderRadius.circular(12),
+          ),
+          child: IconButton(
+            icon: Icon(
+              Icons.print_outlined,
+              size: 20,
+              color: isDark ? Colors.white : Colors.black87,
+            ),
+            onPressed: () => _handlePrint(context),
+            tooltip: 'Print record',
+          ),
         ),
       ],
     );
   }
 
-  Widget _buildRecordIcon() {
-    return Container(
-      padding: const EdgeInsets.all(MedicalRecordConstants.paddingLarge),
-      decoration: BoxDecoration(
-        color: Colors.white.withValues(alpha: 0.2),
-        borderRadius: BorderRadius.circular(MedicalRecordConstants.radiusXLarge),
-      ),
-      child: Icon(recordInfo.icon, size: MedicalRecordConstants.iconHeader, color: Colors.white),
-    );
-  }
-
-  Widget _buildTitle() {
-    return Semantics(
-      header: true,
-      child: Text(
-        record.title,
-        style: const TextStyle(
-          color: Colors.white,
-          fontSize: MedicalRecordConstants.fontXLarge,
-          fontWeight: FontWeight.bold,
-        ),
-      ),
-    );
-  }
-
-  Widget _buildMetadata() {
+  Widget _buildTitleSection(bool isDark) {
     return Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        _buildTypeBadge(),
-        const Spacer(),
-        _buildDateDisplay(),
+        Container(
+          padding: const EdgeInsets.all(16),
+          decoration: BoxDecoration(
+            gradient: LinearGradient(
+              colors: [recordInfo.color, recordInfo.color.withValues(alpha: 0.8)],
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+            ),
+            borderRadius: BorderRadius.circular(20),
+            boxShadow: [
+              BoxShadow(
+                color: recordInfo.color.withValues(alpha: 0.4),
+                blurRadius: 20,
+                offset: const Offset(0, 8),
+              ),
+            ],
+          ),
+          child: Icon(
+            recordInfo.icon,
+            color: Colors.white,
+            size: 32,
+          ),
+        ),
+        const SizedBox(width: 16),
+        Expanded(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                record.title,
+                style: TextStyle(
+                  fontSize: 24,
+                  fontWeight: FontWeight.w800,
+                  color: isDark ? Colors.white : const Color(0xFF1E293B),
+                  letterSpacing: -0.5,
+                ),
+                maxLines: 2,
+                overflow: TextOverflow.ellipsis,
+              ),
+              const SizedBox(height: 8),
+              _buildTypeBadge(isDark),
+              const SizedBox(height: 8),
+              _buildDateDisplay(isDark),
+            ],
+          ),
+        ),
       ],
     );
   }
 
-  Widget _buildTypeBadge() {
+  Widget _buildTypeBadge(bool isDark) {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: AppSpacing.md, vertical: AppSpacing.xs),
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
       decoration: BoxDecoration(
-        color: Colors.white.withValues(alpha: 0.2),
-        borderRadius: BorderRadius.circular(MedicalRecordConstants.radiusXLarge),
+        color: recordInfo.color.withValues(alpha: 0.15),
+        borderRadius: BorderRadius.circular(20),
       ),
       child: Text(
         recordInfo.label,
-        style: const TextStyle(
-          color: Colors.white,
-          fontSize: MedicalRecordConstants.fontBody,
+        style: TextStyle(
+          color: recordInfo.color,
+          fontSize: 12,
           fontWeight: FontWeight.w600,
         ),
       ),
     );
   }
 
-  Widget _buildDateDisplay() {
+  Widget _buildDateDisplay(bool isDark) {
     return Row(
-      mainAxisSize: MainAxisSize.min,
       children: [
         Icon(
           Icons.calendar_today_outlined,
-          color: Colors.white.withValues(alpha: 0.8),
-          size: MedicalRecordConstants.iconSmall,
+          size: 14,
+          color: isDark ? Colors.white60 : const Color(0xFF64748B),
         ),
         const SizedBox(width: 6),
         Text(
           _dateFormat.format(record.recordDate),
           style: TextStyle(
-            color: Colors.white.withValues(alpha: 0.9),
-            fontSize: MedicalRecordConstants.fontMedium,
+            fontSize: 13,
+            color: isDark ? Colors.white60 : const Color(0xFF64748B),
           ),
         ),
       ],
@@ -316,12 +371,17 @@ class _PatientCard extends StatelessWidget {
         padding: const EdgeInsets.all(MedicalRecordConstants.paddingLarge),
         decoration: BoxDecoration(
           color: isDark ? AppColors.darkSurface : Colors.white,
-          borderRadius: BorderRadius.circular(MedicalRecordConstants.radiusLarge),
+          borderRadius: BorderRadius.circular(18),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withValues(alpha: 0.05),
-              blurRadius: 10,
-              offset: const Offset(0, 4),
+              color: AppColors.primary.withValues(alpha: isDark ? 0.15 : 0.08),
+              blurRadius: 16,
+              offset: const Offset(0, 6),
+            ),
+            BoxShadow(
+              color: Colors.black.withValues(alpha: isDark ? 0.2 : 0.04),
+              blurRadius: 8,
+              offset: const Offset(0, 2),
             ),
           ],
         ),
@@ -339,11 +399,18 @@ class _PatientCard extends StatelessWidget {
 
   Widget _buildAvatar() {
     return Container(
-      width: 48,
-      height: 48,
+      width: 52,
+      height: 52,
       decoration: BoxDecoration(
         gradient: AppColors.primaryGradient,
         borderRadius: BorderRadius.circular(14),
+        boxShadow: [
+          BoxShadow(
+            color: AppColors.primary.withValues(alpha: 0.3),
+            blurRadius: 8,
+            offset: const Offset(0, 4),
+          ),
+        ],
       ),
       child: Center(
         child: Text(
@@ -366,16 +433,24 @@ class _PatientCard extends StatelessWidget {
           _fullName,
           style: TextStyle(
             fontWeight: FontWeight.bold,
-            fontSize: MedicalRecordConstants.fontTitle,
+            fontSize: 17,
             color: isDark ? AppColors.darkTextPrimary : AppColors.textPrimary,
           ),
         ),
-        const SizedBox(height: 4),
-        Text(
-          'ID: ${patient.id} • $_age years old',
-          style: TextStyle(
-            color: isDark ? AppColors.darkTextSecondary : AppColors.textSecondary,
-            fontSize: MedicalRecordConstants.fontMedium,
+        const SizedBox(height: 6),
+        Container(
+          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+          decoration: BoxDecoration(
+            color: AppColors.primary.withValues(alpha: 0.1),
+            borderRadius: BorderRadius.circular(8),
+          ),
+          child: Text(
+            'ID: ${patient.id} • $_age years old',
+            style: TextStyle(
+              color: AppColors.primary,
+              fontSize: MedicalRecordConstants.fontBody,
+              fontWeight: FontWeight.w500,
+            ),
           ),
         ),
       ],
@@ -384,12 +459,12 @@ class _PatientCard extends StatelessWidget {
 
   Widget _buildIcon() {
     return Container(
-      padding: const EdgeInsets.all(MedicalRecordConstants.paddingSmall),
+      padding: const EdgeInsets.all(10),
       decoration: BoxDecoration(
         color: AppColors.primary.withValues(alpha: 0.1),
-        borderRadius: BorderRadius.circular(10),
+        borderRadius: BorderRadius.circular(12),
       ),
-      child: const Icon(Icons.person, color: AppColors.primary, size: MedicalRecordConstants.iconLarge),
+      child: const Icon(Icons.person_rounded, color: AppColors.primary, size: 22),
     );
   }
 }

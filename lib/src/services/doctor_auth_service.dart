@@ -42,6 +42,7 @@ class DoctorAuthService extends StateNotifier<DoctorAuthState> {
       : _database = database,
         super(DoctorAuthState());
   
+  // ignore: unused_field - intentionally kept for future database authentication
   final DoctorDatabase? _database;
   AuditService? _auditService;
   
@@ -74,7 +75,7 @@ class DoctorAuthService extends StateNotifier<DoctorAuthState> {
   Future<bool> login(String email, String password) async {
     try {
       // Simulate network delay
-      await Future.delayed(const Duration(milliseconds: 500));
+      await Future<void>.delayed(const Duration(milliseconds: 500));
 
       if (_doctors.containsKey(email)) {
         final doctorData = _doctors[email]!;

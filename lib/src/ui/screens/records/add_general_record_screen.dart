@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:convert';
 import 'package:drift/drift.dart' hide Column;
 import 'package:flutter/material.dart';
@@ -32,6 +33,12 @@ class _AddGeneralRecordScreenState extends ConsumerState<AddGeneralRecordScreen>
   final _vitalsKey = GlobalKey<VitalsInputSectionState>();
   bool _isSaving = false;
 
+  // Auto-save state
+  Timer? _autoSaveTimer;
+  DateTime? _lastSaved;
+  bool _isAutoSaving = false;
+  static const _autoSaveInterval = Duration(seconds: 30);
+
   // Theme colors for this record type
   static const _primaryColor = Color(0xFF10B981); // Clinical Green
   static const _secondaryColor = Color(0xFF059669);
@@ -40,7 +47,6 @@ class _AddGeneralRecordScreenState extends ConsumerState<AddGeneralRecordScreen>
   // Common fields
   int? _selectedPatientId;
   DateTime _recordDate = DateTime.now();
-  final _titleController = TextEditingController();
 
   // General consultation specific fields
   final _chiefComplaintsController = TextEditingController();
@@ -57,12 +63,17 @@ class _AddGeneralRecordScreenState extends ConsumerState<AddGeneralRecordScreen>
     
     if (widget.existingRecord != null) {
       _loadExistingRecord();
+    } else {
+      // Check for draft only when creating new record
+      WidgetsBinding.instance.addPostFrameCallback((_) => _checkForDraft());
     }
+    
+    // Start auto-save timer
+    _autoSaveTimer = Timer.periodic(_autoSaveInterval, (_) => _autoSave());
   }
 
   void _loadExistingRecord() {
     final record = widget.existingRecord!;
-    _titleController.text = record.title;
     _recordDate = record.recordDate;
     _diagnosisController.text = record.diagnosis ?? '';
     _treatmentController.text = record.treatment ?? '';
@@ -99,8 +110,8 @@ class _AddGeneralRecordScreenState extends ConsumerState<AddGeneralRecordScreen>
 
   @override
   void dispose() {
+    _autoSaveTimer?.cancel();
     _scrollController.dispose();
-    _titleController.dispose();
     _chiefComplaintsController.dispose();
     _historyController.dispose();
     _examinationController.dispose();
@@ -108,6 +119,204 @@ class _AddGeneralRecordScreenState extends ConsumerState<AddGeneralRecordScreen>
     _treatmentController.dispose();
     _doctorNotesController.dispose();
     super.dispose();
+  }
+
+  // Auto-save methods
+  Future<void> _checkForDraft() async {
+    final draft = await FormDraftService.loadDraft(
+      formType: 'general_consultation',
+      patientId: _selectedPatientId,
+    );
+    
+    if (draft != null && mounted) {
+      _showRestoreDraftDialog(draft);
+    }
+  }
+
+  void _showRestoreDraftDialog(FormDraft draft) {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        title: Row(
+          children: [
+            Container(
+              padding: const EdgeInsets.all(8),
+              decoration: BoxDecoration(
+                color: Colors.amber.shade100,
+                borderRadius: BorderRadius.circular(10),
+              ),
+              child: Icon(Icons.restore, color: Colors.amber.shade700),
+            ),
+            const SizedBox(width: 12),
+            const Text('Restore Draft?'),
+          ],
+        ),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Text('A previous draft was found for this form.'),
+            const SizedBox(height: 8),
+            Container(
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: Colors.grey.shade100,
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: Row(
+                children: [
+                  Icon(Icons.access_time, size: 16, color: Colors.grey.shade600),
+                  const SizedBox(width: 8),
+                  Text(
+                    'Saved ${draft.timeAgo}',
+                    style: TextStyle(color: Colors.grey.shade700),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () {
+              Navigator.pop(context);
+              FormDraftService.clearDraft(
+                formType: 'general_consultation',
+                patientId: _selectedPatientId,
+              );
+            },
+            child: Text(
+              'Discard',
+              style: TextStyle(color: Colors.grey.shade600),
+            ),
+          ),
+          ElevatedButton(
+            onPressed: () {
+              Navigator.pop(context);
+              _restoreFromDraft(draft.data);
+            },
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Colors.amber.shade600,
+              foregroundColor: Colors.white,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(8),
+              ),
+            ),
+            child: const Text('Restore'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _restoreFromDraft(Map<String, dynamic> data) {
+    setState(() {
+      _chiefComplaintsController.text = (data['chief_complaints'] as String?) ?? '';
+      _historyController.text = (data['history'] as String?) ?? '';
+      _examinationController.text = (data['examination'] as String?) ?? '';
+      _diagnosisController.text = (data['diagnosis'] as String?) ?? '';
+      _treatmentController.text = (data['treatment'] as String?) ?? '';
+      _doctorNotesController.text = (data['doctor_notes'] as String?) ?? '';
+      
+      if (data['record_date'] != null) {
+        _recordDate = DateTime.parse(data['record_date'] as String);
+      }
+      
+      // Restore vitals
+      final vitals = data['vitals'] as Map<String, dynamic>?;
+      if (vitals != null) {
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          _vitalsKey.currentState?.setData(VitalsData(
+            bpSystolic: vitals['bp_systolic'] as String?,
+            bpDiastolic: vitals['bp_diastolic'] as String?,
+            heartRate: vitals['heart_rate'] as String?,
+            temperature: vitals['temperature'] as String?,
+            weight: vitals['weight'] as String?,
+            height: vitals['height'] as String?,
+            spO2: vitals['spo2'] as String?,
+            respiratoryRate: vitals['respiratory_rate'] as String?,
+          ));
+        });
+      }
+    });
+    
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: const Row(
+          children: [
+            Icon(Icons.check_circle, color: Colors.white, size: 18),
+            SizedBox(width: 8),
+            Text('Draft restored'),
+          ],
+        ),
+        backgroundColor: Colors.green.shade600,
+        behavior: SnackBarBehavior.floating,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+        duration: const Duration(seconds: 2),
+      ),
+    );
+  }
+
+  Map<String, dynamic> _buildDraftData() {
+    final vitals = _vitalsKey.currentState?.getData();
+    return {
+      'chief_complaints': _chiefComplaintsController.text,
+      'history': _historyController.text,
+      'examination': _examinationController.text,
+      'diagnosis': _diagnosisController.text,
+      'treatment': _treatmentController.text,
+      'doctor_notes': _doctorNotesController.text,
+      'record_date': _recordDate.toIso8601String(),
+      'vitals': vitals != null ? {
+        'bp_systolic': vitals.bpSystolic,
+        'bp_diastolic': vitals.bpDiastolic,
+        'heart_rate': vitals.heartRate,
+        'temperature': vitals.temperature,
+        'weight': vitals.weight,
+        'height': vitals.height,
+        'spo2': vitals.spO2,
+        'respiratory_rate': vitals.respiratoryRate,
+      } : null,
+    };
+  }
+
+  bool _hasAnyContent() {
+    return _chiefComplaintsController.text.isNotEmpty ||
+        _historyController.text.isNotEmpty ||
+        _examinationController.text.isNotEmpty ||
+        _diagnosisController.text.isNotEmpty ||
+        _treatmentController.text.isNotEmpty ||
+        _doctorNotesController.text.isNotEmpty;
+  }
+
+  Future<void> _autoSave() async {
+    if (!mounted || !_hasAnyContent()) return;
+    
+    setState(() => _isAutoSaving = true);
+    
+    try {
+      await FormDraftService.saveDraft(
+        formType: 'general_consultation',
+        patientId: _selectedPatientId,
+        data: _buildDraftData(),
+      );
+      if (mounted) {
+        setState(() {
+          _lastSaved = DateTime.now();
+          _isAutoSaving = false;
+        });
+      }
+    } catch (_) {
+      if (mounted) setState(() => _isAutoSaving = false);
+    }
+  }
+
+  Future<void> _clearDraftOnSuccess() async {
+    await FormDraftService.clearDraft(
+      formType: 'general_consultation',
+      patientId: _selectedPatientId,
+    );
   }
 
   Map<String, dynamic> _buildDataJson() {
@@ -141,9 +350,7 @@ class _AddGeneralRecordScreenState extends ConsumerState<AddGeneralRecordScreen>
       final companion = MedicalRecordsCompanion.insert(
         patientId: _selectedPatientId!,
         recordType: 'general',
-        title: _titleController.text.isNotEmpty 
-            ? _titleController.text 
-            : 'General Consultation',
+        title: 'General Consultation - ${DateFormat('MMM d, yyyy').format(_recordDate)}',
         description: Value(_chiefComplaintsController.text),
         dataJson: Value(jsonEncode(_buildDataJson())),
         diagnosis: Value(_diagnosisController.text),
@@ -161,9 +368,7 @@ class _AddGeneralRecordScreenState extends ConsumerState<AddGeneralRecordScreen>
           id: widget.existingRecord!.id,
           patientId: _selectedPatientId!,
           recordType: 'general',
-          title: _titleController.text.isNotEmpty 
-              ? _titleController.text 
-              : 'General Consultation',
+          title: 'General Consultation - ${DateFormat('MMM d, yyyy').format(_recordDate)}',
           description: _chiefComplaintsController.text,
           dataJson: jsonEncode(_buildDataJson()),
           diagnosis: _diagnosisController.text,
@@ -192,6 +397,9 @@ class _AddGeneralRecordScreenState extends ConsumerState<AddGeneralRecordScreen>
       }
 
       if (mounted) {
+        // Clear draft on successful save
+        await _clearDraftOnSuccess();
+        
         RecordFormWidgets.showSuccessSnackbar(
           context, 
           widget.existingRecord != null 
@@ -261,34 +469,76 @@ class _AddGeneralRecordScreenState extends ConsumerState<AddGeneralRecordScreen>
     ));
   }
 
+  int _calculateCompletedSections() {
+    int completed = 0;
+    if (_selectedPatientId != null) completed++;
+    if (_recordDate != DateTime.now()) completed++; // Date is always set
+    if (_chiefComplaintsController.text.isNotEmpty) completed++;
+    if (_historyController.text.isNotEmpty) completed++;
+    // Vitals - check if any vital is filled
+    final vitals = _vitalsKey.currentState?.getData();
+    if (vitals != null && (vitals.bpSystolic != null || vitals.heartRate != null || vitals.temperature != null)) {
+      completed++;
+    }
+    if (_diagnosisController.text.isNotEmpty) completed++;
+    if (_treatmentController.text.isNotEmpty) completed++;
+    return completed;
+  }
+
+  void _applyTemplate(QuickFillTemplate template) {
+    final data = template.data;
+    setState(() {
+      if (data['chief_complaints'] != null) {
+        _chiefComplaintsController.text = data['chief_complaints'] as String;
+      }
+      if (data['history'] != null) {
+        _historyController.text = data['history'] as String;
+      }
+      if (data['examination'] != null) {
+        _examinationController.text = data['examination'] as String;
+      }
+      if (data['diagnosis'] != null) {
+        _diagnosisController.text = data['diagnosis'] as String;
+      }
+      if (data['treatment'] != null) {
+        _treatmentController.text = data['treatment'] as String;
+      }
+      // Apply vitals if present
+      if (data['vitals'] != null) {
+        final vitals = data['vitals'] as Map<String, dynamic>;
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          _vitalsKey.currentState?.setData(VitalsData(
+            bpSystolic: vitals['bp_systolic'] as String?,
+            bpDiastolic: vitals['bp_diastolic'] as String?,
+            heartRate: vitals['heart_rate'] as String?,
+            temperature: vitals['temperature'] as String?,
+            weight: vitals['weight'] as String?,
+          ));
+        });
+      }
+    });
+    showTemplateAppliedSnackbar(context, template.label);
+  }
+
   @override
   Widget build(BuildContext context) {
     final dbAsync = ref.watch(doctorDbProvider);
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    final screenWidth = MediaQuery.of(context).size.width;
-    final isCompact = screenWidth < 400;
-    final padding = isCompact ? 12.0 : 20.0;
 
-    return Scaffold(
-      backgroundColor: isDark ? const Color(0xFF0F0F0F) : const Color(0xFFF8FAFC),
+    return RecordFormScaffold(
+      title: widget.existingRecord != null 
+          ? 'Edit Record' 
+          : 'General Consultation',
+      subtitle: DateFormat('EEEE, dd MMMM yyyy').format(_recordDate),
+      icon: Icons.medical_services_rounded,
+      gradientColors: _gradientColors,
+      scrollController: _scrollController,
+      trailing: AutoSaveIndicator(
+        isSaving: _isAutoSaving,
+        lastSaved: _lastSaved,
+      ),
       body: dbAsync.when(
-        data: (db) => CustomScrollView(
-          controller: _scrollController,
-          physics: const BouncingScrollPhysics(),
-          slivers: [
-            // Modern Sliver App Bar
-            _buildSliverAppBar(context, isDark, isCompact),
-            // Body Content
-            SliverPadding(
-              padding: EdgeInsets.all(padding),
-              sliver: SliverList(
-                delegate: SliverChildListDelegate([
-                  _buildFormContent(context, db, isDark),
-                ]),
-              ),
-            ),
-          ],
-        ),
+        data: (db) => _buildFormContent(context, db, isDark),
         loading: () => const Center(
           child: CircularProgressIndicator(color: _primaryColor),
         ),
@@ -297,113 +547,31 @@ class _AddGeneralRecordScreenState extends ConsumerState<AddGeneralRecordScreen>
     );
   }
 
-  Widget _buildSliverAppBar(BuildContext context, bool isDark, bool isCompact) {
-    return SliverAppBar(
-      expandedHeight: 160,
-      floating: false,
-      pinned: true,
-      elevation: 0,
-      backgroundColor: _primaryColor,
-      surfaceTintColor: Colors.transparent,
-      leading: Padding(
-        padding: const EdgeInsets.all(8.0),
-        child: GestureDetector(
-          onTap: () => Navigator.pop(context),
-          child: Container(
-            decoration: BoxDecoration(
-              color: Colors.white.withValues(alpha: 0.2),
-              borderRadius: BorderRadius.circular(12),
-            ),
-            child: const Icon(
-              Icons.arrow_back_ios_new_rounded,
-              size: 18,
-              color: Colors.white,
-            ),
-          ),
-        ),
-      ),
-      flexibleSpace: FlexibleSpaceBar(
-        background: Container(
-          decoration: BoxDecoration(
-            gradient: LinearGradient(
-              begin: Alignment.topLeft,
-              end: Alignment.bottomRight,
-              colors: _gradientColors,
-            ),
-          ),
-          child: SafeArea(
-            child: Padding(
-              padding: EdgeInsets.fromLTRB(
-                isCompact ? 16 : 24,
-                50,
-                isCompact ? 16 : 24,
-                20,
-              ),
-              child: Row(
-                crossAxisAlignment: CrossAxisAlignment.center,
-                children: [
-                  // Icon Container
-                  Container(
-                    padding: const EdgeInsets.all(16),
-                    decoration: BoxDecoration(
-                      color: Colors.white.withValues(alpha: 0.2),
-                      borderRadius: BorderRadius.circular(18),
-                    ),
-                    child: const Icon(
-                      Icons.medical_services_rounded,
-                      color: Colors.white,
-                      size: 28,
-                    ),
-                  ),
-                  const SizedBox(width: 16),
-                  // Title and Subtitle
-                  Expanded(
-                    child: Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          widget.existingRecord != null 
-                              ? 'Edit Record' 
-                              : 'General Consultation',
-                          style: TextStyle(
-                            fontSize: isCompact ? 20 : 24,
-                            fontWeight: FontWeight.w700,
-                            color: Colors.white,
-                          ),
-                        ),
-                        const SizedBox(height: 4),
-                        Row(
-                          children: [
-                            const Icon(Icons.calendar_today, color: Colors.white70, size: 14),
-                            const SizedBox(width: 6),
-                            Text(
-                              DateFormat('EEEE, dd MMM yyyy').format(_recordDate),
-                              style: TextStyle(
-                                fontSize: isCompact ? 12 : 14,
-                                color: Colors.white.withValues(alpha: 0.9),
-                              ),
-                            ),
-                          ],
-                        ),
-                      ],
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ),
-        ),
-      ),
-    );
-  }
-
   Widget _buildFormContent(BuildContext context, DoctorDatabase db, bool isDark) {
+    // Calculate form completion
+    final completedSections = _calculateCompletedSections();
+    const totalSections = 7; // Patient, Date, Complaints, History, Vitals, Diagnosis, Treatment
+
     return Form(
       key: _formKey,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
+          // Progress Indicator
+          FormProgressIndicator(
+            completedSections: completedSections,
+            totalSections: totalSections,
+            accentColor: _primaryColor,
+          ),
+          const SizedBox(height: 16),
+
+          // Quick Fill Templates
+          QuickFillSection(
+            templates: GeneralConsultationTemplates.templates,
+            onTemplateSelected: _applyTemplate,
+          ),
+          const SizedBox(height: 16),
+
           // Patient Selection
           RecordFormSection(
             title: 'Patient Information',
@@ -425,24 +593,11 @@ class _AddGeneralRecordScreenState extends ConsumerState<AddGeneralRecordScreen>
             title: 'Record Details',
             icon: Icons.event_note,
             accentColor: _primaryColor,
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                DatePickerCard(
-                  selectedDate: _recordDate,
-                  onDateSelected: (date) => setState(() => _recordDate = date),
-                  label: 'Record Date',
-                  accentColor: _primaryColor,
-                ),
-                const SizedBox(height: 16),
-                RecordTextField(
-                  controller: _titleController,
-                  label: 'Title',
-                  hint: 'Enter record title (optional)...',
-                  prefixIcon: Icons.title,
-                  accentColor: _primaryColor,
-                ),
-              ],
+            child: DatePickerCard(
+              selectedDate: _recordDate,
+              onDateSelected: (date) => setState(() => _recordDate = date),
+              label: 'Record Date',
+              accentColor: _primaryColor,
             ),
           ),
           const SizedBox(height: 16),

@@ -16,7 +16,12 @@ import '../../theme/app_theme.dart';
 import '../widgets/suggestion_text_field.dart';
 
 class AddPatientScreen extends ConsumerStatefulWidget {
-  const AddPatientScreen({super.key});
+  const AddPatientScreen({super.key, this.patient});
+  
+  /// If provided, the screen will be in edit mode
+  final Patient? patient;
+  
+  bool get isEditMode => patient != null;
 
   @override
   ConsumerState<AddPatientScreen> createState() => _AddPatientScreenState();
@@ -35,6 +40,24 @@ class _AddPatientScreenState extends ConsumerState<AddPatientScreen> {
   bool _isSaving = false;
   Uint8List? _selectedPhotoBytes;
   DateTime? _dateOfBirth;
+
+  @override
+  void initState() {
+    super.initState();
+    // Pre-fill fields if editing
+    if (widget.patient != null) {
+      final p = widget.patient!;
+      _first.text = p.firstName;
+      _last.text = p.lastName ?? '';
+      _phone.text = p.phone;
+      _email.text = p.email;
+      _address.text = p.address;
+      _medicalHistory.text = p.medicalHistory;
+      _allergiesController.text = p.allergies;
+      _riskLevel = p.riskLevel;
+      _dateOfBirth = p.dateOfBirth;
+    }
+  }
 
   @override
   void dispose() {
@@ -229,7 +252,7 @@ class _AddPatientScreenState extends ConsumerState<AddPatientScreen> {
                       ),
                       const SizedBox(height: 8),
                       Text(
-                        'Add New Patient',
+                        widget.isEditMode ? 'Edit Patient' : 'Add New Patient',
                         style: TextStyle(
                           fontSize: 18,
                           fontWeight: FontWeight.w800,
@@ -304,7 +327,7 @@ class _AddPatientScreenState extends ConsumerState<AddPatientScreen> {
                         ],
                       ),
                       const SizedBox(height: 12),
-                      // Date of Birth field
+                      // Age / Date of Birth field
                       InkWell(
                         onTap: () async {
                           final picked = await showDatePicker(
@@ -330,22 +353,24 @@ class _AddPatientScreenState extends ConsumerState<AddPatientScreen> {
                         borderRadius: BorderRadius.circular(12),
                         child: InputDecorator(
                           decoration: InputDecoration(
-                            labelText: 'Date of Birth',
+                            labelText: 'Age',
                             prefixIcon: const Icon(Icons.cake_outlined),
                             border: OutlineInputBorder(
                               borderRadius: BorderRadius.circular(12),
                             ),
+                            helperText: 'Tap to select birth date',
                             errorText: _dateOfBirth == null ? null : null,
                           ),
                           child: Text(
                             _dateOfBirth != null
-                                ? '${_dateOfBirth!.day}/${_dateOfBirth!.month}/${_dateOfBirth!.year} (${DateTime.now().year - _dateOfBirth!.year} years)'
-                                : 'Select date of birth',
+                                ? '${DateTime.now().year - _dateOfBirth!.year} yrs'
+                                : 'Select',
                             style: TextStyle(
                               color: _dateOfBirth != null
                                   ? null
                                   : Theme.of(context).hintColor,
                             ),
+                            overflow: TextOverflow.ellipsis,
                           ),
                         ),
                       ),
@@ -440,14 +465,14 @@ class _AddPatientScreenState extends ConsumerState<AddPatientScreen> {
                                     strokeWidth: 2.5,
                                   ),
                                 )
-                              : const Row(
+                              : Row(
                                   mainAxisAlignment: MainAxisAlignment.center,
                                   children: [
-                                    Icon(Icons.check_rounded, color: Colors.white, size: 22),
-                                    SizedBox(width: 12),
+                                    Icon(widget.isEditMode ? Icons.save_rounded : Icons.check_rounded, color: Colors.white, size: 22),
+                                    const SizedBox(width: 12),
                                     Text(
-                                      'Save Patient',
-                                      style: TextStyle(
+                                      widget.isEditMode ? 'Update Patient' : 'Save Patient',
+                                      style: const TextStyle(
                                         color: Colors.white,
                                         fontSize: 18,
                                         fontWeight: FontWeight.bold,
@@ -748,45 +773,77 @@ class _AddPatientScreenState extends ConsumerState<AddPatientScreen> {
         if (_allergiesController.text.isNotEmpty) 'Allergies: ${_allergiesController.text}',
       ].join('\n');
       
-      final companion = PatientsCompanion.insert(
-        firstName: _first.text,
-        lastName: Value(_last.text),
-        dateOfBirth: Value(_dateOfBirth),
-        phone: Value(_phone.text),
-        email: Value(_email.text),
-        address: Value(_address.text),
-        medicalHistory: Value(combinedHistory),
-        riskLevel: Value(_riskLevel),
-      );
-      final patientId = await db.insertPatient(companion);
-      
-      // Log audit trail for HIPAA compliance
-      final auditService = ref.read(auditServiceProvider);
       final patientName = '${_first.text} ${_last.text}'.trim();
-      await auditService.logPatientCreated(patientId, patientName, data: {
-        'firstName': _first.text,
-        'lastName': _last.text,
-        'phone': _phone.text.isNotEmpty ? '****${_phone.text.substring(_phone.text.length > 4 ? _phone.text.length - 4 : 0)}' : '',
-        'email': _email.text.isNotEmpty ? '****@${_email.text.split('@').lastOrNull ?? ''}' : '',
-      });
+      int patientId;
+      
+      if (widget.isEditMode) {
+        // Update existing patient
+        final companion = PatientsCompanion(
+          id: Value(widget.patient!.id),
+          firstName: Value(_first.text),
+          lastName: Value(_last.text),
+          dateOfBirth: Value(_dateOfBirth),
+          phone: Value(_phone.text),
+          email: Value(_email.text),
+          address: Value(_address.text),
+          medicalHistory: Value(combinedHistory),
+          allergies: Value(_allergiesController.text),
+          riskLevel: Value(_riskLevel),
+          createdAt: Value(widget.patient!.createdAt),
+        );
+        await db.updatePatient(companion);
+        patientId = widget.patient!.id;
+        
+        // Log audit trail for HIPAA compliance
+        final auditService = ref.read(auditServiceProvider);
+        await auditService.logPatientUpdated(patientId, patientName, before: {
+          'firstName': widget.patient!.firstName,
+          'lastName': widget.patient!.lastName,
+        }, after: {
+          'firstName': _first.text,
+          'lastName': _last.text,
+        });
+      } else {
+        // Create new patient
+        final companion = PatientsCompanion.insert(
+          firstName: _first.text,
+          lastName: Value(_last.text),
+          dateOfBirth: Value(_dateOfBirth),
+          phone: Value(_phone.text),
+          email: Value(_email.text),
+          address: Value(_address.text),
+          medicalHistory: Value(combinedHistory),
+          riskLevel: Value(_riskLevel),
+        );
+        patientId = await db.insertPatient(companion);
+        
+        // Log audit trail for HIPAA compliance
+        final auditService = ref.read(auditServiceProvider);
+        await auditService.logPatientCreated(patientId, patientName, data: {
+          'firstName': _first.text,
+          'lastName': _last.text,
+          'phone': _phone.text.isNotEmpty ? '****${_phone.text.substring(_phone.text.length > 4 ? _phone.text.length - 4 : 0)}' : '',
+          'email': _email.text.isNotEmpty ? '****@${_email.text.split('@').lastOrNull ?? ''}' : '',
+        });
+      }
       
       // Save photo if one was selected
       if (_selectedPhotoBytes != null) {
         await PhotoService.savePatientPhoto(patientId, _selectedPhotoBytes!);
       }
       
-      // Fetch the created patient to return it
-      final createdPatient = await db.getPatientById(patientId);
+      // Fetch the patient to return it
+      final savedPatient = await db.getPatientById(patientId);
       
       if (!mounted) return;
       
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: const Row(
+          content: Row(
             children: [
-              Icon(Icons.check_circle, color: Colors.white),
-              SizedBox(width: 12),
-              Text('Patient added successfully'),
+              const Icon(Icons.check_circle, color: Colors.white),
+              const SizedBox(width: 12),
+              Text(widget.isEditMode ? 'Patient updated successfully' : 'Patient added successfully'),
             ],
           ),
           backgroundColor: AppColors.success,
@@ -794,7 +851,7 @@ class _AddPatientScreenState extends ConsumerState<AddPatientScreen> {
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
         ),
       );
-      Navigator.of(context).pop(createdPatient);
+      Navigator.of(context).pop(savedPatient);
     } catch (e) {
       setState(() => _isSaving = false);
       ScaffoldMessenger.of(context).showSnackBar(

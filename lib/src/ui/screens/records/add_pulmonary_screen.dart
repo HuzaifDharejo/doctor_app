@@ -35,7 +35,6 @@ class _AddPulmonaryScreenState extends ConsumerState<AddPulmonaryScreen> {
   // Common fields
   int? _selectedPatientId;
   DateTime _recordDate = DateTime.now();
-  final _titleController = TextEditingController();
 
   // Pulmonary Evaluation Fields
   final _chiefComplaintController = TextEditingController();
@@ -88,7 +87,6 @@ class _AddPulmonaryScreenState extends ConsumerState<AddPulmonaryScreen> {
 
   void _loadExistingRecord() {
     final record = widget.existingRecord!;
-    _titleController.text = record.title;
     _recordDate = record.recordDate;
     _diagnosisController.text = record.diagnosis ?? '';
     _treatmentController.text = record.treatment ?? '';
@@ -140,7 +138,6 @@ class _AddPulmonaryScreenState extends ConsumerState<AddPulmonaryScreen> {
   @override
   void dispose() {
     _scrollController.dispose();
-    _titleController.dispose();
     _chiefComplaintController.dispose();
     _durationController.dispose();
     _symptomCharacterController.dispose();
@@ -222,9 +219,9 @@ class _AddPulmonaryScreenState extends ConsumerState<AddPulmonaryScreen> {
       final companion = MedicalRecordsCompanion.insert(
         patientId: _selectedPatientId!,
         recordType: 'pulmonary_evaluation',
-        title: _titleController.text.isNotEmpty 
-            ? _titleController.text 
-            : 'Pulmonary Evaluation',
+        title: _diagnosisController.text.isNotEmpty 
+            ? 'Pulmonary: ${_diagnosisController.text}'
+            : 'Pulmonary Evaluation - ${DateFormat('MMM d, yyyy').format(_recordDate)}',
         description: Value(_chiefComplaintController.text),
         dataJson: Value(jsonEncode(_buildDataJson())),
         diagnosis: Value(_diagnosisController.text),
@@ -240,9 +237,9 @@ class _AddPulmonaryScreenState extends ConsumerState<AddPulmonaryScreen> {
           id: widget.existingRecord!.id,
           patientId: _selectedPatientId!,
           recordType: 'pulmonary_evaluation',
-          title: _titleController.text.isNotEmpty 
-              ? _titleController.text 
-              : 'Pulmonary Evaluation',
+          title: _diagnosisController.text.isNotEmpty 
+              ? 'Pulmonary: ${_diagnosisController.text}'
+              : 'Pulmonary Evaluation - ${DateFormat('MMM d, yyyy').format(_recordDate)}',
           description: _chiefComplaintController.text,
           dataJson: jsonEncode(_buildDataJson()),
           diagnosis: _diagnosisController.text,
@@ -398,7 +395,6 @@ class _AddPulmonaryScreenState extends ConsumerState<AddPulmonaryScreen> {
   }
 
   void _fillAsthmaTemplate() {
-    _titleController.text = 'Bronchial Asthma Evaluation';
     _chiefComplaintController.text = 'Difficulty breathing, wheezing, chest tightness';
     _symptomCharacterController.text = 'Episodic, worse at night/early morning';
     setState(() {
@@ -412,7 +408,6 @@ class _AddPulmonaryScreenState extends ConsumerState<AddPulmonaryScreen> {
   }
 
   void _fillCOPDTemplate() {
-    _titleController.text = 'COPD Evaluation';
     _chiefComplaintController.text = 'Progressive dyspnea, chronic cough with sputum';
     _symptomCharacterController.text = 'Chronic, progressive';
     _durationController.text = 'Several years';
@@ -428,7 +423,6 @@ class _AddPulmonaryScreenState extends ConsumerState<AddPulmonaryScreen> {
   }
 
   void _fillPneumoniaTemplate() {
-    _titleController.text = 'Pneumonia Evaluation';
     _chiefComplaintController.text = 'Fever, productive cough, pleuritic chest pain';
     _symptomCharacterController.text = 'Acute onset';
     _durationController.text = '3-7 days';
@@ -445,7 +439,6 @@ class _AddPulmonaryScreenState extends ConsumerState<AddPulmonaryScreen> {
   }
 
   void _fillBronchitisTemplate() {
-    _titleController.text = 'Acute Bronchitis Evaluation';
     _chiefComplaintController.text = 'Cough with or without sputum, chest discomfort';
     _symptomCharacterController.text = 'Acute onset, usually following viral URTI';
     _durationController.text = '1-2 weeks';
@@ -460,7 +453,6 @@ class _AddPulmonaryScreenState extends ConsumerState<AddPulmonaryScreen> {
   }
 
   void _fillTBTemplate() {
-    _titleController.text = 'Pulmonary TB Evaluation';
     _chiefComplaintController.text = 'Chronic cough >2 weeks, hemoptysis, weight loss, night sweats';
     _symptomCharacterController.text = 'Chronic, progressive';
     _durationController.text = '>3 weeks';
@@ -477,7 +469,6 @@ class _AddPulmonaryScreenState extends ConsumerState<AddPulmonaryScreen> {
   }
 
   void _fillURTITemplate() {
-    _titleController.text = 'URTI Evaluation';
     _chiefComplaintController.text = 'Sore throat, nasal congestion, mild cough';
     _symptomCharacterController.text = 'Acute onset';
     _durationController.text = '2-5 days';
@@ -531,17 +522,6 @@ class _AddPulmonaryScreenState extends ConsumerState<AddPulmonaryScreen> {
             label: 'Evaluation Date',
             selectedDate: _recordDate,
             onDateSelected: (date) => setState(() => _recordDate = date),
-          ),
-          const SizedBox(height: AppSpacing.lg),
-
-          // Title
-          RecordFormSection(
-            title: 'Title',
-            icon: Icons.title,
-            child: RecordTextField(
-              controller: _titleController,
-              hint: 'Enter record title (optional)...',
-            ),
           ),
           const SizedBox(height: AppSpacing.lg),
 

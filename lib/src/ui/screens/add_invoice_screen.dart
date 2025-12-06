@@ -20,9 +20,24 @@ class AddInvoiceScreen extends ConsumerStatefulWidget {
     super.key,
     this.patientId,
     this.patientName,
+    this.preselectedPatient,
+    this.encounterId,
+    this.appointmentId,
+    this.prescriptionId,
+    this.diagnosis,
   });
   final int? patientId;
   final String? patientName;
+  /// Pre-selected patient from workflow
+  final Patient? preselectedPatient;
+  /// Associated encounter ID from workflow
+  final int? encounterId;
+  /// Associated appointment ID from workflow
+  final int? appointmentId;
+  /// Associated prescription ID from workflow
+  final int? prescriptionId;
+  /// Diagnosis for invoice notes
+  final String? diagnosis;
 
   @override
   ConsumerState<AddInvoiceScreen> createState() => _AddInvoiceScreenState();
@@ -83,6 +98,13 @@ class _AddInvoiceScreenState extends ConsumerState<AddInvoiceScreen> {
     _invoiceNumber = _generateInvoiceNumber();
     if (widget.patientId != null) {
       _selectedPatientId = widget.patientId;
+    } else if (widget.preselectedPatient != null) {
+      _selectedPatientId = widget.preselectedPatient?.id;
+      _selectedPatient = widget.preselectedPatient;
+    }
+    // Pre-fill notes with diagnosis if provided
+    if (widget.diagnosis != null && widget.diagnosis!.isNotEmpty) {
+      _notesController.text = 'Diagnosis: ${widget.diagnosis}';
     }
     _dueDate = DateTime.now().add(const Duration(days: 7));
     _loadPatients();
@@ -205,7 +227,7 @@ class _AddInvoiceScreenState extends ConsumerState<AddInvoiceScreen> {
         // Prepare items JSON
         final itemsJson = jsonEncode(_items.map((item) => item.toJson()).toList());
         
-        // Create invoice companion
+        // Create invoice companion with linked data
         final invoiceCompanion = InvoicesCompanion.insert(
           patientId: _selectedPatientId!,
           invoiceNumber: _invoiceNumber,
@@ -221,6 +243,8 @@ class _AddInvoiceScreenState extends ConsumerState<AddInvoiceScreen> {
           paymentMethod: Value(_paymentMethod),
           paymentStatus: Value(_paymentStatus),
           notes: Value(_notesController.text.isNotEmpty ? _notesController.text : ''),
+          appointmentId: Value(widget.appointmentId),
+          prescriptionId: Value(widget.prescriptionId),
         );
         
         final invoiceId = await db.insertInvoice(invoiceCompanion);
