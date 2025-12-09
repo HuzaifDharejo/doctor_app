@@ -25,15 +25,7 @@ class ClinicalOverviewCard extends StatelessWidget {
   }) : super(key: key);
 
   int? _getAge() {
-    if (patient.dateOfBirth == null) return null;
-    final now = DateTime.now();
-    final birthDate = patient.dateOfBirth!;
-    int age = now.year - birthDate.year;
-    if (now.month < birthDate.month ||
-        (now.month == birthDate.month && now.day < birthDate.day)) {
-      age--;
-    }
-    return age;
+    return patient.age;
   }
 
   Color _getRiskLevelColor() {

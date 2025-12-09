@@ -186,11 +186,19 @@ Future<void> _insertSampleDataRedesigned(DoctorDatabase db) async {
       patientVitalSigns[idx],
     );
 
+    // Calculate age from date of birth
+    final dob = p['dob']! as DateTime;
+    final now = DateTime.now();
+    int age = now.year - dob.year;
+    if (now.month < dob.month || (now.month == dob.month && now.day < dob.day)) {
+      age--;
+    }
+    
     final id = await db.insertPatient(
       PatientsCompanion(
         firstName: Value(p['firstName']! as String),
         lastName: Value(p['lastName']! as String),
-        dateOfBirth: Value(p['dob']! as DateTime),
+        age: Value(age),
         phone: Value(p['phone']! as String),
         email: Value(p['email']! as String),
         address: Value(p['address']! as String),

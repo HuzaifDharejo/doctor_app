@@ -26,7 +26,7 @@ void main() {
             lastName: 'Doe',
             phone: '555-123-4567',
             email: 'john.doe@email.com',
-            dateOfBirth: DateTime(1985, 5, 15),
+            age: 40, // Born 1985
           ),
         );
         expect(patientId, greaterThan(0));

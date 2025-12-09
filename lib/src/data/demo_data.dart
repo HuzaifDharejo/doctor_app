@@ -165,7 +165,7 @@ class DemoData {
       id: 1,
       firstName: 'Sarah',
       lastName: 'Johnson',
-      dateOfBirth: DateTime(1985, 3, 15),
+      age: 40,  // born 1985
       phone: '+1 (555) 123-4567',
       email: 'sarah.johnson@email.com',
       address: '123 Oak Street, Springfield',
@@ -184,7 +184,7 @@ class DemoData {
       id: 2,
       firstName: 'Michael',
       lastName: 'Chen',
-      dateOfBirth: DateTime(1990, 7, 22),
+      age: 35,  // born 1990
       phone: '+1 (555) 234-5678',
       email: 'michael.chen@email.com',
       address: '456 Maple Avenue, Riverside',
@@ -203,7 +203,7 @@ class DemoData {
       id: 3,
       firstName: 'Emily',
       lastName: 'Williams',
-      dateOfBirth: DateTime(1978, 11, 8),
+      age: 47,  // born 1978
       phone: '+1 (555) 345-6789',
       email: 'emily.williams@email.com',
       address: '789 Pine Road, Lakewood',
@@ -222,7 +222,7 @@ class DemoData {
       id: 4,
       firstName: 'James',
       lastName: 'Rodriguez',
-      dateOfBirth: DateTime(1995, 5, 30),
+      age: 30,  // born 1995
       phone: '+1 (555) 456-7890',
       email: 'james.r@email.com',
       address: '321 Elm Court, Meadowbrook',
@@ -241,7 +241,7 @@ class DemoData {
       id: 5,
       firstName: 'Lisa',
       lastName: 'Thompson',
-      dateOfBirth: DateTime(1982, 9, 12),
+      age: 43,  // born 1982
       phone: '+1 (555) 567-8901',
       email: 'lisa.thompson@email.com',
       address: '654 Cedar Lane, Hillside',
@@ -260,7 +260,7 @@ class DemoData {
       id: 6,
       firstName: 'Robert',
       lastName: 'Davis',
-      dateOfBirth: DateTime(1968, 2, 28),
+      age: 57,  // born 1968
       phone: '+1 (555) 678-9012',
       email: 'robert.davis@email.com',
       address: '987 Birch Street, Oakville',
@@ -279,7 +279,7 @@ class DemoData {
       id: 7,
       firstName: 'Amanda',
       lastName: 'Martinez',
-      dateOfBirth: DateTime(1992, 12, 5),
+      age: 33,  // born 1992
       phone: '+1 (555) 789-0123',
       email: 'amanda.m@email.com',
       address: '147 Walnut Drive, Sunnyvale',
@@ -298,7 +298,7 @@ class DemoData {
       id: 8,
       firstName: 'David',
       lastName: 'Brown',
-      dateOfBirth: DateTime(1975, 6, 18),
+      age: 50,  // born 1975
       phone: '+1 (555) 890-1234',
       email: 'david.brown@email.com',
       address: '258 Spruce Avenue, Greenfield',

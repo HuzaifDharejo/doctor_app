@@ -8,6 +8,28 @@ class DatabaseSeedingService {
 
   DatabaseSeedingService(this.db);
 
+  /// Clear all data and reseed with fresh demo data
+  Future<void> resetAndSeedDatabase() async {
+    // Clear all tables in reverse dependency order
+    await db.delete(db.treatmentGoals).go();
+    await db.delete(db.medicationResponses).go();
+    await db.delete(db.treatmentSessions).go();
+    await db.delete(db.treatmentOutcomes).go();
+    await db.delete(db.scheduledFollowUps).go();
+    await db.delete(db.clinicalNotes).go();
+    await db.delete(db.diagnoses).go();
+    await db.delete(db.encounters).go();
+    await db.delete(db.invoices).go();
+    await db.delete(db.prescriptions).go();
+    await db.delete(db.vitalSigns).go();
+    await db.delete(db.medicalRecords).go();
+    await db.delete(db.appointments).go();
+    await db.delete(db.patients).go();
+
+    // Now seed with fresh data
+    await _seedAllData();
+  }
+
   /// Seed all tables with realistic psychiatric clinic data
   Future<void> seedDatabase() async {
     // Check if already seeded
@@ -16,6 +38,11 @@ class DatabaseSeedingService {
       return; // Already seeded
     }
 
+    await _seedAllData();
+  }
+
+  /// Internal method to seed all data
+  Future<void> _seedAllData() async {
     // Seed patients
     final patientIds = await _seedPatients();
 
@@ -67,62 +94,87 @@ class DatabaseSeedingService {
       PatientsCompanion(
         firstName: const drift.Value('Ahmed'),
         lastName: const drift.Value('Khan'),
-        dateOfBirth: drift.Value(DateTime(1985, 5, 15)),
+        age: const drift.Value(40),
+        gender: const drift.Value('Male'),
+        bloodType: const drift.Value('B+'),
         phone: const drift.Value('0300-1234567'),
         email: const drift.Value('ahmed.khan@example.com'),
         address: const drift.Value('123 Main Street, Karachi'),
         medicalHistory: const drift.Value('Depression, Anxiety, Sleep disorders'),
         allergies: const drift.Value('Penicillin, Sulfa drugs'),
         tags: const drift.Value('High risk, Follow-up required'),
-        riskLevel: const drift.Value(3), // High risk
+        riskLevel: const drift.Value(3),
+        chronicConditions: const drift.Value('Major Depressive Disorder'),
+        emergencyContactName: const drift.Value('Sara Khan'),
+        emergencyContactPhone: const drift.Value('0300-1234568'),
       ),
       PatientsCompanion(
         firstName: const drift.Value('Fatima'),
         lastName: const drift.Value('Ali'),
-        dateOfBirth: drift.Value(DateTime(1990, 8, 22)),
+        age: const drift.Value(35),
+        gender: const drift.Value('Female'),
+        bloodType: const drift.Value('A+'),
         phone: const drift.Value('0321-9876543'),
         email: const drift.Value('fatima.ali@example.com'),
         address: const drift.Value('456 Oak Avenue, Lahore'),
         medicalHistory: const drift.Value('Bipolar Disorder, Hypertension'),
         allergies: const drift.Value('Aspirin'),
         tags: const drift.Value('Bipolar, Medication monitoring'),
-        riskLevel: const drift.Value(2), // Medium risk
+        riskLevel: const drift.Value(2),
+        chronicConditions: const drift.Value('Bipolar I Disorder'),
+        emergencyContactName: const drift.Value('Ali Hassan'),
+        emergencyContactPhone: const drift.Value('0321-9876544'),
       ),
       PatientsCompanion(
         firstName: const drift.Value('Muhammad'),
         lastName: const drift.Value('Hassan'),
-        dateOfBirth: drift.Value(DateTime(1988, 3, 10)),
+        age: const drift.Value(55),
+        gender: const drift.Value('Male'),
+        bloodType: const drift.Value('O+'),
         phone: const drift.Value('0333-5555555'),
         email: const drift.Value('m.hassan@example.com'),
         address: const drift.Value('789 Elm Street, Islamabad'),
-        medicalHistory: const drift.Value('PTSD, Anxiety, Sleep disorders'),
+        medicalHistory: const drift.Value('COPD, Smoking history 30 pack years'),
         allergies: const drift.Value(''),
-        tags: const drift.Value('PTSD, Combat veteran'),
-        riskLevel: const drift.Value(2), // Medium risk
+        tags: const drift.Value('COPD, Pulmonary'),
+        riskLevel: const drift.Value(3),
+        chronicConditions: const drift.Value('COPD Gold Stage III'),
+        emergencyContactName: const drift.Value('Ayesha Hassan'),
+        emergencyContactPhone: const drift.Value('0333-5555556'),
       ),
       PatientsCompanion(
         firstName: const drift.Value('Aisha'),
         lastName: const drift.Value('Ahmed'),
-        dateOfBirth: drift.Value(DateTime(1995, 11, 5)),
+        age: const drift.Value(28),
+        gender: const drift.Value('Female'),
+        bloodType: const drift.Value('AB+'),
         phone: const drift.Value('0345-2222222'),
         email: const drift.Value('aisha.ahmed@example.com'),
         address: const drift.Value('321 Pine Road, Multan'),
-        medicalHistory: const drift.Value('Major Depressive Disorder, Insomnia'),
-        allergies: const drift.Value('NSAIDs'),
-        tags: const drift.Value('Depression, Active treatment'),
-        riskLevel: const drift.Value(1), // Low risk
+        medicalHistory: const drift.Value('Asthma since childhood'),
+        allergies: const drift.Value('NSAIDs, Dust mites'),
+        tags: const drift.Value('Asthma, Active treatment'),
+        riskLevel: const drift.Value(1),
+        chronicConditions: const drift.Value('Bronchial Asthma'),
+        emergencyContactName: const drift.Value('Bilal Ahmed'),
+        emergencyContactPhone: const drift.Value('0345-2222223'),
       ),
       PatientsCompanion(
         firstName: const drift.Value('Zainab'),
         lastName: const drift.Value('Hassan'),
-        dateOfBirth: drift.Value(DateTime(1992, 7, 18)),
+        age: const drift.Value(33),
+        gender: const drift.Value('Female'),
+        bloodType: const drift.Value('B-'),
         phone: const drift.Value('0312-3333333'),
         email: const drift.Value('zainab.hassan@example.com'),
         address: const drift.Value('654 Maple Drive, Peshawar'),
         medicalHistory: const drift.Value('Generalized Anxiety Disorder, IBS'),
         allergies: const drift.Value('Latex'),
         tags: const drift.Value('Anxiety, Follow-up in 2 weeks'),
-        riskLevel: const drift.Value(1), // Low risk
+        riskLevel: const drift.Value(1),
+        chronicConditions: const drift.Value('GAD'),
+        emergencyContactName: const drift.Value('Usman Hassan'),
+        emergencyContactPhone: const drift.Value('0312-3333334'),
       ),
     ];
 
@@ -195,6 +247,7 @@ class DatabaseSeedingService {
   ) async {
     final now = DateTime.now();
     final records = [
+      // Psychiatric Assessment - Full data
       MedicalRecordsCompanion(
         patientId: drift.Value(patientIds[0]),
         recordType: const drift.Value('psychiatric_assessment'),
@@ -203,47 +256,95 @@ class DatabaseSeedingService {
         treatment: const drift.Value('SSRI (Sertraline), Psychotherapy'),
         doctorNotes: const drift.Value('Patient responding well to medication. Recommend continue treatment.'),
         recordDate: drift.Value(now.subtract(Duration(days: 2))),
-        dataJson: const drift.Value('{"phq9_score": 12, "gaf_score": 65, "suicidal_ideation": false}'),
+        dataJson: const drift.Value('{"name":"Ahmed Khan","age":"40","gender":"Male","marital_status":"Married","chief_complaint":"Persistent low mood and loss of interest for 3 months","duration":"3 months","symptoms":"Depressed mood, anhedonia, fatigue, poor concentration","mood":"Depressed","affect":"Flat","speech":"Slow, low volume","thought":"Negative automatic thoughts, no delusions","perception":"No hallucinations","cognition":"Intact but slowed","insight":"Good","suicide_risk":"Low","homicide_risk":"None","safety_plan":"Family support, crisis helpline","diagnosis":"Major Depressive Disorder, Moderate, F32.1","treatment_plan":"Continue SSRI, weekly psychotherapy","medications":"Sertraline 100mg daily","follow_up":"2 weeks"}'),
       ),
+      // Psychiatric Assessment - Bipolar
       MedicalRecordsCompanion(
         patientId: drift.Value(patientIds[1]),
         recordType: const drift.Value('psychiatric_assessment'),
         title: const drift.Value('Bipolar Disorder Evaluation'),
         diagnosis: const drift.Value('Bipolar I Disorder, Current Episode Stable'),
-        treatment: const drift.Value('Mood stabilizer (Lithium), Antipsychotic (Haloperidol)'),
+        treatment: const drift.Value('Mood stabilizer (Lithium), Antipsychotic'),
         doctorNotes: const drift.Value('Mood episodes well-controlled. Continue lithium level monitoring.'),
         recordDate: drift.Value(now.subtract(Duration(days: 1))),
-        dataJson: const drift.Value('{"current_episode": "stable", "lithium_level": 0.8, "suicide_risk": 0}'),
+        dataJson: const drift.Value('{"name":"Fatima Ali","age":"35","gender":"Female","marital_status":"Single","chief_complaint":"Follow-up for bipolar disorder management","duration":"Ongoing treatment for 2 years","symptoms":"Previously had manic and depressive episodes","mood":"Euthymic","affect":"Appropriate","speech":"Normal rate and volume","thought":"Linear, goal-directed","perception":"No perceptual disturbances","cognition":"Intact","insight":"Good","suicide_risk":"None","homicide_risk":"None","safety_plan":"Established safety plan in place","diagnosis":"Bipolar I Disorder, F31.9, Currently Stable","treatment_plan":"Continue mood stabilizers, monthly lithium levels","medications":"Lithium 750mg BD, Olanzapine 5mg HS","follow_up":"1 month"}'),
       ),
+      // Pulmonary Evaluation - COPD
       MedicalRecordsCompanion(
         patientId: drift.Value(patientIds[2]),
-        recordType: const drift.Value('psychiatric_assessment'),
-        title: const drift.Value('PTSD Assessment'),
-        diagnosis: const drift.Value('Post-Traumatic Stress Disorder, Moderate Severity'),
-        treatment: const drift.Value('Trauma-focused CBT, SSRI'),
-        doctorNotes: const drift.Value('Symptoms include nightmares and hypervigilance. Starting trauma therapy.'),
+        recordType: const drift.Value('pulmonary_evaluation'),
+        title: const drift.Value('COPD Exacerbation Assessment'),
+        diagnosis: const drift.Value('COPD Exacerbation, Moderate'),
+        treatment: const drift.Value('Bronchodilators, Steroids, Antibiotics'),
+        doctorNotes: const drift.Value('Patient with acute exacerbation. Increased dyspnea and productive cough.'),
         recordDate: drift.Value(now.subtract(Duration(days: 3))),
-        dataJson: const drift.Value('{"pcl5_score": 48, "trauma_type": "combat", "nightmares": true}'),
+        dataJson: const drift.Value('{"chief_complaint":"Increased shortness of breath and cough for 5 days","duration":"5 days","symptoms":{"Cough":true,"Productive Cough":true,"Dyspnea":true,"Wheezing":true,"Fever":false,"Night Sweats":false,"Weight Loss":false,"Fatigue":true},"red_flags":{"Hemoptysis":false,"Severe Dyspnea":true,"Stridor":false,"Cyanosis":false},"vitals":{"bp":"140/90","pr":"95","rr":"24","temp":"37.2","spo2":"91"},"chest_findings":{"Inspection":"Barrel chest, use of accessory muscles","Palpation":"Reduced chest expansion bilaterally","Percussion":"Hyperresonant","Auscultation":"Prolonged expiration, scattered wheezes"},"breath_sounds":{"Normal":false,"Crackles":false,"Wheeze":true,"Rhonchi":true,"Decreased Air Entry":true},"diagnosis":"Acute exacerbation of COPD","differential":"Pneumonia, Heart failure","investigations":{"Chest X-ray":true,"CT Chest":false,"Sputum AFB":true,"Blood Culture":false,"Spirometry":false,"ABG":true,"CBC":true},"treatment_plan":"Nebulization, oral steroids, antibiotics if indicated","medications":"Salbutamol nebulization QID, Prednisolone 40mg OD x 5 days, Azithromycin 500mg OD x 3 days","follow_up":"3 days or earlier if worsening"}'),
       ),
+      // Pulmonary Evaluation - Asthma
       MedicalRecordsCompanion(
         patientId: drift.Value(patientIds[3]),
-        recordType: const drift.Value('psychiatric_assessment'),
-        title: const drift.Value('Depression Severity Assessment'),
-        diagnosis: const drift.Value('Major Depressive Disorder, Moderate to Severe'),
-        treatment: const drift.Value('SSRI (Fluoxetine), Cognitive Behavioral Therapy'),
-        doctorNotes: const drift.Value('Patient with significant depressive symptoms. Initiated antidepressant therapy.'),
+        recordType: const drift.Value('pulmonary_evaluation'),
+        title: const drift.Value('Asthma Evaluation'),
+        diagnosis: const drift.Value('Bronchial Asthma, Moderate Persistent'),
+        treatment: const drift.Value('Inhaled corticosteroids, LABA'),
+        doctorNotes: const drift.Value('Poorly controlled asthma. Step up therapy needed.'),
         recordDate: drift.Value(now.subtract(Duration(days: 10))),
-        dataJson: const drift.Value('{"phq9_score": 18, "sleep_disturbance": true, "anhedonia": true}'),
+        dataJson: const drift.Value('{"chief_complaint":"Recurrent wheezing and breathlessness, worse at night","duration":"2 weeks worsening","symptoms":{"Cough":true,"Dry Cough":true,"Dyspnea":true,"Wheezing":true,"Chest Pain":false,"Fever":false,"Night Sweats":true},"red_flags":{"Hemoptysis":false,"Severe Dyspnea":false,"Stridor":false,"Cyanosis":false},"vitals":{"bp":"120/80","pr":"88","rr":"20","temp":"36.8","spo2":"95"},"chest_findings":{"Inspection":"Normal","Palpation":"Normal expansion","Percussion":"Resonant","Auscultation":"Bilateral expiratory wheeze"},"breath_sounds":{"Normal":false,"Crackles":false,"Wheeze":true,"Rhonchi":false,"Decreased Air Entry":false},"diagnosis":"Bronchial Asthma - Moderate Persistent","differential":"COPD, Cardiac wheeze","investigations":{"Chest X-ray":true,"Spirometry":true,"CBC":true},"treatment_plan":"Step up to ICS/LABA combination, asthma action plan","medications":"Budesonide/Formoterol 200/6 2 puffs BD, Salbutamol MDI PRN","follow_up":"2 weeks"}'),
       ),
+      // Lab Result
+      MedicalRecordsCompanion(
+        patientId: drift.Value(patientIds[0]),
+        recordType: const drift.Value('lab_result'),
+        title: const drift.Value('Complete Blood Count'),
+        diagnosis: const drift.Value('Normal CBC'),
+        treatment: const drift.Value('No treatment required'),
+        doctorNotes: const drift.Value('Routine monitoring labs - all within normal limits'),
+        recordDate: drift.Value(now.subtract(Duration(days: 5))),
+        dataJson: const drift.Value('{"test_name":"Complete Blood Count (CBC)","test_category":"Hematology","result":"Hb: 14.2 g/dL, WBC: 7,500/uL, Platelets: 250,000/uL","reference_range":"Hb: 13-17, WBC: 4000-11000, Plt: 150000-400000","units":"Various","specimen":"Blood","lab_name":"City Diagnostics Lab","ordering_physician":"Dr. Ahmed","interpretation":"All parameters within normal limits","result_status":"Normal"}'),
+      ),
+      // Lab Result - Abnormal
+      MedicalRecordsCompanion(
+        patientId: drift.Value(patientIds[1]),
+        recordType: const drift.Value('lab_result'),
+        title: const drift.Value('Lithium Level'),
+        diagnosis: const drift.Value('Lithium level within therapeutic range'),
+        treatment: const drift.Value('Continue current dose'),
+        doctorNotes: const drift.Value('Therapeutic lithium level achieved'),
+        recordDate: drift.Value(now.subtract(Duration(days: 7))),
+        dataJson: const drift.Value('{"test_name":"Serum Lithium Level","test_category":"Therapeutic Drug Monitoring","result":"0.82 mEq/L","reference_range":"0.6-1.2 mEq/L (therapeutic)","units":"mEq/L","specimen":"Serum","lab_name":"National Lab Services","ordering_physician":"Dr. Fatima","interpretation":"Level within therapeutic range. Continue current dosing.","result_status":"Normal"}'),
+      ),
+      // Imaging
+      MedicalRecordsCompanion(
+        patientId: drift.Value(patientIds[2]),
+        recordType: const drift.Value('imaging'),
+        title: const drift.Value('Chest X-Ray PA View'),
+        diagnosis: const drift.Value('COPD changes'),
+        treatment: const drift.Value('Continue COPD management'),
+        doctorNotes: const drift.Value('CXR shows hyperinflated lungs consistent with COPD'),
+        recordDate: drift.Value(now.subtract(Duration(days: 3))),
+        dataJson: const drift.Value('{"imaging_type":"X-Ray","body_part":"Chest PA View","indication":"Evaluation of COPD exacerbation, rule out pneumonia","technique":"Digital radiograph, PA and lateral views","findings":"Hyperinflated lungs with flattened diaphragms. No focal consolidation. No pleural effusion. Heart size normal. No pneumothorax.","impression":"Chest X-ray findings consistent with COPD. No acute pulmonary infiltrates to suggest pneumonia.","recommendations":"Clinical correlation. Follow-up as clinically indicated.","radiologist":"Dr. Hassan Imaging","facility":"City Radiology Center","contrast_used":false,"urgency":"Routine"}'),
+      ),
+      // Procedure
       MedicalRecordsCompanion(
         patientId: drift.Value(patientIds[4]),
-        recordType: const drift.Value('psychiatric_assessment'),
-        title: const drift.Value('Anxiety Disorder Screening'),
-        diagnosis: const drift.Value('Generalized Anxiety Disorder'),
-        treatment: const drift.Value('SSRI (Citalopram), Relaxation techniques'),
-        doctorNotes: const drift.Value('Patient with persistent anxiety. Started first-line SSRI treatment.'),
+        recordType: const drift.Value('procedure'),
+        title: const drift.Value('ECG Recording'),
+        diagnosis: const drift.Value('Normal sinus rhythm'),
+        treatment: const drift.Value('No cardiac intervention needed'),
+        doctorNotes: const drift.Value('ECG performed for baseline assessment'),
         recordDate: drift.Value(now.subtract(Duration(days: 5))),
-        dataJson: const drift.Value('{"gad7_score": 16, "duration_months": 8, "worry_topics": ["health", "finances"]}'),
+        dataJson: const drift.Value('{"procedure_name":"12-Lead Electrocardiogram (ECG)","procedure_code":"93000","indication":"Baseline cardiac assessment before starting SSRI","anesthesia":"None required","procedure_notes":"Standard 12-lead ECG performed. Patient cooperative.","findings":"Normal sinus rhythm at 72 bpm. Normal axis. PR interval 160ms. QRS 90ms. QTc 410ms. No ST-T changes.","complications":"None","specimen":"N/A","post_op_instructions":"No specific instructions. May resume normal activities.","performed_by":"Dr. Zainab","assisted_by":"Nurse Ayesha","procedure_status":"Completed","start_time":"10:30","end_time":"10:45","vitals":{"bp_pre":"120/78","pulse_pre":"72","spo2_pre":"98","bp_post":"118/76","pulse_post":"70","spo2_post":"99"}}'),
+      ),
+      // Follow-up
+      MedicalRecordsCompanion(
+        patientId: drift.Value(patientIds[0]),
+        recordType: const drift.Value('follow_up'),
+        title: const drift.Value('Depression Treatment Follow-up'),
+        diagnosis: const drift.Value('MDD - Improving'),
+        treatment: const drift.Value('Continue current regimen'),
+        doctorNotes: const drift.Value('Good progress noted'),
+        recordDate: drift.Value(now.subtract(Duration(days: 14))),
+        dataJson: drift.Value('{"progress_notes":"Patient reports significant improvement in mood and energy. Sleeping better. Appetite improved.","symptoms":"Mild residual fatigue, occasional low mood","compliance":"Excellent - taking medications as prescribed","side_effects":"Initial nausea resolved. No current side effects.","medication_review":"Sertraline 100mg well tolerated. Consider maintaining current dose.","investigations":"No new labs needed at this time","overall_progress":"Improved","next_follow_up_date":"${now.add(Duration(days: 14)).toIso8601String()}","next_follow_up_notes":"Review PHQ-9 scores, consider dose adjustment if plateaued","vitals":{"bp":"125/82","pulse":"74","temperature":"36.8","weight":"73","spo2":"98"}}'),
       ),
     ];
 

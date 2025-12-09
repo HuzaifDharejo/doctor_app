@@ -10,7 +10,7 @@ class Patients extends Table {
   IntColumn get id => integer().autoIncrement()();
   TextColumn get firstName => text()();
   TextColumn get lastName => text().withDefault(const Constant(''))();
-  DateTimeColumn get dateOfBirth => dateTime().nullable()();
+  IntColumn get age => integer().nullable()();  // Age in years
   TextColumn get phone => text().withDefault(const Constant(''))();
   TextColumn get email => text().withDefault(const Constant(''))();
   TextColumn get address => text().withDefault(const Constant(''))();

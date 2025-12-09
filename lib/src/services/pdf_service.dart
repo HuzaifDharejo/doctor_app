@@ -248,12 +248,12 @@ class PdfService {
                     ],
                   ),
                   pw.SizedBox(width: 40),
-                  if (patient.dateOfBirth != null)
+                  if (patient.age != null)
                     pw.Column(
                       crossAxisAlignment: pw.CrossAxisAlignment.start,
                       children: [
                         pw.Text('Age:', style: const pw.TextStyle(fontSize: 10, color: PdfColors.grey600)),
-                        pw.Text('${_calculateAge(patient.dateOfBirth!)} years', style: const pw.TextStyle(fontSize: 12)),
+                        pw.Text('${patient.age} years', style: const pw.TextStyle(fontSize: 12)),
                       ],
                     ),
                 ],
@@ -358,6 +358,49 @@ class PdfService {
     
     switch (recordType) {
       case 'psychiatric_assessment':
+        // Demographics
+        if (data['name'] != null || data['age'] != null || data['gender'] != null) {
+          final demographics = <String>[];
+          if (data['name'] != null && data['name'].toString().isNotEmpty) {
+            demographics.add('Name: ${data['name']}');
+          }
+          if (data['age'] != null && data['age'].toString().isNotEmpty) {
+            demographics.add('Age: ${data['age']}');
+          }
+          if (data['gender'] != null && data['gender'].toString().isNotEmpty) {
+            demographics.add('Gender: ${data['gender']}');
+          }
+          if (data['marital_status'] != null && data['marital_status'].toString().isNotEmpty) {
+            demographics.add('Marital Status: ${data['marital_status']}');
+          }
+          if (demographics.isNotEmpty) {
+            widgets.addAll([
+              _buildSectionHeader('Demographics'),
+              pw.SizedBox(height: 8),
+              pw.Text(demographics.join(' | '), style: const pw.TextStyle(fontSize: 11)),
+              pw.SizedBox(height: 16),
+            ]);
+          }
+        }
+        // Chief Complaint
+        if (data['chief_complaint'] != null && data['chief_complaint'].toString().isNotEmpty) {
+          widgets.addAll([
+            _buildSectionHeader('Chief Complaint'),
+            pw.SizedBox(height: 8),
+            pw.Text(data['chief_complaint'].toString(), style: const pw.TextStyle(fontSize: 11)),
+            pw.SizedBox(height: 16),
+          ]);
+        }
+        // Duration
+        if (data['duration'] != null && data['duration'].toString().isNotEmpty) {
+          widgets.addAll([
+            _buildSectionHeader('Duration'),
+            pw.SizedBox(height: 8),
+            pw.Text(data['duration'].toString(), style: const pw.TextStyle(fontSize: 11)),
+            pw.SizedBox(height: 16),
+          ]);
+        }
+        // Presenting Symptoms
         if (data['symptoms'] != null && data['symptoms'].toString().isNotEmpty) {
           widgets.addAll([
             _buildSectionHeader('Presenting Symptoms'),
@@ -366,7 +409,63 @@ class PdfService {
             pw.SizedBox(height: 16),
           ]);
         }
-        if (data['mse'] != null) {
+        // History of Present Illness
+        if (data['hopi'] != null && data['hopi'].toString().isNotEmpty) {
+          widgets.addAll([
+            _buildSectionHeader('History of Present Illness'),
+            pw.SizedBox(height: 8),
+            pw.Text(data['hopi'].toString(), style: const pw.TextStyle(fontSize: 11)),
+            pw.SizedBox(height: 16),
+          ]);
+        }
+        // Past Psychiatric History
+        if (data['past_history'] != null && data['past_history'].toString().isNotEmpty) {
+          widgets.addAll([
+            _buildSectionHeader('Past Psychiatric History'),
+            pw.SizedBox(height: 8),
+            pw.Text(data['past_history'].toString(), style: const pw.TextStyle(fontSize: 11)),
+            pw.SizedBox(height: 16),
+          ]);
+        }
+        // Family History
+        if (data['family_history'] != null && data['family_history'].toString().isNotEmpty) {
+          widgets.addAll([
+            _buildSectionHeader('Family History'),
+            pw.SizedBox(height: 8),
+            pw.Text(data['family_history'].toString(), style: const pw.TextStyle(fontSize: 11)),
+            pw.SizedBox(height: 16),
+          ]);
+        }
+        // Socioeconomic History
+        if (data['socioeconomic'] != null && data['socioeconomic'].toString().isNotEmpty) {
+          widgets.addAll([
+            _buildSectionHeader('Socioeconomic History'),
+            pw.SizedBox(height: 8),
+            pw.Text(data['socioeconomic'].toString(), style: const pw.TextStyle(fontSize: 11)),
+            pw.SizedBox(height: 16),
+          ]);
+        }
+        // Mental Status Examination (flat format)
+        final mseFields = <String, String>{
+          'Mood': data['mood']?.toString() ?? '',
+          'Affect': data['affect']?.toString() ?? '',
+          'Speech': data['speech']?.toString() ?? '',
+          'Thought': data['thought']?.toString() ?? '',
+          'Perception': data['perception']?.toString() ?? '',
+          'Cognition': data['cognition']?.toString() ?? '',
+          'Insight': data['insight']?.toString() ?? '',
+        };
+        final nonEmptyMse = mseFields.entries.where((e) => e.value.isNotEmpty).toList();
+        if (nonEmptyMse.isNotEmpty) {
+          widgets.addAll([
+            _buildSectionHeader('Mental Status Examination'),
+            pw.SizedBox(height: 8),
+            _buildKeyValueTable(Map.fromEntries(nonEmptyMse.map((e) => MapEntry(e.key, e.value)))),
+            pw.SizedBox(height: 16),
+          ]);
+        }
+        // MSE nested format
+        if (data['mse'] != null && data['mse'] is Map) {
           final mse = data['mse'] as Map<String, dynamic>;
           widgets.addAll([
             _buildSectionHeader('Mental Status Examination'),
@@ -375,49 +474,851 @@ class PdfService {
             pw.SizedBox(height: 16),
           ]);
         }
-        
-      case 'pulmonary_evaluation':
-        if (data['chestExam'] != null) {
-          final chest = data['chestExam'] as Map<String, dynamic>;
+        // Risk Assessment
+        if (data['suicide_risk'] != null || data['homicide_risk'] != null) {
+          final risks = <String>[];
+          if (data['suicide_risk'] != null && data['suicide_risk'].toString().isNotEmpty) {
+            risks.add('Suicide Risk: ${data['suicide_risk'].toString().toUpperCase()}');
+          }
+          if (data['homicide_risk'] != null && data['homicide_risk'].toString().isNotEmpty) {
+            risks.add('Homicide Risk: ${data['homicide_risk'].toString().toUpperCase()}');
+          }
+          if (risks.isNotEmpty) {
+            widgets.addAll([
+              _buildSectionHeader('Risk Assessment'),
+              pw.SizedBox(height: 8),
+              pw.Text(risks.join(' | '), style: pw.TextStyle(fontSize: 11, fontWeight: pw.FontWeight.bold, color: PdfColors.red)),
+              pw.SizedBox(height: 16),
+            ]);
+          }
+        }
+        // Safety Plan
+        if (data['safety_plan'] != null && data['safety_plan'].toString().isNotEmpty) {
           widgets.addAll([
-            _buildSectionHeader('Chest Examination'),
+            _buildSectionHeader('Safety Plan'),
             pw.SizedBox(height: 8),
-            _buildKeyValueTable(chest),
+            pw.Text(data['safety_plan'].toString(), style: const pw.TextStyle(fontSize: 11)),
             pw.SizedBox(height: 16),
           ]);
         }
-        if (data['spirometry'] != null) {
-          final spirometry = data['spirometry'] as Map<String, dynamic>;
+        // Diagnosis
+        if (data['diagnosis'] != null && data['diagnosis'].toString().isNotEmpty) {
           widgets.addAll([
-            _buildSectionHeader('Spirometry'),
+            _buildSectionHeader('Diagnosis'),
             pw.SizedBox(height: 8),
-            _buildKeyValueTable(spirometry),
+            pw.Text(data['diagnosis'].toString(), style: pw.TextStyle(fontSize: 11, fontWeight: pw.FontWeight.bold)),
+            pw.SizedBox(height: 16),
+          ]);
+        }
+        // Treatment Plan
+        if (data['treatment_plan'] != null && data['treatment_plan'].toString().isNotEmpty) {
+          widgets.addAll([
+            _buildSectionHeader('Treatment Plan'),
+            pw.SizedBox(height: 8),
+            pw.Text(data['treatment_plan'].toString(), style: const pw.TextStyle(fontSize: 11)),
+            pw.SizedBox(height: 16),
+          ]);
+        }
+        // Medications
+        if (data['medications'] != null && data['medications'].toString().isNotEmpty) {
+          widgets.addAll([
+            _buildSectionHeader('Medications'),
+            pw.SizedBox(height: 8),
+            pw.Text(data['medications'].toString(), style: const pw.TextStyle(fontSize: 11)),
+            pw.SizedBox(height: 16),
+          ]);
+        }
+        // Follow-up
+        if (data['follow_up'] != null && data['follow_up'].toString().isNotEmpty) {
+          widgets.addAll([
+            _buildSectionHeader('Follow-up Plan'),
+            pw.SizedBox(height: 8),
+            pw.Text(data['follow_up'].toString(), style: const pw.TextStyle(fontSize: 11)),
+            pw.SizedBox(height: 16),
+          ]);
+        }
+        
+      case 'pulmonary_evaluation':
+        // Chief Complaint
+        if (data['chief_complaint'] != null && data['chief_complaint'].toString().isNotEmpty) {
+          widgets.addAll([
+            _buildSectionHeader('Chief Complaint'),
+            pw.SizedBox(height: 8),
+            pw.Text(data['chief_complaint'].toString(), style: const pw.TextStyle(fontSize: 11)),
+            pw.SizedBox(height: 16),
+          ]);
+        }
+        // Duration
+        if (data['duration'] != null && data['duration'].toString().isNotEmpty) {
+          widgets.addAll([
+            _buildSectionHeader('Duration'),
+            pw.SizedBox(height: 8),
+            pw.Text(data['duration'].toString(), style: const pw.TextStyle(fontSize: 11)),
+            pw.SizedBox(height: 16),
+          ]);
+        }
+        // Symptom Character (new form)
+        if (data['symptom_character'] != null && data['symptom_character'].toString().isNotEmpty) {
+          widgets.addAll([
+            _buildSectionHeader('Symptom Character'),
+            pw.SizedBox(height: 8),
+            pw.Text(data['symptom_character'].toString(), style: const pw.TextStyle(fontSize: 11)),
+            pw.SizedBox(height: 16),
+          ]);
+        }
+        // Vitals
+        if (data['vitals'] != null && data['vitals'] is Map) {
+          final vitals = data['vitals'] as Map<String, dynamic>;
+          widgets.addAll([
+            _buildSectionHeader('Vital Signs'),
+            pw.SizedBox(height: 8),
+            _buildKeyValueTable(vitals),
+            pw.SizedBox(height: 16),
+          ]);
+        }
+        // Presenting Symptoms (legacy - Map<String, bool> format)
+        if (data['symptoms'] != null && data['symptoms'] is Map) {
+          final symptoms = (data['symptoms'] as Map<String, dynamic>)
+              .entries.where((e) => e.value == true).map((e) => e.key).toList();
+          if (symptoms.isNotEmpty) {
+            widgets.addAll([
+              _buildSectionHeader('Presenting Symptoms'),
+              pw.SizedBox(height: 8),
+              pw.Text(symptoms.join(', '), style: const pw.TextStyle(fontSize: 11)),
+              pw.SizedBox(height: 16),
+            ]);
+          }
+        }
+        // Systemic Symptoms (new form - List<String>)
+        if (data['systemic_symptoms'] != null && data['systemic_symptoms'] is List) {
+          final symptoms = List<String>.from(data['systemic_symptoms'] as List);
+          if (symptoms.isNotEmpty) {
+            widgets.addAll([
+              _buildSectionHeader('Systemic Symptoms'),
+              pw.SizedBox(height: 8),
+              pw.Text(symptoms.join(', '), style: const pw.TextStyle(fontSize: 11)),
+              pw.SizedBox(height: 16),
+            ]);
+          }
+        }
+        // Red Flags (legacy - Map<String, bool> format)
+        if (data['red_flags'] != null && data['red_flags'] is Map) {
+          final flags = (data['red_flags'] as Map<String, dynamic>)
+              .entries.where((e) => e.value == true).map((e) => e.key).toList();
+          if (flags.isNotEmpty) {
+            widgets.addAll([
+              _buildSectionHeader('Red Flags'),
+              pw.SizedBox(height: 8),
+              pw.Text(flags.join(', '), style: pw.TextStyle(fontSize: 11, fontWeight: pw.FontWeight.bold, color: PdfColors.red)),
+              pw.SizedBox(height: 16),
+            ]);
+          }
+        }
+        // Red Flags (new form - List<String> format)
+        if (data['red_flags'] != null && data['red_flags'] is List) {
+          final flags = List<String>.from(data['red_flags'] as List);
+          if (flags.isNotEmpty) {
+            widgets.addAll([
+              _buildSectionHeader('Red Flags'),
+              pw.SizedBox(height: 8),
+              pw.Text(flags.join(', '), style: pw.TextStyle(fontSize: 11, fontWeight: pw.FontWeight.bold, color: PdfColors.red)),
+              pw.SizedBox(height: 16),
+            ]);
+          }
+        }
+        // ====== MEDICAL HISTORY SECTION (new form) ======
+        if (data['past_pulmonary_history'] != null && data['past_pulmonary_history'].toString().isNotEmpty) {
+          widgets.addAll([
+            _buildSectionHeader('Past Pulmonary History'),
+            pw.SizedBox(height: 8),
+            pw.Text(data['past_pulmonary_history'].toString(), style: const pw.TextStyle(fontSize: 11)),
+            pw.SizedBox(height: 16),
+          ]);
+        }
+        if (data['exposure_history'] != null && data['exposure_history'].toString().isNotEmpty) {
+          widgets.addAll([
+            _buildSectionHeader('Exposure History'),
+            pw.SizedBox(height: 8),
+            pw.Text(data['exposure_history'].toString(), style: const pw.TextStyle(fontSize: 11)),
+            pw.SizedBox(height: 16),
+          ]);
+        }
+        if (data['allergy_atopy_history'] != null && data['allergy_atopy_history'].toString().isNotEmpty) {
+          widgets.addAll([
+            _buildSectionHeader('Allergy/Atopy History'),
+            pw.SizedBox(height: 8),
+            pw.Text(data['allergy_atopy_history'].toString(), style: const pw.TextStyle(fontSize: 11)),
+            pw.SizedBox(height: 16),
+          ]);
+        }
+        // Current Medications (new form - List<String>)
+        if (data['current_medications'] != null && data['current_medications'] is List) {
+          final meds = List<String>.from(data['current_medications'] as List);
+          if (meds.isNotEmpty) {
+            widgets.addAll([
+              _buildSectionHeader('Current Medications'),
+              pw.SizedBox(height: 8),
+              pw.Text(meds.join(', '), style: const pw.TextStyle(fontSize: 11)),
+              pw.SizedBox(height: 16),
+            ]);
+          }
+        }
+        // Comorbidities (new form - List<String>)
+        if (data['comorbidities'] != null && data['comorbidities'] is List) {
+          final comorbidities = List<String>.from(data['comorbidities'] as List);
+          if (comorbidities.isNotEmpty) {
+            widgets.addAll([
+              _buildSectionHeader('Comorbidities'),
+              pw.SizedBox(height: 8),
+              pw.Text(comorbidities.join(', '), style: const pw.TextStyle(fontSize: 11)),
+              pw.SizedBox(height: 16),
+            ]);
+          }
+        }
+        // Chest Findings (legacy - nested object)
+        if (data['chest_findings'] != null && data['chest_findings'] is Map) {
+          final findings = data['chest_findings'] as Map<String, dynamic>;
+          widgets.addAll([
+            _buildSectionHeader('Chest Examination'),
+            pw.SizedBox(height: 8),
+            _buildKeyValueTable(findings),
+            pw.SizedBox(height: 16),
+          ]);
+        }
+        // Chest Auscultation (new form - nested object with zones)
+        if (data['chest_auscultation'] != null && data['chest_auscultation'] is Map) {
+          final auscultation = data['chest_auscultation'] as Map<String, dynamic>;
+          widgets.add(_buildSectionHeader('Chest Auscultation'));
+          widgets.add(pw.SizedBox(height: 8));
+          
+          // Breath Sounds
+          if (auscultation['breath_sounds'] != null && auscultation['breath_sounds'].toString().isNotEmpty) {
+            widgets.add(pw.Text('Breath Sounds: ${auscultation['breath_sounds']}', style: pw.TextStyle(fontSize: 11, fontWeight: pw.FontWeight.bold)));
+          }
+          // Added Sounds
+          if (auscultation['added_sounds'] != null && auscultation['added_sounds'] is List) {
+            final sounds = List<String>.from(auscultation['added_sounds'] as List);
+            if (sounds.isNotEmpty) {
+              widgets.add(pw.Text('Added Sounds: ${sounds.join(', ')}', style: const pw.TextStyle(fontSize: 11)));
+            }
+          }
+          // Zone findings
+          final zones = <String, String>{
+            'Right Upper Zone': auscultation['right_upper_zone']?.toString() ?? '',
+            'Right Middle Zone': auscultation['right_middle_zone']?.toString() ?? '',
+            'Right Lower Zone': auscultation['right_lower_zone']?.toString() ?? '',
+            'Left Upper Zone': auscultation['left_upper_zone']?.toString() ?? '',
+            'Left Middle Zone': auscultation['left_middle_zone']?.toString() ?? '',
+            'Left Lower Zone': auscultation['left_lower_zone']?.toString() ?? '',
+          };
+          final nonEmptyZones = zones.entries.where((e) => e.value.isNotEmpty).toList();
+          if (nonEmptyZones.isNotEmpty) {
+            widgets.add(pw.SizedBox(height: 4));
+            for (final zone in nonEmptyZones) {
+              widgets.add(pw.Text('${zone.key}: ${zone.value}', style: const pw.TextStyle(fontSize: 10)));
+            }
+          }
+          // Additional Findings
+          if (auscultation['additional_findings'] != null && auscultation['additional_findings'].toString().isNotEmpty) {
+            widgets.add(pw.SizedBox(height: 4));
+            widgets.add(pw.Text('Additional Findings: ${auscultation['additional_findings']}', style: const pw.TextStyle(fontSize: 11)));
+          }
+          widgets.add(pw.SizedBox(height: 16));
+        }
+        // Breath Sounds (legacy - Map<String, bool> format)
+        if (data['breath_sounds'] != null && data['breath_sounds'] is Map) {
+          final sounds = (data['breath_sounds'] as Map<String, dynamic>)
+              .entries.where((e) => e.value == true).map((e) => e.key).toList();
+          if (sounds.isNotEmpty) {
+            widgets.addAll([
+              _buildSectionHeader('Breath Sounds'),
+              pw.SizedBox(height: 8),
+              pw.Text(sounds.join(', '), style: const pw.TextStyle(fontSize: 11)),
+              pw.SizedBox(height: 16),
+            ]);
+          }
+        }
+        // Diagnosis
+        if (data['diagnosis'] != null && data['diagnosis'].toString().isNotEmpty) {
+          widgets.addAll([
+            _buildSectionHeader('Diagnosis'),
+            pw.SizedBox(height: 8),
+            pw.Text(data['diagnosis'].toString(), style: pw.TextStyle(fontSize: 11, fontWeight: pw.FontWeight.bold)),
+            pw.SizedBox(height: 16),
+          ]);
+        }
+        // Differential
+        if (data['differential'] != null && data['differential'].toString().isNotEmpty) {
+          widgets.addAll([
+            _buildSectionHeader('Differential Diagnosis'),
+            pw.SizedBox(height: 8),
+            pw.Text(data['differential'].toString(), style: const pw.TextStyle(fontSize: 11)),
+            pw.SizedBox(height: 16),
+          ]);
+        }
+        // Investigations (legacy - Map<String, bool> format)
+        if (data['investigations'] != null && data['investigations'] is Map) {
+          final invs = (data['investigations'] as Map<String, dynamic>)
+              .entries.where((e) => e.value == true).map((e) => e.key).toList();
+          if (invs.isNotEmpty) {
+            widgets.addAll([
+              _buildSectionHeader('Investigations Ordered'),
+              pw.SizedBox(height: 8),
+              pw.Text(invs.join(', '), style: const pw.TextStyle(fontSize: 11)),
+              pw.SizedBox(height: 16),
+            ]);
+          }
+        }
+        // Investigations Required (new form - List<String>)
+        if (data['investigations_required'] != null && data['investigations_required'] is List) {
+          final invs = List<String>.from(data['investigations_required'] as List);
+          if (invs.isNotEmpty) {
+            widgets.addAll([
+              _buildSectionHeader('Investigations Required'),
+              pw.SizedBox(height: 8),
+              pw.Text(invs.join(', '), style: const pw.TextStyle(fontSize: 11)),
+              pw.SizedBox(height: 16),
+            ]);
+          }
+        }
+        // Treatment Plan (legacy)
+        if (data['treatment_plan'] != null && data['treatment_plan'].toString().isNotEmpty) {
+          widgets.addAll([
+            _buildSectionHeader('Treatment Plan'),
+            pw.SizedBox(height: 8),
+            pw.Text(data['treatment_plan'].toString(), style: const pw.TextStyle(fontSize: 11)),
+            pw.SizedBox(height: 16),
+          ]);
+        }
+        // Medications (legacy)
+        if (data['medications'] != null && data['medications'].toString().isNotEmpty) {
+          widgets.addAll([
+            _buildSectionHeader('Medications'),
+            pw.SizedBox(height: 8),
+            pw.Text(data['medications'].toString(), style: const pw.TextStyle(fontSize: 11)),
+            pw.SizedBox(height: 16),
+          ]);
+        }
+        // Follow-up (legacy)
+        if (data['follow_up'] != null && data['follow_up'].toString().isNotEmpty) {
+          widgets.addAll([
+            _buildSectionHeader('Follow-up Plan'),
+            pw.SizedBox(height: 8),
+            pw.Text(data['follow_up'].toString(), style: const pw.TextStyle(fontSize: 11)),
+            pw.SizedBox(height: 16),
+          ]);
+        }
+        // Follow-up Plan (new form)
+        if (data['follow_up_plan'] != null && data['follow_up_plan'].toString().isNotEmpty) {
+          widgets.addAll([
+            _buildSectionHeader('Follow-up Plan'),
+            pw.SizedBox(height: 8),
+            pw.Text(data['follow_up_plan'].toString(), style: const pw.TextStyle(fontSize: 11)),
             pw.SizedBox(height: 16),
           ]);
         }
         
       case 'lab_result':
-        widgets.addAll([
-          _buildSectionHeader('Lab Results'),
-          pw.SizedBox(height: 8),
-          _buildKeyValueTable(data),
-          pw.SizedBox(height: 16),
-        ]);
+        // Test Name and Category
+        if (data['test_name'] != null && data['test_name'].toString().isNotEmpty) {
+          widgets.addAll([
+            _buildSectionHeader('Test Information'),
+            pw.SizedBox(height: 8),
+            pw.Text('Test: ${data['test_name']}', style: pw.TextStyle(fontSize: 12, fontWeight: pw.FontWeight.bold)),
+          ]);
+          if (data['test_category'] != null && data['test_category'].toString().isNotEmpty) {
+            widgets.add(pw.Text('Category: ${data['test_category']}', style: const pw.TextStyle(fontSize: 11)));
+          }
+          widgets.add(pw.SizedBox(height: 16));
+        }
+        // Result with status
+        if (data['result'] != null && data['result'].toString().isNotEmpty) {
+          final status = data['result_status']?.toString() ?? 'Normal';
+          final statusColor = status.toLowerCase() == 'abnormal' ? PdfColors.red : 
+                             status.toLowerCase() == 'critical' ? PdfColors.red900 : PdfColors.green;
+          widgets.addAll([
+            _buildSectionHeader('Result'),
+            pw.SizedBox(height: 8),
+            pw.Row(
+              children: [
+                pw.Expanded(
+                  child: pw.Text(data['result'].toString(), style: pw.TextStyle(fontSize: 14, fontWeight: pw.FontWeight.bold)),
+                ),
+                pw.Container(
+                  padding: const pw.EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                  decoration: pw.BoxDecoration(
+                    color: statusColor.shade(0.1),
+                    borderRadius: pw.BorderRadius.circular(4),
+                  ),
+                  child: pw.Text(status.toUpperCase(), style: pw.TextStyle(fontSize: 9, fontWeight: pw.FontWeight.bold, color: statusColor)),
+                ),
+              ],
+            ),
+          ]);
+          if (data['units'] != null && data['units'].toString().isNotEmpty) {
+            widgets.add(pw.Text('Units: ${data['units']}', style: const pw.TextStyle(fontSize: 10)));
+          }
+          if (data['reference_range'] != null && data['reference_range'].toString().isNotEmpty) {
+            widgets.add(pw.Text('Reference Range: ${data['reference_range']}', style: const pw.TextStyle(fontSize: 10)));
+          }
+          widgets.add(pw.SizedBox(height: 16));
+        }
+        // Specimen
+        if (data['specimen'] != null && data['specimen'].toString().isNotEmpty) {
+          widgets.addAll([
+            pw.Text('Specimen: ${data['specimen']}', style: const pw.TextStyle(fontSize: 10)),
+            pw.SizedBox(height: 8),
+          ]);
+        }
+        // Lab and Physician
+        if (data['lab_name'] != null || data['ordering_physician'] != null) {
+          final info = <String>[];
+          if (data['lab_name'] != null && data['lab_name'].toString().isNotEmpty) {
+            info.add('Lab: ${data['lab_name']}');
+          }
+          if (data['ordering_physician'] != null && data['ordering_physician'].toString().isNotEmpty) {
+            info.add('Ordered by: ${data['ordering_physician']}');
+          }
+          if (info.isNotEmpty) {
+            widgets.addAll([
+              pw.Text(info.join(' | '), style: const pw.TextStyle(fontSize: 10)),
+              pw.SizedBox(height: 16),
+            ]);
+          }
+        }
+        // Interpretation
+        if (data['interpretation'] != null && data['interpretation'].toString().isNotEmpty) {
+          widgets.addAll([
+            _buildSectionHeader('Interpretation'),
+            pw.SizedBox(height: 8),
+            pw.Text(data['interpretation'].toString(), style: const pw.TextStyle(fontSize: 11)),
+            pw.SizedBox(height: 16),
+          ]);
+        }
         
       case 'imaging':
-        if (data['findings'] != null) {
+        // Imaging type and body part
+        if (data['imaging_type'] != null || data['body_part'] != null) {
           widgets.addAll([
-            _buildSectionHeader('Imaging Findings'),
+            _buildSectionHeader('Study Information'),
+            pw.SizedBox(height: 8),
+          ]);
+          if (data['imaging_type'] != null && data['imaging_type'].toString().isNotEmpty) {
+            widgets.add(pw.Text('Type: ${data['imaging_type']}', style: pw.TextStyle(fontSize: 12, fontWeight: pw.FontWeight.bold)));
+          }
+          if (data['body_part'] != null && data['body_part'].toString().isNotEmpty) {
+            widgets.add(pw.Text('Body Part: ${data['body_part']}', style: const pw.TextStyle(fontSize: 11)));
+          }
+          if (data['urgency'] != null && data['urgency'].toString().isNotEmpty) {
+            widgets.add(pw.Text('Urgency: ${data['urgency']}', style: const pw.TextStyle(fontSize: 10)));
+          }
+          if (data['contrast_used'] == true) {
+            widgets.add(pw.Text('Contrast Used: Yes', style: const pw.TextStyle(fontSize: 10)));
+          }
+          widgets.add(pw.SizedBox(height: 16));
+        }
+        // Indication
+        if (data['indication'] != null && data['indication'].toString().isNotEmpty) {
+          widgets.addAll([
+            _buildSectionHeader('Indication'),
+            pw.SizedBox(height: 8),
+            pw.Text(data['indication'].toString(), style: const pw.TextStyle(fontSize: 11)),
+            pw.SizedBox(height: 16),
+          ]);
+        }
+        // Technique
+        if (data['technique'] != null && data['technique'].toString().isNotEmpty) {
+          widgets.addAll([
+            _buildSectionHeader('Technique'),
+            pw.SizedBox(height: 8),
+            pw.Text(data['technique'].toString(), style: const pw.TextStyle(fontSize: 11)),
+            pw.SizedBox(height: 16),
+          ]);
+        }
+        // Findings
+        if (data['findings'] != null && data['findings'].toString().isNotEmpty) {
+          widgets.addAll([
+            _buildSectionHeader('Findings'),
             pw.SizedBox(height: 8),
             pw.Text(data['findings'].toString(), style: const pw.TextStyle(fontSize: 11)),
             pw.SizedBox(height: 16),
           ]);
         }
-        if (data['impression'] != null) {
+        // Impression
+        if (data['impression'] != null && data['impression'].toString().isNotEmpty) {
           widgets.addAll([
             _buildSectionHeader('Impression'),
             pw.SizedBox(height: 8),
-            pw.Text(data['impression'].toString(), style: const pw.TextStyle(fontSize: 11)),
+            pw.Text(data['impression'].toString(), style: pw.TextStyle(fontSize: 11, fontWeight: pw.FontWeight.bold)),
+            pw.SizedBox(height: 16),
+          ]);
+        }
+        // Recommendations
+        if (data['recommendations'] != null && data['recommendations'].toString().isNotEmpty) {
+          widgets.addAll([
+            _buildSectionHeader('Recommendations'),
+            pw.SizedBox(height: 8),
+            pw.Text(data['recommendations'].toString(), style: const pw.TextStyle(fontSize: 11)),
+            pw.SizedBox(height: 16),
+          ]);
+        }
+        // Radiologist and Facility
+        if (data['radiologist'] != null || data['facility'] != null) {
+          final info = <String>[];
+          if (data['radiologist'] != null && data['radiologist'].toString().isNotEmpty) {
+            info.add('Radiologist: ${data['radiologist']}');
+          }
+          if (data['facility'] != null && data['facility'].toString().isNotEmpty) {
+            info.add('Facility: ${data['facility']}');
+          }
+          if (info.isNotEmpty) {
+            widgets.addAll([
+              pw.Text(info.join(' | '), style: const pw.TextStyle(fontSize: 10)),
+              pw.SizedBox(height: 16),
+            ]);
+          }
+        }
+        
+      case 'procedure':
+        // Procedure name and code
+        if (data['procedure_name'] != null && data['procedure_name'].toString().isNotEmpty) {
+          widgets.addAll([
+            _buildSectionHeader('Procedure'),
+            pw.SizedBox(height: 8),
+            pw.Text(data['procedure_name'].toString(), style: pw.TextStyle(fontSize: 14, fontWeight: pw.FontWeight.bold)),
+          ]);
+          if (data['procedure_code'] != null && data['procedure_code'].toString().isNotEmpty) {
+            widgets.add(pw.Text('Code: ${data['procedure_code']}', style: const pw.TextStyle(fontSize: 10)));
+          }
+          if (data['procedure_status'] != null && data['procedure_status'].toString().isNotEmpty) {
+            widgets.add(pw.Text('Status: ${data['procedure_status']}', style: const pw.TextStyle(fontSize: 10)));
+          }
+          widgets.add(pw.SizedBox(height: 16));
+        }
+        // Timing
+        if (data['start_time'] != null || data['end_time'] != null) {
+          final timing = <String>[];
+          if (data['start_time'] != null) timing.add('Start: ${data['start_time']}');
+          if (data['end_time'] != null) timing.add('End: ${data['end_time']}');
+          if (timing.isNotEmpty) {
+            widgets.addAll([
+              pw.Text(timing.join(' | '), style: const pw.TextStyle(fontSize: 10)),
+              pw.SizedBox(height: 16),
+            ]);
+          }
+        }
+        // Indication
+        if (data['indication'] != null && data['indication'].toString().isNotEmpty) {
+          widgets.addAll([
+            _buildSectionHeader('Indication'),
+            pw.SizedBox(height: 8),
+            pw.Text(data['indication'].toString(), style: const pw.TextStyle(fontSize: 11)),
+            pw.SizedBox(height: 16),
+          ]);
+        }
+        // Anesthesia
+        if (data['anesthesia'] != null && data['anesthesia'].toString().isNotEmpty) {
+          widgets.addAll([
+            _buildSectionHeader('Anesthesia'),
+            pw.SizedBox(height: 8),
+            pw.Text(data['anesthesia'].toString(), style: const pw.TextStyle(fontSize: 11)),
+            pw.SizedBox(height: 16),
+          ]);
+        }
+        // Procedure Notes
+        if (data['procedure_notes'] != null && data['procedure_notes'].toString().isNotEmpty) {
+          widgets.addAll([
+            _buildSectionHeader('Procedure Notes'),
+            pw.SizedBox(height: 8),
+            pw.Text(data['procedure_notes'].toString(), style: const pw.TextStyle(fontSize: 11)),
+            pw.SizedBox(height: 16),
+          ]);
+        }
+        // Findings
+        if (data['findings'] != null && data['findings'].toString().isNotEmpty) {
+          widgets.addAll([
+            _buildSectionHeader('Findings'),
+            pw.SizedBox(height: 8),
+            pw.Text(data['findings'].toString(), style: const pw.TextStyle(fontSize: 11)),
+            pw.SizedBox(height: 16),
+          ]);
+        }
+        // Complications
+        if (data['complications'] != null && data['complications'].toString().isNotEmpty) {
+          widgets.addAll([
+            _buildSectionHeader('Complications'),
+            pw.SizedBox(height: 8),
+            pw.Text(data['complications'].toString(), style: pw.TextStyle(fontSize: 11, color: PdfColors.red)),
+            pw.SizedBox(height: 16),
+          ]);
+        }
+        // Specimen
+        if (data['specimen'] != null && data['specimen'].toString().isNotEmpty) {
+          widgets.addAll([
+            _buildSectionHeader('Specimen Collected'),
+            pw.SizedBox(height: 8),
+            pw.Text(data['specimen'].toString(), style: const pw.TextStyle(fontSize: 11)),
+            pw.SizedBox(height: 16),
+          ]);
+        }
+        // Post-op Instructions
+        if (data['post_op_instructions'] != null && data['post_op_instructions'].toString().isNotEmpty) {
+          widgets.addAll([
+            _buildSectionHeader('Post-Operative Instructions'),
+            pw.SizedBox(height: 8),
+            pw.Text(data['post_op_instructions'].toString(), style: const pw.TextStyle(fontSize: 11)),
+            pw.SizedBox(height: 16),
+          ]);
+        }
+        // Providers
+        if (data['performed_by'] != null || data['assisted_by'] != null) {
+          final providers = <String>[];
+          if (data['performed_by'] != null && data['performed_by'].toString().isNotEmpty) {
+            providers.add('Performed by: ${data['performed_by']}');
+          }
+          if (data['assisted_by'] != null && data['assisted_by'].toString().isNotEmpty) {
+            providers.add('Assisted by: ${data['assisted_by']}');
+          }
+          if (providers.isNotEmpty) {
+            widgets.addAll([
+              pw.Text(providers.join(' | '), style: const pw.TextStyle(fontSize: 10)),
+              pw.SizedBox(height: 16),
+            ]);
+          }
+        }
+        // Vitals (pre/post)
+        if (data['vitals'] != null && data['vitals'] is Map) {
+          final vitals = data['vitals'] as Map<String, dynamic>;
+          final nonEmptyVitals = vitals.entries.where((e) => e.value != null && e.value.toString().isNotEmpty).toList();
+          if (nonEmptyVitals.isNotEmpty) {
+            widgets.addAll([
+              _buildSectionHeader('Vital Signs'),
+              pw.SizedBox(height: 8),
+              _buildKeyValueTable(Map.fromEntries(nonEmptyVitals.map((e) => MapEntry(e.key, e.value)))),
+              pw.SizedBox(height: 16),
+            ]);
+          }
+        }
+        
+      case 'follow_up':
+        // Progress notes
+        if (data['progress_notes'] != null && data['progress_notes'].toString().isNotEmpty) {
+          widgets.addAll([
+            _buildSectionHeader('Progress Notes'),
+            pw.SizedBox(height: 8),
+            pw.Text(data['progress_notes'].toString(), style: const pw.TextStyle(fontSize: 11)),
+            pw.SizedBox(height: 16),
+          ]);
+        } else if (data['follow_up_notes'] != null && data['follow_up_notes'].toString().isNotEmpty) {
+          widgets.addAll([
+            _buildSectionHeader('Follow-up Notes'),
+            pw.SizedBox(height: 8),
+            pw.Text(data['follow_up_notes'].toString(), style: const pw.TextStyle(fontSize: 11)),
+            pw.SizedBox(height: 16),
+          ]);
+        }
+        // Overall progress
+        if (data['overall_progress'] != null && data['overall_progress'].toString().isNotEmpty) {
+          final progress = data['overall_progress'].toString();
+          final progressColor = progress.toLowerCase() == 'improved' ? PdfColors.green :
+                               progress.toLowerCase() == 'worsened' ? PdfColors.red : PdfColors.orange;
+          widgets.addAll([
+            pw.Row(
+              children: [
+                pw.Text('Overall Progress: ', style: const pw.TextStyle(fontSize: 11)),
+                pw.Container(
+                  padding: const pw.EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                  decoration: pw.BoxDecoration(
+                    color: progressColor.shade(0.1),
+                    borderRadius: pw.BorderRadius.circular(4),
+                  ),
+                  child: pw.Text(progress.toUpperCase(), style: pw.TextStyle(fontSize: 10, fontWeight: pw.FontWeight.bold, color: progressColor)),
+                ),
+              ],
+            ),
+            pw.SizedBox(height: 16),
+          ]);
+        }
+        // Current symptoms
+        if (data['symptoms'] != null && data['symptoms'].toString().isNotEmpty) {
+          widgets.addAll([
+            _buildSectionHeader('Current Symptoms'),
+            pw.SizedBox(height: 8),
+            pw.Text(data['symptoms'].toString(), style: const pw.TextStyle(fontSize: 11)),
+            pw.SizedBox(height: 16),
+          ]);
+        }
+        // Compliance
+        if (data['compliance'] != null && data['compliance'].toString().isNotEmpty) {
+          widgets.addAll([
+            _buildSectionHeader('Medication Compliance'),
+            pw.SizedBox(height: 8),
+            pw.Text(data['compliance'].toString(), style: const pw.TextStyle(fontSize: 11)),
+            pw.SizedBox(height: 16),
+          ]);
+        }
+        // Side effects
+        if (data['side_effects'] != null && data['side_effects'].toString().isNotEmpty) {
+          widgets.addAll([
+            _buildSectionHeader('Side Effects Reported'),
+            pw.SizedBox(height: 8),
+            pw.Text(data['side_effects'].toString(), style: const pw.TextStyle(fontSize: 11)),
+            pw.SizedBox(height: 16),
+          ]);
+        }
+        // Medication review
+        if (data['medication_review'] != null && data['medication_review'].toString().isNotEmpty) {
+          widgets.addAll([
+            _buildSectionHeader('Medication Review'),
+            pw.SizedBox(height: 8),
+            pw.Text(data['medication_review'].toString(), style: const pw.TextStyle(fontSize: 11)),
+            pw.SizedBox(height: 16),
+          ]);
+        }
+        // Investigations
+        if (data['investigations'] != null && data['investigations'].toString().isNotEmpty) {
+          widgets.addAll([
+            _buildSectionHeader('Investigations'),
+            pw.SizedBox(height: 8),
+            pw.Text(data['investigations'].toString(), style: const pw.TextStyle(fontSize: 11)),
+            pw.SizedBox(height: 16),
+          ]);
+        }
+        // Next follow-up
+        if (data['next_follow_up_date'] != null || data['next_follow_up_notes'] != null) {
+          widgets.add(_buildSectionHeader('Next Follow-up'));
+          widgets.add(pw.SizedBox(height: 8));
+          if (data['next_follow_up_date'] != null) {
+            try {
+              final date = DateTime.parse(data['next_follow_up_date'].toString());
+              widgets.add(pw.Text('Date: ${date.day}/${date.month}/${date.year}', style: pw.TextStyle(fontSize: 11, fontWeight: pw.FontWeight.bold)));
+            } catch (_) {
+              widgets.add(pw.Text('Date: ${data['next_follow_up_date']}', style: const pw.TextStyle(fontSize: 11)));
+            }
+          }
+          if (data['next_follow_up_notes'] != null && data['next_follow_up_notes'].toString().isNotEmpty) {
+            widgets.add(pw.Text(data['next_follow_up_notes'].toString(), style: const pw.TextStyle(fontSize: 11)));
+          }
+          widgets.add(pw.SizedBox(height: 16));
+        }
+        // Vitals
+        if (data['vitals'] != null && data['vitals'] is Map) {
+          final vitals = data['vitals'] as Map<String, dynamic>;
+          final nonEmptyVitals = vitals.entries.where((e) => e.value != null && e.value.toString().isNotEmpty).toList();
+          if (nonEmptyVitals.isNotEmpty) {
+            widgets.addAll([
+              _buildSectionHeader('Vital Signs'),
+              pw.SizedBox(height: 8),
+              _buildKeyValueTable(Map.fromEntries(nonEmptyVitals.map((e) => MapEntry(e.key, e.value)))),
+              pw.SizedBox(height: 16),
+            ]);
+          }
+        }
+        
+      case 'general':
+        // General record - display all data dynamically
+        // Record Type/Title
+        if (data['record_type'] != null && data['record_type'].toString().isNotEmpty) {
+          widgets.addAll([
+            _buildSectionHeader('Record Type'),
+            pw.SizedBox(height: 8),
+            pw.Text(data['record_type'].toString(), style: pw.TextStyle(fontSize: 11, fontWeight: pw.FontWeight.bold)),
+            pw.SizedBox(height: 16),
+          ]);
+        }
+        // Description
+        if (data['description'] != null && data['description'].toString().isNotEmpty) {
+          widgets.addAll([
+            _buildSectionHeader('Description'),
+            pw.SizedBox(height: 8),
+            pw.Text(data['description'].toString(), style: const pw.TextStyle(fontSize: 11)),
+            pw.SizedBox(height: 16),
+          ]);
+        }
+        // Chief Complaint
+        if (data['chief_complaint'] != null && data['chief_complaint'].toString().isNotEmpty) {
+          widgets.addAll([
+            _buildSectionHeader('Chief Complaint'),
+            pw.SizedBox(height: 8),
+            pw.Text(data['chief_complaint'].toString(), style: const pw.TextStyle(fontSize: 11)),
+            pw.SizedBox(height: 16),
+          ]);
+        }
+        // Vitals
+        if (data['vitals'] != null && data['vitals'] is Map) {
+          final vitals = data['vitals'] as Map<String, dynamic>;
+          final nonEmptyVitals = vitals.entries.where((e) => e.value != null && e.value.toString().isNotEmpty).toList();
+          if (nonEmptyVitals.isNotEmpty) {
+            widgets.addAll([
+              _buildSectionHeader('Vital Signs'),
+              pw.SizedBox(height: 8),
+              _buildKeyValueTable(Map.fromEntries(nonEmptyVitals.map((e) => MapEntry(e.key, e.value)))),
+              pw.SizedBox(height: 16),
+            ]);
+          }
+        }
+        // Notes/Comments
+        if (data['notes'] != null && data['notes'].toString().isNotEmpty) {
+          widgets.addAll([
+            _buildSectionHeader('Notes'),
+            pw.SizedBox(height: 8),
+            pw.Text(data['notes'].toString(), style: const pw.TextStyle(fontSize: 11)),
+            pw.SizedBox(height: 16),
+          ]);
+        }
+        // Clinical Findings
+        if (data['findings'] != null && data['findings'].toString().isNotEmpty) {
+          widgets.addAll([
+            _buildSectionHeader('Clinical Findings'),
+            pw.SizedBox(height: 8),
+            pw.Text(data['findings'].toString(), style: const pw.TextStyle(fontSize: 11)),
+            pw.SizedBox(height: 16),
+          ]);
+        }
+        // Diagnosis
+        if (data['diagnosis'] != null && data['diagnosis'].toString().isNotEmpty) {
+          widgets.addAll([
+            _buildSectionHeader('Diagnosis'),
+            pw.SizedBox(height: 8),
+            pw.Text(data['diagnosis'].toString(), style: pw.TextStyle(fontSize: 11, fontWeight: pw.FontWeight.bold)),
+            pw.SizedBox(height: 16),
+          ]);
+        }
+        // Treatment
+        if (data['treatment'] != null && data['treatment'].toString().isNotEmpty) {
+          widgets.addAll([
+            _buildSectionHeader('Treatment'),
+            pw.SizedBox(height: 8),
+            pw.Text(data['treatment'].toString(), style: const pw.TextStyle(fontSize: 11)),
+            pw.SizedBox(height: 16),
+          ]);
+        }
+        // Medications
+        if (data['medications'] != null && data['medications'].toString().isNotEmpty) {
+          widgets.addAll([
+            _buildSectionHeader('Medications'),
+            pw.SizedBox(height: 8),
+            pw.Text(data['medications'].toString(), style: const pw.TextStyle(fontSize: 11)),
+            pw.SizedBox(height: 16),
+          ]);
+        }
+        // Follow-up
+        if (data['follow_up'] != null && data['follow_up'].toString().isNotEmpty) {
+          widgets.addAll([
+            _buildSectionHeader('Follow-up Plan'),
+            pw.SizedBox(height: 8),
+            pw.Text(data['follow_up'].toString(), style: const pw.TextStyle(fontSize: 11)),
+            pw.SizedBox(height: 16),
+          ]);
+        }
+        // Display any other data fields dynamically
+        final handledKeys = {'record_type', 'description', 'chief_complaint', 'vitals', 'notes', 'findings', 'diagnosis', 'treatment', 'medications', 'follow_up'};
+        final otherData = data.entries.where((e) => !handledKeys.contains(e.key) && e.value != null && e.value.toString().isNotEmpty).toList();
+        if (otherData.isNotEmpty) {
+          widgets.addAll([
+            _buildSectionHeader('Additional Information'),
+            pw.SizedBox(height: 8),
+            _buildKeyValueTable(Map.fromEntries(otherData.map((e) => MapEntry(e.key, e.value)))),
             pw.SizedBox(height: 16),
           ]);
         }
@@ -508,6 +1409,14 @@ class PdfService {
       medications = jsonDecode(prescription.itemsJson) as List<dynamic>;
     } catch (_) {}
 
+    // Parse vitals from vitalsJson
+    Map<String, dynamic> vitals = {};
+    try {
+      if (prescription.vitalsJson.isNotEmpty && prescription.vitalsJson != '{}') {
+        vitals = jsonDecode(prescription.vitalsJson) as Map<String, dynamic>;
+      }
+    } catch (_) {}
+
     pdf.addPage(
       pw.Page(
         pageFormat: PdfPageFormat.a4,
@@ -570,7 +1479,48 @@ class PdfService {
                   ],
                 ),
               ),
-              pw.SizedBox(height: 20),
+              pw.SizedBox(height: 12),
+              
+              // Vitals Section (if available)
+              if (vitals.isNotEmpty) ...[
+                pw.Container(
+                  padding: const pw.EdgeInsets.all(10),
+                  decoration: pw.BoxDecoration(
+                    border: pw.Border.all(color: PdfColors.blue200),
+                    borderRadius: pw.BorderRadius.circular(6),
+                    color: PdfColors.blue50,
+                  ),
+                  child: pw.Column(
+                    crossAxisAlignment: pw.CrossAxisAlignment.start,
+                    children: [
+                      pw.Text('Vitals:', style: pw.TextStyle(fontWeight: pw.FontWeight.bold, fontSize: 11, color: PdfColors.blue800)),
+                      pw.SizedBox(height: 6),
+                      pw.Wrap(
+                        spacing: 16,
+                        runSpacing: 4,
+                        children: [
+                          // Support both snake_case and camelCase field names
+                          if ((vitals['bp'] ?? vitals['blood_pressure']) != null && (vitals['bp'] ?? vitals['blood_pressure']).toString().isNotEmpty && (vitals['bp'] ?? vitals['blood_pressure']).toString() != '-/-')
+                            pw.Text('BP: ${vitals['bp'] ?? vitals['blood_pressure']}', style: const pw.TextStyle(fontSize: 10)),
+                          if ((vitals['pulse'] ?? vitals['heart_rate'] ?? vitals['heartRate']) != null && (vitals['pulse'] ?? vitals['heart_rate'] ?? vitals['heartRate']).toString().isNotEmpty && (vitals['pulse'] ?? vitals['heart_rate'] ?? vitals['heartRate']).toString() != '-')
+                            pw.Text('Pulse: ${vitals['pulse'] ?? vitals['heart_rate'] ?? vitals['heartRate']} bpm', style: const pw.TextStyle(fontSize: 10)),
+                          if ((vitals['temperature'] ?? vitals['temp']) != null && (vitals['temperature'] ?? vitals['temp']).toString().isNotEmpty && (vitals['temperature'] ?? vitals['temp']).toString() != '-')
+                            pw.Text('Temp: ${vitals['temperature'] ?? vitals['temp']}°F', style: const pw.TextStyle(fontSize: 10)),
+                          if ((vitals['respiratory_rate'] ?? vitals['respiratoryRate'] ?? vitals['rr']) != null && (vitals['respiratory_rate'] ?? vitals['respiratoryRate'] ?? vitals['rr']).toString().isNotEmpty && (vitals['respiratory_rate'] ?? vitals['respiratoryRate'] ?? vitals['rr']).toString() != '-')
+                            pw.Text('RR: ${vitals['respiratory_rate'] ?? vitals['respiratoryRate'] ?? vitals['rr']}/min', style: const pw.TextStyle(fontSize: 10)),
+                          if ((vitals['spo2'] ?? vitals['oxygenSaturation'] ?? vitals['oxygen_saturation']) != null && (vitals['spo2'] ?? vitals['oxygenSaturation'] ?? vitals['oxygen_saturation']).toString().isNotEmpty && (vitals['spo2'] ?? vitals['oxygenSaturation'] ?? vitals['oxygen_saturation']).toString() != '-')
+                            pw.Text('SpO2: ${vitals['spo2'] ?? vitals['oxygenSaturation'] ?? vitals['oxygen_saturation']}%', style: const pw.TextStyle(fontSize: 10)),
+                          if ((vitals['weight'] ?? vitals['wt']) != null && (vitals['weight'] ?? vitals['wt']).toString().isNotEmpty && (vitals['weight'] ?? vitals['wt']).toString() != '-')
+                            pw.Text('Wt: ${vitals['weight'] ?? vitals['wt']} kg', style: const pw.TextStyle(fontSize: 10)),
+                          if ((vitals['height'] ?? vitals['ht']) != null && (vitals['height'] ?? vitals['ht']).toString().isNotEmpty && (vitals['height'] ?? vitals['ht']).toString() != '-')
+                            pw.Text('Ht: ${vitals['height'] ?? vitals['ht']} cm', style: const pw.TextStyle(fontSize: 10)),
+                        ],
+                      ),
+                    ],
+                  ),
+                ),
+                pw.SizedBox(height: 12),
+              ],
               
               // Rx Symbol
               pw.Row(
@@ -1058,15 +2008,10 @@ class PdfService {
     final pdf = theme != null ? pw.Document(theme: theme) : pw.Document();
     final now = DateTime.now();
     
-    // Calculate patient age
+    // Get patient age
     String age = '';
-    if (patient.dateOfBirth != null) {
-      final dob = patient.dateOfBirth!;
-      int years = now.year - dob.year;
-      if (now.month < dob.month || (now.month == dob.month && now.day < dob.day)) {
-        years--;
-      }
-      age = '$years years';
+    if (patient.age != null) {
+      age = '${patient.age} years';
     }
 
     pdf.addPage(

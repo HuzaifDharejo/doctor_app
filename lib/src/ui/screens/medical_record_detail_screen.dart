@@ -63,6 +63,10 @@ class MedicalRecordDetailScreen extends ConsumerWidget {
                 _RecordContent(record: record, data: _data, isDark: isDark),
                 ..._buildCommonSections(isDark),
                 const SizedBox(height: 32),
+                // Show all stored data section - displays any remaining fields
+                if (_data.isNotEmpty)
+                  _AllDataSection(data: _data, isDark: isDark),
+                const SizedBox(height: 32),
                 _ActionButtons(
                   record: record,
                   patient: patient,
@@ -361,7 +365,7 @@ class _PatientCard extends StatelessWidget {
 
   String get _initials => '${patient.firstName[0]}${patient.lastName[0]}';
   String get _fullName => '${patient.firstName} ${patient.lastName}';
-  int get _age => patient.dateOfBirth?.ageInYears ?? 0;
+  int get _age => patient.age ?? 0;
 
   @override
   Widget build(BuildContext context) {
@@ -519,6 +523,7 @@ class _PulmonaryContent extends StatelessWidget {
   Widget build(BuildContext context) {
     return Column(
       children: [
+        // Chief Complaint
         if (data.hasValue('chief_complaint'))
           InfoCard(
             title: 'Chief Complaint',
@@ -527,47 +532,54 @@ class _PulmonaryContent extends StatelessWidget {
             color: MedicalRecordConstants.pulmonaryColor,
             isDark: isDark,
           ),
-        if (data.hasValue('duration') || data.hasValue('symptom_character')) ...[
+        // Duration
+        if (data.hasValue('duration')) ...[
           const SizedBox(height: MedicalRecordConstants.paddingMedium),
-          Row(
-            children: [
-              if (data.hasValue('duration'))
-                Expanded(
-                  child: StatCard(
-                    label: 'Duration',
-                    value: data.getString('duration'),
-                    icon: Icons.schedule,
-                    color: AppColors.warning,
-                    isDark: isDark,
-                  ),
-                ),
-              if (data.hasValue('duration') && data.hasValue('symptom_character'))
-                const SizedBox(width: MedicalRecordConstants.paddingMedium),
-              if (data.hasValue('symptom_character'))
-                Expanded(
-                  child: StatCard(
-                    label: 'Character',
-                    value: data.getString('symptom_character'),
-                    icon: Icons.description,
-                    color: AppColors.info,
-                    isDark: isDark,
-                  ),
-                ),
-            ],
+          StatCard(
+            label: 'Duration',
+            value: data.getString('duration'),
+            icon: Icons.schedule,
+            color: AppColors.warning,
+            isDark: isDark,
           ),
         ],
+        // Symptom Character (new form)
+        if (data.hasValue('symptom_character')) ...[
+          const SizedBox(height: MedicalRecordConstants.paddingMedium),
+          InfoCard(
+            title: 'Symptom Character',
+            content: data.getString('symptom_character'),
+            icon: Icons.description_outlined,
+            color: AppColors.info,
+            isDark: isDark,
+          ),
+        ],
+        // Vitals Section
         if (data.hasValue('vitals'))
           _VitalsSection(vitals: data.getMap('vitals'), isDark: isDark, isPulmonary: true),
+        // Presenting Symptoms (legacy format - Map<String, bool>)
+        if (data.hasValue('symptoms')) ...[
+          const SizedBox(height: MedicalRecordConstants.paddingLarge),
+          ChipsSection(
+            title: 'Presenting Symptoms',
+            items: data.getStringList('symptoms'),
+            color: AppColors.primary,
+            icon: Icons.sick_outlined,
+            isDark: isDark,
+          ),
+        ],
+        // Systemic Symptoms (new form - List<String>)
         if (data.hasValue('systemic_symptoms')) ...[
           const SizedBox(height: MedicalRecordConstants.paddingLarge),
           ChipsSection(
             title: 'Systemic Symptoms',
             items: data.getStringList('systemic_symptoms'),
             color: AppColors.warning,
-            icon: Icons.warning_amber_outlined,
+            icon: Icons.sick_outlined,
             isDark: isDark,
           ),
         ],
+        // Red Flags (both formats - Map<String, bool> or List<String>)
         if (data.hasValue('red_flags')) ...[
           const SizedBox(height: MedicalRecordConstants.paddingLarge),
           ChipsSection(
@@ -578,15 +590,350 @@ class _PulmonaryContent extends StatelessWidget {
             isDark: isDark,
           ),
         ],
+        // ====== HISTORY SECTION (new form) ======
+        if (data.hasValue('past_pulmonary_history') || 
+            data.hasValue('exposure_history') || 
+            data.hasValue('allergy_atopy_history')) ...[
+          const SizedBox(height: MedicalRecordConstants.paddingLarge),
+          _SectionHeader(title: 'Medical History', icon: Icons.history, isDark: isDark),
+          const SizedBox(height: MedicalRecordConstants.paddingMedium),
+        ],
+        if (data.hasValue('past_pulmonary_history'))
+          InfoCard(
+            title: 'Past Pulmonary History',
+            content: data.getString('past_pulmonary_history'),
+            icon: Icons.history,
+            color: AppColors.info,
+            isDark: isDark,
+          ),
+        if (data.hasValue('exposure_history')) ...[
+          const SizedBox(height: MedicalRecordConstants.paddingMedium),
+          InfoCard(
+            title: 'Exposure History',
+            content: data.getString('exposure_history'),
+            icon: Icons.warning_amber_outlined,
+            color: AppColors.warning,
+            isDark: isDark,
+          ),
+        ],
+        if (data.hasValue('allergy_atopy_history')) ...[
+          const SizedBox(height: MedicalRecordConstants.paddingMedium),
+          InfoCard(
+            title: 'Allergy/Atopy History',
+            content: data.getString('allergy_atopy_history'),
+            icon: Icons.local_florist_outlined,
+            color: AppColors.error,
+            isDark: isDark,
+          ),
+        ],
+        // Current Medications (new form - List<String>)
+        if (data.hasValue('current_medications')) ...[
+          const SizedBox(height: MedicalRecordConstants.paddingLarge),
+          ChipsSection(
+            title: 'Current Medications',
+            items: data.getStringList('current_medications'),
+            color: AppColors.info,
+            icon: Icons.medication_outlined,
+            isDark: isDark,
+          ),
+        ],
+        // Comorbidities (new form - List<String>)
+        if (data.hasValue('comorbidities')) ...[
+          const SizedBox(height: MedicalRecordConstants.paddingMedium),
+          ChipsSection(
+            title: 'Comorbidities',
+            items: data.getStringList('comorbidities'),
+            color: AppColors.warning,
+            icon: Icons.medical_services_outlined,
+            isDark: isDark,
+          ),
+        ],
+        // ====== CHEST EXAMINATION SECTION ======
+        // Chest Findings (legacy format - nested object)
+        if (data.hasValue('chest_findings'))
+          _ChestFindingsSection(findings: data.getMap('chest_findings'), isDark: isDark),
+        // Chest Auscultation (new form - nested object with zones)
         if (data.hasValue('chest_auscultation'))
           _ChestAuscultationSection(auscultation: data.getMap('chest_auscultation'), isDark: isDark),
-        if (data.hasValue('investigations_required')) ...[
+        // Breath Sounds (legacy format - Map<String, bool>)
+        if (data.hasValue('breath_sounds')) ...[
+          const SizedBox(height: MedicalRecordConstants.paddingLarge),
+          ChipsSection(
+            title: 'Breath Sounds',
+            items: data.getStringList('breath_sounds'),
+            color: AppColors.info,
+            icon: Icons.hearing,
+            isDark: isDark,
+          ),
+        ],
+        // ====== DIAGNOSIS & INVESTIGATIONS ======
+        // Diagnosis
+        if (data.hasValue('diagnosis')) ...[
+          const SizedBox(height: MedicalRecordConstants.paddingLarge),
+          InfoCard(
+            title: 'Diagnosis',
+            content: data.getString('diagnosis'),
+            icon: Icons.medical_information,
+            color: AppColors.success,
+            isDark: isDark,
+          ),
+        ],
+        // Differential Diagnosis
+        if (data.hasValue('differential')) ...[
+          const SizedBox(height: MedicalRecordConstants.paddingMedium),
+          InfoCard(
+            title: 'Differential Diagnosis',
+            content: data.getString('differential'),
+            icon: Icons.compare_arrows,
+            color: AppColors.warning,
+            isDark: isDark,
+          ),
+        ],
+        // Investigations (legacy format - Map<String, bool>)
+        if (data.hasValue('investigations')) ...[
           const SizedBox(height: MedicalRecordConstants.paddingLarge),
           ChipsSection(
             title: 'Investigations Ordered',
+            items: data.getStringList('investigations'),
+            color: AppColors.primary,
+            icon: Icons.biotech,
+            isDark: isDark,
+          ),
+        ],
+        // Investigations Required (new form - List<String>)
+        if (data.hasValue('investigations_required')) ...[
+          const SizedBox(height: MedicalRecordConstants.paddingLarge),
+          ChipsSection(
+            title: 'Investigations Required',
             items: data.getStringList('investigations_required'),
             color: AppColors.primary,
             icon: Icons.biotech,
+            isDark: isDark,
+          ),
+        ],
+        // ====== TREATMENT & FOLLOW-UP ======
+        // Treatment Plan (legacy)
+        if (data.hasValue('treatment_plan')) ...[
+          const SizedBox(height: MedicalRecordConstants.paddingLarge),
+          InfoCard(
+            title: 'Treatment Plan',
+            content: data.getString('treatment_plan'),
+            icon: Icons.healing,
+            color: AppColors.success,
+            isDark: isDark,
+          ),
+        ],
+        // Medications (legacy)
+        if (data.hasValue('medications')) ...[
+          const SizedBox(height: MedicalRecordConstants.paddingMedium),
+          InfoCard(
+            title: 'Medications',
+            content: data.getString('medications'),
+            icon: Icons.medication,
+            color: AppColors.info,
+            isDark: isDark,
+          ),
+        ],
+        // Follow-up (legacy)
+        if (data.hasValue('follow_up')) ...[
+          const SizedBox(height: MedicalRecordConstants.paddingLarge),
+          InfoCard(
+            title: 'Follow-up Plan',
+            content: data.getString('follow_up'),
+            icon: Icons.event_repeat,
+            color: AppColors.success,
+            isDark: isDark,
+          ),
+        ],
+        // Follow-up Plan (new form)
+        if (data.hasValue('follow_up_plan')) ...[
+          const SizedBox(height: MedicalRecordConstants.paddingLarge),
+          InfoCard(
+            title: 'Follow-up Plan',
+            content: data.getString('follow_up_plan'),
+            icon: Icons.event_repeat,
+            color: AppColors.success,
+            isDark: isDark,
+          ),
+        ],
+      ],
+    );
+  }
+}
+
+/// Section header for organizing content
+class _SectionHeader extends StatelessWidget {
+  const _SectionHeader({
+    required this.title,
+    required this.icon,
+    required this.isDark,
+  });
+  
+  final String title;
+  final IconData icon;
+  final bool isDark;
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      children: [
+        Icon(
+          icon,
+          size: 20,
+          color: isDark ? AppColors.darkTextSecondary : AppColors.textSecondary,
+        ),
+        const SizedBox(width: 8),
+        Text(
+          title,
+          style: TextStyle(
+            fontSize: 16,
+            fontWeight: FontWeight.w600,
+            color: isDark ? AppColors.darkTextPrimary : AppColors.textPrimary,
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+/// Displays chest auscultation findings from new pulmonary form
+class _ChestAuscultationSection extends StatelessWidget {
+  const _ChestAuscultationSection({
+    required this.auscultation,
+    required this.isDark,
+  });
+  
+  final Map<String, dynamic> auscultation;
+  final bool isDark;
+
+  @override
+  Widget build(BuildContext context) {
+    if (auscultation.isEmpty) return const SizedBox.shrink();
+    
+    final breathSounds = auscultation['breath_sounds'] as String?;
+    final addedSounds = auscultation['added_sounds'];
+    final additionalFindings = auscultation['additional_findings'] as String?;
+    
+    // Zone findings
+    final zones = <String, String?>{
+      'Right Upper Zone': auscultation['right_upper_zone'] as String?,
+      'Right Middle Zone': auscultation['right_middle_zone'] as String?,
+      'Right Lower Zone': auscultation['right_lower_zone'] as String?,
+      'Left Upper Zone': auscultation['left_upper_zone'] as String?,
+      'Left Middle Zone': auscultation['left_middle_zone'] as String?,
+      'Left Lower Zone': auscultation['left_lower_zone'] as String?,
+    };
+    
+    final hasZoneData = zones.values.any((v) => v != null && v.isNotEmpty);
+    
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const SizedBox(height: MedicalRecordConstants.paddingLarge),
+        _SectionHeader(title: 'Chest Auscultation', icon: Icons.hearing, isDark: isDark),
+        const SizedBox(height: MedicalRecordConstants.paddingMedium),
+        
+        // Breath Sounds
+        if (breathSounds != null && breathSounds.isNotEmpty)
+          InfoCard(
+            title: 'Breath Sounds',
+            content: breathSounds,
+            icon: Icons.hearing,
+            color: AppColors.info,
+            isDark: isDark,
+          ),
+        
+        // Added Sounds (chips)
+        if (addedSounds != null) ...[
+          const SizedBox(height: MedicalRecordConstants.paddingMedium),
+          ChipsSection(
+            title: 'Added Sounds',
+            items: addedSounds is List 
+                ? List<String>.from(addedSounds)
+                : [addedSounds.toString()],
+            color: AppColors.warning,
+            icon: Icons.volume_up,
+            isDark: isDark,
+          ),
+        ],
+        
+        // Zone-by-zone findings
+        if (hasZoneData) ...[
+          const SizedBox(height: MedicalRecordConstants.paddingMedium),
+          Container(
+            padding: const EdgeInsets.all(MedicalRecordConstants.paddingMedium),
+            decoration: BoxDecoration(
+              color: isDark ? AppColors.darkSurface : Colors.white,
+              borderRadius: BorderRadius.circular(MedicalRecordConstants.radiusMedium),
+              border: Border.all(
+                color: isDark ? AppColors.darkDivider : AppColors.divider,
+              ),
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    Icon(
+                      Icons.grid_view_rounded,
+                      size: 18,
+                      color: AppColors.primary,
+                    ),
+                    const SizedBox(width: 8),
+                    Text(
+                      'Zone Findings',
+                      style: TextStyle(
+                        fontSize: 14,
+                        fontWeight: FontWeight.w600,
+                        color: isDark ? AppColors.darkTextPrimary : AppColors.textPrimary,
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 12),
+                ...zones.entries
+                    .where((e) => e.value != null && e.value!.isNotEmpty)
+                    .map((e) => Padding(
+                          padding: const EdgeInsets.only(bottom: 8),
+                          child: Row(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              SizedBox(
+                                width: 130,
+                                child: Text(
+                                  '${e.key}:',
+                                  style: TextStyle(
+                                    fontSize: 13,
+                                    fontWeight: FontWeight.w500,
+                                    color: isDark ? AppColors.darkTextSecondary : AppColors.textSecondary,
+                                  ),
+                                ),
+                              ),
+                              Expanded(
+                                child: Text(
+                                  e.value!,
+                                  style: TextStyle(
+                                    fontSize: 13,
+                                    color: isDark ? AppColors.darkTextPrimary : AppColors.textPrimary,
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                        )),
+              ],
+            ),
+          ),
+        ],
+        
+        // Additional Findings
+        if (additionalFindings != null && additionalFindings.isNotEmpty) ...[
+          const SizedBox(height: MedicalRecordConstants.paddingMedium),
+          InfoCard(
+            title: 'Additional Findings',
+            content: additionalFindings,
+            icon: Icons.note_add_outlined,
+            color: AppColors.info,
             isDark: isDark,
           ),
         ],
@@ -603,16 +950,85 @@ class _PsychiatricContent extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    // Check if MSE fields are stored directly or nested
+    final hasFlatMse = data.hasValue('mood') || data.hasValue('affect') || 
+                       data.hasValue('speech') || data.hasValue('thought');
+    
     return Column(
       children: [
-        if (data.hasValue('symptoms'))
+        // Patient demographics if available
+        if (data.hasValue('name') || data.hasValue('age') || data.hasValue('gender')) ...[
+          Container(
+            padding: const EdgeInsets.all(MedicalRecordConstants.paddingMedium),
+            decoration: BoxDecoration(
+              color: isDark ? AppColors.darkSurface : Colors.white,
+              borderRadius: BorderRadius.circular(MedicalRecordConstants.radiusMedium),
+              border: Border.all(color: isDark ? AppColors.darkDivider : AppColors.divider),
+            ),
+            child: Row(
+              children: [
+                if (data.hasValue('name'))
+                  Expanded(
+                    child: _buildDemoItem('Name', data.getString('name')),
+                  ),
+                if (data.hasValue('age'))
+                  Expanded(
+                    child: _buildDemoItem('Age', data.getString('age')),
+                  ),
+                if (data.hasValue('gender'))
+                  Expanded(
+                    child: _buildDemoItem('Gender', data.getString('gender')),
+                  ),
+                if (data.hasValue('marital_status'))
+                  Expanded(
+                    child: _buildDemoItem('Status', data.getString('marital_status')),
+                  ),
+              ],
+            ),
+          ),
+          const SizedBox(height: MedicalRecordConstants.paddingLarge),
+        ],
+        // Chief complaint
+        if (data.hasValue('chief_complaint'))
           InfoCard(
-            title: 'Presenting Symptoms',
-            content: data.getString('symptoms'),
-            icon: Icons.sick_outlined,
-            color: AppColors.primary,
+            title: 'Chief Complaint',
+            content: data.getString('chief_complaint'),
+            icon: Icons.assignment_outlined,
+            color: AppColors.warning,
             isDark: isDark,
           ),
+        // Duration
+        if (data.hasValue('duration')) ...[
+          const SizedBox(height: MedicalRecordConstants.paddingMedium),
+          StatCard(
+            label: 'Duration',
+            value: data.getString('duration'),
+            icon: Icons.schedule,
+            color: AppColors.info,
+            isDark: isDark,
+          ),
+        ],
+        // Presenting symptoms
+        if (data.hasValue('symptoms')) ...[
+          const SizedBox(height: MedicalRecordConstants.paddingLarge),
+          if (data['symptoms'] is List)
+            ChipsSection(
+              title: 'Presenting Symptoms',
+              items: data.getStringList('symptoms'),
+              color: AppColors.primary,
+              icon: Icons.sick_outlined,
+              isDark: isDark,
+            )
+          else
+            InfoCard(
+              title: 'Presenting Symptoms',
+              content: data.getString('symptoms'),
+              icon: Icons.sick_outlined,
+              color: AppColors.primary,
+              isDark: isDark,
+            ),
+        ],
+        // History of present illness
         if (data.hasValue('hopi')) ...[
           const SizedBox(height: MedicalRecordConstants.paddingLarge),
           InfoCard(
@@ -623,16 +1039,336 @@ class _PsychiatricContent extends StatelessWidget {
             isDark: isDark,
           ),
         ],
+        // Past History
+        if (data.hasValue('past_history')) ...[
+          const SizedBox(height: MedicalRecordConstants.paddingLarge),
+          InfoCard(
+            title: 'Past Psychiatric History',
+            content: data.getString('past_history'),
+            icon: Icons.history_edu,
+            color: AppColors.warning,
+            isDark: isDark,
+          ),
+        ],
+        // Family History
+        if (data.hasValue('family_history')) ...[
+          const SizedBox(height: MedicalRecordConstants.paddingMedium),
+          InfoCard(
+            title: 'Family History',
+            content: data.getString('family_history'),
+            icon: Icons.family_restroom,
+            color: AppColors.info,
+            isDark: isDark,
+          ),
+        ],
+        // Socioeconomic History
+        if (data.hasValue('socioeconomic')) ...[
+          const SizedBox(height: MedicalRecordConstants.paddingMedium),
+          InfoCard(
+            title: 'Socioeconomic History',
+            content: data.getString('socioeconomic'),
+            icon: Icons.work_outline,
+            color: AppColors.primary,
+            isDark: isDark,
+          ),
+        ],
+        // Mental State Examination - Nested format
         if (data.hasValue('mse')) ...[
           const SizedBox(height: MedicalRecordConstants.paddingLarge),
           _MseSection(mse: data.getMap('mse'), isDark: isDark),
         ],
+        // Mental State Examination - Flat format (direct fields)
+        if (hasFlatMse && !data.hasValue('mse')) ...[
+          const SizedBox(height: MedicalRecordConstants.paddingLarge),
+          _buildFlatMseSection(),
+        ],
+        // Risk assessment - Nested format
         if (data.hasValue('risk_assessment')) ...[
           const SizedBox(height: MedicalRecordConstants.paddingLarge),
           _RiskAssessmentSection(risk: data.getMap('risk_assessment'), isDark: isDark),
         ],
+        // Risk assessment - Flat format
+        if ((data.hasValue('suicide_risk') || data.hasValue('homicide_risk')) && !data.hasValue('risk_assessment')) ...[
+          const SizedBox(height: MedicalRecordConstants.paddingLarge),
+          _buildFlatRiskSection(),
+        ],
+        // Safety plan
+        if (data.hasValue('safety_plan')) ...[
+          const SizedBox(height: MedicalRecordConstants.paddingLarge),
+          InfoCard(
+            title: 'Safety Plan',
+            content: data.getString('safety_plan'),
+            icon: Icons.shield_outlined,
+            color: AppColors.success,
+            isDark: isDark,
+          ),
+        ],
+        // Diagnosis
+        if (data.hasValue('diagnosis')) ...[
+          const SizedBox(height: MedicalRecordConstants.paddingLarge),
+          InfoCard(
+            title: 'Diagnosis',
+            content: data.getString('diagnosis'),
+            icon: Icons.medical_information_outlined,
+            color: AppColors.error,
+            isDark: isDark,
+          ),
+        ],
+        // Treatment plan
+        if (data.hasValue('treatment_plan')) ...[
+          const SizedBox(height: MedicalRecordConstants.paddingLarge),
+          InfoCard(
+            title: 'Treatment Plan',
+            content: data.getString('treatment_plan'),
+            icon: Icons.healing_outlined,
+            color: AppColors.success,
+            isDark: isDark,
+          ),
+        ],
+        // Medications
+        if (data.hasValue('medications')) ...[
+          const SizedBox(height: MedicalRecordConstants.paddingLarge),
+          InfoCard(
+            title: 'Medications',
+            content: data.getString('medications'),
+            icon: Icons.medication_outlined,
+            color: AppColors.primary,
+            isDark: isDark,
+          ),
+        ],
+        // Follow-up
+        if (data.hasValue('follow_up')) ...[
+          const SizedBox(height: MedicalRecordConstants.paddingLarge),
+          InfoCard(
+            title: 'Follow-up Plan',
+            content: data.getString('follow_up'),
+            icon: Icons.event_repeat,
+            color: AppColors.info,
+            isDark: isDark,
+          ),
+        ],
+        // Vitals
         if (data.hasValue('vitals'))
           _VitalsSection(vitals: data.getMap('vitals'), isDark: isDark),
+      ],
+    );
+  }
+  
+  Widget _buildDemoItem(String label, String value) {
+    return Column(
+      children: [
+        Text(
+          label,
+          style: TextStyle(
+            fontSize: MedicalRecordConstants.fontSmall,
+            color: isDark ? AppColors.darkTextSecondary : AppColors.textSecondary,
+          ),
+        ),
+        const SizedBox(height: 4),
+        Text(
+          value,
+          style: TextStyle(
+            fontSize: MedicalRecordConstants.fontBody,
+            fontWeight: FontWeight.w600,
+            color: isDark ? AppColors.darkTextPrimary : AppColors.textPrimary,
+          ),
+        ),
+      ],
+    );
+  }
+  
+  Widget _buildFlatMseSection() {
+    final mseFields = [
+      ('Mood', data.getString('mood'), Icons.mood),
+      ('Affect', data.getString('affect'), Icons.sentiment_satisfied_alt),
+      ('Speech', data.getString('speech'), Icons.record_voice_over),
+      ('Thought', data.getString('thought'), Icons.psychology),
+      ('Perception', data.getString('perception'), Icons.visibility),
+      ('Cognition', data.getString('cognition'), Icons.memory),
+      ('Insight', data.getString('insight'), Icons.lightbulb_outline),
+    ].where((f) => f.$2.isNotEmpty).toList();
+    
+    if (mseFields.isEmpty) return const SizedBox.shrink();
+    
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          children: [
+            Icon(
+              Icons.psychology,
+              size: MedicalRecordConstants.iconMedium,
+              color: AppColors.primary,
+            ),
+            const SizedBox(width: MedicalRecordConstants.paddingSmall),
+            Text(
+              'Mental State Examination',
+              style: TextStyle(
+                fontSize: MedicalRecordConstants.fontLarge,
+                fontWeight: FontWeight.w600,
+                color: isDark ? AppColors.darkTextPrimary : AppColors.textPrimary,
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: MedicalRecordConstants.paddingMedium),
+        ...mseFields.map((field) => Padding(
+          padding: const EdgeInsets.only(bottom: MedicalRecordConstants.paddingSmall),
+          child: Container(
+            padding: const EdgeInsets.all(MedicalRecordConstants.paddingMedium),
+            decoration: BoxDecoration(
+              color: isDark ? AppColors.darkSurface : Colors.white,
+              borderRadius: BorderRadius.circular(MedicalRecordConstants.radiusMedium),
+              border: Border.all(color: isDark ? AppColors.darkDivider : AppColors.divider),
+            ),
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Icon(field.$3, size: MedicalRecordConstants.iconSmall, color: AppColors.primary),
+                const SizedBox(width: MedicalRecordConstants.paddingSmall),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        field.$1,
+                        style: TextStyle(
+                          fontSize: MedicalRecordConstants.fontSmall,
+                          fontWeight: FontWeight.w600,
+                          color: AppColors.primary,
+                        ),
+                      ),
+                      const SizedBox(height: 4),
+                      Text(
+                        field.$2,
+                        style: TextStyle(
+                          fontSize: MedicalRecordConstants.fontBody,
+                          color: isDark ? AppColors.darkTextPrimary : AppColors.textPrimary,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          ),
+        )),
+      ],
+    );
+  }
+  
+  Widget _buildFlatRiskSection() {
+    final suicideRisk = data.getString('suicide_risk');
+    final homicideRisk = data.getString('homicide_risk');
+    
+    Color getRiskColor(String risk) {
+      switch (risk.toLowerCase()) {
+        case 'high':
+          return AppColors.error;
+        case 'moderate':
+        case 'medium':
+          return AppColors.warning;
+        case 'low':
+          return AppColors.success;
+        default:
+          return AppColors.info;
+      }
+    }
+    
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          children: [
+            Icon(
+              Icons.warning_amber,
+              size: MedicalRecordConstants.iconMedium,
+              color: AppColors.error,
+            ),
+            const SizedBox(width: MedicalRecordConstants.paddingSmall),
+            Text(
+              'Risk Assessment',
+              style: TextStyle(
+                fontSize: MedicalRecordConstants.fontLarge,
+                fontWeight: FontWeight.w600,
+                color: isDark ? AppColors.darkTextPrimary : AppColors.textPrimary,
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: MedicalRecordConstants.paddingMedium),
+        Row(
+          children: [
+            if (suicideRisk.isNotEmpty)
+              Expanded(
+                child: Container(
+                  padding: const EdgeInsets.all(MedicalRecordConstants.paddingMedium),
+                  decoration: BoxDecoration(
+                    color: getRiskColor(suicideRisk).withValues(alpha: 0.1),
+                    borderRadius: BorderRadius.circular(MedicalRecordConstants.radiusMedium),
+                    border: Border.all(color: getRiskColor(suicideRisk).withValues(alpha: 0.3)),
+                  ),
+                  child: Column(
+                    children: [
+                      Icon(Icons.person_off, color: getRiskColor(suicideRisk)),
+                      const SizedBox(height: 8),
+                      Text(
+                        'Suicide Risk',
+                        style: TextStyle(
+                          fontSize: MedicalRecordConstants.fontSmall,
+                          color: isDark ? AppColors.darkTextSecondary : AppColors.textSecondary,
+                        ),
+                      ),
+                      const SizedBox(height: 4),
+                      Text(
+                        suicideRisk.toUpperCase(),
+                        style: TextStyle(
+                          fontSize: MedicalRecordConstants.fontLarge,
+                          fontWeight: FontWeight.bold,
+                          color: getRiskColor(suicideRisk),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            if (suicideRisk.isNotEmpty && homicideRisk.isNotEmpty)
+              const SizedBox(width: MedicalRecordConstants.paddingMedium),
+            if (homicideRisk.isNotEmpty)
+              Expanded(
+                child: Container(
+                  padding: const EdgeInsets.all(MedicalRecordConstants.paddingMedium),
+                  decoration: BoxDecoration(
+                    color: getRiskColor(homicideRisk).withValues(alpha: 0.1),
+                    borderRadius: BorderRadius.circular(MedicalRecordConstants.radiusMedium),
+                    border: Border.all(color: getRiskColor(homicideRisk).withValues(alpha: 0.3)),
+                  ),
+                  child: Column(
+                    children: [
+                      Icon(Icons.dangerous, color: getRiskColor(homicideRisk)),
+                      const SizedBox(height: 8),
+                      Text(
+                        'Homicide Risk',
+                        style: TextStyle(
+                          fontSize: MedicalRecordConstants.fontSmall,
+                          color: isDark ? AppColors.darkTextSecondary : AppColors.textSecondary,
+                        ),
+                      ),
+                      const SizedBox(height: 4),
+                      Text(
+                        homicideRisk.toUpperCase(),
+                        style: TextStyle(
+                          fontSize: MedicalRecordConstants.fontLarge,
+                          fontWeight: FontWeight.bold,
+                          color: getRiskColor(homicideRisk),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+          ],
+        ),
       ],
     );
   }
@@ -646,29 +1382,159 @@ class _LabResultContent extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    return Column(
+      children: [
+        // Main result card
+        Container(
+          padding: const EdgeInsets.all(MedicalRecordConstants.paddingLarge),
+          decoration: BoxDecoration(
+            color: isDark ? AppColors.darkSurface : Colors.white,
+            borderRadius: BorderRadius.circular(MedicalRecordConstants.radiusLarge),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withValues(alpha: 0.05),
+                blurRadius: 10,
+                offset: const Offset(0, 4),
+              ),
+            ],
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              _buildHeader(),
+              const SizedBox(height: MedicalRecordConstants.paddingLarge),
+              _buildResult(),
+              if (data.hasValue('units')) ...[
+                const SizedBox(height: MedicalRecordConstants.paddingSmall),
+                Text(
+                  'Units: ${data.getString('units')}',
+                  style: TextStyle(
+                    fontSize: MedicalRecordConstants.fontBody,
+                    color: isDark ? AppColors.darkTextSecondary : AppColors.textSecondary,
+                  ),
+                ),
+              ],
+              if (data.hasValue('reference_range')) ...[
+                const SizedBox(height: MedicalRecordConstants.paddingMedium),
+                _buildReferenceRange(),
+              ],
+              if (data.hasValue('result_status')) ...[
+                const SizedBox(height: MedicalRecordConstants.paddingMedium),
+                _buildResultStatus(),
+              ],
+            ],
+          ),
+        ),
+        // Additional info cards
+        if (data.hasValue('test_category')) ...[
+          const SizedBox(height: MedicalRecordConstants.paddingLarge),
+          _buildInfoRow(Icons.category_outlined, 'Test Category', data.getString('test_category')),
+        ],
+        if (data.hasValue('specimen')) ...[
+          const SizedBox(height: MedicalRecordConstants.paddingMedium),
+          _buildInfoRow(Icons.science_outlined, 'Specimen', data.getString('specimen')),
+        ],
+        if (data.hasValue('lab_name')) ...[
+          const SizedBox(height: MedicalRecordConstants.paddingMedium),
+          _buildInfoRow(Icons.local_hospital_outlined, 'Laboratory', data.getString('lab_name')),
+        ],
+        if (data.hasValue('ordering_physician')) ...[
+          const SizedBox(height: MedicalRecordConstants.paddingMedium),
+          _buildInfoRow(Icons.person_outline, 'Ordering Physician', data.getString('ordering_physician')),
+        ],
+        if (data.hasValue('interpretation')) ...[
+          const SizedBox(height: MedicalRecordConstants.paddingLarge),
+          InfoCard(
+            title: 'Interpretation',
+            content: data.getString('interpretation'),
+            icon: Icons.analytics_outlined,
+            color: AppColors.info,
+            isDark: isDark,
+          ),
+        ],
+      ],
+    );
+  }
+
+  Widget _buildInfoRow(IconData icon, String label, String value) {
     return Container(
-      padding: const EdgeInsets.all(MedicalRecordConstants.paddingLarge),
+      padding: const EdgeInsets.all(MedicalRecordConstants.paddingMedium),
       decoration: BoxDecoration(
         color: isDark ? AppColors.darkSurface : Colors.white,
-        borderRadius: BorderRadius.circular(MedicalRecordConstants.radiusLarge),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.05),
-            blurRadius: 10,
-            offset: const Offset(0, 4),
+        borderRadius: BorderRadius.circular(MedicalRecordConstants.radiusMedium),
+        border: Border.all(color: isDark ? AppColors.darkDivider : AppColors.divider),
+      ),
+      child: Row(
+        children: [
+          Icon(icon, size: MedicalRecordConstants.iconMedium, color: AppColors.primary),
+          const SizedBox(width: MedicalRecordConstants.paddingMedium),
+          Text(
+            label,
+            style: TextStyle(
+              fontSize: MedicalRecordConstants.fontBody,
+              color: isDark ? AppColors.darkTextSecondary : AppColors.textSecondary,
+            ),
+          ),
+          const Spacer(),
+          Flexible(
+            child: Text(
+              value,
+              style: TextStyle(
+                fontSize: MedicalRecordConstants.fontLarge,
+                fontWeight: FontWeight.w500,
+                color: isDark ? AppColors.darkTextPrimary : AppColors.textPrimary,
+              ),
+              textAlign: TextAlign.end,
+            ),
           ),
         ],
       ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
+    );
+  }
+
+  Widget _buildResultStatus() {
+    final status = data.getString('result_status');
+    Color statusColor;
+    IconData statusIcon;
+    
+    switch (status.toLowerCase()) {
+      case 'normal':
+        statusColor = AppColors.success;
+        statusIcon = Icons.check_circle_outline;
+      case 'abnormal':
+        statusColor = AppColors.warning;
+        statusIcon = Icons.warning_amber_outlined;
+      case 'critical':
+        statusColor = AppColors.error;
+        statusIcon = Icons.error_outline;
+      default:
+        statusColor = AppColors.info;
+        statusIcon = Icons.help_outline;
+    }
+
+    return Container(
+      padding: const EdgeInsets.symmetric(
+        horizontal: MedicalRecordConstants.paddingMedium,
+        vertical: MedicalRecordConstants.paddingSmall,
+      ),
+      decoration: BoxDecoration(
+        color: statusColor.withValues(alpha: 0.1),
+        borderRadius: BorderRadius.circular(MedicalRecordConstants.radiusSmall),
+        border: Border.all(color: statusColor.withValues(alpha: 0.3)),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
         children: [
-          _buildHeader(),
-          const SizedBox(height: MedicalRecordConstants.paddingLarge),
-          _buildResult(),
-          if (data.hasValue('reference_range')) ...[
-            const SizedBox(height: MedicalRecordConstants.paddingMedium),
-            _buildReferenceRange(),
-          ],
+          Icon(statusIcon, size: MedicalRecordConstants.iconSmall, color: statusColor),
+          const SizedBox(width: MedicalRecordConstants.paddingSmall),
+          Text(
+            status,
+            style: TextStyle(
+              fontSize: MedicalRecordConstants.fontBody,
+              fontWeight: FontWeight.w600,
+              color: statusColor,
+            ),
+          ),
         ],
       ),
     );
@@ -760,14 +1626,67 @@ class _ImagingContent extends StatelessWidget {
   Widget build(BuildContext context) {
     return Column(
       children: [
-        if (data.hasValue('imaging_type'))
+        // Imaging type and body part
+        if (data.hasValue('imaging_type') || data.hasValue('body_part'))
+          _buildHeaderCard(),
+        // Urgency badge
+        if (data.hasValue('urgency')) ...[
+          const SizedBox(height: MedicalRecordConstants.paddingMedium),
+          _buildUrgencyBadge(),
+        ],
+        // Indication
+        if (data.hasValue('indication')) ...[
+          const SizedBox(height: MedicalRecordConstants.paddingLarge),
           InfoCard(
-            title: 'Imaging Type',
-            content: data.getString('imaging_type'),
-            icon: Icons.image_outlined,
+            title: 'Indication',
+            content: data.getString('indication'),
+            icon: Icons.help_outline,
+            color: AppColors.warning,
+            isDark: isDark,
+          ),
+        ],
+        // Technique
+        if (data.hasValue('technique')) ...[
+          const SizedBox(height: MedicalRecordConstants.paddingLarge),
+          InfoCard(
+            title: 'Technique',
+            content: data.getString('technique'),
+            icon: Icons.settings_outlined,
             color: AppColors.info,
             isDark: isDark,
           ),
+        ],
+        // Contrast used
+        if (data.hasValue('contrast_used') && data['contrast_used'] == true) ...[
+          const SizedBox(height: MedicalRecordConstants.paddingMedium),
+          Container(
+            padding: const EdgeInsets.symmetric(
+              horizontal: MedicalRecordConstants.paddingMedium,
+              vertical: MedicalRecordConstants.paddingSmall,
+            ),
+            decoration: BoxDecoration(
+              color: AppColors.warning.withValues(alpha: 0.1),
+              borderRadius: BorderRadius.circular(MedicalRecordConstants.radiusSmall),
+              border: Border.all(color: AppColors.warning.withValues(alpha: 0.3)),
+            ),
+            child: const Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Icon(Icons.contrast, size: MedicalRecordConstants.iconSmall, color: AppColors.warning),
+                SizedBox(width: MedicalRecordConstants.paddingSmall),
+                Text(
+                  'Contrast Used',
+                  style: TextStyle(
+                    fontSize: MedicalRecordConstants.fontBody,
+                    fontWeight: FontWeight.w600,
+                    color: AppColors.warning,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+        // Findings
         if (data.hasValue('findings')) ...[
           const SizedBox(height: MedicalRecordConstants.paddingLarge),
           InfoCard(
@@ -778,7 +1697,196 @@ class _ImagingContent extends StatelessWidget {
             isDark: isDark,
           ),
         ],
+        // Impression
+        if (data.hasValue('impression')) ...[
+          const SizedBox(height: MedicalRecordConstants.paddingLarge),
+          InfoCard(
+            title: 'Impression',
+            content: data.getString('impression'),
+            icon: Icons.summarize_outlined,
+            color: AppColors.success,
+            isDark: isDark,
+          ),
+        ],
+        // Recommendations
+        if (data.hasValue('recommendations')) ...[
+          const SizedBox(height: MedicalRecordConstants.paddingLarge),
+          InfoCard(
+            title: 'Recommendations',
+            content: data.getString('recommendations'),
+            icon: Icons.recommend_outlined,
+            color: AppColors.accent,
+            isDark: isDark,
+          ),
+        ],
+        // Radiologist & Facility
+        if (data.hasValue('radiologist') || data.hasValue('facility')) ...[
+          const SizedBox(height: MedicalRecordConstants.paddingLarge),
+          _buildProviderInfo(),
+        ],
       ],
+    );
+  }
+
+  Widget _buildHeaderCard() {
+    return Container(
+      padding: const EdgeInsets.all(MedicalRecordConstants.paddingLarge),
+      decoration: BoxDecoration(
+        color: isDark ? AppColors.darkSurface : Colors.white,
+        borderRadius: BorderRadius.circular(MedicalRecordConstants.radiusLarge),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.05),
+            blurRadius: 10,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
+      child: Row(
+        children: [
+          Container(
+            padding: const EdgeInsets.all(AppSpacing.md),
+            decoration: BoxDecoration(
+              color: AppColors.info.withValues(alpha: 0.1),
+              borderRadius: BorderRadius.circular(MedicalRecordConstants.radiusMedium),
+            ),
+            child: const Icon(Icons.image_search_outlined, color: AppColors.info, size: 28),
+          ),
+          const SizedBox(width: MedicalRecordConstants.paddingMedium),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                if (data.hasValue('imaging_type'))
+                  Text(
+                    data.getString('imaging_type'),
+                    style: TextStyle(
+                      fontSize: MedicalRecordConstants.fontTitle,
+                      fontWeight: FontWeight.bold,
+                      color: isDark ? AppColors.darkTextPrimary : AppColors.textPrimary,
+                    ),
+                  ),
+                if (data.hasValue('body_part'))
+                  Text(
+                    data.getString('body_part'),
+                    style: TextStyle(
+                      fontSize: MedicalRecordConstants.fontLarge,
+                      color: isDark ? AppColors.darkTextSecondary : AppColors.textSecondary,
+                    ),
+                  ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildUrgencyBadge() {
+    final urgency = data.getString('urgency');
+    Color urgencyColor;
+    
+    switch (urgency.toLowerCase()) {
+      case 'stat':
+      case 'emergency':
+        urgencyColor = AppColors.error;
+      case 'urgent':
+        urgencyColor = AppColors.warning;
+      default:
+        urgencyColor = AppColors.success;
+    }
+
+    return Container(
+      padding: const EdgeInsets.symmetric(
+        horizontal: MedicalRecordConstants.paddingMedium,
+        vertical: MedicalRecordConstants.paddingSmall,
+      ),
+      decoration: BoxDecoration(
+        color: urgencyColor.withValues(alpha: 0.1),
+        borderRadius: BorderRadius.circular(MedicalRecordConstants.radiusSmall),
+        border: Border.all(color: urgencyColor.withValues(alpha: 0.3)),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(Icons.priority_high, size: MedicalRecordConstants.iconSmall, color: urgencyColor),
+          const SizedBox(width: MedicalRecordConstants.paddingSmall),
+          Text(
+            urgency,
+            style: TextStyle(
+              fontSize: MedicalRecordConstants.fontBody,
+              fontWeight: FontWeight.w600,
+              color: urgencyColor,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildProviderInfo() {
+    return Container(
+      padding: const EdgeInsets.all(MedicalRecordConstants.paddingMedium),
+      decoration: BoxDecoration(
+        color: isDark ? AppColors.darkSurface : Colors.white,
+        borderRadius: BorderRadius.circular(MedicalRecordConstants.radiusMedium),
+        border: Border.all(color: isDark ? AppColors.darkDivider : AppColors.divider),
+      ),
+      child: Column(
+        children: [
+          if (data.hasValue('radiologist'))
+            Row(
+              children: [
+                const Icon(Icons.person_outline, size: MedicalRecordConstants.iconMedium, color: AppColors.primary),
+                const SizedBox(width: MedicalRecordConstants.paddingSmall),
+                Text(
+                  'Radiologist:',
+                  style: TextStyle(
+                    fontSize: MedicalRecordConstants.fontBody,
+                    color: isDark ? AppColors.darkTextSecondary : AppColors.textSecondary,
+                  ),
+                ),
+                const Spacer(),
+                Text(
+                  data.getString('radiologist'),
+                  style: TextStyle(
+                    fontSize: MedicalRecordConstants.fontLarge,
+                    fontWeight: FontWeight.w500,
+                    color: isDark ? AppColors.darkTextPrimary : AppColors.textPrimary,
+                  ),
+                ),
+              ],
+            ),
+          if (data.hasValue('radiologist') && data.hasValue('facility'))
+            const Divider(height: MedicalRecordConstants.paddingLarge),
+          if (data.hasValue('facility'))
+            Row(
+              children: [
+                const Icon(Icons.local_hospital_outlined, size: MedicalRecordConstants.iconMedium, color: AppColors.info),
+                const SizedBox(width: MedicalRecordConstants.paddingSmall),
+                Text(
+                  'Facility:',
+                  style: TextStyle(
+                    fontSize: MedicalRecordConstants.fontBody,
+                    color: isDark ? AppColors.darkTextSecondary : AppColors.textSecondary,
+                  ),
+                ),
+                const Spacer(),
+                Flexible(
+                  child: Text(
+                    data.getString('facility'),
+                    style: TextStyle(
+                      fontSize: MedicalRecordConstants.fontLarge,
+                      fontWeight: FontWeight.w500,
+                      color: isDark ? AppColors.darkTextPrimary : AppColors.textPrimary,
+                    ),
+                    textAlign: TextAlign.end,
+                  ),
+                ),
+              ],
+            ),
+        ],
+      ),
     );
   }
 }
@@ -793,32 +1901,441 @@ class _ProcedureContent extends StatelessWidget {
   Widget build(BuildContext context) {
     return Column(
       children: [
+        // Procedure header with name and code
         if (data.hasValue('procedure_name'))
+          _buildHeaderCard(),
+        // Status and timing
+        if (data.hasValue('procedure_status') || data.hasValue('start_time') || data.hasValue('end_time')) ...[
+          const SizedBox(height: MedicalRecordConstants.paddingMedium),
+          _buildStatusTimingRow(),
+        ],
+        // Indication
+        if (data.hasValue('indication')) ...[
+          const SizedBox(height: MedicalRecordConstants.paddingLarge),
           InfoCard(
-            title: 'Procedure',
-            content: data.getString('procedure_name'),
-            icon: Icons.healing_outlined,
-            color: AppColors.accent,
+            title: 'Indication',
+            content: data.getString('indication'),
+            icon: Icons.help_outline,
+            color: AppColors.warning,
             isDark: isDark,
           ),
+        ],
+        // Anesthesia
+        if (data.hasValue('anesthesia')) ...[
+          const SizedBox(height: MedicalRecordConstants.paddingLarge),
+          InfoCard(
+            title: 'Anesthesia',
+            content: data.getString('anesthesia'),
+            icon: Icons.medication_liquid_outlined,
+            color: AppColors.info,
+            isDark: isDark,
+          ),
+        ],
+        // Procedure notes
         if (data.hasValue('procedure_notes')) ...[
           const SizedBox(height: MedicalRecordConstants.paddingLarge),
           InfoCard(
             title: 'Procedure Notes',
             content: data.getString('procedure_notes'),
             icon: Icons.note_alt_outlined,
-            color: AppColors.info,
+            color: AppColors.primary,
             isDark: isDark,
           ),
         ],
+        // Findings
+        if (data.hasValue('findings')) ...[
+          const SizedBox(height: MedicalRecordConstants.paddingLarge),
+          InfoCard(
+            title: 'Findings',
+            content: data.getString('findings'),
+            icon: Icons.search,
+            color: AppColors.success,
+            isDark: isDark,
+          ),
+        ],
+        // Complications
+        if (data.hasValue('complications')) ...[
+          const SizedBox(height: MedicalRecordConstants.paddingLarge),
+          InfoCard(
+            title: 'Complications',
+            content: data.getString('complications'),
+            icon: Icons.warning_amber_outlined,
+            color: AppColors.error,
+            isDark: isDark,
+          ),
+        ],
+        // Specimen
+        if (data.hasValue('specimen')) ...[
+          const SizedBox(height: MedicalRecordConstants.paddingLarge),
+          InfoCard(
+            title: 'Specimen Collected',
+            content: data.getString('specimen'),
+            icon: Icons.science_outlined,
+            color: AppColors.warning,
+            isDark: isDark,
+          ),
+        ],
+        // Post-op instructions
+        if (data.hasValue('post_op_instructions')) ...[
+          const SizedBox(height: MedicalRecordConstants.paddingLarge),
+          InfoCard(
+            title: 'Post-Operative Instructions',
+            content: data.getString('post_op_instructions'),
+            icon: Icons.assignment_outlined,
+            color: AppColors.accent,
+            isDark: isDark,
+          ),
+        ],
+        // Providers
+        if (data.hasValue('performed_by') || data.hasValue('assisted_by')) ...[
+          const SizedBox(height: MedicalRecordConstants.paddingLarge),
+          _buildProvidersCard(),
+        ],
+        // Vitals (pre/post procedure)
         if (data.hasValue('vitals'))
-          _VitalsSection(vitals: data.getMap('vitals'), isDark: isDark),
+          _ProcedureVitalsSection(vitals: data.getMap('vitals'), isDark: isDark),
       ],
+    );
+  }
+
+  Widget _buildHeaderCard() {
+    return Container(
+      padding: const EdgeInsets.all(MedicalRecordConstants.paddingLarge),
+      decoration: BoxDecoration(
+        color: isDark ? AppColors.darkSurface : Colors.white,
+        borderRadius: BorderRadius.circular(MedicalRecordConstants.radiusLarge),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.05),
+            blurRadius: 10,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
+      child: Row(
+        children: [
+          Container(
+            padding: const EdgeInsets.all(AppSpacing.md),
+            decoration: BoxDecoration(
+              color: AppColors.accent.withValues(alpha: 0.1),
+              borderRadius: BorderRadius.circular(MedicalRecordConstants.radiusMedium),
+            ),
+            child: const Icon(Icons.healing_outlined, color: AppColors.accent, size: 28),
+          ),
+          const SizedBox(width: MedicalRecordConstants.paddingMedium),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  data.getString('procedure_name'),
+                  style: TextStyle(
+                    fontSize: MedicalRecordConstants.fontTitle,
+                    fontWeight: FontWeight.bold,
+                    color: isDark ? AppColors.darkTextPrimary : AppColors.textPrimary,
+                  ),
+                ),
+                if (data.hasValue('procedure_code'))
+                  Text(
+                    'Code: ${data.getString('procedure_code')}',
+                    style: TextStyle(
+                      fontSize: MedicalRecordConstants.fontBody,
+                      color: isDark ? AppColors.darkTextSecondary : AppColors.textSecondary,
+                    ),
+                  ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildStatusTimingRow() {
+    final status = data.getString('procedure_status');
+    Color statusColor;
+    
+    switch (status.toLowerCase()) {
+      case 'completed':
+        statusColor = AppColors.success;
+      case 'in progress':
+        statusColor = AppColors.warning;
+      case 'cancelled':
+        statusColor = AppColors.error;
+      default:
+        statusColor = AppColors.info;
+    }
+
+    return Wrap(
+      spacing: MedicalRecordConstants.paddingSmall,
+      runSpacing: MedicalRecordConstants.paddingSmall,
+      children: [
+        if (data.hasValue('procedure_status'))
+          Container(
+            padding: const EdgeInsets.symmetric(
+              horizontal: MedicalRecordConstants.paddingMedium,
+              vertical: MedicalRecordConstants.paddingSmall,
+            ),
+            decoration: BoxDecoration(
+              color: statusColor.withValues(alpha: 0.1),
+              borderRadius: BorderRadius.circular(MedicalRecordConstants.radiusSmall),
+              border: Border.all(color: statusColor.withValues(alpha: 0.3)),
+            ),
+            child: Text(
+              status,
+              style: TextStyle(
+                fontSize: MedicalRecordConstants.fontBody,
+                fontWeight: FontWeight.w600,
+                color: statusColor,
+              ),
+            ),
+          ),
+        if (data.hasValue('start_time'))
+          Container(
+            padding: const EdgeInsets.symmetric(
+              horizontal: MedicalRecordConstants.paddingMedium,
+              vertical: MedicalRecordConstants.paddingSmall,
+            ),
+            decoration: BoxDecoration(
+              color: isDark ? AppColors.darkSurface : AppColors.background,
+              borderRadius: BorderRadius.circular(MedicalRecordConstants.radiusSmall),
+            ),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                const Icon(Icons.play_arrow, size: MedicalRecordConstants.iconSmall, color: AppColors.success),
+                const SizedBox(width: 4),
+                Text(
+                  'Start: ${data.getString('start_time')}',
+                  style: TextStyle(
+                    fontSize: MedicalRecordConstants.fontBody,
+                    color: isDark ? AppColors.darkTextPrimary : AppColors.textPrimary,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        if (data.hasValue('end_time'))
+          Container(
+            padding: const EdgeInsets.symmetric(
+              horizontal: MedicalRecordConstants.paddingMedium,
+              vertical: MedicalRecordConstants.paddingSmall,
+            ),
+            decoration: BoxDecoration(
+              color: isDark ? AppColors.darkSurface : AppColors.background,
+              borderRadius: BorderRadius.circular(MedicalRecordConstants.radiusSmall),
+            ),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                const Icon(Icons.stop, size: MedicalRecordConstants.iconSmall, color: AppColors.error),
+                const SizedBox(width: 4),
+                Text(
+                  'End: ${data.getString('end_time')}',
+                  style: TextStyle(
+                    fontSize: MedicalRecordConstants.fontBody,
+                    color: isDark ? AppColors.darkTextPrimary : AppColors.textPrimary,
+                  ),
+                ),
+              ],
+            ),
+          ),
+      ],
+    );
+  }
+
+  Widget _buildProvidersCard() {
+    return Container(
+      padding: const EdgeInsets.all(MedicalRecordConstants.paddingMedium),
+      decoration: BoxDecoration(
+        color: isDark ? AppColors.darkSurface : Colors.white,
+        borderRadius: BorderRadius.circular(MedicalRecordConstants.radiusMedium),
+        border: Border.all(color: isDark ? AppColors.darkDivider : AppColors.divider),
+      ),
+      child: Column(
+        children: [
+          if (data.hasValue('performed_by'))
+            Row(
+              children: [
+                const Icon(Icons.person, size: MedicalRecordConstants.iconMedium, color: AppColors.primary),
+                const SizedBox(width: MedicalRecordConstants.paddingSmall),
+                Text(
+                  'Performed by:',
+                  style: TextStyle(
+                    fontSize: MedicalRecordConstants.fontBody,
+                    color: isDark ? AppColors.darkTextSecondary : AppColors.textSecondary,
+                  ),
+                ),
+                const Spacer(),
+                Text(
+                  data.getString('performed_by'),
+                  style: TextStyle(
+                    fontSize: MedicalRecordConstants.fontLarge,
+                    fontWeight: FontWeight.w500,
+                    color: isDark ? AppColors.darkTextPrimary : AppColors.textPrimary,
+                  ),
+                ),
+              ],
+            ),
+          if (data.hasValue('performed_by') && data.hasValue('assisted_by'))
+            const Divider(height: MedicalRecordConstants.paddingLarge),
+          if (data.hasValue('assisted_by'))
+            Row(
+              children: [
+                const Icon(Icons.group, size: MedicalRecordConstants.iconMedium, color: AppColors.info),
+                const SizedBox(width: MedicalRecordConstants.paddingSmall),
+                Text(
+                  'Assisted by:',
+                  style: TextStyle(
+                    fontSize: MedicalRecordConstants.fontBody,
+                    color: isDark ? AppColors.darkTextSecondary : AppColors.textSecondary,
+                  ),
+                ),
+                const Spacer(),
+                Flexible(
+                  child: Text(
+                    data.getString('assisted_by'),
+                    style: TextStyle(
+                      fontSize: MedicalRecordConstants.fontLarge,
+                      fontWeight: FontWeight.w500,
+                      color: isDark ? AppColors.darkTextPrimary : AppColors.textPrimary,
+                    ),
+                    textAlign: TextAlign.end,
+                  ),
+                ),
+              ],
+            ),
+        ],
+      ),
     );
   }
 }
 
-class _FollowUpContent extends StatelessWidget {
+/// Special vitals section for procedures showing pre/post comparison
+class _ProcedureVitalsSection extends StatelessWidget {
+  const _ProcedureVitalsSection({required this.vitals, required this.isDark});
+  final Map<String, dynamic> vitals;
+  final bool isDark;
+
+  @override
+  Widget build(BuildContext context) {
+    final hasPre = vitals['bp_pre'] != null || vitals['pulse_pre'] != null || vitals['spo2_pre'] != null;
+    final hasPost = vitals['bp_post'] != null || vitals['pulse_post'] != null || vitals['spo2_post'] != null;
+    
+    if (!hasPre && !hasPost) return const SizedBox.shrink();
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const SizedBox(height: MedicalRecordConstants.paddingLarge),
+        Container(
+          padding: const EdgeInsets.all(MedicalRecordConstants.paddingLarge),
+          decoration: BoxDecoration(
+            color: isDark ? AppColors.darkSurface : Colors.white,
+            borderRadius: BorderRadius.circular(MedicalRecordConstants.radiusLarge),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withValues(alpha: 0.05),
+                blurRadius: 10,
+                offset: const Offset(0, 4),
+              ),
+            ],
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                children: [
+                  Container(
+                    padding: const EdgeInsets.all(MedicalRecordConstants.paddingSmall),
+                    decoration: BoxDecoration(
+                      color: AppColors.error.withValues(alpha: 0.1),
+                      borderRadius: BorderRadius.circular(MedicalRecordConstants.radiusSmall),
+                    ),
+                    child: const Icon(Icons.monitor_heart_outlined, color: AppColors.error, size: MedicalRecordConstants.iconLarge),
+                  ),
+                  const SizedBox(width: MedicalRecordConstants.paddingMedium),
+                  Text(
+                    'Vital Signs',
+                    style: TextStyle(
+                      fontSize: MedicalRecordConstants.fontTitle,
+                      fontWeight: FontWeight.w600,
+                      color: isDark ? AppColors.darkTextPrimary : AppColors.textPrimary,
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: MedicalRecordConstants.paddingLarge),
+              Row(
+                children: [
+                  if (hasPre)
+                    Expanded(child: _buildVitalsColumn('Pre-Procedure', 'pre')),
+                  if (hasPre && hasPost)
+                    Container(
+                      width: 1,
+                      height: 100,
+                      margin: const EdgeInsets.symmetric(horizontal: MedicalRecordConstants.paddingMedium),
+                      color: isDark ? AppColors.darkDivider : AppColors.divider,
+                    ),
+                  if (hasPost)
+                    Expanded(child: _buildVitalsColumn('Post-Procedure', 'post')),
+                ],
+              ),
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildVitalsColumn(String title, String suffix) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          title,
+          style: TextStyle(
+            fontSize: MedicalRecordConstants.fontBody,
+            fontWeight: FontWeight.w600,
+            color: suffix == 'pre' ? AppColors.warning : AppColors.success,
+          ),
+        ),
+        const SizedBox(height: MedicalRecordConstants.paddingSmall),
+        if (vitals['bp_$suffix'] != null)
+          _buildVitalRow('BP', vitals['bp_$suffix'].toString(), 'mmHg'),
+        if (vitals['pulse_$suffix'] != null)
+          _buildVitalRow('Pulse', vitals['pulse_$suffix'].toString(), 'bpm'),
+        if (vitals['spo2_$suffix'] != null)
+          _buildVitalRow('SpO2', vitals['spo2_$suffix'].toString(), '%'),
+      ],
+    );
+  }
+
+  Widget _buildVitalRow(String label, String value, String unit) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 4),
+      child: Row(
+        children: [
+          Text(
+            '$label: ',
+            style: TextStyle(
+              fontSize: MedicalRecordConstants.fontBody,
+              color: isDark ? AppColors.darkTextSecondary : AppColors.textSecondary,
+            ),
+          ),
+          Text(
+            '$value $unit',
+            style: TextStyle(
+              fontSize: MedicalRecordConstants.fontLarge,
+              fontWeight: FontWeight.w500,
+              color: isDark ? AppColors.darkTextPrimary : AppColors.textPrimary,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}class _FollowUpContent extends StatelessWidget {
 
   const _FollowUpContent({required this.data, required this.isDark});
   final Map<String, dynamic> data;
@@ -828,18 +2345,226 @@ class _FollowUpContent extends StatelessWidget {
   Widget build(BuildContext context) {
     return Column(
       children: [
-        if (data.hasValue('follow_up_notes'))
+        // Progress notes / follow_up_notes (support both keys)
+        if (data.hasValue('progress_notes') || data.hasValue('follow_up_notes'))
           InfoCard(
-            title: 'Follow-up Notes',
-            content: data.getString('follow_up_notes'),
-            icon: Icons.event_repeat,
+            title: 'Progress Notes',
+            content: data.getString('progress_notes').isNotEmpty 
+                ? data.getString('progress_notes') 
+                : data.getString('follow_up_notes'),
+            icon: Icons.note_alt_outlined,
             color: AppColors.primary,
             isDark: isDark,
           ),
+        // Current symptoms
+        if (data.hasValue('symptoms')) ...[
+          const SizedBox(height: MedicalRecordConstants.paddingLarge),
+          InfoCard(
+            title: 'Current Symptoms',
+            content: data.getString('symptoms'),
+            icon: Icons.sick_outlined,
+            color: AppColors.warning,
+            isDark: isDark,
+          ),
+        ],
+        // Overall progress
+        if (data.hasValue('overall_progress')) ...[
+          const SizedBox(height: MedicalRecordConstants.paddingMedium),
+          _ProgressIndicator(progress: data.getString('overall_progress'), isDark: isDark),
+        ],
+        // Medication compliance
+        if (data.hasValue('compliance')) ...[
+          const SizedBox(height: MedicalRecordConstants.paddingLarge),
+          InfoCard(
+            title: 'Medication Compliance',
+            content: data.getString('compliance'),
+            icon: Icons.medication_outlined,
+            color: AppColors.success,
+            isDark: isDark,
+          ),
+        ],
+        // Side effects
+        if (data.hasValue('side_effects')) ...[
+          const SizedBox(height: MedicalRecordConstants.paddingLarge),
+          InfoCard(
+            title: 'Side Effects Reported',
+            content: data.getString('side_effects'),
+            icon: Icons.warning_amber_outlined,
+            color: AppColors.error,
+            isDark: isDark,
+          ),
+        ],
+        // Medication review
+        if (data.hasValue('medication_review')) ...[
+          const SizedBox(height: MedicalRecordConstants.paddingLarge),
+          InfoCard(
+            title: 'Medication Review',
+            content: data.getString('medication_review'),
+            icon: Icons.medical_services_outlined,
+            color: AppColors.info,
+            isDark: isDark,
+          ),
+        ],
+        // Investigations
+        if (data.hasValue('investigations')) ...[
+          const SizedBox(height: MedicalRecordConstants.paddingLarge),
+          InfoCard(
+            title: 'Investigations',
+            content: data.getString('investigations'),
+            icon: Icons.biotech,
+            color: AppColors.primary,
+            isDark: isDark,
+          ),
+        ],
+        // Next follow-up info
+        if (data.hasValue('next_follow_up_notes') || data.hasValue('next_follow_up_date')) ...[
+          const SizedBox(height: MedicalRecordConstants.paddingLarge),
+          _NextFollowUpCard(data: data, isDark: isDark),
+        ],
+        // Vitals section
         if (data.hasValue('vitals'))
           _VitalsSection(vitals: data.getMap('vitals'), isDark: isDark),
       ],
     );
+  }
+}
+
+/// Widget that displays ALL data stored in the record as a summary
+/// This ensures no data is hidden from the user
+class _AllDataSection extends StatelessWidget {
+  const _AllDataSection({required this.data, required this.isDark});
+  final Map<String, dynamic> data;
+  final bool isDark;
+
+  // Keys that are already displayed by type-specific widgets
+  static const _displayedKeys = {
+    // Common
+    'vitals',
+    // Pulmonary
+    'chief_complaint', 'duration', 'symptom_character', 'systemic_symptoms',
+    'red_flags', 'past_pulmonary_history', 'exposure_history', 
+    'allergy_atopy_history', 'current_medications', 'comorbidities',
+    'chest_auscultation', 'investigations_required', 'follow_up_plan',
+    // Psychiatric
+    'name', 'age', 'gender', 'marital_status', 'symptoms', 'hopi',
+    'mse', 'mood', 'affect', 'speech', 'thought', 'perception', 'cognition',
+    'insight', 'risk_assessment', 'suicide_risk', 'homicide_risk', 
+    'safety_plan', 'diagnosis', 'treatment_plan', 'medications', 'follow_up',
+    // Lab
+    'test_name', 'test_category', 'result', 'reference_range', 'units',
+    'specimen', 'lab_name', 'ordering_physician', 'interpretation', 'result_status',
+    // Imaging
+    'imaging_type', 'body_part', 'indication', 'technique', 'findings',
+    'impression', 'recommendations', 'radiologist', 'facility', 'contrast_used', 'urgency',
+    // Procedure
+    'procedure_name', 'procedure_code', 'anesthesia', 'procedure_notes',
+    'complications', 'post_op_instructions', 'performed_by', 'assisted_by',
+    'procedure_status', 'start_time', 'end_time',
+    // Follow-up
+    'progress_notes', 'follow_up_notes', 'compliance', 'side_effects',
+    'medication_review', 'investigations', 'overall_progress', 
+    'next_follow_up_date', 'next_follow_up_notes',
+  };
+
+  @override
+  Widget build(BuildContext context) {
+    // Find any keys that aren't already displayed
+    final additionalData = <String, dynamic>{};
+    for (final entry in data.entries) {
+      if (!_displayedKeys.contains(entry.key) && 
+          entry.value != null &&
+          !(entry.value is String && (entry.value as String).isEmpty) &&
+          !(entry.value is List && (entry.value as List).isEmpty) &&
+          !(entry.value is Map && (entry.value as Map).isEmpty)) {
+        additionalData[entry.key] = entry.value;
+      }
+    }
+
+    if (additionalData.isEmpty) return const SizedBox.shrink();
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const SizedBox(height: MedicalRecordConstants.paddingLarge),
+        Row(
+          children: [
+            Icon(
+              Icons.data_object,
+              size: MedicalRecordConstants.iconMedium,
+              color: AppColors.info,
+            ),
+            const SizedBox(width: MedicalRecordConstants.paddingSmall),
+            Text(
+              'Additional Information',
+              style: TextStyle(
+                fontSize: MedicalRecordConstants.fontLarge,
+                fontWeight: FontWeight.w600,
+                color: isDark ? AppColors.darkTextPrimary : AppColors.textPrimary,
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: MedicalRecordConstants.paddingMedium),
+        ...additionalData.entries.map((entry) {
+          final title = _formatKey(entry.key);
+          final value = entry.value;
+          
+          if (value is Map) {
+            final mapContent = (value as Map<String, dynamic>).entries
+                .where((e) => e.value != null && e.value.toString().isNotEmpty)
+                .map((e) => '${_formatKey(e.key)}: ${e.value}')
+                .join('\n');
+            if (mapContent.isEmpty) return const SizedBox.shrink();
+            return Padding(
+              padding: const EdgeInsets.only(bottom: MedicalRecordConstants.paddingMedium),
+              child: InfoCard(
+                title: title,
+                content: mapContent,
+                icon: Icons.info_outline,
+                color: AppColors.info,
+                isDark: isDark,
+              ),
+            );
+          } else if (value is List) {
+            final listItems = value.map((e) => e.toString()).where((e) => e.isNotEmpty).toList();
+            if (listItems.isEmpty) return const SizedBox.shrink();
+            return Padding(
+              padding: const EdgeInsets.only(bottom: MedicalRecordConstants.paddingMedium),
+              child: ChipsSection(
+                title: title,
+                items: listItems,
+                color: AppColors.info,
+                icon: Icons.list,
+                isDark: isDark,
+              ),
+            );
+          } else {
+            final content = value.toString();
+            if (content.isEmpty) return const SizedBox.shrink();
+            return Padding(
+              padding: const EdgeInsets.only(bottom: MedicalRecordConstants.paddingMedium),
+              child: InfoCard(
+                title: title,
+                content: content,
+                icon: Icons.info_outline,
+                color: AppColors.info,
+                isDark: isDark,
+              ),
+            );
+          }
+        }),
+      ],
+    );
+  }
+  
+  String _formatKey(String key) {
+    return key
+        .replaceAllMapped(RegExp(r'([a-z])([A-Z])'), (m) => '${m[1]} ${m[2]}')
+        .replaceAll('_', ' ')
+        .split(' ')
+        .map((word) => word.isNotEmpty ? '${word[0].toUpperCase()}${word.substring(1).toLowerCase()}' : '')
+        .join(' ')
+        .trim();
   }
 }
 
@@ -983,6 +2708,171 @@ class _GeneralContent extends StatelessWidget {
 // ============================================================================
 // SPECIALIZED SECTIONS
 // ============================================================================
+
+/// Progress indicator for follow-up records
+class _ProgressIndicator extends StatelessWidget {
+  const _ProgressIndicator({required this.progress, required this.isDark});
+  final String progress;
+  final bool isDark;
+
+  @override
+  Widget build(BuildContext context) {
+    Color progressColor;
+    IconData progressIcon;
+    
+    switch (progress.toLowerCase()) {
+      case 'improved':
+        progressColor = AppColors.success;
+        progressIcon = Icons.trending_up;
+      case 'stable':
+        progressColor = AppColors.info;
+        progressIcon = Icons.trending_flat;
+      case 'worsened':
+        progressColor = AppColors.error;
+        progressIcon = Icons.trending_down;
+      default:
+        progressColor = AppColors.warning;
+        progressIcon = Icons.help_outline;
+    }
+
+    return Container(
+      padding: const EdgeInsets.all(MedicalRecordConstants.paddingLarge),
+      decoration: BoxDecoration(
+        color: progressColor.withValues(alpha: 0.1),
+        borderRadius: BorderRadius.circular(MedicalRecordConstants.radiusLarge),
+        border: Border.all(color: progressColor.withValues(alpha: 0.3)),
+      ),
+      child: Row(
+        children: [
+          Container(
+            padding: const EdgeInsets.all(MedicalRecordConstants.paddingMedium),
+            decoration: BoxDecoration(
+              color: progressColor.withValues(alpha: 0.2),
+              borderRadius: BorderRadius.circular(MedicalRecordConstants.radiusMedium),
+            ),
+            child: Icon(progressIcon, color: progressColor, size: 24),
+          ),
+          const SizedBox(width: MedicalRecordConstants.paddingLarge),
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                'Overall Progress',
+                style: TextStyle(
+                  fontSize: MedicalRecordConstants.fontBody,
+                  color: isDark ? AppColors.darkTextSecondary : AppColors.textSecondary,
+                ),
+              ),
+              const SizedBox(height: 4),
+              Text(
+                progress,
+                style: TextStyle(
+                  fontSize: MedicalRecordConstants.fontTitle,
+                  fontWeight: FontWeight.bold,
+                  color: progressColor,
+                ),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+/// Card showing next follow-up information
+class _NextFollowUpCard extends StatelessWidget {
+  const _NextFollowUpCard({required this.data, required this.isDark});
+  final Map<String, dynamic> data;
+  final bool isDark;
+
+  @override
+  Widget build(BuildContext context) {
+    final dateStr = data.getString('next_follow_up_date');
+    final notes = data.getString('next_follow_up_notes');
+    
+    DateTime? nextDate;
+    if (dateStr.isNotEmpty) {
+      try {
+        nextDate = DateTime.parse(dateStr);
+      } catch (_) {}
+    }
+
+    return Container(
+      padding: const EdgeInsets.all(MedicalRecordConstants.paddingLarge),
+      decoration: BoxDecoration(
+        color: isDark ? AppColors.darkSurface : Colors.white,
+        borderRadius: BorderRadius.circular(MedicalRecordConstants.radiusLarge),
+        border: Border.all(color: AppColors.success.withValues(alpha: 0.3)),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.05),
+            blurRadius: 10,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.all(MedicalRecordConstants.paddingSmall),
+                decoration: BoxDecoration(
+                  color: AppColors.success.withValues(alpha: 0.1),
+                  borderRadius: BorderRadius.circular(MedicalRecordConstants.radiusSmall),
+                ),
+                child: const Icon(Icons.event_repeat, color: AppColors.success, size: MedicalRecordConstants.iconLarge),
+              ),
+              const SizedBox(width: MedicalRecordConstants.paddingMedium),
+              Text(
+                'Next Follow-up',
+                style: TextStyle(
+                  fontSize: MedicalRecordConstants.fontTitle,
+                  fontWeight: FontWeight.w600,
+                  color: isDark ? AppColors.darkTextPrimary : AppColors.textPrimary,
+                ),
+              ),
+            ],
+          ),
+          if (nextDate != null) ...[
+            const SizedBox(height: MedicalRecordConstants.paddingMedium),
+            Container(
+              padding: const EdgeInsets.symmetric(
+                horizontal: MedicalRecordConstants.paddingMedium,
+                vertical: MedicalRecordConstants.paddingSmall,
+              ),
+              decoration: BoxDecoration(
+                color: AppColors.success.withValues(alpha: 0.1),
+                borderRadius: BorderRadius.circular(MedicalRecordConstants.radiusSmall),
+              ),
+              child: Text(
+                DateFormat('EEEE, MMMM d, yyyy').format(nextDate),
+                style: const TextStyle(
+                  fontSize: MedicalRecordConstants.fontLarge,
+                  fontWeight: FontWeight.w600,
+                  color: AppColors.success,
+                ),
+              ),
+            ),
+          ],
+          if (notes.isNotEmpty) ...[
+            const SizedBox(height: MedicalRecordConstants.paddingMedium),
+            Text(
+              notes,
+              style: TextStyle(
+                fontSize: MedicalRecordConstants.fontLarge,
+                color: isDark ? AppColors.darkTextPrimary : AppColors.textPrimary,
+                height: 1.5,
+              ),
+            ),
+          ],
+        ],
+      ),
+    );
+  }
+}
 
 class _VitalsSection extends StatelessWidget {
 
@@ -1284,14 +3174,21 @@ class _RiskAssessmentSection extends StatelessWidget {
   }
 }
 
-class _ChestAuscultationSection extends StatelessWidget {
-
-  const _ChestAuscultationSection({required this.auscultation, required this.isDark});
-  final Map<String, dynamic> auscultation;
+// Chest Findings Section for Pulmonary Evaluation
+class _ChestFindingsSection extends StatelessWidget {
+  const _ChestFindingsSection({required this.findings, required this.isDark});
+  final Map<String, dynamic> findings;
   final bool isDark;
 
   @override
   Widget build(BuildContext context) {
+    // Filter non-empty findings
+    final nonEmptyFindings = findings.entries
+        .where((e) => e.value != null && e.value.toString().isNotEmpty)
+        .toList();
+    
+    if (nonEmptyFindings.isEmpty) return const SizedBox.shrink();
+    
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -1312,107 +3209,50 @@ class _ChestAuscultationSection extends StatelessWidget {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              _buildHeader(),
+              Row(
+                children: [
+                  Container(
+                    padding: const EdgeInsets.all(AppSpacing.md),
+                    decoration: BoxDecoration(
+                      color: MedicalRecordConstants.pulmonaryColor.withValues(alpha: 0.1),
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                    child: const Icon(Icons.air, color: MedicalRecordConstants.pulmonaryColor, size: MedicalRecordConstants.iconLarge),
+                  ),
+                  const SizedBox(width: MedicalRecordConstants.paddingMedium),
+                  const Text(
+                    'Chest Examination',
+                    style: TextStyle(fontWeight: FontWeight.bold, fontSize: MedicalRecordConstants.fontTitle),
+                  ),
+                ],
+              ),
               const SizedBox(height: MedicalRecordConstants.paddingLarge),
-              if (auscultation.hasValue('breath_sounds'))
-                _buildRow('Breath Sounds', auscultation.getString('breath_sounds')),
-              if (auscultation.hasValue('added_sounds')) ...[
-                const SizedBox(height: MedicalRecordConstants.paddingMedium),
-                _buildAddedSounds(),
-              ],
-              const SizedBox(height: MedicalRecordConstants.paddingLarge),
-              _LungZonesDisplay(auscultation: auscultation, isDark: isDark),
+              ...nonEmptyFindings.map((entry) => Padding(
+                padding: const EdgeInsets.only(bottom: MedicalRecordConstants.paddingMedium),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      entry.key,
+                      style: TextStyle(
+                        fontWeight: FontWeight.w600,
+                        fontSize: MedicalRecordConstants.fontMedium,
+                        color: isDark ? AppColors.darkTextSecondary : AppColors.textSecondary,
+                      ),
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      entry.value.toString(),
+                      style: TextStyle(
+                        fontSize: MedicalRecordConstants.fontMedium,
+                        color: isDark ? AppColors.darkTextPrimary : AppColors.textPrimary,
+                      ),
+                    ),
+                  ],
+                ),
+              )),
             ],
           ),
-        ),
-      ],
-    );
-  }
-
-  Widget _buildHeader() {
-    return Row(
-      children: [
-        Container(
-          padding: const EdgeInsets.all(AppSpacing.md),
-          decoration: BoxDecoration(
-            color: MedicalRecordConstants.pulmonaryColor.withValues(alpha: 0.1),
-            borderRadius: BorderRadius.circular(10),
-          ),
-          child: const Icon(Icons.hearing, color: MedicalRecordConstants.pulmonaryColor, size: MedicalRecordConstants.iconLarge),
-        ),
-        const SizedBox(width: MedicalRecordConstants.paddingMedium),
-        const Text(
-          'Chest Auscultation',
-          style: TextStyle(fontWeight: FontWeight.bold, fontSize: MedicalRecordConstants.fontTitle),
-        ),
-      ],
-    );
-  }
-
-  Widget _buildRow(String label, String value) {
-    return Padding(
-      padding: const EdgeInsets.only(bottom: MedicalRecordConstants.paddingSmall),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          SizedBox(
-            width: 100,
-            child: Text(
-              label,
-              style: TextStyle(
-                fontSize: MedicalRecordConstants.fontMedium,
-                color: isDark ? AppColors.darkTextSecondary : AppColors.textSecondary,
-              ),
-            ),
-          ),
-          Expanded(
-            child: Text(
-              value,
-              style: TextStyle(
-                fontSize: MedicalRecordConstants.fontMedium,
-                fontWeight: FontWeight.w500,
-                color: isDark ? AppColors.darkTextPrimary : AppColors.textPrimary,
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildAddedSounds() {
-    final sounds = auscultation.getStringList('added_sounds');
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(
-          'Added Sounds',
-          style: TextStyle(
-            fontWeight: FontWeight.w600,
-            fontSize: MedicalRecordConstants.fontMedium,
-            color: isDark ? AppColors.darkTextSecondary : AppColors.textSecondary,
-          ),
-        ),
-        const SizedBox(height: MedicalRecordConstants.paddingSmall),
-        Wrap(
-          spacing: MedicalRecordConstants.paddingSmall,
-          runSpacing: MedicalRecordConstants.paddingSmall,
-          children: sounds.map((sound) => Container(
-            padding: const EdgeInsets.symmetric(horizontal: AppSpacing.md, vertical: AppSpacing.xs),
-            decoration: BoxDecoration(
-              color: AppColors.accent.withValues(alpha: 0.1),
-              borderRadius: BorderRadius.circular(MedicalRecordConstants.radiusXLarge),
-              border: Border.all(color: AppColors.accent.withValues(alpha: 0.3)),
-            ),
-            child: Text(
-              sound,
-              style: const TextStyle(
-                color: AppColors.accent,
-                fontSize: MedicalRecordConstants.fontBody,
-                fontWeight: FontWeight.w600,
-              ),
-            ),
-          ),).toList(),
         ),
       ],
     );

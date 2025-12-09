@@ -36,10 +36,10 @@ class _AddPatientScreenState extends ConsumerState<AddPatientScreen> {
   final _address = TextEditingController();
   final _medicalHistory = TextEditingController();
   final _allergiesController = TextEditingController();
+  final _ageController = TextEditingController();
   int _riskLevel = 1;
   bool _isSaving = false;
   Uint8List? _selectedPhotoBytes;
-  DateTime? _dateOfBirth;
 
   @override
   void initState() {
@@ -55,7 +55,9 @@ class _AddPatientScreenState extends ConsumerState<AddPatientScreen> {
       _medicalHistory.text = p.medicalHistory;
       _allergiesController.text = p.allergies;
       _riskLevel = p.riskLevel;
-      _dateOfBirth = p.dateOfBirth;
+      if (p.age != null) {
+        _ageController.text = p.age.toString();
+      }
     }
   }
 
@@ -68,6 +70,7 @@ class _AddPatientScreenState extends ConsumerState<AddPatientScreen> {
     _address.dispose();
     _medicalHistory.dispose();
     _allergiesController.dispose();
+    _ageController.dispose();
     super.dispose();
   }
 
@@ -327,52 +330,20 @@ class _AddPatientScreenState extends ConsumerState<AddPatientScreen> {
                         ],
                       ),
                       const SizedBox(height: 12),
-                      // Age / Date of Birth field
-                      InkWell(
-                        onTap: () async {
-                          final picked = await showDatePicker(
-                            context: context,
-                            initialDate: _dateOfBirth ?? DateTime.now().subtract(const Duration(days: 365 * 30)),
-                            firstDate: DateTime(1900),
-                            lastDate: DateTime.now(),
-                            builder: (context, child) {
-                              return Theme(
-                                data: Theme.of(context).copyWith(
-                                  colorScheme: Theme.of(context).colorScheme.copyWith(
-                                    primary: const Color(0xFF6366F1),
-                                  ),
-                                ),
-                                child: child!,
-                              );
-                            },
-                          );
-                          if (picked != null) {
-                            setState(() => _dateOfBirth = picked);
-                          }
+                      // Age field - simple number input
+                      AppInput(
+                        controller: _ageController,
+                        label: 'Age',
+                        hint: 'Enter age in years',
+                        prefixIcon: Icons.cake_outlined,
+                        keyboardType: TextInputType.number,
+                        validator: (v) {
+                          if (v == null || v.isEmpty) return null; // Optional
+                          final age = int.tryParse(v);
+                          if (age == null) return 'Enter a valid number';
+                          if (age < 0 || age > 150) return 'Enter a valid age (0-150)';
+                          return null;
                         },
-                        borderRadius: BorderRadius.circular(12),
-                        child: InputDecorator(
-                          decoration: InputDecoration(
-                            labelText: 'Age',
-                            prefixIcon: const Icon(Icons.cake_outlined),
-                            border: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(12),
-                            ),
-                            helperText: 'Tap to select birth date',
-                            errorText: _dateOfBirth == null ? null : null,
-                          ),
-                          child: Text(
-                            _dateOfBirth != null
-                                ? '${DateTime.now().year - _dateOfBirth!.year} yrs'
-                                : 'Select',
-                            style: TextStyle(
-                              color: _dateOfBirth != null
-                                  ? null
-                                  : Theme.of(context).hintColor,
-                            ),
-                            overflow: TextOverflow.ellipsis,
-                          ),
-                        ),
                       ),
                     ],
                   ),
@@ -774,6 +745,7 @@ class _AddPatientScreenState extends ConsumerState<AddPatientScreen> {
       ].join('\n');
       
       final patientName = '${_first.text} ${_last.text}'.trim();
+      final age = _ageController.text.isNotEmpty ? int.tryParse(_ageController.text) : null;
       int patientId;
       
       if (widget.isEditMode) {
@@ -782,7 +754,7 @@ class _AddPatientScreenState extends ConsumerState<AddPatientScreen> {
           id: Value(widget.patient!.id),
           firstName: Value(_first.text),
           lastName: Value(_last.text),
-          dateOfBirth: Value(_dateOfBirth),
+          age: Value(age),
           phone: Value(_phone.text),
           email: Value(_email.text),
           address: Value(_address.text),
@@ -808,7 +780,7 @@ class _AddPatientScreenState extends ConsumerState<AddPatientScreen> {
         final companion = PatientsCompanion.insert(
           firstName: _first.text,
           lastName: Value(_last.text),
-          dateOfBirth: Value(_dateOfBirth),
+          age: Value(age),
           phone: Value(_phone.text),
           email: Value(_email.text),
           address: Value(_address.text),

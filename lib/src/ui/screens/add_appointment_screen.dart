@@ -1414,7 +1414,7 @@ class _AddAppointmentScreenState extends ConsumerState<AddAppointmentScreen> {
             shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
           ),
         );
-        Navigator.pop(context, createdAppointment);
+        Navigator.pop(context, true);
       }
     } catch (e, st) {
       log.e('APPOINTMENT', 'Failed to save appointment', error: e, stackTrace: st);

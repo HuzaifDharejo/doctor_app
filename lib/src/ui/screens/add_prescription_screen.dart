@@ -568,7 +568,7 @@ class _AddPrescriptionScreenState extends ConsumerState<AddPrescriptionScreen> {
       patientData = {
         'id': selectedPatient.id,
         'name': _getPatientName(selectedPatient),
-        'age': _calculateAge(selectedPatient.dateOfBirth),
+        'age': selectedPatient.age ?? 0,
       };
     }
 
@@ -1280,7 +1280,7 @@ class _AddPrescriptionScreenState extends ConsumerState<AddPrescriptionScreen> {
     if (_selectedPatient != null) {
       final patient = _selectedPatient!;
       final patientName = _getPatientName(patient);
-      final age = _calculateAge(patient.dateOfBirth);
+      final age = patient.age ?? 0;
       return Container(
         padding: const EdgeInsets.all(14),
         decoration: BoxDecoration(
@@ -1429,7 +1429,7 @@ class _AddPrescriptionScreenState extends ConsumerState<AddPrescriptionScreen> {
               itemBuilder: (context, index) {
                 final patient = filteredPatients[index];
                 final patientName = _getPatientName(patient);
-                final age = _calculateAge(patient.dateOfBirth);
+                final age = patient.age ?? 0;
                 return ListTile(
                   leading: CircleAvatar(
                     backgroundColor: isDark ? Colors.grey[800] : Colors.grey[200],

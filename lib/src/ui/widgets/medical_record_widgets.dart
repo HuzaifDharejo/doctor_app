@@ -590,10 +590,18 @@ extension SafeMapAccess on Map<String, dynamic> {
   }
   
   /// Get list value or empty list if null/invalid
+  /// Also handles Map<String, bool> where we extract keys with true values
   List<String> getStringList(String key) {
     final value = this[key];
     if (value is List) {
       return value.map((e) => e.toString()).toList();
+    }
+    // Handle Map<String, bool> - return keys with true values
+    if (value is Map) {
+      return value.entries
+          .where((e) => e.value == true)
+          .map((e) => e.key.toString())
+          .toList();
     }
     return [];
   }

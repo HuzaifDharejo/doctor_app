@@ -13,7 +13,7 @@ void main() {
         id: 1,
         firstName: 'John',
         lastName: 'Doe',
-        dateOfBirth: DateTime(1990, 5, 15),
+        age: 35,  // born 1990
         phone: '1234567890',
         email: 'john.doe@example.com',
         address: '123 Main St',
@@ -91,7 +91,7 @@ void main() {
         id: 2,
         firstName: 'Jane',
         lastName: 'Smith',
-        dateOfBirth: DateTime(1985, 3, 20),
+        age: 40,  // born 1985
         phone: '9876543210',
         email: '',
         address: '',
@@ -119,7 +119,7 @@ void main() {
         id: 2,
         firstName: 'Jane',
         lastName: 'Smith',
-        dateOfBirth: DateTime(1985, 3, 20),
+        age: 40,  // born 1985
         phone: '9876543210',
         email: '',
         address: '',
@@ -182,7 +182,7 @@ void main() {
         id: 3,
         firstName: 'Bob',
         lastName: 'Wilson',
-        dateOfBirth: DateTime(1995, 8, 10),
+        age: 30,  // born 1995
         phone: '',
         email: '',
         address: '',
@@ -212,7 +212,7 @@ void main() {
         id: 4,
         firstName: 'Alice',
         lastName: 'Brown',
-        dateOfBirth: DateTime(1995, 8, 10),
+        age: 30,  // born 1995
         phone: '1112223333',
         email: '',
         address: '',
@@ -239,7 +239,7 @@ void main() {
         id: 5,
         firstName: 'Charlie',
         lastName: 'Davis',
-        dateOfBirth: DateTime(1988, 12),
+        age: 37,  // born 1988
         phone: '5555555555',
         email: '',
         address: '',
@@ -267,7 +267,7 @@ void main() {
         id: 6,
         firstName: 'Eve',
         lastName: 'Taylor',
-        dateOfBirth: DateTime(1992, 6, 20),
+        age: 33,  // born 1992
         phone: '',
         email: '',
         address: '',

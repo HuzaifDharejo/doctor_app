@@ -27,7 +27,7 @@ void main() {
             firstName: 'Alice',
             lastName: 'Johnson',
             phone: '555-111-2222',
-            dateOfBirth: DateTime(1990, 3, 20),
+            age: 35, // Born 1990
           ),
         );
         expect(patientId, greaterThan(0));
@@ -434,7 +434,7 @@ void main() {
             firstName: 'Maria',
             lastName: 'Garcia',
             phone: '555-888-0000',
-            dateOfBirth: DateTime(1975, 8, 10),
+            age: 50, // Born 1975
             medicalHistory: 'Diabetes Type 2, Hypertension',
           ),
         );

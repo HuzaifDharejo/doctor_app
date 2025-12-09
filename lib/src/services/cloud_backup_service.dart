@@ -627,7 +627,7 @@ class CloudBackupService {
     'id': p.id,
     'firstName': p.firstName,
     'lastName': p.lastName,
-    'dateOfBirth': p.dateOfBirth?.toIso8601String(),
+    'age': p.age,
     'phone': p.phone,
     'email': p.email,
     'address': p.address,
@@ -742,7 +742,7 @@ class CloudBackupService {
     await db.insertPatient(PatientsCompanion.insert(
       firstName: json['firstName'] as String,
       lastName: Value(json['lastName'] as String? ?? ''),
-      dateOfBirth: Value(json['dateOfBirth'] != null ? DateTime.parse(json['dateOfBirth'] as String) : null),
+      age: Value(json['age'] as int?),
       phone: Value(json['phone'] as String? ?? ''),
       email: Value(json['email'] as String? ?? ''),
       address: Value(json['address'] as String? ?? ''),

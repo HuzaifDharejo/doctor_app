@@ -142,9 +142,8 @@ class _PsychiatricAssessmentScreenModernState
       final p = widget.preselectedPatient!;
       _patientId = p.id;
       _nameController.text = '${p.firstName} ${p.lastName}'.trim();
-      if (p.dateOfBirth != null) {
-        final age = DateTime.now().year - p.dateOfBirth!.year;
-        _ageController.text = age.toString();
+      if (p.age != null) {
+        _ageController.text = p.age.toString();
       }
     }
 
@@ -251,6 +250,9 @@ class _PsychiatricAssessmentScreenModernState
         'chief_complaint': _chiefComplaintController.text,
         'duration': _durationController.text,
         'symptoms': _symptoms,
+        'past_history': _pastHistoryController.text,
+        'family_history': _familyHistoryController.text,
+        'socioeconomic': _socioeconomicController.text,
         'mood': _moodController.text,
         'affect': _affectController.text,
         'speech': _speechController.text,

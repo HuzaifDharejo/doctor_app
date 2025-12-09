@@ -170,7 +170,7 @@ class _PatientViewScreenState extends ConsumerState<PatientViewScreen>
         id: Value(widget.patient.id),
         firstName: Value(widget.patient.firstName),
         lastName: Value(widget.patient.lastName),
-        dateOfBirth: Value(widget.patient.dateOfBirth),
+        age: Value(widget.patient.age),
         phone: Value(_phoneController.text),
         email: Value(_emailController.text),
         address: Value(_addressController.text),
@@ -1586,159 +1586,161 @@ Address: ${patient.address}
 
   Widget _buildModernPatientHeader(Patient patient, Color riskColor, bool isCompactScreen) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    final age = patient.dateOfBirth != null ? _calculateAge(patient.dateOfBirth!) : null;
+    final age = patient.age;
     
     return Padding(
       padding: EdgeInsets.fromLTRB(
         isCompactScreen ? 16 : 24,
         isCompactScreen ? 56 : 60,
         isCompactScreen ? 16 : 24,
-        72,
+        64, // Reduced from 72 to prevent overflow
       ),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          // Patient Icon with Risk Indicator
-          Stack(
-            alignment: Alignment.center,
-            children: [
-              // Outer glow ring
-              Container(
-                width: isCompactScreen ? 72 : 84,
-                height: isCompactScreen ? 72 : 84,
-                decoration: BoxDecoration(
-                  shape: BoxShape.circle,
-                  border: Border.all(
-                    color: Colors.white.withValues(alpha: 0.3),
-                    width: 2,
-                  ),
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.black.withValues(alpha: 0.2),
-                      blurRadius: 20,
-                      spreadRadius: 2,
-                    ),
-                  ],
-                ),
-                child: Container(
+      child: SingleChildScrollView(
+        physics: const NeverScrollableScrollPhysics(),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            // Patient Icon with Risk Indicator
+            Stack(
+              alignment: Alignment.center,
+              children: [
+                // Outer glow ring
+                Container(
+                  width: isCompactScreen ? 68 : 80, // Slightly reduced
+                  height: isCompactScreen ? 68 : 80,
                   decoration: BoxDecoration(
                     shape: BoxShape.circle,
-                    gradient: LinearGradient(
-                      begin: Alignment.topLeft,
-                      end: Alignment.bottomRight,
-                      colors: [
-                        Colors.white.withValues(alpha: 0.25),
-                        Colors.white.withValues(alpha: 0.1),
-                      ],
+                    border: Border.all(
+                      color: Colors.white.withValues(alpha: 0.3),
+                      width: 2,
                     ),
-                  ),
-                  child: Icon(
-                    Icons.person_rounded,
-                    size: isCompactScreen ? 36 : 42,
-                    color: Colors.white,
-                  ),
-                ),
-              ),
-              // Risk badge
-              Positioned(
-                bottom: 0,
-                right: 0,
-                child: Container(
-                  padding: const EdgeInsets.all(6),
-                  decoration: BoxDecoration(
-                    color: riskColor,
-                    shape: BoxShape.circle,
-                    border: Border.all(color: Colors.white, width: 2.5),
                     boxShadow: [
                       BoxShadow(
-                        color: riskColor.withValues(alpha: 0.5),
-                        blurRadius: 8,
-                        spreadRadius: 1,
+                        color: Colors.black.withValues(alpha: 0.2),
+                        blurRadius: 20,
+                        spreadRadius: 2,
                       ),
                     ],
                   ),
-                  child: Icon(
-                    patient.riskLevel == 0
-                        ? Icons.check_rounded
-                        : (patient.riskLevel == 1 ? Icons.warning_amber_rounded : Icons.priority_high_rounded),
-                    color: Colors.white,
-                    size: 12,
+                  child: Container(
+                    decoration: BoxDecoration(
+                      shape: BoxShape.circle,
+                      gradient: LinearGradient(
+                        begin: Alignment.topLeft,
+                        end: Alignment.bottomRight,
+                        colors: [
+                          Colors.white.withValues(alpha: 0.25),
+                          Colors.white.withValues(alpha: 0.1),
+                        ],
+                      ),
+                    ),
+                    child: Icon(
+                      Icons.person_rounded,
+                      size: isCompactScreen ? 34 : 40, // Slightly reduced
+                      color: Colors.white,
+                    ),
                   ),
                 ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 12),
-          
-          // Patient Name
-          Text(
-            '${patient.firstName} ${patient.lastName}'.trim(),
-            style: TextStyle(
-              fontSize: isCompactScreen ? 20 : 24,
-              fontWeight: FontWeight.w800,
-              color: Colors.white,
-              letterSpacing: -0.5,
-              shadows: [
-                Shadow(
-                  color: Colors.black.withValues(alpha: 0.2),
-                  blurRadius: 4,
-                  offset: const Offset(0, 2),
+                // Risk badge
+                Positioned(
+                  bottom: 0,
+                  right: 0,
+                  child: Container(
+                    padding: const EdgeInsets.all(5), // Slightly reduced
+                    decoration: BoxDecoration(
+                      color: riskColor,
+                      shape: BoxShape.circle,
+                      border: Border.all(color: Colors.white, width: 2),
+                      boxShadow: [
+                        BoxShadow(
+                          color: riskColor.withValues(alpha: 0.5),
+                          blurRadius: 8,
+                          spreadRadius: 1,
+                        ),
+                      ],
+                    ),
+                    child: Icon(
+                      patient.riskLevel == 0
+                          ? Icons.check_rounded
+                          : (patient.riskLevel == 1 ? Icons.warning_amber_rounded : Icons.priority_high_rounded),
+                      color: Colors.white,
+                      size: 11, // Slightly reduced
+                    ),
+                  ),
                 ),
               ],
             ),
-            textAlign: TextAlign.center,
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
-          ),
-          const SizedBox(height: 8),
+            const SizedBox(height: 10), // Reduced from 12
+            
+            // Patient Name
+            Text(
+              '${patient.firstName} ${patient.lastName}'.trim(),
+              style: TextStyle(
+                fontSize: isCompactScreen ? 19 : 22, // Slightly reduced
+                fontWeight: FontWeight.w800,
+                color: Colors.white,
+                letterSpacing: -0.5,
+                shadows: [
+                  Shadow(
+                    color: Colors.black.withValues(alpha: 0.2),
+                    blurRadius: 4,
+                    offset: const Offset(0, 2),
+                  ),
+                ],
+              ),
+              textAlign: TextAlign.center,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+            ),
+            const SizedBox(height: 6), // Reduced from 8
           
-          // Patient Info Row
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-            decoration: BoxDecoration(
-              color: Colors.white.withValues(alpha: 0.15),
-              borderRadius: BorderRadius.circular(24),
-              border: Border.all(
-                color: Colors.white.withValues(alpha: 0.2),
+            // Patient Info Row
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6), // Reduced padding
+              decoration: BoxDecoration(
+                color: Colors.white.withValues(alpha: 0.15),
+                borderRadius: BorderRadius.circular(24),
+                border: Border.all(
+                  color: Colors.white.withValues(alpha: 0.2),
+                ),
+              ),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  // Patient ID
+                  _buildInfoBadge(
+                    icon: Icons.tag_rounded,
+                    text: 'P-${patient.id.toString().padLeft(4, '0')}',
+                  ),
+                  if (age != null) ...[
+                    _buildDividerDot(),
+                    _buildInfoBadge(
+                      icon: Icons.cake_outlined,
+                      text: '$age yrs',
+                    ),
+                  ],
+                  if (patient.gender != null && patient.gender!.isNotEmpty) ...[
+                    _buildDividerDot(),
+                    _buildInfoBadge(
+                      icon: patient.gender?.toLowerCase() == 'male' 
+                          ? Icons.male_rounded 
+                          : patient.gender?.toLowerCase() == 'female'
+                              ? Icons.female_rounded
+                              : Icons.person_outline_rounded,
+                      text: patient.gender!,
+                    ),
+                  ],
+                ],
               ),
             ),
-            child: Row(
-              mainAxisSize: MainAxisSize.min,
+            const SizedBox(height: 8), // Reduced from 10
+            
+            // Risk Level & Status
+            Row(
+              mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                // Patient ID
-                _buildInfoBadge(
-                  icon: Icons.tag_rounded,
-                  text: 'P-${patient.id.toString().padLeft(4, '0')}',
-                ),
-                if (age != null) ...[
-                  _buildDividerDot(),
-                  _buildInfoBadge(
-                    icon: Icons.cake_outlined,
-                    text: '$age yrs',
-                  ),
-                ],
-                if (patient.gender != null && patient.gender!.isNotEmpty) ...[
-                  _buildDividerDot(),
-                  _buildInfoBadge(
-                    icon: patient.gender?.toLowerCase() == 'male' 
-                        ? Icons.male_rounded 
-                        : patient.gender?.toLowerCase() == 'female'
-                            ? Icons.female_rounded
-                            : Icons.person_outline_rounded,
-                    text: patient.gender!,
-                  ),
-                ],
-              ],
-            ),
-          ),
-          const SizedBox(height: 10),
-          
-          // Risk Level & Status
-          Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5), // Reduced padding
                 decoration: BoxDecoration(
                   color: riskColor.withValues(alpha: 0.2),
                   borderRadius: BorderRadius.circular(20),
@@ -1797,7 +1799,8 @@ Address: ${patient.address}
               ],
             ],
           ),
-        ],
+          ],
+        ),
       ),
     );
   }

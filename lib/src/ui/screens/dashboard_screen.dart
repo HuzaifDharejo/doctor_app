@@ -704,11 +704,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
         final patientName = patient != null 
             ? '${patient.firstName} ${patient.lastName}' 
             : 'Patient #${currentAppt.patientId}';
-        final age = patient?.dateOfBirth != null 
-            ? DateTime.now().difference(patient!.dateOfBirth!).inDays ~/ 365 
-            : null;
-        
-        return Column(
+        final age = patient?.age;        return Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Row(

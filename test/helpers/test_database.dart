@@ -222,7 +222,7 @@ class TestDataFactory {
   static PatientsCompanion createPatient({
     String firstName = 'Test',
     String? lastName,
-    DateTime? dateOfBirth,
+    int? age,
     String? phone,
     String? email,
     String? address,
@@ -233,7 +233,7 @@ class TestDataFactory {
     return PatientsCompanion.insert(
       firstName: firstName,
       lastName: Value(lastName ?? ''),
-      dateOfBirth: Value(dateOfBirth),
+      age: Value(age),
       phone: Value(phone ?? ''),
       email: Value(email ?? ''),
       address: Value(address ?? ''),

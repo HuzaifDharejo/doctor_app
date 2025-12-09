@@ -152,11 +152,10 @@ class _EncounterScreenState extends ConsumerState<EncounterScreen> {
     final patient = summary.patient ?? widget.patient;
     if (patient == null) return const SizedBox.shrink();
 
-    // Calculate age if DOB available
+    // Get age directly from patient
     String? ageText;
-    if (patient.dateOfBirth != null) {
-      final age = DateTime.now().difference(patient.dateOfBirth!).inDays ~/ 365;
-      ageText = '$age yrs';
+    if (patient.age != null) {
+      ageText = '${patient.age} yrs';
     }
 
     // Check for allergies

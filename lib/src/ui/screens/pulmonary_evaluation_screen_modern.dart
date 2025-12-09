@@ -145,9 +145,8 @@ class _PulmonaryEvaluationScreenModernState
       final p = widget.preselectedPatient!;
       _patientId = p.id;
       _patientNameController.text = '${p.firstName} ${p.lastName}'.trim();
-      if (p.dateOfBirth != null) {
-        final age = DateTime.now().year - p.dateOfBirth!.year;
-        _ageController.text = age.toString();
+      if (p.age != null) {
+        _ageController.text = p.age.toString();
       }
     }
   }

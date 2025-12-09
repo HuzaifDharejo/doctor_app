@@ -284,7 +284,7 @@ class RecordSectionHeader extends StatelessWidget {
 
 /// A scaffold widget for medical record forms with gradient header
 /// Provides consistent layout structure across all record screens
-class RecordFormScaffold extends StatelessWidget {
+class RecordFormScaffold extends StatefulWidget {
   const RecordFormScaffold({
     super.key,
     required this.title,
@@ -305,18 +305,25 @@ class RecordFormScaffold extends StatelessWidget {
   final Widget? trailing;
 
   @override
+  State<RecordFormScaffold> createState() => _RecordFormScaffoldState();
+}
+
+class _RecordFormScaffoldState extends State<RecordFormScaffold> {
+  bool _isNavigating = false;
+
+  @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final screenWidth = MediaQuery.of(context).size.width;
     final isCompact = screenWidth < 400;
     final padding = isCompact ? 12.0 : 20.0;
     
-    final colors = gradientColors ?? [AppColors.primary, AppColors.primaryDark];
+    final colors = widget.gradientColors ?? [AppColors.primary, AppColors.primaryDark];
 
     return Scaffold(
       backgroundColor: isDark ? const Color(0xFF0F0F0F) : const Color(0xFFF8FAFC),
       body: CustomScrollView(
-        controller: scrollController,
+        controller: widget.scrollController,
         physics: const BouncingScrollPhysics(),
         slivers: [
           // Gradient Header
@@ -327,12 +334,18 @@ class RecordFormScaffold extends StatelessWidget {
           SliverPadding(
             padding: EdgeInsets.all(padding),
             sliver: SliverList(
-              delegate: SliverChildListDelegate([body]),
+              delegate: SliverChildListDelegate([widget.body]),
             ),
           ),
         ],
       ),
     );
+  }
+
+  void _handleBackNavigation(BuildContext context) {
+    if (_isNavigating) return;
+    _isNavigating = true;
+    Navigator.pop(context);
   }
 
   Widget _buildGradientHeader(BuildContext context, List<Color> colors, bool isCompact) {
@@ -365,7 +378,7 @@ class RecordFormScaffold extends StatelessWidget {
         children: [
           // Back Button
           GestureDetector(
-            onTap: () => Navigator.pop(context),
+            onTap: () => _handleBackNavigation(context),
             child: Container(
               padding: const EdgeInsets.all(10),
               decoration: BoxDecoration(
@@ -394,7 +407,7 @@ class RecordFormScaffold extends StatelessWidget {
                 ),
               ],
             ),
-            child: Icon(icon, color: Colors.white, size: 28),
+            child: Icon(widget.icon, color: Colors.white, size: 28),
           ),
           const SizedBox(width: 16),
           // Title & Subtitle
@@ -403,7 +416,7 @@ class RecordFormScaffold extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  title,
+                  widget.title,
                   style: TextStyle(
                     fontSize: isCompact ? 20 : 24,
                     fontWeight: FontWeight.bold,
@@ -422,7 +435,7 @@ class RecordFormScaffold extends StatelessWidget {
                     const SizedBox(width: 6),
                     Expanded(
                       child: Text(
-                        subtitle,
+                        widget.subtitle,
                         style: TextStyle(
                           fontSize: isCompact ? 12 : 14,
                           color: Colors.white.withValues(alpha: 0.9),
@@ -437,9 +450,9 @@ class RecordFormScaffold extends StatelessWidget {
             ),
           ),
           // Trailing widget (e.g., auto-save indicator)
-          if (trailing != null) ...[
+          if (widget.trailing != null) ...[
             const SizedBox(width: 8),
-            trailing!,
+            widget.trailing!,
           ],
         ],
       ),

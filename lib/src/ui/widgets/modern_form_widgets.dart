@@ -674,7 +674,7 @@ class ModernFormWidgets {
                   spacing: 12,
                   runSpacing: 4,
                   children: [
-                    if (patient.dateOfBirth != null)
+                    if (patient.age != null)
                       Row(
                         mainAxisSize: MainAxisSize.min,
                         children: [
@@ -685,7 +685,7 @@ class ModernFormWidgets {
                           ),
                           const SizedBox(width: 4),
                           Text(
-                            '${DateTime.now().year - patient.dateOfBirth!.year} yrs',
+                            '${patient.age} yrs',
                             style: TextStyle(
                               color: Colors.white.withValues(alpha: 0.9),
                               fontSize: 13,

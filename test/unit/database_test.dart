@@ -91,12 +91,11 @@ void main() {
     });
 
     test('should handle patient with all fields', () async {
-      final dob = DateTime(1990, 5, 15);
       final id = await db.insertPatient(
         TestDataFactory.createPatient(
           firstName: 'John',
           lastName: 'Doe',
-          dateOfBirth: dob,
+          age: 35,  // was born 1990
           phone: '123-456-7890',
           email: 'john@example.com',
           address: '123 Main St',
@@ -110,7 +109,7 @@ void main() {
 
       expect(patient!.firstName, equals('John'));
       expect(patient.lastName, equals('Doe'));
-      expect(patient.dateOfBirth, equals(dob));
+      expect(patient.age, equals(35));
       expect(patient.phone, equals('123-456-7890'));
       expect(patient.email, equals('john@example.com'));
       expect(patient.address, equals('123 Main St'));
