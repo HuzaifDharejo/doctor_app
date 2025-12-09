@@ -2,162 +2,39 @@ import '../db/doctor_db.dart';
 import '../services/doctor_settings_service.dart';
 
 /// Demo data for showcasing the app when database is unavailable
+/// This app is designed for a single doctor managing their own clinic
 class DemoData {
   static final DateTime _today = DateTime.now();
   static final DateTime _baseDate = DateTime(_today.year, _today.month, _today.day);
 
-  /// Sample doctor profiles for demo mode
-  static List<DoctorProfile> get doctors => [
-    DoctorProfile(
-      name: 'Dr. Ahmed Hassan',
-      specialization: 'General Physician',
-      qualifications: 'MBBS, FCPS (Medicine)',
-      licenseNumber: 'PMC-12345-2015',
-      experienceYears: 12,
-      bio: 'Experienced general physician with over a decade of practice in internal medicine. '
-           'Specialized in managing chronic diseases including diabetes, hypertension, and cardiovascular conditions.',
-      phone: '+92 321 1234567',
-      email: 'dr.ahmed.hassan@clinic.com',
-      clinicName: 'Hassan Medical Center',
-      clinicAddress: '45 Main Boulevard, Gulberg III, Lahore',
-      clinicPhone: '+92 42 35761234',
-      consultationFee: 2000,
-      followUpFee: 1500,
-      emergencyFee: 3500,
-      languages: ['English', 'Urdu', 'Punjabi'],
-      workingHours: {
-        'Monday': {'enabled': true, 'start': '09:00', 'end': '17:00'},
-        'Tuesday': {'enabled': true, 'start': '09:00', 'end': '17:00'},
-        'Wednesday': {'enabled': true, 'start': '09:00', 'end': '17:00'},
-        'Thursday': {'enabled': true, 'start': '09:00', 'end': '17:00'},
-        'Friday': {'enabled': true, 'start': '09:00', 'end': '13:00'},
-        'Saturday': {'enabled': true, 'start': '10:00', 'end': '14:00'},
-        'Sunday': {'enabled': false, 'start': '09:00', 'end': '17:00'},
-      },
-    ),
-    DoctorProfile(
-      name: 'Dr. Fatima Khan',
-      specialization: 'Cardiologist',
-      qualifications: 'MBBS, MRCP (UK), Fellowship in Cardiology',
-      licenseNumber: 'PMC-23456-2012',
-      experienceYears: 15,
-      bio: 'Board-certified cardiologist specializing in interventional cardiology and heart failure management. '
-           'Former senior registrar at Aga Khan University Hospital.',
-      phone: '+92 300 9876543',
-      email: 'dr.fatima.khan@heartcare.pk',
-      clinicName: 'Heart Care Specialists',
-      clinicAddress: '123 Clifton Road, Block 5, Karachi',
-      clinicPhone: '+92 21 35678901',
-      consultationFee: 5000,
-      followUpFee: 3000,
-      emergencyFee: 8000,
-      languages: ['English', 'Urdu', 'Sindhi'],
-      workingHours: {
-        'Monday': {'enabled': true, 'start': '10:00', 'end': '18:00'},
-        'Tuesday': {'enabled': true, 'start': '10:00', 'end': '18:00'},
-        'Wednesday': {'enabled': true, 'start': '10:00', 'end': '18:00'},
-        'Thursday': {'enabled': true, 'start': '10:00', 'end': '18:00'},
-        'Friday': {'enabled': false, 'start': '10:00', 'end': '18:00'},
-        'Saturday': {'enabled': true, 'start': '10:00', 'end': '14:00'},
-        'Sunday': {'enabled': false, 'start': '10:00', 'end': '18:00'},
-      },
-    ),
-    DoctorProfile(
-      name: 'Dr. Muhammad Ali Raza',
-      specialization: 'Pulmonologist',
-      qualifications: 'MBBS, FCPS (Pulmonology), PhD',
-      licenseNumber: 'PMC-34567-2010',
-      experienceYears: 18,
-      bio: 'Expert in respiratory medicine with extensive experience in COPD, asthma management, and sleep disorders. '
-           'Research interests include pulmonary rehabilitation and interventional pulmonology.',
-      phone: '+92 333 4567890',
-      email: 'dr.ali.raza@lungcare.pk',
-      clinicName: 'Breathing Easy Clinic',
-      clinicAddress: '78 F-7 Markaz, Islamabad',
-      clinicPhone: '+92 51 2345678',
-      consultationFee: 3500,
-      followUpFee: 2500,
-      emergencyFee: 5500,
-      languages: ['English', 'Urdu', 'Pashto'],
-      workingHours: {
-        'Monday': {'enabled': true, 'start': '08:00', 'end': '16:00'},
-        'Tuesday': {'enabled': true, 'start': '08:00', 'end': '16:00'},
-        'Wednesday': {'enabled': true, 'start': '08:00', 'end': '16:00'},
-        'Thursday': {'enabled': true, 'start': '08:00', 'end': '16:00'},
-        'Friday': {'enabled': true, 'start': '08:00', 'end': '12:00'},
-        'Saturday': {'enabled': false, 'start': '08:00', 'end': '16:00'},
-        'Sunday': {'enabled': false, 'start': '08:00', 'end': '16:00'},
-      },
-    ),
-    DoctorProfile(
-      name: 'Dr. Sarah Williams',
-      specialization: 'Psychiatrist',
-      qualifications: 'MD, DABPN, Fellowship in Child Psychiatry',
-      licenseNumber: 'PMC-45678-2014',
-      experienceYears: 10,
-      bio: 'Compassionate psychiatrist focusing on anxiety disorders, depression, and PTSD. '
-           'Trained in cognitive behavioral therapy and psychopharmacology.',
-      phone: '+92 312 7654321',
-      email: 'dr.sarah.williams@mindcare.pk',
-      clinicName: 'Mind Wellness Center',
-      clinicAddress: '56 DHA Phase 5, Lahore',
-      clinicPhone: '+92 42 37891234',
-      consultationFee: 4000,
-      followUpFee: 2500,
-      emergencyFee: 6000,
-      languages: ['English', 'Urdu'],
-      workingHours: {
-        'Monday': {'enabled': true, 'start': '11:00', 'end': '19:00'},
-        'Tuesday': {'enabled': true, 'start': '11:00', 'end': '19:00'},
-        'Wednesday': {'enabled': true, 'start': '11:00', 'end': '19:00'},
-        'Thursday': {'enabled': true, 'start': '11:00', 'end': '19:00'},
-        'Friday': {'enabled': true, 'start': '11:00', 'end': '17:00'},
-        'Saturday': {'enabled': true, 'start': '11:00', 'end': '15:00'},
-        'Sunday': {'enabled': false, 'start': '11:00', 'end': '19:00'},
-      },
-    ),
-    DoctorProfile(
-      name: 'Dr. Zainab Malik',
-      specialization: 'Gynecologist & Obstetrician',
-      qualifications: 'MBBS, MRCOG (UK), FCPS (Obs & Gynae)',
-      licenseNumber: 'PMC-56789-2011',
-      experienceYears: 14,
-      bio: 'Expert in high-risk pregnancies, fertility treatments, and minimally invasive gynecological surgery. '
-           'Passionate about women\'s health education and preventive care.',
-      phone: '+92 345 2345678',
-      email: 'dr.zainab.malik@womencare.pk',
-      clinicName: 'Women\'s Health Clinic',
-      clinicAddress: '90 Bahria Town Phase 4, Rawalpindi',
-      clinicPhone: '+92 51 5432109',
-      consultationFee: 3000,
-      followUpFee: 2000,
-      emergencyFee: 5000,
-      languages: ['English', 'Urdu', 'Punjabi'],
-      workingHours: {
-        'Monday': {'enabled': true, 'start': '09:00', 'end': '17:00'},
-        'Tuesday': {'enabled': true, 'start': '09:00', 'end': '17:00'},
-        'Wednesday': {'enabled': true, 'start': '09:00', 'end': '17:00'},
-        'Thursday': {'enabled': true, 'start': '09:00', 'end': '17:00'},
-        'Friday': {'enabled': true, 'start': '09:00', 'end': '14:00'},
-        'Saturday': {'enabled': true, 'start': '09:00', 'end': '13:00'},
-        'Sunday': {'enabled': false, 'start': '09:00', 'end': '17:00'},
-      },
-    ),
-  ];
-
-  /// Get default doctor profile for demo mode
-  static DoctorProfile get defaultDoctor => doctors.first;
-
-  /// Get doctor by specialization
-  static DoctorProfile? getDoctorBySpecialization(String specialization) {
-    try {
-      return doctors.firstWhere(
-        (d) => d.specialization.toLowerCase().contains(specialization.toLowerCase()),
-      );
-    } catch (e) {
-      return null;
-    }
-  }
+  /// Sample doctor profile for demo mode (single doctor app)
+  static DoctorProfile get defaultDoctor => DoctorProfile(
+    name: 'Dr. Ahmed Hassan',
+    specialization: 'General Physician',
+    qualifications: 'MBBS, FCPS (Medicine)',
+    licenseNumber: 'PMC-12345-2015',
+    experienceYears: 12,
+    bio: 'Experienced general physician with over a decade of practice in internal medicine. '
+         'Specialized in managing chronic diseases including diabetes, hypertension, and cardiovascular conditions.',
+    phone: '+92 321 1234567',
+    email: 'dr.ahmed.hassan@clinic.com',
+    clinicName: 'Hassan Medical Center',
+    clinicAddress: '45 Main Boulevard, Gulberg III, Lahore',
+    clinicPhone: '+92 42 35761234',
+    consultationFee: 2000,
+    followUpFee: 1500,
+    emergencyFee: 3500,
+    languages: ['English', 'Urdu', 'Punjabi'],
+    workingHours: {
+      'Monday': {'enabled': true, 'start': '09:00', 'end': '17:00'},
+      'Tuesday': {'enabled': true, 'start': '09:00', 'end': '17:00'},
+      'Wednesday': {'enabled': true, 'start': '09:00', 'end': '17:00'},
+      'Thursday': {'enabled': true, 'start': '09:00', 'end': '17:00'},
+      'Friday': {'enabled': true, 'start': '09:00', 'end': '13:00'},
+      'Saturday': {'enabled': true, 'start': '10:00', 'end': '14:00'},
+      'Sunday': {'enabled': false, 'start': '09:00', 'end': '17:00'},
+    },
+  );
 
   /// Sample patients for demo mode
   static List<Patient> get patients => [

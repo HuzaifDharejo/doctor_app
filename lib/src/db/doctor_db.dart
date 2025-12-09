@@ -374,7 +374,633 @@ class EncounterDiagnoses extends Table {
   TextColumn get notes => text().withDefault(const Constant(''))();
 }
 
-@DriftDatabase(tables: [Patients, Appointments, Prescriptions, MedicalRecords, Invoices, VitalSigns, TreatmentOutcomes, ScheduledFollowUps, TreatmentSessions, MedicationResponses, TreatmentGoals, AuditLogs, Encounters, Diagnoses, ClinicalNotes, EncounterDiagnoses])
+// ═══════════════════════════════════════════════════════════════════════════════
+// SCHEMA V3: COMPREHENSIVE CLINICAL FEATURES
+// ═══════════════════════════════════════════════════════════════════════════════
+
+/// Referrals - Track patient referrals to specialists
+class Referrals extends Table {
+  IntColumn get id => integer().autoIncrement()();
+  IntColumn get patientId => integer().references(Patients, #id)();
+  IntColumn get encounterId => integer().nullable().references(Encounters, #id)();
+  
+  // Referral details
+  TextColumn get referralType => text().withDefault(const Constant('specialist'))();
+  // Types: 'specialist', 'diagnostic', 'therapy', 'surgery', 'emergency', 'second_opinion'
+  
+  TextColumn get specialty => text()(); // e.g., 'Cardiology', 'Neurology', 'Orthopedics'
+  TextColumn get referredToName => text().withDefault(const Constant(''))();
+  TextColumn get referredToFacility => text().withDefault(const Constant(''))();
+  TextColumn get referredToPhone => text().withDefault(const Constant(''))();
+  TextColumn get referredToEmail => text().withDefault(const Constant(''))();
+  TextColumn get referredToAddress => text().withDefault(const Constant(''))();
+  
+  // Clinical info
+  TextColumn get reasonForReferral => text()();
+  TextColumn get clinicalHistory => text().withDefault(const Constant(''))();
+  TextColumn get diagnosisIds => text().withDefault(const Constant(''))(); // JSON array of diagnosis IDs
+  TextColumn get urgency => text().withDefault(const Constant('routine'))();
+  // Urgency: 'stat', 'urgent', 'routine', 'elective'
+  
+  // Status tracking
+  TextColumn get status => text().withDefault(const Constant('pending'))();
+  // Status: 'draft', 'pending', 'sent', 'accepted', 'scheduled', 'completed', 'cancelled', 'rejected'
+  
+  DateTimeColumn get referralDate => dateTime()();
+  DateTimeColumn get appointmentDate => dateTime().nullable()();
+  DateTimeColumn get completedDate => dateTime().nullable()();
+  
+  // Outcome
+  TextColumn get consultationNotes => text().withDefault(const Constant(''))();
+  TextColumn get recommendations => text().withDefault(const Constant(''))();
+  TextColumn get attachments => text().withDefault(const Constant(''))(); // JSON array of file paths
+  
+  // Insurance
+  TextColumn get preAuthRequired => text().withDefault(const Constant('unknown'))();
+  TextColumn get preAuthStatus => text().withDefault(const Constant(''))();
+  TextColumn get preAuthNumber => text().withDefault(const Constant(''))();
+  
+  TextColumn get notes => text().withDefault(const Constant(''))();
+  DateTimeColumn get createdAt => dateTime().withDefault(currentDateAndTime)();
+}
+
+/// Immunizations - Vaccination records and schedules
+class Immunizations extends Table {
+  IntColumn get id => integer().autoIncrement()();
+  IntColumn get patientId => integer().references(Patients, #id)();
+  IntColumn get encounterId => integer().nullable().references(Encounters, #id)();
+  
+  // Vaccine details
+  TextColumn get vaccineName => text()();
+  TextColumn get vaccineCode => text().withDefault(const Constant(''))(); // CVX code
+  TextColumn get manufacturer => text().withDefault(const Constant(''))();
+  TextColumn get lotNumber => text().withDefault(const Constant(''))();
+  DateTimeColumn get expirationDate => dateTime().nullable()();
+  
+  // Administration
+  DateTimeColumn get administeredDate => dateTime()();
+  TextColumn get administeredBy => text().withDefault(const Constant(''))();
+  TextColumn get administrationSite => text().withDefault(const Constant(''))(); // e.g., 'Left deltoid'
+  TextColumn get route => text().withDefault(const Constant('IM'))(); // 'IM', 'SC', 'PO', 'IN'
+  TextColumn get dose => text().withDefault(const Constant(''))();
+  IntColumn get doseNumber => integer().withDefault(const Constant(1))(); // Which dose in series
+  IntColumn get seriesTotal => integer().nullable()(); // Total doses in series
+  
+  // Status
+  TextColumn get status => text().withDefault(const Constant('completed'))();
+  // Status: 'scheduled', 'completed', 'refused', 'contraindicated', 'deferred'
+  
+  TextColumn get refusalReason => text().withDefault(const Constant(''))();
+  TextColumn get contraindication => text().withDefault(const Constant(''))();
+  
+  // Reaction tracking
+  BoolColumn get hadReaction => boolean().withDefault(const Constant(false))();
+  TextColumn get reactionDetails => text().withDefault(const Constant(''))();
+  TextColumn get reactionSeverity => text().withDefault(const Constant(''))(); // 'mild', 'moderate', 'severe'
+  
+  // Next dose
+  DateTimeColumn get nextDoseDate => dateTime().nullable()();
+  BoolColumn get reminderSent => boolean().withDefault(const Constant(false))();
+  
+  TextColumn get notes => text().withDefault(const Constant(''))();
+  DateTimeColumn get createdAt => dateTime().withDefault(currentDateAndTime)();
+}
+
+/// FamilyMedicalHistory - Structured family history tracking
+class FamilyMedicalHistory extends Table {
+  IntColumn get id => integer().autoIncrement()();
+  IntColumn get patientId => integer().references(Patients, #id)();
+  
+  // Family member
+  TextColumn get relationship => text()(); // 'father', 'mother', 'sibling', 'grandparent_paternal', etc.
+  TextColumn get relativeName => text().withDefault(const Constant(''))();
+  IntColumn get relativeAge => integer().nullable()();
+  BoolColumn get isDeceased => boolean().withDefault(const Constant(false))();
+  IntColumn get ageAtDeath => integer().nullable()();
+  TextColumn get causeOfDeath => text().withDefault(const Constant(''))();
+  
+  // Medical conditions
+  TextColumn get conditions => text().withDefault(const Constant(''))(); // JSON array of conditions
+  TextColumn get conditionDetails => text().withDefault(const Constant(''))(); // JSON: condition -> details
+  
+  // Specific conditions flags for quick queries
+  BoolColumn get hasHeartDisease => boolean().withDefault(const Constant(false))();
+  BoolColumn get hasDiabetes => boolean().withDefault(const Constant(false))();
+  BoolColumn get hasCancer => boolean().withDefault(const Constant(false))();
+  TextColumn get cancerTypes => text().withDefault(const Constant(''))();
+  BoolColumn get hasHypertension => boolean().withDefault(const Constant(false))();
+  BoolColumn get hasStroke => boolean().withDefault(const Constant(false))();
+  BoolColumn get hasMentalIllness => boolean().withDefault(const Constant(false))();
+  TextColumn get mentalIllnessTypes => text().withDefault(const Constant(''))();
+  BoolColumn get hasSubstanceAbuse => boolean().withDefault(const Constant(false))();
+  BoolColumn get hasGeneticDisorder => boolean().withDefault(const Constant(false))();
+  TextColumn get geneticDisorderTypes => text().withDefault(const Constant(''))();
+  
+  TextColumn get notes => text().withDefault(const Constant(''))();
+  DateTimeColumn get createdAt => dateTime().withDefault(currentDateAndTime)();
+  DateTimeColumn get updatedAt => dateTime().nullable()();
+}
+
+/// PatientConsents - Manage consent forms and documentation
+class PatientConsents extends Table {
+  IntColumn get id => integer().autoIncrement()();
+  IntColumn get patientId => integer().references(Patients, #id)();
+  IntColumn get encounterId => integer().nullable().references(Encounters, #id)();
+  
+  // Consent details
+  TextColumn get consentType => text()();
+  // Types: 'treatment', 'procedure', 'hipaa', 'research', 'medication', 'telehealth', 
+  //        'photo_video', 'information_release', 'financial', 'advance_directive'
+  
+  TextColumn get consentTitle => text()();
+  TextColumn get consentDescription => text().withDefault(const Constant(''))();
+  TextColumn get consentText => text().withDefault(const Constant(''))(); // Full consent text
+  TextColumn get templateId => text().withDefault(const Constant(''))(); // Link to template
+  
+  // For procedure consent
+  TextColumn get procedureName => text().withDefault(const Constant(''))();
+  TextColumn get procedureRisks => text().withDefault(const Constant(''))();
+  TextColumn get procedureBenefits => text().withDefault(const Constant(''))();
+  TextColumn get procedureAlternatives => text().withDefault(const Constant(''))();
+  
+  // Signature
+  TextColumn get signatureData => text().withDefault(const Constant(''))(); // Base64 signature image
+  TextColumn get signedByName => text().withDefault(const Constant(''))();
+  TextColumn get signedByRelationship => text().withDefault(const Constant('self'))(); // 'self', 'guardian', 'power_of_attorney'
+  DateTimeColumn get signedAt => dateTime().nullable()();
+  
+  // Witness
+  TextColumn get witnessName => text().withDefault(const Constant(''))();
+  TextColumn get witnessSignature => text().withDefault(const Constant(''))();
+  
+  // Status
+  TextColumn get status => text().withDefault(const Constant('pending'))();
+  // Status: 'pending', 'signed', 'refused', 'revoked', 'expired'
+  
+  DateTimeColumn get effectiveDate => dateTime()();
+  DateTimeColumn get expirationDate => dateTime().nullable()();
+  BoolColumn get isActive => boolean().withDefault(const Constant(true))();
+  
+  TextColumn get notes => text().withDefault(const Constant(''))();
+  DateTimeColumn get createdAt => dateTime().withDefault(currentDateAndTime)();
+}
+
+/// InsuranceInfo - Patient insurance information
+class InsuranceInfo extends Table {
+  IntColumn get id => integer().autoIncrement()();
+  IntColumn get patientId => integer().references(Patients, #id)();
+  
+  // Insurance details
+  TextColumn get insuranceType => text().withDefault(const Constant('primary'))(); // 'primary', 'secondary', 'tertiary'
+  TextColumn get payerName => text()();
+  TextColumn get payerId => text().withDefault(const Constant(''))();
+  TextColumn get planName => text().withDefault(const Constant(''))();
+  TextColumn get planType => text().withDefault(const Constant(''))(); // 'HMO', 'PPO', 'EPO', 'POS', 'HDHP'
+  TextColumn get memberId => text()();
+  TextColumn get groupNumber => text().withDefault(const Constant(''))();
+  
+  // Subscriber info
+  TextColumn get subscriberName => text().withDefault(const Constant(''))();
+  TextColumn get subscriberDob => text().withDefault(const Constant(''))();
+  TextColumn get subscriberRelationship => text().withDefault(const Constant('self'))();
+  
+  // Coverage details
+  DateTimeColumn get effectiveDate => dateTime()();
+  DateTimeColumn get terminationDate => dateTime().nullable()();
+  RealColumn get copay => real().withDefault(const Constant(0))();
+  RealColumn get deductible => real().withDefault(const Constant(0))();
+  RealColumn get deductibleMet => real().withDefault(const Constant(0))();
+  RealColumn get outOfPocketMax => real().withDefault(const Constant(0))();
+  RealColumn get outOfPocketMet => real().withDefault(const Constant(0))();
+  
+  // Contact
+  TextColumn get payerPhone => text().withDefault(const Constant(''))();
+  TextColumn get payerAddress => text().withDefault(const Constant(''))();
+  TextColumn get claimsAddress => text().withDefault(const Constant(''))();
+  
+  // Card images
+  TextColumn get frontCardImage => text().withDefault(const Constant(''))();
+  TextColumn get backCardImage => text().withDefault(const Constant(''))();
+  
+  BoolColumn get isVerified => boolean().withDefault(const Constant(false))();
+  DateTimeColumn get verifiedAt => dateTime().nullable()();
+  BoolColumn get isActive => boolean().withDefault(const Constant(true))();
+  
+  TextColumn get notes => text().withDefault(const Constant(''))();
+  DateTimeColumn get createdAt => dateTime().withDefault(currentDateAndTime)();
+}
+
+/// InsuranceClaims - Track insurance claims
+class InsuranceClaims extends Table {
+  IntColumn get id => integer().autoIncrement()();
+  IntColumn get patientId => integer().references(Patients, #id)();
+  IntColumn get insuranceId => integer().references(InsuranceInfo, #id)();
+  IntColumn get encounterId => integer().nullable().references(Encounters, #id)();
+  IntColumn get invoiceId => integer().nullable().references(Invoices, #id)();
+  
+  // Claim details
+  TextColumn get claimNumber => text()();
+  TextColumn get claimType => text().withDefault(const Constant('professional'))(); // 'professional', 'institutional'
+  DateTimeColumn get serviceDate => dateTime()();
+  DateTimeColumn get submittedDate => dateTime().nullable()();
+  
+  // Billing codes
+  TextColumn get diagnosisCodes => text().withDefault(const Constant(''))(); // JSON array of ICD-10 codes
+  TextColumn get procedureCodes => text().withDefault(const Constant(''))(); // JSON array of CPT codes
+  TextColumn get modifiers => text().withDefault(const Constant(''))(); // JSON: CPT -> modifiers
+  TextColumn get placeOfService => text().withDefault(const Constant('11'))(); // POS code
+  
+  // Amounts
+  RealColumn get billedAmount => real().withDefault(const Constant(0))();
+  RealColumn get allowedAmount => real().withDefault(const Constant(0))();
+  RealColumn get paidAmount => real().withDefault(const Constant(0))();
+  RealColumn get patientResponsibility => real().withDefault(const Constant(0))();
+  RealColumn get adjustmentAmount => real().withDefault(const Constant(0))();
+  TextColumn get adjustmentReason => text().withDefault(const Constant(''))();
+  
+  // Status tracking
+  TextColumn get status => text().withDefault(const Constant('draft'))();
+  // Status: 'draft', 'submitted', 'acknowledged', 'pending', 'approved', 'denied', 
+  //         'partially_paid', 'paid', 'appealed', 'void'
+  
+  TextColumn get denialReason => text().withDefault(const Constant(''))();
+  TextColumn get denialCode => text().withDefault(const Constant(''))();
+  DateTimeColumn get processedDate => dateTime().nullable()();
+  DateTimeColumn get paidDate => dateTime().nullable()();
+  
+  // ERA/EOB info
+  TextColumn get checkNumber => text().withDefault(const Constant(''))();
+  TextColumn get eobDocument => text().withDefault(const Constant(''))(); // File path
+  
+  TextColumn get notes => text().withDefault(const Constant(''))();
+  DateTimeColumn get createdAt => dateTime().withDefault(currentDateAndTime)();
+}
+
+/// PreAuthorizations - Track pre-authorization requests
+class PreAuthorizations extends Table {
+  IntColumn get id => integer().autoIncrement()();
+  IntColumn get patientId => integer().references(Patients, #id)();
+  IntColumn get insuranceId => integer().references(InsuranceInfo, #id)();
+  IntColumn get referralId => integer().nullable().references(Referrals, #id)();
+  
+  // Auth details
+  TextColumn get authNumber => text().withDefault(const Constant(''))();
+  TextColumn get authType => text()(); // 'procedure', 'medication', 'dme', 'imaging', 'therapy', 'admission'
+  TextColumn get serviceDescription => text()();
+  TextColumn get procedureCodes => text().withDefault(const Constant(''))(); // JSON array of CPT codes
+  TextColumn get diagnosisCodes => text().withDefault(const Constant(''))(); // JSON array of ICD-10 codes
+  
+  // Request info
+  DateTimeColumn get requestedDate => dateTime()();
+  TextColumn get requestedBy => text().withDefault(const Constant(''))();
+  IntColumn get unitsRequested => integer().withDefault(const Constant(1))();
+  TextColumn get clinicalJustification => text().withDefault(const Constant(''))();
+  TextColumn get supportingDocuments => text().withDefault(const Constant(''))(); // JSON array of file paths
+  
+  // Status
+  TextColumn get status => text().withDefault(const Constant('pending'))();
+  // Status: 'draft', 'submitted', 'pending', 'approved', 'denied', 'partial', 'expired', 'cancelled'
+  
+  IntColumn get unitsApproved => integer().nullable()();
+  IntColumn get unitsUsed => integer().withDefault(const Constant(0))();
+  DateTimeColumn get approvedDate => dateTime().nullable()();
+  DateTimeColumn get effectiveDate => dateTime().nullable()();
+  DateTimeColumn get expirationDate => dateTime().nullable()();
+  
+  TextColumn get denialReason => text().withDefault(const Constant(''))();
+  TextColumn get appealInfo => text().withDefault(const Constant(''))();
+  
+  TextColumn get notes => text().withDefault(const Constant(''))();
+  DateTimeColumn get createdAt => dateTime().withDefault(currentDateAndTime)();
+}
+
+/// LabOrders - Track lab orders
+class LabOrders extends Table {
+  IntColumn get id => integer().autoIncrement()();
+  IntColumn get patientId => integer().references(Patients, #id)();
+  IntColumn get encounterId => integer().nullable().references(Encounters, #id)();
+  
+  // Order details
+  TextColumn get orderNumber => text()();
+  TextColumn get orderType => text().withDefault(const Constant('lab'))(); // 'lab', 'imaging', 'pathology', 'genetic'
+  TextColumn get testCodes => text()(); // JSON array of test codes (LOINC)
+  TextColumn get testNames => text()(); // JSON array of test names
+  TextColumn get diagnosisCodes => text().withDefault(const Constant(''))(); // Supporting ICD-10 codes
+  
+  // Order info
+  TextColumn get orderingProvider => text()();
+  DateTimeColumn get orderedDate => dateTime()();
+  TextColumn get priority => text().withDefault(const Constant('routine'))(); // 'stat', 'urgent', 'routine'
+  TextColumn get fasting => text().withDefault(const Constant('no'))(); // 'yes', 'no', 'preferred'
+  TextColumn get specialInstructions => text().withDefault(const Constant(''))();
+  
+  // Lab info
+  TextColumn get labName => text().withDefault(const Constant(''))();
+  TextColumn get labAddress => text().withDefault(const Constant(''))();
+  TextColumn get labPhone => text().withDefault(const Constant(''))();
+  TextColumn get labFax => text().withDefault(const Constant(''))();
+  
+  // Collection
+  DateTimeColumn get collectionDate => dateTime().nullable()();
+  TextColumn get collectionSite => text().withDefault(const Constant(''))(); // 'in-office', 'lab', 'home'
+  TextColumn get specimenType => text().withDefault(const Constant(''))();
+  TextColumn get specimenId => text().withDefault(const Constant(''))();
+  
+  // Status
+  TextColumn get status => text().withDefault(const Constant('pending'))();
+  // Status: 'draft', 'pending', 'sent', 'received', 'in_progress', 'resulted', 'cancelled'
+  
+  // Results
+  IntColumn get medicalRecordId => integer().nullable().references(MedicalRecords, #id)();
+  DateTimeColumn get resultedDate => dateTime().nullable()();
+  BoolColumn get hasAbnormal => boolean().withDefault(const Constant(false))();
+  BoolColumn get hasCritical => boolean().withDefault(const Constant(false))();
+  BoolColumn get reviewed => boolean().withDefault(const Constant(false))();
+  TextColumn get reviewedBy => text().withDefault(const Constant(''))();
+  DateTimeColumn get reviewedAt => dateTime().nullable()();
+  
+  TextColumn get notes => text().withDefault(const Constant(''))();
+  DateTimeColumn get createdAt => dateTime().withDefault(currentDateAndTime)();
+}
+
+/// ProblemList - Active problems for the patient
+class ProblemList extends Table {
+  IntColumn get id => integer().autoIncrement()();
+  IntColumn get patientId => integer().references(Patients, #id)();
+  IntColumn get diagnosisId => integer().nullable().references(Diagnoses, #id)();
+  
+  // Problem details
+  TextColumn get problemName => text()();
+  TextColumn get icdCode => text().withDefault(const Constant(''))();
+  TextColumn get snomedCode => text().withDefault(const Constant(''))();
+  
+  TextColumn get category => text().withDefault(const Constant('medical'))();
+  // Categories: 'medical', 'surgical', 'psychiatric', 'social', 'functional'
+  
+  TextColumn get status => text().withDefault(const Constant('active'))();
+  // Status: 'active', 'chronic', 'resolved', 'inactive', 'ruled_out'
+  
+  TextColumn get severity => text().withDefault(const Constant('moderate'))();
+  // Severity: 'mild', 'moderate', 'severe', 'life_threatening'
+  
+  TextColumn get clinicalStatus => text().withDefault(const Constant('confirmed'))();
+  // Clinical: 'confirmed', 'provisional', 'differential', 'rule_out'
+  
+  IntColumn get priority => integer().withDefault(const Constant(5))(); // 1-10, lower = higher priority
+  
+  // Dates
+  DateTimeColumn get onsetDate => dateTime().nullable()();
+  DateTimeColumn get diagnosedDate => dateTime().nullable()();
+  DateTimeColumn get resolvedDate => dateTime().nullable()();
+  DateTimeColumn get lastReviewedDate => dateTime().nullable()();
+  
+  // Goals
+  TextColumn get treatmentGoal => text().withDefault(const Constant(''))();
+  TextColumn get currentTreatment => text().withDefault(const Constant(''))();
+  
+  BoolColumn get isChiefConcern => boolean().withDefault(const Constant(false))();
+  
+  TextColumn get notes => text().withDefault(const Constant(''))();
+  DateTimeColumn get createdAt => dateTime().withDefault(currentDateAndTime)();
+  DateTimeColumn get updatedAt => dateTime().nullable()();
+}
+
+/// GrowthMeasurements - Pediatric growth tracking
+class GrowthMeasurements extends Table {
+  IntColumn get id => integer().autoIncrement()();
+  IntColumn get patientId => integer().references(Patients, #id)();
+  IntColumn get encounterId => integer().nullable().references(Encounters, #id)();
+  
+  DateTimeColumn get measurementDate => dateTime()();
+  IntColumn get ageMonths => integer()(); // Age at measurement in months
+  
+  // Measurements
+  RealColumn get weightKg => real().nullable()();
+  RealColumn get heightCm => real().nullable()();
+  RealColumn get headCircumferenceCm => real().nullable()();
+  RealColumn get bmi => real().nullable()();
+  
+  // Percentiles (WHO/CDC)
+  RealColumn get weightPercentile => real().nullable()();
+  RealColumn get heightPercentile => real().nullable()();
+  RealColumn get headCircumferencePercentile => real().nullable()();
+  RealColumn get bmiPercentile => real().nullable()();
+  
+  // Z-scores
+  RealColumn get weightZScore => real().nullable()();
+  RealColumn get heightZScore => real().nullable()();
+  RealColumn get headCircumferenceZScore => real().nullable()();
+  RealColumn get bmiZScore => real().nullable()();
+  
+  TextColumn get chartStandard => text().withDefault(const Constant('WHO'))(); // 'WHO', 'CDC'
+  TextColumn get notes => text().withDefault(const Constant(''))();
+  DateTimeColumn get createdAt => dateTime().withDefault(currentDateAndTime)();
+}
+
+/// ClinicalReminders - Preventive care and screening reminders
+class ClinicalReminders extends Table {
+  IntColumn get id => integer().autoIncrement()();
+  IntColumn get patientId => integer().references(Patients, #id)();
+  
+  // Reminder details
+  TextColumn get reminderType => text()();
+  // Types: 'screening', 'immunization', 'lab', 'follow_up', 'medication', 'referral', 'wellness'
+  
+  TextColumn get title => text()();
+  TextColumn get description => text().withDefault(const Constant(''))();
+  TextColumn get guidelineSource => text().withDefault(const Constant(''))(); // e.g., 'USPSTF', 'CDC', 'ACS'
+  TextColumn get recommendation => text().withDefault(const Constant(''))();
+  
+  // Timing
+  DateTimeColumn get dueDate => dateTime()();
+  TextColumn get frequency => text().withDefault(const Constant(''))(); // e.g., 'annual', 'every_3_years'
+  DateTimeColumn get lastCompletedDate => dateTime().nullable()();
+  DateTimeColumn get nextDueDate => dateTime().nullable()();
+  
+  // Status
+  TextColumn get status => text().withDefault(const Constant('due'))();
+  // Status: 'upcoming', 'due', 'overdue', 'completed', 'declined', 'not_applicable'
+  
+  TextColumn get declinedReason => text().withDefault(const Constant(''))();
+  IntColumn get completedEncounterId => integer().nullable()();
+  
+  // Priority
+  IntColumn get priority => integer().withDefault(const Constant(2))(); // 1=high, 2=medium, 3=low
+  BoolColumn get notificationSent => boolean().withDefault(const Constant(false))();
+  
+  // Age/gender based
+  IntColumn get applicableMinAge => integer().nullable()();
+  IntColumn get applicableMaxAge => integer().nullable()();
+  TextColumn get applicableGender => text().withDefault(const Constant('all'))(); // 'all', 'male', 'female'
+  
+  TextColumn get notes => text().withDefault(const Constant(''))();
+  DateTimeColumn get createdAt => dateTime().withDefault(currentDateAndTime)();
+}
+
+/// AppointmentWaitlist - Track patients waiting for appointments
+class AppointmentWaitlist extends Table {
+  IntColumn get id => integer().autoIncrement()();
+  IntColumn get patientId => integer().references(Patients, #id)();
+  
+  // Request details
+  TextColumn get reason => text()();
+  TextColumn get preferredProvider => text().withDefault(const Constant(''))();
+  TextColumn get preferredDays => text().withDefault(const Constant(''))(); // JSON array: ['monday', 'wednesday']
+  TextColumn get preferredTimeStart => text().withDefault(const Constant(''))(); // HH:MM
+  TextColumn get preferredTimeEnd => text().withDefault(const Constant(''))(); // HH:MM
+  IntColumn get durationMinutes => integer().withDefault(const Constant(30))();
+  
+  // Urgency
+  TextColumn get urgency => text().withDefault(const Constant('routine'))();
+  // Urgency: 'stat', 'urgent', 'soon', 'routine'
+  
+  // Status
+  TextColumn get status => text().withDefault(const Constant('waiting'))();
+  // Status: 'waiting', 'contacted', 'scheduled', 'cancelled', 'expired'
+  
+  DateTimeColumn get requestedDate => dateTime()();
+  DateTimeColumn get expirationDate => dateTime().nullable()();
+  IntColumn get scheduledAppointmentId => integer().nullable()();
+  
+  // Contact preferences
+  TextColumn get contactMethod => text().withDefault(const Constant('phone'))(); // 'phone', 'sms', 'email'
+  IntColumn get contactAttempts => integer().withDefault(const Constant(0))();
+  DateTimeColumn get lastContactedAt => dateTime().nullable()();
+  
+  TextColumn get notes => text().withDefault(const Constant(''))();
+  DateTimeColumn get createdAt => dateTime().withDefault(currentDateAndTime)();
+}
+
+/// RecurringAppointments - Manage recurring appointment patterns
+class RecurringAppointments extends Table {
+  IntColumn get id => integer().autoIncrement()();
+  IntColumn get patientId => integer().references(Patients, #id)();
+  
+  // Recurrence pattern
+  TextColumn get frequency => text()(); // 'daily', 'weekly', 'biweekly', 'monthly', 'quarterly', 'custom'
+  IntColumn get intervalDays => integer().nullable()(); // For custom frequency
+  TextColumn get daysOfWeek => text().withDefault(const Constant(''))(); // JSON array for weekly: ['monday', 'thursday']
+  IntColumn get dayOfMonth => integer().nullable()(); // For monthly
+  
+  // Time
+  TextColumn get preferredTime => text()(); // HH:MM
+  IntColumn get durationMinutes => integer().withDefault(const Constant(30))();
+  
+  // Appointment details
+  TextColumn get reason => text()();
+  TextColumn get appointmentType => text().withDefault(const Constant('follow_up'))();
+  TextColumn get provider => text().withDefault(const Constant(''))();
+  
+  // Date range
+  DateTimeColumn get startDate => dateTime()();
+  DateTimeColumn get endDate => dateTime().nullable()(); // null = indefinite
+  IntColumn get maxOccurrences => integer().nullable()(); // null = no limit
+  IntColumn get occurrencesCreated => integer().withDefault(const Constant(0))();
+  
+  // Status
+  BoolColumn get isActive => boolean().withDefault(const Constant(true))();
+  TextColumn get status => text().withDefault(const Constant('active'))();
+  // Status: 'active', 'paused', 'completed', 'cancelled'
+  
+  // Last generated
+  DateTimeColumn get lastGeneratedDate => dateTime().nullable()();
+  IntColumn get lastGeneratedAppointmentId => integer().nullable()();
+  
+  TextColumn get notes => text().withDefault(const Constant(''))();
+  DateTimeColumn get createdAt => dateTime().withDefault(currentDateAndTime)();
+}
+
+/// ClinicalLetters - Medical letters and forms
+class ClinicalLetters extends Table {
+  IntColumn get id => integer().autoIncrement()();
+  IntColumn get patientId => integer().references(Patients, #id)();
+  IntColumn get encounterId => integer().nullable().references(Encounters, #id)();
+  
+  // Letter type
+  TextColumn get letterType => text()();
+  // Types: 'referral_letter', 'disability_form', 'fmla', 'work_excuse', 'school_excuse',
+  //        'medical_clearance', 'insurance_letter', 'prior_auth', 'to_whom_it_may_concern',
+  //        'specialist_summary', 'transfer_summary', 'consultation_reply', 'custom'
+  
+  TextColumn get title => text()();
+  TextColumn get templateId => text().withDefault(const Constant(''))();
+  
+  // Recipient
+  TextColumn get recipientName => text().withDefault(const Constant(''))();
+  TextColumn get recipientFacility => text().withDefault(const Constant(''))();
+  TextColumn get recipientAddress => text().withDefault(const Constant(''))();
+  TextColumn get recipientFax => text().withDefault(const Constant(''))();
+  
+  // Content
+  TextColumn get content => text()(); // Full letter content
+  TextColumn get formData => text().withDefault(const Constant('{}'))(); // JSON for form-based letters
+  
+  // Dates
+  DateTimeColumn get letterDate => dateTime()();
+  DateTimeColumn get effectiveFrom => dateTime().nullable()();
+  DateTimeColumn get effectiveTo => dateTime().nullable()();
+  
+  // Status
+  TextColumn get status => text().withDefault(const Constant('draft'))();
+  // Status: 'draft', 'final', 'sent', 'faxed', 'printed', 'void'
+  
+  TextColumn get signedBy => text().withDefault(const Constant(''))();
+  DateTimeColumn get signedAt => dateTime().nullable()();
+  TextColumn get signatureData => text().withDefault(const Constant(''))();
+  
+  // Delivery tracking
+  DateTimeColumn get sentAt => dateTime().nullable()();
+  TextColumn get sentMethod => text().withDefault(const Constant(''))(); // 'fax', 'email', 'mail', 'portal'
+  TextColumn get deliveryStatus => text().withDefault(const Constant(''))();
+  
+  TextColumn get notes => text().withDefault(const Constant(''))();
+  DateTimeColumn get createdAt => dateTime().withDefault(currentDateAndTime)();
+}
+
+/// CPTCodes - Reference table for procedure codes
+class CptCodes extends Table {
+  IntColumn get id => integer().autoIncrement()();
+  TextColumn get code => text()();
+  TextColumn get description => text()();
+  TextColumn get category => text().withDefault(const Constant(''))();
+  RealColumn get defaultFee => real().withDefault(const Constant(0))();
+  IntColumn get defaultDuration => integer().withDefault(const Constant(15))(); // minutes
+  BoolColumn get isActive => boolean().withDefault(const Constant(true))();
+  DateTimeColumn get createdAt => dateTime().withDefault(currentDateAndTime)();
+}
+
+/// Model class for patient with insurance
+class PatientWithInsurance {
+  PatientWithInsurance({required this.patient, required this.insurances});
+  final Patient patient;
+  final List<InsuranceInfoData> insurances;
+}
+
+/// Model class for referral with patient info
+class ReferralWithPatient {
+  ReferralWithPatient({required this.referral, required this.patient});
+  final Referral referral;
+  final Patient patient;
+}
+
+/// Model class for lab order with patient info
+class LabOrderWithPatient {
+  LabOrderWithPatient({required this.labOrder, required this.patient});
+  final LabOrder labOrder;
+  final Patient patient;
+}
+
+@DriftDatabase(tables: [
+  Patients, Appointments, Prescriptions, MedicalRecords, Invoices, 
+  VitalSigns, TreatmentOutcomes, ScheduledFollowUps, TreatmentSessions, 
+  MedicationResponses, TreatmentGoals, AuditLogs, 
+  Encounters, Diagnoses, ClinicalNotes, EncounterDiagnoses,
+  // V3: New comprehensive clinical tables
+  Referrals, Immunizations, FamilyMedicalHistory, PatientConsents,
+  InsuranceInfo, InsuranceClaims, PreAuthorizations, LabOrders,
+  ProblemList, GrowthMeasurements, ClinicalReminders, 
+  AppointmentWaitlist, RecurringAppointments, ClinicalLetters, CptCodes
+])
 class DoctorDatabase extends _$DoctorDatabase {
   /// Singleton instance
   static DoctorDatabase? _instance;
@@ -396,7 +1022,7 @@ class DoctorDatabase extends _$DoctorDatabase {
   DoctorDatabase.forTesting(super.e);
 
   @override
-  int get schemaVersion => 7;
+  int get schemaVersion => 8;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -468,6 +1094,24 @@ class DoctorDatabase extends _$DoctorDatabase {
         await m.addColumn(treatmentSessions, treatmentSessions.encounterId);
         // Note: Old duplicate fields (diagnosis, chiefComplaint, vitalsJson) kept for compatibility
         // but marked @Deprecated - use Encounters/Diagnoses/VitalSigns tables instead
+      }
+      if (from < 8) {
+        // Schema V3: Comprehensive clinical features
+        await m.createTable(referrals);
+        await m.createTable(immunizations);
+        await m.createTable(familyMedicalHistory);
+        await m.createTable(patientConsents);
+        await m.createTable(insuranceInfo);
+        await m.createTable(insuranceClaims);
+        await m.createTable(preAuthorizations);
+        await m.createTable(labOrders);
+        await m.createTable(problemList);
+        await m.createTable(growthMeasurements);
+        await m.createTable(clinicalReminders);
+        await m.createTable(appointmentWaitlist);
+        await m.createTable(recurringAppointments);
+        await m.createTable(clinicalLetters);
+        await m.createTable(cptCodes);
       }
     },
   );

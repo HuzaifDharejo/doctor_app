@@ -12,11 +12,19 @@ import '../../ui/screens/appointments_screen.dart';
 import '../../ui/screens/billing_screen.dart';
 import '../../ui/screens/clinical_analytics_screen.dart';
 import '../../ui/screens/clinical_dashboard.dart';
+import '../../ui/screens/clinical_letters_screen.dart';
+import '../../ui/screens/clinical_reminders_screen.dart';
 import '../../ui/screens/communications_screen.dart';
+import '../../ui/screens/consent_screen.dart';
 import '../../ui/screens/dashboard_screen.dart';
 import '../../ui/screens/data_export_screen.dart';
+import '../../ui/screens/family_history_screen.dart';
 import '../../ui/screens/follow_ups_screen.dart';
+import '../../ui/screens/growth_chart_screen.dart';
+import '../../ui/screens/immunizations_screen.dart';
+import '../../ui/screens/insurance_screen.dart';
 import '../../ui/screens/invoice_detail_screen.dart';
+import '../../ui/screens/lab_orders_screen.dart';
 import '../../ui/screens/lab_results_screen.dart';
 import '../../ui/screens/medical_record_detail_screen.dart';
 import '../../ui/screens/medical_records_list_screen.dart';
@@ -28,15 +36,19 @@ import '../../ui/screens/onboarding_screen.dart';
 import '../../ui/screens/patient_view/patient_view.dart';
 import '../../ui/screens/patients_screen.dart';
 import '../../ui/screens/prescriptions_screen.dart';
+import '../../ui/screens/problem_list_screen.dart';
 import '../../ui/screens/psychiatric_assessment_screen_modern.dart';
 import '../../ui/screens/pulmonary_evaluation_screen_modern.dart';
 import '../../ui/screens/records/records.dart';
+import '../../ui/screens/recurring_appointments_screen.dart';
+import '../../ui/screens/referrals_screen.dart';
 import '../../ui/screens/settings_screen.dart';
 import '../../ui/screens/treatment_dashboard.dart';
 import '../../ui/screens/treatment_outcomes_screen.dart';
 import '../../ui/screens/treatment_progress_screen.dart';
 import '../../ui/screens/user_manual_screen.dart';
 import '../../ui/screens/vital_signs_screen.dart';
+import '../../ui/screens/waitlist_screen.dart';
 import '../../ui/screens/backup_settings_screen.dart';
 
 /// Route names as constants
@@ -79,6 +91,20 @@ abstract class AppRoutes {
   static const String labResults = '/lab-results';
   static const String onboarding = '/onboarding';
   static const String backupSettings = '/backup-settings';
+  
+  // New clinical feature routes
+  static const String referrals = '/referrals';
+  static const String immunizations = '/immunizations';
+  static const String familyHistory = '/family-history';
+  static const String problemList = '/problem-list';
+  static const String labOrders = '/lab-orders';
+  static const String clinicalReminders = '/clinical-reminders';
+  static const String waitlist = '/waitlist';
+  static const String recurringAppointments = '/recurring-appointments';
+  static const String clinicalLetters = '/clinical-letters';
+  static const String consents = '/consents';
+  static const String insurance = '/insurance';
+  static const String growthCharts = '/growth-charts';
 }
 
 /// Route arguments for type-safe navigation
@@ -170,6 +196,67 @@ class MedicalRecordDetailArgs {
 class MedicalRecordsListArgs {
   const MedicalRecordsListArgs({this.filterRecordType});
   final String? filterRecordType;
+}
+
+// New clinical feature route arguments
+class ReferralsArgs {
+  const ReferralsArgs({this.patientId, this.patientName});
+  final int? patientId;
+  final String? patientName;
+}
+
+class ImmunizationsArgs {
+  const ImmunizationsArgs({this.patientId, this.patientName});
+  final int? patientId;
+  final String? patientName;
+}
+
+class FamilyHistoryArgs {
+  const FamilyHistoryArgs({this.patientId, this.patientName});
+  final int? patientId;
+  final String? patientName;
+}
+
+class ProblemListArgs {
+  const ProblemListArgs({this.patientId, this.patientName});
+  final int? patientId;
+  final String? patientName;
+}
+
+class LabOrdersArgs {
+  const LabOrdersArgs({this.patientId, this.patientName});
+  final int? patientId;
+  final String? patientName;
+}
+
+class ClinicalRemindersArgs {
+  const ClinicalRemindersArgs({this.patientId, this.patientName});
+  final int? patientId;
+  final String? patientName;
+}
+
+class GrowthChartsArgs {
+  const GrowthChartsArgs({required this.patientId, required this.patientName});
+  final int patientId;
+  final String patientName;
+}
+
+class ConsentsArgs {
+  const ConsentsArgs({this.patientId, this.patientName});
+  final int? patientId;
+  final String? patientName;
+}
+
+class InsuranceArgs {
+  const InsuranceArgs({this.patientId, this.patientName});
+  final int? patientId;
+  final String? patientName;
+}
+
+class ClinicalLettersArgs {
+  const ClinicalLettersArgs({this.patientId, this.patientName});
+  final int? patientId;
+  final String? patientName;
 }
 
 /// App router configuration
@@ -345,6 +432,80 @@ class AppRouter {
         
       case AppRoutes.dashboard:
         return _buildRoute(const DashboardScreen(), settings);
+        
+      // New clinical feature routes
+      case AppRoutes.referrals:
+        final args = settings.arguments as ReferralsArgs?;
+        return _buildRoute(
+          ReferralsScreen(patientId: args?.patientId),
+          settings,
+        );
+        
+      case AppRoutes.immunizations:
+        final args = settings.arguments as ImmunizationsArgs?;
+        return _buildRoute(
+          ImmunizationsScreen(patientId: args?.patientId),
+          settings,
+        );
+        
+      case AppRoutes.familyHistory:
+        final args = settings.arguments as FamilyHistoryArgs?;
+        return _buildRoute(
+          FamilyHistoryScreen(patientId: args?.patientId),
+          settings,
+        );
+        
+      case AppRoutes.problemList:
+        final args = settings.arguments as ProblemListArgs?;
+        return _buildRoute(
+          ProblemListScreen(patientId: args?.patientId),
+          settings,
+        );
+        
+      case AppRoutes.labOrders:
+        final args = settings.arguments as LabOrdersArgs?;
+        return _buildRoute(
+          LabOrdersScreen(patientId: args?.patientId),
+          settings,
+        );
+        
+      case AppRoutes.clinicalReminders:
+        final args = settings.arguments as ClinicalRemindersArgs?;
+        return _buildRoute(
+          ClinicalRemindersScreen(patientId: args?.patientId),
+          settings,
+        );
+        
+      case AppRoutes.waitlist:
+        return _buildRoute(const WaitlistScreen(), settings);
+        
+      case AppRoutes.recurringAppointments:
+        return _buildRoute(const RecurringAppointmentsScreen(), settings);
+        
+      case AppRoutes.clinicalLetters:
+        return _buildRoute(
+          const ClinicalLettersScreen(),
+          settings,
+        );
+        
+      case AppRoutes.consents:
+        return _buildRoute(
+          const ConsentScreen(),
+          settings,
+        );
+        
+      case AppRoutes.insurance:
+        return _buildRoute(
+          const InsuranceScreen(),
+          settings,
+        );
+        
+      case AppRoutes.growthCharts:
+        final args = settings.arguments as GrowthChartsArgs;
+        return _buildRoute(
+          GrowthChartScreen(patientId: args.patientId),
+          settings,
+        );
         
       default:
         return _buildRoute(
@@ -555,4 +716,92 @@ extension NavigationHelper on BuildContext {
 
   /// Navigate to dashboard
   Future<void> goToDashboard() => pushNamed(AppRoutes.dashboard);
+
+  // New clinical feature navigation helpers
+  
+  /// Navigate to referrals
+  Future<void> goToReferrals({int? patientId, String? patientName}) {
+    return pushNamed(
+      AppRoutes.referrals,
+      arguments: ReferralsArgs(patientId: patientId, patientName: patientName),
+    );
+  }
+
+  /// Navigate to immunizations
+  Future<void> goToImmunizations({int? patientId, String? patientName}) {
+    return pushNamed(
+      AppRoutes.immunizations,
+      arguments: ImmunizationsArgs(patientId: patientId, patientName: patientName),
+    );
+  }
+
+  /// Navigate to family history
+  Future<void> goToFamilyHistory({int? patientId, String? patientName}) {
+    return pushNamed(
+      AppRoutes.familyHistory,
+      arguments: FamilyHistoryArgs(patientId: patientId, patientName: patientName),
+    );
+  }
+
+  /// Navigate to problem list
+  Future<void> goToProblemList({int? patientId, String? patientName}) {
+    return pushNamed(
+      AppRoutes.problemList,
+      arguments: ProblemListArgs(patientId: patientId, patientName: patientName),
+    );
+  }
+
+  /// Navigate to lab orders
+  Future<void> goToLabOrders({int? patientId, String? patientName}) {
+    return pushNamed(
+      AppRoutes.labOrders,
+      arguments: LabOrdersArgs(patientId: patientId, patientName: patientName),
+    );
+  }
+
+  /// Navigate to clinical reminders
+  Future<void> goToClinicalReminders({int? patientId, String? patientName}) {
+    return pushNamed(
+      AppRoutes.clinicalReminders,
+      arguments: ClinicalRemindersArgs(patientId: patientId, patientName: patientName),
+    );
+  }
+
+  /// Navigate to waitlist
+  Future<void> goToWaitlist() => pushNamed(AppRoutes.waitlist);
+
+  /// Navigate to recurring appointments
+  Future<void> goToRecurringAppointments() => pushNamed(AppRoutes.recurringAppointments);
+
+  /// Navigate to clinical letters
+  Future<void> goToClinicalLetters({int? patientId, String? patientName}) {
+    return pushNamed(
+      AppRoutes.clinicalLetters,
+      arguments: ClinicalLettersArgs(patientId: patientId, patientName: patientName),
+    );
+  }
+
+  /// Navigate to consents
+  Future<void> goToConsents({int? patientId, String? patientName}) {
+    return pushNamed(
+      AppRoutes.consents,
+      arguments: ConsentsArgs(patientId: patientId, patientName: patientName),
+    );
+  }
+
+  /// Navigate to insurance
+  Future<void> goToInsurance({int? patientId, String? patientName}) {
+    return pushNamed(
+      AppRoutes.insurance,
+      arguments: InsuranceArgs(patientId: patientId, patientName: patientName),
+    );
+  }
+
+  /// Navigate to growth charts
+  Future<void> goToGrowthCharts(int patientId, String patientName) {
+    return pushNamed(
+      AppRoutes.growthCharts,
+      arguments: GrowthChartsArgs(patientId: patientId, patientName: patientName),
+    );
+  }
 }

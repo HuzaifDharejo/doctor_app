@@ -61,7 +61,13 @@ enum AuditAction {
   
   // Settings
   changeSettings('CHANGE_SETTINGS'),
-  changeSecuritySettings('CHANGE_SECURITY_SETTINGS');
+  changeSecuritySettings('CHANGE_SECURITY_SETTINGS'),
+  
+  // Generic CRUD actions for clinical features
+  create('CREATE'),
+  update('UPDATE'),
+  delete('DELETE'),
+  signDocument('SIGN_DOCUMENT');
 
   final String value;
   const AuditAction(this.value);
@@ -79,7 +85,22 @@ enum AuditEntityType {
   treatmentGoal('TREATMENT_GOAL'),
   followUp('FOLLOW_UP'),
   settings('SETTINGS'),
-  none('');
+  none(''),
+  
+  // Additional entity types for clinical features
+  clinicalNote('CLINICAL_NOTE'),
+  clinicalLetter('CLINICAL_LETTER'),
+  clinicalReminder('CLINICAL_REMINDER'),
+  consent('CONSENT'),
+  familyHistory('FAMILY_HISTORY'),
+  growthMeasurement('GROWTH_MEASUREMENT'),
+  immunization('IMMUNIZATION'),
+  insurance('INSURANCE'),
+  labOrder('LAB_ORDER'),
+  problemList('PROBLEM_LIST'),
+  recurringAppointment('RECURRING_APPOINTMENT'),
+  referral('REFERRAL'),
+  waitlist('WAITLIST');
 
   final String value;
   const AuditEntityType(this.value);

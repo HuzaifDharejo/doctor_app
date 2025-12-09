@@ -717,6 +717,143 @@ class _HomeShellState extends ConsumerState<HomeShell> {
                   ),
                   
                   const SizedBox(height: 16),
+                  _buildSectionTitle('CLINICAL FEATURES', isDarkMode),
+                  const SizedBox(height: 8),
+                  
+                  _buildModernDrawerItem(
+                    icon: Icons.send_rounded,
+                    title: 'Referrals',
+                    subtitle: 'Specialist referrals',
+                    onTap: () {
+                      context
+                        ..pop<void>()
+                        ..goToReferrals();
+                    },
+                    color: const Color(0xFF3B82F6),
+                    isDark: isDarkMode,
+                  ),
+                  _buildModernDrawerItem(
+                    icon: Icons.vaccines_rounded,
+                    title: 'Immunizations',
+                    subtitle: 'Vaccine tracking',
+                    onTap: () {
+                      context
+                        ..pop<void>()
+                        ..goToImmunizations();
+                    },
+                    color: const Color(0xFF10B981),
+                    isDark: isDarkMode,
+                  ),
+                  _buildModernDrawerItem(
+                    icon: Icons.family_restroom_rounded,
+                    title: 'Family History',
+                    subtitle: 'Hereditary conditions',
+                    onTap: () {
+                      context
+                        ..pop<void>()
+                        ..goToFamilyHistory();
+                    },
+                    color: const Color(0xFFEC4899),
+                    isDark: isDarkMode,
+                  ),
+                  _buildModernDrawerItem(
+                    icon: Icons.list_alt_rounded,
+                    title: 'Problem List',
+                    subtitle: 'Active conditions',
+                    onTap: () {
+                      context
+                        ..pop<void>()
+                        ..goToProblemList();
+                    },
+                    color: const Color(0xFFEF4444),
+                    isDark: isDarkMode,
+                  ),
+                  _buildModernDrawerItem(
+                    icon: Icons.science_rounded,
+                    title: 'Lab Orders',
+                    subtitle: 'Order & track labs',
+                    onTap: () {
+                      context
+                        ..pop<void>()
+                        ..goToLabOrders();
+                    },
+                    color: const Color(0xFF8B5CF6),
+                    isDark: isDarkMode,
+                  ),
+                  _buildModernDrawerItem(
+                    icon: Icons.alarm_rounded,
+                    title: 'Clinical Reminders',
+                    subtitle: 'Care gaps & alerts',
+                    onTap: () {
+                      context
+                        ..pop<void>()
+                        ..goToClinicalReminders();
+                    },
+                    color: const Color(0xFFF59E0B),
+                    isDark: isDarkMode,
+                  ),
+                  _buildModernDrawerItem(
+                    icon: Icons.queue_rounded,
+                    title: 'Waitlist',
+                    subtitle: 'Appointment waitlist',
+                    onTap: () {
+                      context
+                        ..pop<void>()
+                        ..goToWaitlist();
+                    },
+                    color: const Color(0xFF06B6D4),
+                    isDark: isDarkMode,
+                  ),
+                  _buildModernDrawerItem(
+                    icon: Icons.event_repeat_rounded,
+                    title: 'Recurring Appts',
+                    subtitle: 'Appointment patterns',
+                    onTap: () {
+                      context
+                        ..pop<void>()
+                        ..goToRecurringAppointments();
+                    },
+                    color: const Color(0xFF84CC16),
+                    isDark: isDarkMode,
+                  ),
+                  _buildModernDrawerItem(
+                    icon: Icons.description_rounded,
+                    title: 'Clinical Letters',
+                    subtitle: 'Letters & documents',
+                    onTap: () {
+                      context
+                        ..pop<void>()
+                        ..goToClinicalLetters();
+                    },
+                    color: const Color(0xFF14B8A6),
+                    isDark: isDarkMode,
+                  ),
+                  _buildModernDrawerItem(
+                    icon: Icons.verified_user_rounded,
+                    title: 'Consents',
+                    subtitle: 'Consent management',
+                    onTap: () {
+                      context
+                        ..pop<void>()
+                        ..goToConsents();
+                    },
+                    color: const Color(0xFF059669),
+                    isDark: isDarkMode,
+                  ),
+                  _buildModernDrawerItem(
+                    icon: Icons.health_and_safety_rounded,
+                    title: 'Insurance',
+                    subtitle: 'Claims & billing',
+                    onTap: () {
+                      context
+                        ..pop<void>()
+                        ..goToInsurance();
+                    },
+                    color: const Color(0xFFD946EF),
+                    isDark: isDarkMode,
+                  ),
+                  
+                  const SizedBox(height: 16),
                   _buildSectionTitle('MORE', isDarkMode),
                   const SizedBox(height: 8),
                   

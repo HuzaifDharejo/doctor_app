@@ -12,18 +12,15 @@ import '../../providers/encounter_provider.dart';
 import '../../services/encounter_service.dart';
 import '../../services/logger_service.dart';
 import '../../theme/app_theme.dart';
-import '../widgets/diagnosis_picker.dart';
-import '../widgets/soap_note_editor.dart';
 import '../widgets/vitals_entry_modal.dart';
 import 'add_appointment_screen.dart';
 import 'add_invoice_screen.dart';
 import 'add_patient_screen.dart';
 import 'add_prescription_screen.dart';
-import 'records/records.dart';
-import 'patient_view/patient_view_screen.dart';
-import 'records/add_follow_up_screen.dart';
-import 'vital_signs_screen.dart';
 import 'encounter_screen.dart';
+import 'patient_view/patient_view_screen.dart';
+import 'records/records.dart';
+import 'vital_signs_screen.dart';
 
 /// Guided workflow wizard for complete patient journey
 /// From registration to invoice in a step-by-step process

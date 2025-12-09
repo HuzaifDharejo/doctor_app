@@ -2,8 +2,10 @@ import 'package:flutter/material.dart';
 import '../../core/components/app_button.dart';
 import '../../theme/app_theme.dart';
 import '../../core/theme/design_tokens.dart';
+import 'voice_dictation_button.dart';
 
 /// A text field that shows suggestion chips when focused (inline below the field)
+/// Also supports voice dictation for hands-free note-taking
 class SuggestionTextField extends StatefulWidget {
 
   const SuggestionTextField({
@@ -15,6 +17,7 @@ class SuggestionTextField extends StatefulWidget {
     this.separator = ', ',
     this.validator,
     this.keyboardType,
+    this.enableVoiceDictation = true,
   });
   final TextEditingController controller;
   final String label;
@@ -26,6 +29,8 @@ class SuggestionTextField extends StatefulWidget {
   final String separator;
   final String? Function(String?)? validator;
   final TextInputType? keyboardType;
+  /// Enable voice-to-text dictation button
+  final bool enableVoiceDictation;
 
   @override
   State<SuggestionTextField> createState() => _SuggestionTextFieldState();
@@ -108,20 +113,45 @@ class _SuggestionTextFieldState extends State<SuggestionTextField> {
               borderRadius: BorderRadius.circular(12),
             ),
             filled: true,
-            suffixIcon: widget.suggestions.isNotEmpty
-                ? GestureDetector(
+            suffixIcon: Row(
+              mainAxisSize: MainAxisSize.min,
+              mainAxisAlignment: MainAxisAlignment.end,
+              children: [
+                // Voice dictation button
+                if (widget.enableVoiceDictation)
+                  VoiceDictationButton(
+                    onTextReceived: (text) {
+                      final current = widget.controller.text;
+                      if (current.isNotEmpty && !current.endsWith(' ')) {
+                        widget.controller.text = '$current $text';
+                      } else {
+                        widget.controller.text = '$current$text';
+                      }
+                      widget.controller.selection = TextSelection.collapsed(
+                        offset: widget.controller.text.length,
+                      );
+                    },
+                    iconSize: 20,
+                  ),
+                // Suggestions lightbulb
+                if (widget.suggestions.isNotEmpty)
+                  GestureDetector(
                     onTap: () {
                       if (!_isFocused) {
                         _focusNode.requestFocus();
                       }
                     },
-                    child: Icon(
-                      Icons.lightbulb_outline,
-                      color: _isFocused ? AppColors.warning : (isDark ? AppColors.darkTextSecondary : AppColors.textHint),
-                      size: 20,
+                    child: Padding(
+                      padding: const EdgeInsets.only(right: 12),
+                      child: Icon(
+                        Icons.lightbulb_outline,
+                        color: _isFocused ? AppColors.warning : (isDark ? AppColors.darkTextSecondary : AppColors.textHint),
+                        size: 20,
+                      ),
                     ),
-                  )
-                : null,
+                  ),
+              ],
+            ),
           ),
         ),
         // Suggestions appear when focused
