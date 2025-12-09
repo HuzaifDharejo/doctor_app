@@ -52,8 +52,6 @@ class _AddGeneralRecordScreenState extends ConsumerState<AddGeneralRecordScreen>
   final _chiefComplaintsController = TextEditingController();
   final _historyController = TextEditingController();
   final _examinationController = TextEditingController();
-  final _diagnosisController = TextEditingController();
-  final _treatmentController = TextEditingController();
   final _doctorNotesController = TextEditingController();
 
   @override
@@ -75,8 +73,6 @@ class _AddGeneralRecordScreenState extends ConsumerState<AddGeneralRecordScreen>
   void _loadExistingRecord() {
     final record = widget.existingRecord!;
     _recordDate = record.recordDate;
-    _diagnosisController.text = record.diagnosis ?? '';
-    _treatmentController.text = record.treatment ?? '';
     _doctorNotesController.text = record.doctorNotes ?? '';
     
     if (record.dataJson != null) {
@@ -115,8 +111,6 @@ class _AddGeneralRecordScreenState extends ConsumerState<AddGeneralRecordScreen>
     _chiefComplaintsController.dispose();
     _historyController.dispose();
     _examinationController.dispose();
-    _diagnosisController.dispose();
-    _treatmentController.dispose();
     _doctorNotesController.dispose();
     super.dispose();
   }
@@ -215,8 +209,6 @@ class _AddGeneralRecordScreenState extends ConsumerState<AddGeneralRecordScreen>
       _chiefComplaintsController.text = (data['chief_complaints'] as String?) ?? '';
       _historyController.text = (data['history'] as String?) ?? '';
       _examinationController.text = (data['examination'] as String?) ?? '';
-      _diagnosisController.text = (data['diagnosis'] as String?) ?? '';
-      _treatmentController.text = (data['treatment'] as String?) ?? '';
       _doctorNotesController.text = (data['doctor_notes'] as String?) ?? '';
       
       if (data['record_date'] != null) {
@@ -264,8 +256,6 @@ class _AddGeneralRecordScreenState extends ConsumerState<AddGeneralRecordScreen>
       'chief_complaints': _chiefComplaintsController.text,
       'history': _historyController.text,
       'examination': _examinationController.text,
-      'diagnosis': _diagnosisController.text,
-      'treatment': _treatmentController.text,
       'doctor_notes': _doctorNotesController.text,
       'record_date': _recordDate.toIso8601String(),
       'vitals': vitals != null ? {
@@ -285,8 +275,6 @@ class _AddGeneralRecordScreenState extends ConsumerState<AddGeneralRecordScreen>
     return _chiefComplaintsController.text.isNotEmpty ||
         _historyController.text.isNotEmpty ||
         _examinationController.text.isNotEmpty ||
-        _diagnosisController.text.isNotEmpty ||
-        _treatmentController.text.isNotEmpty ||
         _doctorNotesController.text.isNotEmpty;
   }
 
@@ -353,8 +341,6 @@ class _AddGeneralRecordScreenState extends ConsumerState<AddGeneralRecordScreen>
         title: 'General Consultation - ${DateFormat('MMM d, yyyy').format(_recordDate)}',
         description: Value(_chiefComplaintsController.text),
         dataJson: Value(jsonEncode(_buildDataJson())),
-        diagnosis: Value(_diagnosisController.text),
-        treatment: Value(_treatmentController.text),
         doctorNotes: Value(_doctorNotesController.text),
         recordDate: _recordDate,
       );
@@ -371,8 +357,8 @@ class _AddGeneralRecordScreenState extends ConsumerState<AddGeneralRecordScreen>
           title: 'General Consultation - ${DateFormat('MMM d, yyyy').format(_recordDate)}',
           description: _chiefComplaintsController.text,
           dataJson: jsonEncode(_buildDataJson()),
-          diagnosis: _diagnosisController.text,
-          treatment: _treatmentController.text,
+          diagnosis: '',
+          treatment: '',
           doctorNotes: _doctorNotesController.text,
           recordDate: _recordDate,
           createdAt: widget.existingRecord!.createdAt,
@@ -389,11 +375,6 @@ class _AddGeneralRecordScreenState extends ConsumerState<AddGeneralRecordScreen>
       final vitals = _vitalsKey.currentState?.getData();
       if (vitals != null && _hasAnyVitals(vitals)) {
         await _saveVitalsToPatientRecord(db, vitals, recordId);
-      }
-
-      // Create TreatmentOutcome if diagnosis or treatment is provided
-      if (_diagnosisController.text.isNotEmpty || _treatmentController.text.isNotEmpty) {
-        await _saveTreatmentOutcome(db, recordId);
       }
 
       if (mounted) {
@@ -452,23 +433,6 @@ class _AddGeneralRecordScreenState extends ConsumerState<AddGeneralRecordScreen>
     ));
   }
 
-  Future<void> _saveTreatmentOutcome(DoctorDatabase db, int? recordId) async {
-    await db.insertTreatmentOutcome(TreatmentOutcomesCompanion.insert(
-      patientId: _selectedPatientId!,
-      medicalRecordId: Value(recordId),
-      treatmentType: 'combination',
-      treatmentDescription: _treatmentController.text.isNotEmpty 
-          ? _treatmentController.text 
-          : 'General consultation treatment',
-      providerType: const Value('primary_care'),
-      providerName: const Value(''),
-      diagnosis: Value(_diagnosisController.text),
-      startDate: _recordDate,
-      outcome: const Value('ongoing'),
-      notes: Value(_doctorNotesController.text),
-    ));
-  }
-
   int _calculateCompletedSections() {
     int completed = 0;
     if (_selectedPatientId != null) completed++;
@@ -480,8 +444,6 @@ class _AddGeneralRecordScreenState extends ConsumerState<AddGeneralRecordScreen>
     if (vitals != null && (vitals.bpSystolic != null || vitals.heartRate != null || vitals.temperature != null)) {
       completed++;
     }
-    if (_diagnosisController.text.isNotEmpty) completed++;
-    if (_treatmentController.text.isNotEmpty) completed++;
     return completed;
   }
 
@@ -496,12 +458,6 @@ class _AddGeneralRecordScreenState extends ConsumerState<AddGeneralRecordScreen>
       }
       if (data['examination'] != null) {
         _examinationController.text = data['examination'] as String;
-      }
-      if (data['diagnosis'] != null) {
-        _diagnosisController.text = data['diagnosis'] as String;
-      }
-      if (data['treatment'] != null) {
-        _treatmentController.text = data['treatment'] as String;
       }
       // Apply vitals if present
       if (data['vitals'] != null) {
@@ -550,7 +506,7 @@ class _AddGeneralRecordScreenState extends ConsumerState<AddGeneralRecordScreen>
   Widget _buildFormContent(BuildContext context, DoctorDatabase db, bool isDark) {
     // Calculate form completion
     final completedSections = _calculateCompletedSections();
-    const totalSections = 7; // Patient, Date, Complaints, History, Vitals, Diagnosis, Treatment
+    const totalSections = 5; // Patient, Date, Complaints, History, Vitals
 
     return Form(
       key: _formKey,
@@ -657,39 +613,6 @@ class _AddGeneralRecordScreenState extends ConsumerState<AddGeneralRecordScreen>
               hint: 'Physical examination findings...',
               maxLines: 4,
               accentColor: Colors.purple,
-            ),
-          ),
-          const SizedBox(height: 16),
-
-          // Diagnosis
-          RecordFormSection(
-            title: 'Diagnosis',
-            icon: Icons.medical_information,
-            accentColor: Colors.teal,
-            child: SuggestionTextField(
-              controller: _diagnosisController,
-              label: 'Diagnosis',
-              hint: 'Enter diagnosis...',
-              prefixIcon: Icons.medical_information_outlined,
-              maxLines: 3,
-              suggestions: MedicalSuggestions.diagnoses,
-            ),
-          ),
-          const SizedBox(height: 16),
-
-          // Treatment Plan
-          RecordFormSection(
-            title: 'Treatment Plan',
-            icon: Icons.healing,
-            accentColor: _primaryColor,
-            child: SuggestionTextField(
-              controller: _treatmentController,
-              label: 'Treatment',
-              hint: 'Enter treatment plan...',
-              prefixIcon: Icons.healing_outlined,
-              maxLines: 4,
-              suggestions: PrescriptionSuggestions.instructions,
-              separator: '\n',
             ),
           ),
           const SizedBox(height: 16),

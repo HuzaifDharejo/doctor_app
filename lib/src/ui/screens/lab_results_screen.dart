@@ -151,13 +151,13 @@ class _LabResultsScreenState extends ConsumerState<LabResultsScreen> with Single
                     if (db != null) {
                       final patient = await db.getPatientById(widget.patientId);
                       if (patient != null && mounted) {
-                        final result = await Navigator.push<bool>(
+                        final result = await Navigator.push<MedicalRecord?>(
                           context,
-                          MaterialPageRoute(
+                          MaterialPageRoute<MedicalRecord?>(
                             builder: (_) => AddLabResultScreen(preselectedPatient: patient),
                           ),
                         );
-                        if (result == true) {
+                        if (result != null) {
                           _loadLabResults();
                         }
                       }

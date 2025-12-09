@@ -778,14 +778,14 @@ class _AddRecordFAB extends StatelessWidget {
   }
 
   Future<void> _addRecord(BuildContext context) async {
-    final result = await Navigator.push<bool>(
+    final result = await Navigator.push<MedicalRecord?>(
       context,
-      MaterialPageRoute<bool>(
+      MaterialPageRoute<MedicalRecord?>(
         builder: (_) => const SelectRecordTypeScreen(),
       ),
     );
     
-    if ((result ?? false) && context.mounted) {
+    if (result != null && context.mounted) {
       // Trigger rebuild by invalidating the provider
       // This is handled by the parent widget's state
     }

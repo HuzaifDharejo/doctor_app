@@ -13,6 +13,7 @@ import '../../services/suggestions_service.dart';
 import '../../theme/app_theme.dart';
 import '../../core/theme/design_tokens.dart';
 import '../widgets/suggestion_text_field.dart';
+import 'records/components/quick_fill_templates.dart';
 
 class PsychiatricAssessmentScreenModern extends ConsumerStatefulWidget {
   
@@ -113,26 +114,6 @@ class _PsychiatricAssessmentScreenModernState
     'ADHD',
   ];
 
-  // Common quick templates
-  Map<String, Map<String, dynamic>> _templates = {
-    'Depression': {
-      'mood': 'Depressed, hopeless',
-      'affect': 'Flat, blunted',
-      'symptoms': ['Sleep Disturbance', 'Appetite Change', 'Fatigue', 'Concentration Issues'],
-      'diagnosis': 'Major Depressive Disorder',
-    },
-    'Anxiety': {
-      'mood': 'Anxious, tense',
-      'affect': 'Apprehensive',
-      'symptoms': ['Anxiety', 'Sleep Disturbance', 'Concentration Issues'],
-      'diagnosis': 'Generalized Anxiety Disorder',
-    },
-    'OCD': {
-      'symptoms': ['Obsessions', 'Compulsions', 'Anxiety'],
-      'diagnosis': 'Obsessive-Compulsive Disorder',
-    },
-  };
-
   @override
   void initState() {
     super.initState();
@@ -178,26 +159,55 @@ class _PsychiatricAssessmentScreenModernState
     super.dispose();
   }
 
-  void _applyTemplate(String templateName) {
-    final template = _templates[templateName];
-    if (template == null) return;
+  void _applyTemplate(QuickFillTemplate template) {
+    final data = template.data;
 
     setState(() {
-      if (template['mood'] != null) _moodController.text = template['mood'] as String;
-      if (template['affect'] != null) _affectController.text = template['affect'] as String;
-      if (template['diagnosis'] != null) _diagnosisController.text = template['diagnosis'] as String;
+      if (data['chief_complaint'] != null) _chiefComplaintController.text = data['chief_complaint'] as String;
+      if (data['duration'] != null) _durationController.text = data['duration'] as String;
+      if (data['mood'] != null) _moodController.text = data['mood'] as String;
+      if (data['affect'] != null) _affectController.text = data['affect'] as String;
+      if (data['speech'] != null) _speechController.text = data['speech'] as String;
+      if (data['thought'] != null) _thoughtController.text = data['thought'] as String;
+      if (data['perception'] != null) _perceptionController.text = data['perception'] as String;
+      if (data['cognition'] != null) _cognitionController.text = data['cognition'] as String;
+      if (data['insight'] != null) _insightController.text = data['insight'] as String;
+      if (data['diagnosis'] != null) _diagnosisController.text = data['diagnosis'] as String;
+      if (data['treatment'] != null) _treatmentPlanController.text = data['treatment'] as String;
+      if (data['follow_up'] != null) _followUpController.text = data['follow_up'] as String;
+      if (data['suicide_risk'] != null) _suicideRisk = data['suicide_risk'] as String;
       
-      final symptoms = template['symptoms'];
+      // Handle symptoms list
+      final symptoms = data['symptoms'];
       if (symptoms is List) {
-        for (final symptom in symptoms) {
-          _symptoms[symptom as String] = true;
+        // Reset all symptoms first
+        for (final key in _symptoms.keys) {
+          _symptoms[key] = false;
         }
+        // Then set the ones from template
+        for (final symptom in symptoms) {
+          if (_symptoms.containsKey(symptom)) {
+            _symptoms[symptom as String] = true;
+          }
+        }
+      }
+      
+      // Show risk warning if high risk
+      if (_suicideRisk == 'Moderate' || _suicideRisk == 'High') {
+        _showRiskWarning = true;
       }
     });
 
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
-        content: Text('Template "$templateName" applied'),
+        content: Row(
+          children: [
+            const Icon(Icons.check_circle, color: Colors.white, size: 20),
+            const SizedBox(width: 8),
+            Text('${template.label} template applied'),
+          ],
+        ),
+        backgroundColor: template.color,
         behavior: SnackBarBehavior.floating,
         duration: const Duration(seconds: 2),
       ),
@@ -795,48 +805,73 @@ class _PsychiatricAssessmentScreenModernState
   }
 
   Widget _buildTemplatesBar(bool isDark, Color cardColor) {
-    return Card(
-      color: cardColor,
-      elevation: isDark ? 0 : 1,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(12),
-        side: isDark ? BorderSide(color: Colors.grey.shade800) : BorderSide.none,
-      ),
-      child: Padding(
-        padding: const EdgeInsets.all(AppSpacing.md),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              'Quick Templates',
-              style: Theme.of(context).textTheme.titleSmall?.copyWith(
-                color: isDark ? Colors.white70 : Colors.black54,
-              ),
-            ),
-            const SizedBox(height: 8),
-            SingleChildScrollView(
-              scrollDirection: Axis.horizontal,
-              child: Row(
-                children: _templates.keys.map((name) {
-                  return Padding(
-                    padding: const EdgeInsets.only(right: 8),
-                    child: ElevatedButton.icon(
-                      onPressed: () => _applyTemplate(name),
-                      icon: const Icon(Icons.auto_awesome_outlined, size: 18),
-                      label: Text(name),
-                      style: ElevatedButton.styleFrom(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 12,
-                          vertical: 8,
-                        ),
-                      ),
-                    ),
-                  );
-                }).toList(),
-              ),
-            ),
-          ],
+    return Container(
+      padding: const EdgeInsets.all(AppSpacing.lg),
+      decoration: BoxDecoration(
+        color: isDark ? Colors.grey.shade800.withValues(alpha: 0.5) : Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(
+          color: isDark ? Colors.grey.shade700 : Colors.grey.shade200,
         ),
+        boxShadow: isDark ? null : [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.05),
+            blurRadius: 10,
+            offset: const Offset(0, 2),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.all(8),
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                    colors: [Colors.amber.shade500, Colors.orange.shade600],
+                  ),
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                child: const Icon(
+                  Icons.flash_on_rounded,
+                  color: Colors.white,
+                  size: 18,
+                ),
+              ),
+              const SizedBox(width: 12),
+              Text(
+                'Quick Fill Templates',
+                style: TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.w600,
+                  color: isDark ? Colors.white : Colors.grey.shade800,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 16),
+          Wrap(
+            spacing: 8,
+            runSpacing: 10,
+            children: PsychiatricTemplates.templates.map((template) {
+              return ActionChip(
+                avatar: Icon(template.icon, size: 18, color: template.color),
+                label: Text(template.label),
+                onPressed: () => _applyTemplate(template),
+                backgroundColor: template.color.withValues(alpha: 0.1),
+                side: BorderSide(color: template.color.withValues(alpha: 0.3)),
+                labelStyle: TextStyle(
+                  color: template.color,
+                  fontWeight: FontWeight.w500,
+                  fontSize: 13,
+                ),
+                padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 2),
+              );
+            }).toList(),
+          ),
+        ],
       ),
     );
   }

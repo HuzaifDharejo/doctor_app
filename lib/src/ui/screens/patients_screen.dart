@@ -273,12 +273,12 @@ class _PatientsScreenState extends ConsumerState<PatientsScreen> {
           color: Colors.transparent,
           child: InkWell(
             onTap: () async {
-              final result = await Navigator.push<bool>(
+              final result = await Navigator.push<Patient?>(
                 context,
-                MaterialPageRoute<bool>(builder: (_) => const AddPatientScreen()),
+                MaterialPageRoute<Patient?>(builder: (_) => const AddPatientScreen()),
               );
               // Refresh list if a patient was added
-              if (result == true && mounted) {
+              if (result != null && mounted) {
                 _handleRefresh();
               }
             },

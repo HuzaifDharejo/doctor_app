@@ -11,6 +11,7 @@ import '../../../core/theme/design_tokens.dart';
 import '../../widgets/suggestion_text_field.dart';
 import 'record_form_widgets.dart';
 import 'components/record_components.dart';
+import 'components/quick_fill_templates.dart';
 
 /// Screen for adding a Follow-up Visit medical record
 class AddFollowUpScreen extends ConsumerStatefulWidget {
@@ -347,6 +348,10 @@ class _AddFollowUpScreenState extends ConsumerState<AddFollowUpScreen> {
           ),
           const SizedBox(height: AppSpacing.lg),
 
+          // Quick Fill Templates
+          _buildQuickFillSection(isDark),
+          const SizedBox(height: AppSpacing.lg),
+
           // Overall Progress
           _buildProgressSelector(isDark),
           const SizedBox(height: AppSpacing.lg),
@@ -541,6 +546,112 @@ class _AddFollowUpScreenState extends ConsumerState<AddFollowUpScreen> {
           ),
           const SizedBox(height: AppSpacing.xxl),
         ],
+      ),
+    );
+  }
+
+  Widget _buildQuickFillSection(bool isDark) {
+    return Container(
+      padding: const EdgeInsets.all(AppSpacing.lg),
+      decoration: BoxDecoration(
+        color: isDark ? Colors.grey.shade800.withValues(alpha: 0.5) : Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(
+          color: isDark ? Colors.grey.shade700 : Colors.grey.shade200,
+        ),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Icon(
+                Icons.flash_on_rounded,
+                color: Colors.amber.shade600,
+                size: 20,
+              ),
+              const SizedBox(width: 8),
+              Text(
+                'Quick Fill Templates',
+                style: TextStyle(
+                  fontSize: 14,
+                  fontWeight: FontWeight.w600,
+                  color: isDark ? Colors.white : Colors.grey.shade800,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 12),
+          Wrap(
+            spacing: 8,
+            runSpacing: 8,
+            children: FollowUpTemplates.templates.map((template) {
+              return _buildQuickFillChip(
+                label: template.label,
+                icon: template.icon,
+                color: template.color,
+                onTap: () => _applyTemplate(template),
+              );
+            }).toList(),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildQuickFillChip({
+    required String label,
+    required IconData icon,
+    required Color color,
+    required VoidCallback onTap,
+  }) {
+    return ActionChip(
+      avatar: Icon(icon, size: 18, color: color),
+      label: Text(label),
+      onPressed: onTap,
+      backgroundColor: color.withValues(alpha: 0.1),
+      side: BorderSide(color: color.withValues(alpha: 0.3)),
+      labelStyle: TextStyle(
+        color: color,
+        fontWeight: FontWeight.w500,
+      ),
+    );
+  }
+
+  void _applyTemplate(QuickFillTemplate template) {
+    final data = template.data;
+    
+    // Map template data to controllers
+    if (data['reason'] != null) {
+      _progressNotesController.text = 'Reason: ${data['reason']}';
+    }
+    if (data['interval_history'] != null) {
+      _symptomsController.text = (data['interval_history'] as String?) ?? '';
+    }
+    if (data['current_status'] != null) {
+      _assessmentController.text = (data['current_status'] as String?) ?? '';
+    }
+    if (data['medications_reviewed'] != null) {
+      _medicationReviewController.text = (data['medications_reviewed'] as String?) ?? '';
+    }
+    if (data['plan'] != null) {
+      _planController.text = (data['plan'] as String?) ?? '';
+    }
+    
+    setState(() {});
+    
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Row(
+          children: [
+            const Icon(Icons.check_circle, color: Colors.white, size: 20),
+            const SizedBox(width: 8),
+            Text('${template.label} template applied'),
+          ],
+        ),
+        backgroundColor: template.color,
+        behavior: SnackBarBehavior.floating,
+        duration: const Duration(seconds: 2),
       ),
     );
   }

@@ -128,8 +128,12 @@ class _AddPrescriptionScreenState extends ConsumerState<AddPrescriptionScreen> {
     final patients = await db.getAllPatients();
     setState(() {
       _patients = patients;
-      if (_selectedPatientId != null && _selectedPatient == null) {
-        _selectedPatient = _patients.where((p) => p.id == _selectedPatientId).firstOrNull;
+      if (_selectedPatientId != null) {
+        // If patient not yet loaded, find from patients list
+        if (_selectedPatient == null) {
+          _selectedPatient = _patients.where((p) => p.id == _selectedPatientId).firstOrNull;
+        }
+        // Always load vitals when we have a selected patient
         if (_selectedPatient != null) {
           _loadLastVisitVitals(_selectedPatientId!);
         }

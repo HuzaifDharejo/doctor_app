@@ -247,13 +247,13 @@ class _AppointmentsScreenState extends ConsumerState<AppointmentsScreen> {
   }
 
   Future<void> _navigateToAddAppointment(BuildContext context) async {
-    final result = await Navigator.push<bool>(
+    final result = await Navigator.push<Appointment?>(
       context,
-      MaterialPageRoute<bool>(
+      MaterialPageRoute<Appointment?>(
         builder: (_) => AddAppointmentScreen(initialDate: _selectedDate),
       ),
     );
-    if (result ?? false) {
+    if (result != null) {
       setState(() {}); // Refresh the list
     }
   }

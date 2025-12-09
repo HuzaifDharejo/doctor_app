@@ -10,6 +10,7 @@ import '../../../theme/app_theme.dart';
 import '../../../core/theme/design_tokens.dart';
 import '../../widgets/suggestion_text_field.dart';
 import 'components/record_components.dart';
+import 'components/quick_fill_templates.dart';
 import 'record_form_widgets.dart';
 
 /// Screen for adding an Imaging/Radiology medical record
@@ -237,6 +238,10 @@ class _AddImagingScreenState extends ConsumerState<AddImagingScreen> {
           ),
           const SizedBox(height: 16),
 
+          // Quick Fill Templates Section
+          _buildQuickFillSection(context, isDark),
+          const SizedBox(height: 16),
+
           // Date and Title Section
           RecordFormSection(
             title: 'Record Details',
@@ -433,6 +438,103 @@ class _AddImagingScreenState extends ConsumerState<AddImagingScreen> {
           ),
           const SizedBox(height: 40),
         ],
+      ),
+    );
+  }
+
+  Widget _buildQuickFillSection(BuildContext context, bool isDark) {
+    return Container(
+      padding: const EdgeInsets.all(AppSpacing.lg),
+      decoration: BoxDecoration(
+        color: isDark ? Colors.grey.shade800.withValues(alpha: 0.5) : Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(
+          color: isDark ? Colors.grey.shade700 : Colors.grey.shade200,
+        ),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Icon(
+                Icons.flash_on_rounded,
+                color: Colors.amber.shade600,
+                size: 20,
+              ),
+              const SizedBox(width: 8),
+              Text(
+                'Quick Fill Templates',
+                style: TextStyle(
+                  fontSize: 14,
+                  fontWeight: FontWeight.w600,
+                  color: isDark ? Colors.white : Colors.grey.shade800,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 12),
+          Wrap(
+            spacing: 8,
+            runSpacing: 8,
+            children: ImagingTemplates.templates.map((template) {
+              return _buildQuickFillChip(
+                label: template.label,
+                icon: template.icon,
+                color: template.color,
+                onTap: () => _applyTemplate(template),
+              );
+            }).toList(),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildQuickFillChip({
+    required String label,
+    required IconData icon,
+    required Color color,
+    required VoidCallback onTap,
+  }) {
+    return ActionChip(
+      avatar: Icon(icon, size: 18, color: color),
+      label: Text(label),
+      onPressed: onTap,
+      backgroundColor: color.withValues(alpha: 0.1),
+      side: BorderSide(color: color.withValues(alpha: 0.3)),
+      labelStyle: TextStyle(
+        color: color,
+        fontWeight: FontWeight.w500,
+      ),
+    );
+  }
+
+  void _applyTemplate(QuickFillTemplate template) {
+    final data = template.data;
+    
+    _imagingTypeController.text = (data['imaging_type'] as String?) ?? '';
+    _bodyPartController.text = (data['body_part'] as String?) ?? '';
+    _indicationController.text = (data['indication'] as String?) ?? '';
+    _techniqueController.text = (data['technique'] as String?) ?? '';
+    _findingsController.text = (data['findings'] as String?) ?? '';
+    _impressionController.text = (data['impression'] as String?) ?? '';
+    _recommendationsController.text = (data['recommendations'] as String?) ?? '';
+    
+    setState(() {});
+    
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Row(
+          children: [
+            Icon(Icons.check_circle, color: Colors.white, size: 20),
+            const SizedBox(width: 8),
+            Text('${template.label} template applied'),
+          ],
+        ),
+        backgroundColor: template.color,
+        behavior: SnackBarBehavior.floating,
+        duration: const Duration(seconds: 2),
       ),
     );
   }

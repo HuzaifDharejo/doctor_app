@@ -298,7 +298,7 @@ Future<void> _insertSampleData(DoctorDatabase db) async {
     await db.insertPrescription(
       PrescriptionsCompanion(
         patientId: Value(patientIds[rx.patientIndex]),
-        medications: Value(medsJson),
+        itemsJson: Value(medsJson),
         instructions: Value(rx.instructions),
         isRefillable: Value(true),
         createdAt: Value(today.subtract(Duration(days: random.nextInt(30)))),
@@ -455,7 +455,7 @@ Future<void> _insertSampleData(DoctorDatabase db) async {
       InvoicesCompanion(
         patientId: Value(patientIds[inv.patientIndex]),
         invoiceNumber: Value('INV-${DateTime.now().year}-$invoiceNum'),
-        items: Value(itemsJson),
+        itemsJson: Value(itemsJson),
         subtotal: Value(subtotal),
         discountPercent: Value(inv.discountPercent.toDouble()),
         discountAmount: Value(discount),
@@ -475,7 +475,7 @@ Future<void> _insertSampleData(DoctorDatabase db) async {
   log.i('SEED', '✓ Inserted $invoiceCount invoices');
 
   // ============================================================================
-  // VITAL SIGNS - Recent measurements
+  // VITAL SIGNS - Recent measurements for all patients
   // ============================================================================
   final vitalData = [
     // Diabetic patient - slightly elevated BP
@@ -498,23 +498,43 @@ Future<void> _insertSampleData(DoctorDatabase db) async {
     _VitalData(8, 130, 84, 74, 36.8, 15, 88.0, 175, 28.7, 98),
     // Migraine patient
     _VitalData(9, 118, 76, 72, 36.6, 14, 60.0, 162, 22.9, 99),
+    // Pediatric - Ahmed Junior (child)
+    _VitalData(10, 100, 65, 90, 36.8, 22, 28.0, 130, 16.6, 99),
+    // Pediatric - Sara Khan
+    _VitalData(11, 105, 68, 85, 36.7, 20, 42.0, 150, 18.7, 99),
+    // Elderly - Amjad Hussain (Parkinson's)
+    _VitalData(12, 136, 82, 68, 36.5, 16, 70.0, 168, 24.8, 96),
+    // Elderly - Nasreen Begum (RA)
+    _VitalData(13, 144, 88, 72, 36.6, 15, 65.0, 155, 27.0, 97),
+    // New patient - Farhan Ahmed
+    _VitalData(14, 120, 78, 74, 36.6, 14, 78.0, 175, 25.5, 99),
+    // New patient - Hira Qureshi
+    _VitalData(15, 112, 72, 70, 36.5, 14, 58.0, 162, 22.1, 99),
+    // PUD patient - Imran Shah
+    _VitalData(16, 126, 80, 76, 36.7, 15, 82.0, 172, 27.7, 98),
+    // Epilepsy patient - Rabia Butt
+    _VitalData(17, 118, 76, 72, 36.6, 14, 64.0, 160, 25.0, 99),
+    // Sports injury - Kamran Akmal
+    _VitalData(18, 118, 74, 62, 36.5, 14, 85.0, 180, 26.2, 99),
+    // Muscle strain - Nadia Ali
+    _VitalData(19, 110, 70, 68, 36.5, 14, 55.0, 165, 20.2, 99),
   ];
 
   int vitalCount = 0;
   for (final v in vitalData) {
     // Add current vitals
-    await db.insertVitalSign(
+    await db.insertVitalSigns(
       VitalSignsCompanion(
         patientId: Value(patientIds[v.patientIndex]),
-        systolicBp: Value(v.systolic),
-        diastolicBp: Value(v.diastolic),
-        pulseRate: Value(v.pulse),
+        systolicBp: Value(v.systolic.toDouble()),
+        diastolicBp: Value(v.diastolic.toDouble()),
+        heartRate: Value(v.pulse),
         temperature: Value(v.temp),
         respiratoryRate: Value(v.respRate),
         weight: Value(v.weight),
         height: Value(v.height),
         bmi: Value(v.bmi),
-        oxygenSaturation: Value(v.o2Sat),
+        oxygenSaturation: Value(v.o2Sat.toDouble()),
         recordedAt: Value(today.subtract(Duration(hours: random.nextInt(48)))),
       ),
     );
@@ -523,18 +543,18 @@ Future<void> _insertSampleData(DoctorDatabase db) async {
     // Add a couple historical vitals for trending
     for (int i = 1; i <= 2; i++) {
       final variance = random.nextInt(10) - 5;
-      await db.insertVitalSign(
+      await db.insertVitalSigns(
         VitalSignsCompanion(
           patientId: Value(patientIds[v.patientIndex]),
-          systolicBp: Value(v.systolic + variance),
-          diastolicBp: Value(v.diastolic + (variance ~/ 2)),
-          pulseRate: Value(v.pulse + variance),
+          systolicBp: Value((v.systolic + variance).toDouble()),
+          diastolicBp: Value((v.diastolic + (variance ~/ 2)).toDouble()),
+          heartRate: Value(v.pulse + variance),
           temperature: Value(v.temp),
           respiratoryRate: Value(v.respRate),
           weight: Value(v.weight + (variance / 10)),
           height: Value(v.height),
           bmi: Value(v.bmi + (variance / 20)),
-          oxygenSaturation: Value(v.o2Sat),
+          oxygenSaturation: Value(v.o2Sat.toDouble()),
           recordedAt: Value(today.subtract(Duration(days: i * 30))),
         ),
       );
