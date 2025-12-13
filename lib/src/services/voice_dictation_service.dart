@@ -1,7 +1,9 @@
 import 'package:flutter/foundation.dart';
 import 'package:speech_to_text/speech_recognition_result.dart';
 import 'package:speech_to_text/speech_to_text.dart';
-import 'package:speech_to_text/speech_to_text_provider.dart' show SpeechListenOptions;
+
+// Re-export types used by the service
+export 'package:speech_to_text/speech_to_text.dart' show LocaleName;
 
 /// Service for voice-to-text dictation
 /// 
@@ -52,12 +54,6 @@ class VoiceDictationService {
   Future<bool> initialize() async {
     if (_isInitialized) return true;
     
-    // Web platform doesn't support speech_to_text well
-    if (kIsWeb) {
-      debugPrint('VoiceDictationService: Speech recognition not fully supported on web');
-      return false;
-    }
-    
     try {
       _isInitialized = await _speechToText.initialize(
         onError: (error) {
@@ -69,18 +65,22 @@ class VoiceDictationService {
           _isListening = status == 'listening';
           _onStatusChange?.call(_isListening);
         },
-        debugLogging: false,
+        debugLogging: kDebugMode,
       );
       
       if (_isInitialized) {
         // Get available locales and prefer English
         final locales = await _speechToText.locales();
-        final englishLocale = locales.firstWhere(
-          (locale) => locale.localeId.startsWith('en'),
-          orElse: () => locales.isNotEmpty ? locales.first : LocaleName('en_US', 'English'),
-        );
-        _currentLocaleId = englishLocale.localeId;
+        if (locales.isNotEmpty) {
+          final englishLocale = locales.firstWhere(
+            (locale) => locale.localeId.startsWith('en'),
+            orElse: () => locales.first,
+          );
+          _currentLocaleId = englishLocale.localeId;
+        }
         debugPrint('VoiceDictationService: Initialized with locale $_currentLocaleId');
+      } else {
+        debugPrint('VoiceDictationService: Speech recognition not available');
       }
       
       return _isInitialized;

@@ -3,8 +3,6 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../db/doctor_db.dart';
 import '../../extensions/drift_extensions.dart';
-import '../../models/problem_list.dart';
-import '../../providers/db_provider.dart';
 import '../../services/problem_list_service.dart';
 import '../../theme/app_theme.dart';
 import '../../core/theme/design_tokens.dart';

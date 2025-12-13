@@ -7,6 +7,7 @@ import '../../db/doctor_db.dart';
 import '../../providers/db_provider.dart';
 import '../../core/widgets/loading_state.dart';
 import '../../core/widgets/error_state.dart';
+import '../../core/widgets/skeleton_loading.dart';
 import '../../core/utils/pagination.dart';
 import 'add_patient_screen.dart';
 import 'patient_view/patient_view.dart';
@@ -446,8 +447,8 @@ class _PatientsScreenState extends ConsumerState<PatientsScreen> {
 
     // Show loading on initial load
     if (!controller.hasInitialized && controller.isLoading) {
-      return const SliverFillRemaining(
-        child: Center(child: CircularProgressIndicator(color: Color(0xFF6366F1))),
+      return const SliverToBoxAdapter(
+        child: PatientListSkeleton(itemCount: 6),
       );
     }
 

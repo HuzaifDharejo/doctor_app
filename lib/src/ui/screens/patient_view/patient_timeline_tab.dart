@@ -5,7 +5,6 @@ import 'package:intl/intl.dart';
 import '../../../db/doctor_db.dart';
 import '../../../providers/db_provider.dart';
 import '../../../theme/app_theme.dart';
-import '../../../core/theme/design_tokens.dart';
 import '../encounter_screen.dart';
 import '../prescriptions_screen.dart';
 import '../medical_record_detail_screen.dart';
@@ -66,6 +65,7 @@ class _PatientTimelineTabState extends ConsumerState<PatientTimelineTab> {
             // Timeline list
             Expanded(
               child: ListView.builder(
+                primary: false,
                 padding: const EdgeInsets.all(16),
                 itemCount: events.length,
                 itemBuilder: (context, index) {
@@ -97,43 +97,66 @@ class _PatientTimelineTabState extends ConsumerState<PatientTimelineTab> {
   
   Widget _buildFilterChips(bool isDark) {
     final filters = [
-      ('all', 'All', Icons.timeline),
-      ('appointments', 'Appointments', Icons.event),
-      ('encounters', 'Visits', Icons.medical_services),
-      ('prescriptions', 'Prescriptions', Icons.medication),
-      ('records', 'Records', Icons.folder),
-      ('vitals', 'Vitals', Icons.favorite),
-      ('invoices', 'Invoices', Icons.receipt),
+      ('all', 'All', Icons.timeline_rounded),
+      ('appointments', 'Appointments', Icons.event_rounded),
+      ('encounters', 'Visits', Icons.medical_services_rounded),
+      ('prescriptions', 'Prescriptions', Icons.medication_rounded),
+      ('records', 'Records', Icons.folder_rounded),
+      ('vitals', 'Vitals', Icons.favorite_rounded),
+      ('invoices', 'Invoices', Icons.receipt_rounded),
     ];
     
-    return SingleChildScrollView(
-      scrollDirection: Axis.horizontal,
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-      child: Row(
-        children: filters.map((f) {
-          final isSelected = _filter == f.$1;
-          return Padding(
-            padding: const EdgeInsets.only(right: 8),
-            child: FilterChip(
-              selected: isSelected,
-              label: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Icon(f.$3, size: 16),
-                  const SizedBox(width: 4),
-                  Text(f.$2),
-                ],
+    return Container(
+      margin: const EdgeInsets.fromLTRB(16, 8, 16, 8),
+      decoration: BoxDecoration(
+        color: isDark ? AppColors.darkSurface : Colors.grey.shade100,
+        borderRadius: BorderRadius.circular(12),
+      ),
+      child: SingleChildScrollView(
+        scrollDirection: Axis.horizontal,
+        padding: const EdgeInsets.all(4),
+        child: Row(
+          children: filters.map((f) {
+            final isSelected = _filter == f.$1;
+            return Padding(
+              padding: const EdgeInsets.only(right: 4),
+              child: GestureDetector(
+                onTap: () => setState(() => _filter = f.$1),
+                child: AnimatedContainer(
+                  duration: const Duration(milliseconds: 200),
+                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                  decoration: BoxDecoration(
+                    color: isSelected ? AppColors.primary : Colors.transparent,
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(
+                        f.$3,
+                        size: 16,
+                        color: isSelected 
+                            ? Colors.white 
+                            : (isDark ? AppColors.darkTextSecondary : AppColors.textSecondary),
+                      ),
+                      const SizedBox(width: 6),
+                      Text(
+                        f.$2,
+                        style: TextStyle(
+                          fontSize: 13,
+                          fontWeight: FontWeight.w600,
+                          color: isSelected 
+                              ? Colors.white 
+                              : (isDark ? AppColors.darkTextSecondary : AppColors.textSecondary),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
               ),
-              onSelected: (_) => setState(() => _filter = f.$1),
-              selectedColor: AppColors.primary.withValues(alpha: 0.2),
-              checkmarkColor: AppColors.primary,
-              labelStyle: TextStyle(
-                color: isSelected ? AppColors.primary : (isDark ? Colors.white70 : Colors.black87),
-                fontWeight: isSelected ? FontWeight.w600 : FontWeight.normal,
-              ),
-            ),
-          );
-        }).toList(),
+            );
+          }).toList(),
+        ),
       ),
     );
   }

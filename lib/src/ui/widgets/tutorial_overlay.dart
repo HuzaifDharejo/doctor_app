@@ -47,14 +47,26 @@ class TutorialOverlay extends StatefulWidget {
     required VoidCallback onComplete,
     Color highlightColor = const Color(0xFF6366F1),
   }) {
-    showDialog<void>(
-      context: context,
-      barrierDismissible: false,
-      barrierColor: Colors.black54,
-      builder: (context) => TutorialOverlay(
-        steps: steps,
-        onComplete: onComplete,
-        highlightColor: highlightColor,
+    // Use Navigator with a full-screen route for proper coverage
+    Navigator.of(context, rootNavigator: true).push(
+      PageRouteBuilder<void>(
+        opaque: false,
+        barrierDismissible: false,
+        barrierColor: Colors.transparent,
+        pageBuilder: (context, animation, secondaryAnimation) {
+          return TutorialOverlay(
+            steps: steps,
+            onComplete: onComplete,
+            highlightColor: highlightColor,
+          );
+        },
+        transitionsBuilder: (context, animation, secondaryAnimation, child) {
+          return FadeTransition(
+            opacity: animation,
+            child: child,
+          );
+        },
+        transitionDuration: const Duration(milliseconds: 300),
       ),
     );
   }
@@ -65,6 +77,8 @@ class _TutorialOverlayState extends State<TutorialOverlay>
   late int _currentStep;
   late AnimationController _pulseController;
   late AnimationController _fadeController;
+  int _retryCount = 0;
+  static const int _maxRetries = 5;
 
   @override
   void initState() {
@@ -79,6 +93,23 @@ class _TutorialOverlayState extends State<TutorialOverlay>
       duration: const Duration(milliseconds: 400),
       vsync: this,
     )..forward();
+    
+    // Schedule a check in case widgets aren't rendered yet
+    _scheduleRetry();
+  }
+  
+  void _scheduleRetry() {
+    if (_retryCount < _maxRetries) {
+      Future.delayed(const Duration(milliseconds: 200), () {
+        if (mounted) {
+          _retryCount++;
+          setState(() {}); // Rebuild to check if target is now available
+          if (_getTargetRect(widget.steps[_currentStep].targetKey) == null) {
+            _scheduleRetry();
+          }
+        }
+      });
+    }
   }
 
   @override
@@ -93,6 +124,8 @@ class _TutorialOverlayState extends State<TutorialOverlay>
       _fadeController.reverse().then((_) {
         setState(() => _currentStep++);
         widget.steps[_currentStep].onComplete?.call();
+        // Auto-scroll to make the target visible
+        _scrollToTarget(widget.steps[_currentStep].targetKey);
         _fadeController.forward();
       });
     } else {
@@ -105,9 +138,30 @@ class _TutorialOverlayState extends State<TutorialOverlay>
     if (_currentStep > 0) {
       _fadeController.reverse().then((_) {
         setState(() => _currentStep--);
+        // Auto-scroll to make the target visible
+        _scrollToTarget(widget.steps[_currentStep].targetKey);
         _fadeController.forward();
       });
     }
+  }
+  
+  void _scrollToTarget(GlobalKey targetKey) {
+    // Wait a frame for state to update, then scroll
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      final context = targetKey.currentContext;
+      if (context != null) {
+        Scrollable.ensureVisible(
+          context,
+          duration: const Duration(milliseconds: 300),
+          curve: Curves.easeInOut,
+          alignment: 0.5, // Center the target in the viewport
+        );
+        // Rebuild after scroll to update spotlight position
+        Future.delayed(const Duration(milliseconds: 350), () {
+          if (mounted) setState(() {});
+        });
+      }
+    });
   }
 
   void _skip() {
@@ -119,43 +173,98 @@ class _TutorialOverlayState extends State<TutorialOverlay>
   Widget build(BuildContext context) {
     final step = widget.steps[_currentStep];
     final targetBox = _getTargetRect(step.targetKey);
+    final mediaQuery = MediaQuery.of(context);
+    final screenSize = mediaQuery.size;
+    final topPadding = mediaQuery.padding.top;
+    final bottomPadding = mediaQuery.padding.bottom;
 
-    return GestureDetector(
-      onTap: _nextStep,
-      child: Stack(
-        children: [
-          // Overlay with spotlight
-          if (targetBox != null)
-            CustomPaint(
-              painter: _OverlayPainter(
-                highlightArea: targetBox,
-                color: Colors.black54,
-                padding: widget.padding,
-              ),
-              child: Container(),
+    return PopScope(
+      canPop: false,
+      child: Material(
+        type: MaterialType.transparency,
+        child: GestureDetector(
+          onTap: _nextStep,
+          behavior: HitTestBehavior.opaque,
+          child: Container(
+            width: screenSize.width,
+            height: screenSize.height,
+            color: Colors.transparent,
+            child: Stack(
+              fit: StackFit.expand,
+              clipBehavior: Clip.none,
+              children: [
+                // Full screen overlay with spotlight hole
+                Positioned(
+                  top: -topPadding,
+                  left: 0,
+                  right: 0,
+                  bottom: -bottomPadding,
+                  child: CustomPaint(
+                    size: Size(screenSize.width, screenSize.height + topPadding + bottomPadding),
+                    painter: _OverlayPainter(
+                      highlightArea: targetBox,
+                      color: Colors.black.withValues(alpha: 0.8),
+                      padding: widget.padding,
+                      screenSize: Size(screenSize.width, screenSize.height + topPadding + bottomPadding),
+                    ),
+                  ),
+                ),
+                // Tutorial content
+                Positioned.fill(
+                  child: FadeTransition(
+                    opacity: _fadeController,
+                    child: targetBox != null 
+                        ? _buildTutorialContent(step, targetBox)
+                        : _buildCenteredTutorialContent(step),
+                  ),
+                ),
+              ],
             ),
-          // Tutorial content
-          if (targetBox != null)
-            Positioned(
-              left: 0,
-              right: 0,
-              top: 0,
-              bottom: 0,
-              child: FadeTransition(
-                opacity: _fadeController,
-                child: _buildTutorialContent(step, targetBox),
-              ),
-            ),
-        ],
+          ),
+        ),
+      ),
+    );
+  }
+  
+  Widget _buildCenteredTutorialContent(TutorialStep step) {
+    return SafeArea(
+      child: Center(
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 24),
+          child: _buildTutorialCard(step),
+        ),
       ),
     );
   }
 
   Widget _buildTutorialContent(TutorialStep step, Rect targetBox) {
     final size = MediaQuery.of(context).size;
-    final isTop = targetBox.top < size.height / 2;
+    final viewPadding = MediaQuery.of(context).viewPadding;
+    
+    // Determine if target is in top half - if so, show card below; otherwise show card above
+    final isTargetInTopHalf = targetBox.center.dy < size.height / 2;
+    
+    // Minimum safe margins from screen edges
+    final minTopMargin = viewPadding.top + 16;
+    final minBottomMargin = viewPadding.bottom + 16;
+    const cardEstimatedHeight = 200.0;
+    
+    double? cardTop;
+    double? cardBottom;
+    
+    if (isTargetInTopHalf) {
+      // Target is in top half - place card BELOW the target
+      cardTop = (targetBox.bottom + 24).clamp(minTopMargin, size.height - cardEstimatedHeight - minBottomMargin);
+      cardBottom = null;
+    } else {
+      // Target is in bottom half - place card ABOVE the target
+      cardTop = null;
+      final spaceAboveTarget = targetBox.top - 24;
+      cardBottom = (size.height - spaceAboveTarget).clamp(minBottomMargin, size.height - cardEstimatedHeight - minTopMargin);
+    }
 
     return Stack(
+      clipBehavior: Clip.none,
       children: [
         // Pulsing highlight around target
         Positioned(
@@ -178,12 +287,12 @@ class _TutorialOverlayState extends State<TutorialOverlay>
             ),
           ),
         ),
-        // Floating tutorial card
+        // Floating tutorial card with safe positioning
         Positioned(
           left: 16,
           right: 16,
-          top: isTop ? null : targetBox.bottom + 24,
-          bottom: isTop ? size.height - targetBox.top + 24 : null,
+          top: cardTop,
+          bottom: cardBottom,
           child: _buildTutorialCard(step),
         ),
       ],
@@ -326,33 +435,50 @@ class _OverlayPainter extends CustomPainter {
   _OverlayPainter({
     required this.highlightArea,
     required this.color,
+    required this.screenSize,
     this.padding = 8.0,
   });
 
-  final Rect highlightArea;
+  final Rect? highlightArea;
   final Color color;
   final double padding;
+  final Size screenSize;
 
   @override
   void paint(Canvas canvas, Size size) {
-    // Draw semi-transparent overlay
-    canvas.drawRect(
-      Rect.fromLTWH(0, 0, size.width, size.height),
-      Paint()..color = color,
+    final paint = Paint()..color = color;
+    
+    if (highlightArea == null) {
+      // No highlight - just draw full overlay
+      canvas.drawRect(Rect.fromLTWH(0, 0, size.width, size.height), paint);
+      return;
+    }
+    
+    // Create a path that covers the entire screen
+    final fullPath = Path()
+      ..addRect(Rect.fromLTWH(0, 0, size.width, size.height));
+    
+    // Create a path for the spotlight hole
+    final spotlightRect = highlightArea!.inflate(padding);
+    final spotlightPath = Path()
+      ..addRRect(RRect.fromRectAndRadius(spotlightRect, const Radius.circular(12)));
+    
+    // Subtract the spotlight from the full overlay using Path.combine
+    final overlayPath = Path.combine(
+      PathOperation.difference,
+      fullPath,
+      spotlightPath,
     );
-
-    // Clear the highlighted area
-    canvas.drawRRect(
-      RRect.fromRectAndRadius(
-        highlightArea.inflate(padding),
-        const Radius.circular(12),
-      ),
-      Paint()..blendMode = BlendMode.clear,
-    );
+    
+    canvas.drawPath(overlayPath, paint);
   }
 
   @override
-  bool shouldRepaint(covariant CustomPainter oldDelegate) => true;
+  bool shouldRepaint(covariant _OverlayPainter oldDelegate) {
+    return highlightArea != oldDelegate.highlightArea ||
+           color != oldDelegate.color ||
+           padding != oldDelegate.padding;
+  }
 }
 
 /// Provider for tutorial state

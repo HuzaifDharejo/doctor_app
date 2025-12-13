@@ -95,7 +95,7 @@ class _QuickCheckInDialogState extends State<QuickCheckInDialog> {
       child: Container(
         width: 400,
         decoration: BoxDecoration(
-          color: isDark ? const Color(0xFF1E1E1E) : Colors.white,
+          color: isDark ? AppColors.darkSurface : Colors.white,
           borderRadius: BorderRadius.circular(20),
           boxShadow: [
             BoxShadow(
@@ -114,8 +114,8 @@ class _QuickCheckInDialogState extends State<QuickCheckInDialog> {
               decoration: BoxDecoration(
                 gradient: LinearGradient(
                   colors: [
-                    const Color(0xFF10B981).withValues(alpha: 0.15),
-                    const Color(0xFF059669).withValues(alpha: 0.1),
+                    AppColors.quickActionGreen.withValues(alpha: 0.15),
+                    AppColors.quickActionGreenDark.withValues(alpha: 0.1),
                   ],
                 ),
                 borderRadius: const BorderRadius.only(
@@ -128,12 +128,12 @@ class _QuickCheckInDialogState extends State<QuickCheckInDialog> {
                   Container(
                     padding: const EdgeInsets.all(12),
                     decoration: BoxDecoration(
-                      color: const Color(0xFF10B981).withValues(alpha: 0.2),
+                      color: AppColors.quickActionGreen.withValues(alpha: 0.2),
                       borderRadius: BorderRadius.circular(14),
                     ),
                     child: const Icon(
                       Icons.how_to_reg_rounded,
-                      color: Color(0xFF10B981),
+                      color: AppColors.quickActionGreen,
                       size: 24,
                     ),
                   ),
@@ -190,12 +190,12 @@ class _QuickCheckInDialogState extends State<QuickCheckInDialog> {
                       children: [
                         CircleAvatar(
                           radius: 24,
-                          backgroundColor: const Color(0xFF6366F1).withValues(alpha: 0.2),
+                          backgroundColor: AppColors.primary.withValues(alpha: 0.2),
                           child: Text(
                             '${widget.patient.firstName[0]}${widget.patient.lastName.isNotEmpty ? widget.patient.lastName[0] : ''}',
                             style: const TextStyle(
                               fontWeight: FontWeight.w700,
-                              color: Color(0xFF6366F1),
+                              color: AppColors.primary,
                             ),
                           ),
                         ),
@@ -243,10 +243,10 @@ class _QuickCheckInDialogState extends State<QuickCheckInDialog> {
                       width: double.infinity,
                       padding: const EdgeInsets.all(14),
                       decoration: BoxDecoration(
-                        color: const Color(0xFF6366F1).withValues(alpha: 0.1),
+                        color: AppColors.primary.withValues(alpha: 0.1),
                         borderRadius: BorderRadius.circular(12),
                         border: Border.all(
-                          color: const Color(0xFF6366F1).withValues(alpha: 0.2),
+                          color: AppColors.primary.withValues(alpha: 0.2),
                         ),
                       ),
                       child: Row(
@@ -254,7 +254,7 @@ class _QuickCheckInDialogState extends State<QuickCheckInDialog> {
                           const Icon(
                             Icons.medical_services_outlined,
                             size: 18,
-                            color: Color(0xFF6366F1),
+                            color: AppColors.primary,
                           ),
                           const SizedBox(width: 10),
                           Expanded(
@@ -278,14 +278,14 @@ class _QuickCheckInDialogState extends State<QuickCheckInDialog> {
                     padding: const EdgeInsets.all(14),
                     decoration: BoxDecoration(
                       color: _autoCreateEncounter
-                          ? const Color(0xFF10B981).withValues(alpha: 0.1)
+                          ? AppColors.quickActionGreen.withValues(alpha: 0.1)
                           : (isDark 
                               ? Colors.white.withValues(alpha: 0.05) 
                               : Colors.grey.withValues(alpha: 0.1)),
                       borderRadius: BorderRadius.circular(12),
                       border: Border.all(
                         color: _autoCreateEncounter
-                            ? const Color(0xFF10B981).withValues(alpha: 0.3)
+                            ? AppColors.quickActionGreen.withValues(alpha: 0.3)
                             : Colors.transparent,
                       ),
                     ),
@@ -294,7 +294,7 @@ class _QuickCheckInDialogState extends State<QuickCheckInDialog> {
                         Icon(
                           Icons.flash_on_rounded,
                           color: _autoCreateEncounter
-                              ? const Color(0xFF10B981)
+                              ? AppColors.quickActionGreen
                               : (isDark ? Colors.white54 : Colors.black45),
                           size: 22,
                         ),
@@ -324,7 +324,7 @@ class _QuickCheckInDialogState extends State<QuickCheckInDialog> {
                         Switch(
                           value: _autoCreateEncounter,
                           onChanged: (v) => setState(() => _autoCreateEncounter = v),
-                          activeColor: const Color(0xFF10B981),
+                          activeColor: AppColors.quickActionGreen,
                         ),
                       ],
                     ),
@@ -390,7 +390,7 @@ class _QuickCheckInDialogState extends State<QuickCheckInDialog> {
                     child: ElevatedButton(
                       onPressed: _isLoading ? null : _checkIn,
                       style: ElevatedButton.styleFrom(
-                        backgroundColor: const Color(0xFF10B981),
+                        backgroundColor: AppColors.quickActionGreen,
                         foregroundColor: Colors.white,
                         padding: const EdgeInsets.symmetric(vertical: 14),
                         shape: RoundedRectangleBorder(

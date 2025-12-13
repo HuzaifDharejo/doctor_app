@@ -4,6 +4,12 @@ import '../../../../theme/app_theme.dart';
 
 /// A reusable form section card with title, icon, and content
 /// Provides consistent styling across all medical record forms
+/// 
+/// Enhanced with:
+/// - Completion summaries when collapsed
+/// - Risk indicators for high-risk sections
+/// - Section keys for scroll navigation
+/// - Mini progress indicator
 class RecordFormSection extends StatelessWidget {
   const RecordFormSection({
     super.key,
@@ -15,6 +21,13 @@ class RecordFormSection extends StatelessWidget {
     this.collapsible = false,
     this.initiallyExpanded = true,
     this.padding,
+    this.completionSummary,
+    this.isHighRisk = false,
+    this.riskBadgeText,
+    this.sectionKey,
+    this.onToggle,
+    this.completedFields,
+    this.totalFields,
   });
 
   final String title;
@@ -25,21 +38,57 @@ class RecordFormSection extends StatelessWidget {
   final bool collapsible;
   final bool initiallyExpanded;
   final EdgeInsets? padding;
+  /// Summary shown when section is collapsed (e.g., "3 symptoms selected")
+  final String? completionSummary;
+  /// If true, section gets red styling for risk warning
+  final bool isHighRisk;
+  /// Optional badge text (e.g., "HIGH RISK", "CRITICAL")
+  final String? riskBadgeText;
+  /// Key for scroll navigation
+  final GlobalKey? sectionKey;
+  /// Callback when section is expanded/collapsed, receives new expanded state
+  final void Function(bool expanded)? onToggle;
+  /// Number of completed fields (for mini progress)
+  final int? completedFields;
+  /// Total fields in section (for mini progress)
+  final int? totalFields;
 
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final color = accentColor ?? AppColors.primary;
     
-    final content = Container(
+    if (collapsible) {
+      return _CollapsibleSection(
+        key: sectionKey,
+        title: title,
+        icon: icon,
+        accentColor: color,
+        initiallyExpanded: initiallyExpanded,
+        completionSummary: completionSummary,
+        isHighRisk: isHighRisk,
+        riskBadgeText: riskBadgeText,
+        onToggle: onToggle,
+        completedFields: completedFields,
+        totalFields: totalFields,
+        child: child,
+      );
+    }
+
+    return Container(
+      key: sectionKey,
       padding: padding ?? const EdgeInsets.all(AppSpacing.lg),
       decoration: BoxDecoration(
-        color: isDark ? AppColors.darkSurface : Colors.white,
+        color: isHighRisk
+            ? (isDark ? Colors.red.shade900.withValues(alpha: 0.3) : Colors.red.shade50)
+            : (isDark ? AppColors.darkSurface : Colors.white),
         borderRadius: BorderRadius.circular(16),
         border: Border.all(
-          color: isDark 
-              ? color.withValues(alpha: 0.2)
-              : color.withValues(alpha: 0.1),
+          color: isHighRisk
+              ? (isDark ? Colors.red.shade700 : Colors.red.shade300)
+              : (isDark 
+                  ? color.withValues(alpha: 0.2)
+                  : color.withValues(alpha: 0.1)),
         ),
         boxShadow: isDark ? null : [
           BoxShadow(
@@ -74,6 +123,34 @@ class RecordFormSection extends StatelessWidget {
                   ),
                 ),
               ),
+              // Risk badge
+              if (isHighRisk && riskBadgeText != null) ...[
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                  decoration: BoxDecoration(
+                    color: Colors.red,
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: Text(
+                    riskBadgeText!,
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontSize: 10,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 8),
+              ],
+              // Mini progress indicator
+              if (completedFields != null && totalFields != null && totalFields! > 0) ...[
+                _MiniProgressIndicator(
+                  completed: completedFields!,
+                  total: totalFields!,
+                  color: color,
+                ),
+                const SizedBox(width: 8),
+              ],
               if (trailing != null) trailing!,
             ],
           ),
@@ -83,29 +160,77 @@ class RecordFormSection extends StatelessWidget {
         ],
       ),
     );
-
-    if (collapsible) {
-      return _CollapsibleSection(
-        title: title,
-        icon: icon,
-        accentColor: color,
-        initiallyExpanded: initiallyExpanded,
-        child: child,
-      );
-    }
-
-    return content;
   }
 }
 
-/// Collapsible version of the section
+/// Mini progress indicator for section headers
+class _MiniProgressIndicator extends StatelessWidget {
+  const _MiniProgressIndicator({
+    required this.completed,
+    required this.total,
+    required this.color,
+  });
+
+  final int completed;
+  final int total;
+  final Color color;
+
+  @override
+  Widget build(BuildContext context) {
+    final progress = total > 0 ? completed / total : 0.0;
+    final isComplete = completed >= total;
+    
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+      decoration: BoxDecoration(
+        color: isComplete ? AppColors.success.withValues(alpha: 0.1) : color.withValues(alpha: 0.1),
+        borderRadius: BorderRadius.circular(12),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          SizedBox(
+            width: 12,
+            height: 12,
+            child: CircularProgressIndicator(
+              value: progress,
+              strokeWidth: 2,
+              backgroundColor: Colors.grey.withValues(alpha: 0.3),
+              valueColor: AlwaysStoppedAnimation<Color>(
+                isComplete ? AppColors.success : color,
+              ),
+            ),
+          ),
+          const SizedBox(width: 6),
+          Text(
+            '$completed/$total',
+            style: TextStyle(
+              fontSize: 11,
+              fontWeight: FontWeight.w600,
+              color: isComplete ? AppColors.success : color,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+/// Collapsible version of the section with enhanced features
 class _CollapsibleSection extends StatefulWidget {
   const _CollapsibleSection({
+    super.key,
     required this.title,
     required this.icon,
     required this.child,
     required this.accentColor,
     required this.initiallyExpanded,
+    this.completionSummary,
+    this.isHighRisk = false,
+    this.riskBadgeText,
+    this.onToggle,
+    this.completedFields,
+    this.totalFields,
   });
 
   final String title;
@@ -113,6 +238,12 @@ class _CollapsibleSection extends StatefulWidget {
   final Widget child;
   final Color accentColor;
   final bool initiallyExpanded;
+  final String? completionSummary;
+  final bool isHighRisk;
+  final String? riskBadgeText;
+  final void Function(bool expanded)? onToggle;
+  final int? completedFields;
+  final int? totalFields;
 
   @override
   State<_CollapsibleSection> createState() => _CollapsibleSectionState();
@@ -153,21 +284,26 @@ class _CollapsibleSectionState extends State<_CollapsibleSection>
         _controller.reverse();
       }
     });
+    widget.onToggle?.call(_isExpanded);
   }
 
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    final color = widget.accentColor;
+    final color = widget.isHighRisk ? Colors.red : widget.accentColor;
 
     return Container(
       decoration: BoxDecoration(
-        color: isDark ? AppColors.darkSurface : Colors.white,
+        color: widget.isHighRisk
+            ? (isDark ? Colors.red.shade900.withValues(alpha: 0.3) : Colors.red.shade50)
+            : (isDark ? AppColors.darkSurface : Colors.white),
         borderRadius: BorderRadius.circular(16),
         border: Border.all(
-          color: isDark 
-              ? color.withValues(alpha: 0.2)
-              : color.withValues(alpha: 0.1),
+          color: widget.isHighRisk
+              ? (isDark ? Colors.red.shade700 : Colors.red.shade300)
+              : (isDark 
+                  ? color.withValues(alpha: 0.2)
+                  : color.withValues(alpha: 0.1)),
         ),
       ),
       child: Column(
@@ -190,15 +326,63 @@ class _CollapsibleSectionState extends State<_CollapsibleSection>
                   ),
                   const SizedBox(width: 12),
                   Expanded(
-                    child: Text(
-                      widget.title,
-                      style: TextStyle(
-                        fontWeight: FontWeight.w600,
-                        fontSize: 15,
-                        color: isDark ? Colors.white : AppColors.textPrimary,
-                      ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          widget.title,
+                          style: TextStyle(
+                            fontWeight: FontWeight.w600,
+                            fontSize: 15,
+                            color: isDark ? Colors.white : AppColors.textPrimary,
+                          ),
+                        ),
+                        // Completion summary when collapsed
+                        if (!_isExpanded && widget.completionSummary != null)
+                          Padding(
+                            padding: const EdgeInsets.only(top: 4),
+                            child: Text(
+                              widget.completionSummary!,
+                              style: TextStyle(
+                                fontSize: 12,
+                                color: AppColors.success,
+                                fontWeight: FontWeight.w500,
+                              ),
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          ),
+                      ],
                     ),
                   ),
+                  // Risk badge
+                  if (widget.isHighRisk && widget.riskBadgeText != null) ...[
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                      decoration: BoxDecoration(
+                        color: Colors.red,
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: Text(
+                        widget.riskBadgeText!,
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontSize: 10,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                  ],
+                  // Mini progress indicator
+                  if (widget.completedFields != null && widget.totalFields != null && widget.totalFields! > 0) ...[
+                    _MiniProgressIndicator(
+                      completed: widget.completedFields!,
+                      total: widget.totalFields!,
+                      color: widget.accentColor,
+                    ),
+                    const SizedBox(width: 8),
+                  ],
                   RotationTransition(
                     turns: _iconTurns,
                     child: Icon(
@@ -459,3 +643,242 @@ class _RecordFormScaffoldState extends State<RecordFormScaffold> {
     );
   }
 }
+
+/// Section info model for navigation bar
+/// 
+/// Supports two usage patterns:
+/// 1. String key-based: Use [key] as unique identifier, [title] for display
+/// 2. Legacy: Use [name] for both identifier and display
+class SectionInfo {
+  const SectionInfo({
+    this.key,
+    this.title,
+    this.name,
+    required this.icon,
+    this.isComplete = false,
+    this.isExpanded = true,
+    this.isHighRisk = false,
+  }) : assert(key != null || name != null, 'Either key or name must be provided');
+
+  /// Unique string key for the section (used for navigation)
+  final String? key;
+  
+  /// Display title for the section (falls back to name if not provided)
+  final String? title;
+  
+  /// Legacy: section name (used as both key and display if key/title not provided)
+  final String? name;
+  
+  /// Icon for the section
+  final IconData icon;
+  
+  /// Whether this section is complete
+  final bool isComplete;
+  
+  /// Whether this section is currently expanded
+  final bool isExpanded;
+  
+  /// Whether this section represents high risk (shows red styling)
+  final bool isHighRisk;
+  
+  /// Get the display name for this section
+  String get displayName => title ?? name ?? key ?? '';
+  
+  /// Get the unique key for this section
+  String get sectionKey => key ?? name ?? '';
+}
+
+/// A horizontal scrollable navigation bar for jumping between form sections
+/// 
+/// Shows pill-shaped buttons for each section with:
+/// - Section icon and name
+/// - Completion checkmark for completed sections
+/// - Gradient highlighting for active/expanded sections
+/// - Red styling for high-risk sections
+/// 
+/// Supports two callback patterns:
+/// - [onSectionTap]: Called with section key (String) when tapped
+/// - Index-based: Use sections[index].sectionKey to get the key
+class SectionNavigationBar extends StatelessWidget {
+  const SectionNavigationBar({
+    super.key,
+    required this.sections,
+    required this.onSectionTap,
+    this.accentColor,
+  });
+
+  final List<SectionInfo> sections;
+  /// Called with the section key when a section is tapped
+  final void Function(String sectionKey) onSectionTap;
+  final Color? accentColor;
+
+  @override
+  Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final primaryColor = accentColor ?? AppColors.primary;
+
+    return SingleChildScrollView(
+      scrollDirection: Axis.horizontal,
+      child: Row(
+        children: List.generate(sections.length, (index) {
+          final section = sections[index];
+          final isExpanded = section.isExpanded;
+          final isComplete = section.isComplete;
+          final isRisk = section.isHighRisk;
+          
+          return Padding(
+            padding: EdgeInsets.only(right: index < sections.length - 1 ? 8 : 0),
+            child: Material(
+              color: Colors.transparent,
+              child: InkWell(
+                onTap: () => onSectionTap(section.sectionKey),
+                borderRadius: BorderRadius.circular(20),
+                child: AnimatedContainer(
+                  duration: const Duration(milliseconds: 200),
+                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                  decoration: BoxDecoration(
+                    gradient: isExpanded
+                        ? LinearGradient(
+                            colors: isRisk
+                                ? [Colors.red, Colors.red.shade700]
+                                : [primaryColor, primaryColor.withValues(alpha: 0.8)],
+                          )
+                        : null,
+                    color: isExpanded
+                        ? null
+                        : (isDark 
+                            ? Colors.grey.shade800.withValues(alpha: 0.5) 
+                            : Colors.grey.shade100),
+                    borderRadius: BorderRadius.circular(20),
+                    border: isComplete && !isExpanded
+                        ? Border.all(color: AppColors.success.withValues(alpha: 0.5), width: 2)
+                        : null,
+                  ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(
+                        section.icon,
+                        size: 16,
+                        color: isExpanded
+                            ? Colors.white
+                            : (isRisk
+                                ? Colors.red
+                                : (isDark ? Colors.grey.shade300 : Colors.grey.shade700)),
+                      ),
+                      const SizedBox(width: 6),
+                      Text(
+                        section.displayName,
+                        style: TextStyle(
+                          fontSize: 12,
+                          fontWeight: FontWeight.w600,
+                          color: isExpanded
+                              ? Colors.white
+                              : (isDark ? Colors.grey.shade300 : Colors.grey.shade700),
+                        ),
+                      ),
+                      if (isComplete) ...[
+                        const SizedBox(width: 4),
+                        Icon(
+                          Icons.check_circle,
+                          size: 14,
+                          color: isExpanded ? Colors.white.withValues(alpha: 0.8) : AppColors.success,
+                        ),
+                      ],
+                    ],
+                  ),
+                ),
+              ),
+            ),
+          );
+        }),
+      ),
+    );
+  }
+}
+
+/// Risk level indicator badge with color coding
+class RiskIndicatorBadge extends StatelessWidget {
+  const RiskIndicatorBadge({
+    super.key,
+    required this.level,
+    this.animated = false,
+  });
+
+  final RiskLevel level;
+  final bool animated;
+
+  Color get color {
+    switch (level) {
+      case RiskLevel.none:
+        return AppColors.success;
+      case RiskLevel.low:
+        return Colors.amber;
+      case RiskLevel.moderate:
+        return Colors.orange;
+      case RiskLevel.high:
+        return Colors.red;
+      case RiskLevel.critical:
+        return Colors.red.shade900;
+    }
+  }
+
+  IconData get icon {
+    switch (level) {
+      case RiskLevel.none:
+        return Icons.shield_rounded;
+      case RiskLevel.low:
+        return Icons.info_outline;
+      case RiskLevel.moderate:
+        return Icons.warning_amber;
+      case RiskLevel.high:
+        return Icons.warning_rounded;
+      case RiskLevel.critical:
+        return Icons.dangerous;
+    }
+  }
+
+  String get label {
+    switch (level) {
+      case RiskLevel.none:
+        return 'LOW RISK';
+      case RiskLevel.low:
+        return 'LOW';
+      case RiskLevel.moderate:
+        return 'MODERATE';
+      case RiskLevel.high:
+        return 'HIGH RISK';
+      case RiskLevel.critical:
+        return 'CRITICAL';
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+      decoration: BoxDecoration(
+        color: color.withValues(alpha: 0.15),
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: color.withValues(alpha: 0.3)),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(icon, size: 16, color: color),
+          const SizedBox(width: 6),
+          Text(
+            label,
+            style: TextStyle(
+              fontSize: 11,
+              fontWeight: FontWeight.bold,
+              color: color,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+enum RiskLevel { none, low, moderate, high, critical }

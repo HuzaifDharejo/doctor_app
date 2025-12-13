@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../db/doctor_db.dart';
+import '../../providers/db_provider.dart';
 import '../../services/waitlist_service.dart';
 import '../../theme/app_theme.dart';
 import '../../core/theme/design_tokens.dart';
@@ -581,7 +582,7 @@ class _WaitlistScreenState extends ConsumerState<WaitlistScreen>
                   width: 40,
                   height: 4,
                   decoration: BoxDecoration(
-                    color: Colors.grey[300],
+                    color: isDark ? Colors.grey[600] : Colors.grey[300],
                     borderRadius: BorderRadius.circular(2),
                   ),
                 ),
@@ -736,6 +737,7 @@ class _WaitlistScreenState extends ConsumerState<WaitlistScreen>
   void _showBookAppointmentDialog(AppointmentWaitlistData entry) {
     DateTime selectedDate = DateTime.now().add(const Duration(days: 1));
     TimeOfDay selectedTime = const TimeOfDay(hour: 9, minute: 0);
+    final isDark = Theme.of(context).brightness == Brightness.dark;
 
     showModalBottomSheet<void>(
       context: context,
@@ -761,7 +763,7 @@ class _WaitlistScreenState extends ConsumerState<WaitlistScreen>
                         width: 40,
                         height: 4,
                         decoration: BoxDecoration(
-                          color: Colors.grey[300],
+                          color: isDark ? Colors.grey[600] : Colors.grey[300],
                           borderRadius: BorderRadius.circular(2),
                         ),
                       ),
@@ -881,9 +883,17 @@ class _WaitlistScreenState extends ConsumerState<WaitlistScreen>
     String selectedPriority = 'normal';
     List<String> selectedDays = [];
     String selectedTimeSlot = 'any';
+    int? selectedPatientId;
+    List<Patient> patients = [];
+    final isDark = Theme.of(context).brightness == Brightness.dark;
 
     final weekdays = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday'];
     final timeSlots = ['any', 'morning', 'afternoon', 'evening'];
+
+    // Load patients
+    ref.read(doctorDbProvider).whenData((db) async {
+      patients = await db.getAllPatients();
+    });
 
     showModalBottomSheet<void>(
       context: context,
@@ -910,7 +920,7 @@ class _WaitlistScreenState extends ConsumerState<WaitlistScreen>
                           width: 40,
                           height: 4,
                           decoration: BoxDecoration(
-                            color: Colors.grey[300],
+                            color: isDark ? Colors.grey[600] : Colors.grey[300],
                             borderRadius: BorderRadius.circular(2),
                           ),
                         ),
@@ -924,10 +934,31 @@ class _WaitlistScreenState extends ConsumerState<WaitlistScreen>
                         ),
                       ),
                       const SizedBox(height: 20),
-                      // In real app, this would be a patient selector
-                      const Text(
-                        'Select patient to add to waitlist',
-                        style: TextStyle(color: Colors.grey),
+                      // Patient selector
+                      FutureBuilder<List<Patient>>(
+                        future: ref.read(doctorDbProvider).value?.getAllPatients() ?? Future.value([]),
+                        builder: (context, snapshot) {
+                          if (snapshot.connectionState == ConnectionState.waiting) {
+                            return const Center(child: CircularProgressIndicator());
+                          }
+                          final patientList = snapshot.data ?? [];
+                          return DropdownButtonFormField<int>(
+                            decoration: const InputDecoration(
+                              labelText: 'Select Patient *',
+                              border: OutlineInputBorder(),
+                              prefixIcon: Icon(Icons.person),
+                            ),
+                            value: selectedPatientId,
+                            items: patientList.map((p) => DropdownMenuItem(
+                              value: p.id,
+                              child: Text('${p.firstName} ${p.lastName}'),
+                            )).toList(),
+                            onChanged: (value) {
+                              setModalState(() => selectedPatientId = value);
+                            },
+                            validator: (value) => value == null ? 'Please select a patient' : null,
+                          );
+                        },
                       ),
                       const SizedBox(height: 16),
                       TextField(
@@ -1003,10 +1034,9 @@ class _WaitlistScreenState extends ConsumerState<WaitlistScreen>
                       SizedBox(
                         width: double.infinity,
                         child: ElevatedButton(
-                          onPressed: () async {
-                            // In real app, patient would be selected
+                          onPressed: selectedPatientId == null ? null : () async {
                             await _waitlistService.addToWaitlist(
-                              patientId: 1, // placeholder
+                              patientId: selectedPatientId!,
                               reason: reasonController.text.isNotEmpty ? reasonController.text : 'General appointment',
                               requestedDate: DateTime.now(),
                               urgency: selectedPriority,

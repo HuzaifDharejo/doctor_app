@@ -236,11 +236,11 @@ class LabOrderService {
     String? clinicalIndication,
     String? notes,
   }) async {
-    return createLabOrder(
+    final labOrderId = await createLabOrder(
       patientId: patientId,
       orderNumber: 'LAB${DateTime.now().millisecondsSinceEpoch}',
-      testCodes: testCode ?? '',
-      testNames: testName ?? '',
+      testCodes: '[]', // V5: Use LabTestResults table instead
+      testNames: '[]', // V5: Use LabTestResults table instead
       orderingProvider: 'Current Provider',
       orderedDate: DateTime.now(),
       priority: urgency ?? 'routine',
@@ -249,6 +249,20 @@ class LabOrderService {
       specialInstructions: clinicalIndication ?? '',
       notes: notes,
     );
+    
+    // V5: Save test to normalized LabTestResults table
+    if (testName != null && testName.isNotEmpty) {
+      await _db.insertLabTestResult(
+        LabTestResultsCompanion.insert(
+          labOrderId: labOrderId,
+          patientId: patientId,
+          testName: testName,
+          testCode: Value(testCode ?? ''),
+        ),
+      );
+    }
+    
+    return labOrderId;
   }
 
   /// Order lab (screen compatibility - alias with different params)

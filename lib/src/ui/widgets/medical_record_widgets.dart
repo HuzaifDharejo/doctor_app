@@ -83,17 +83,19 @@ class RecordTypeInfo {
   );
 
   static const Map<String, RecordTypeInfo> _recordTypeMap = {
-    'pulmonary_evaluation': RecordTypeInfo(
-      icon: Icons.air,
-      color: MedicalRecordConstants.pulmonaryColor,
-      label: 'Pulmonary Evaluation',
-      recordType: 'pulmonary_evaluation',
+    // Core record types
+    'general': _defaultRecordType,
+    'follow_up': RecordTypeInfo(
+      icon: Icons.event_repeat,
+      color: MedicalRecordConstants.followUpColor,
+      label: 'Follow-up Visit',
+      recordType: 'follow_up',
     ),
-    'psychiatric_assessment': RecordTypeInfo(
-      icon: Icons.psychology,
-      color: MedicalRecordConstants.psychiatricColor,
-      label: 'Psychiatric Assessment',
-      recordType: 'psychiatric_assessment',
+    'vitals': RecordTypeInfo(
+      icon: Icons.monitor_heart_outlined,
+      color: Color(0xFFEC4899),
+      label: 'Vital Signs',
+      recordType: 'vitals',
     ),
     'lab_result': RecordTypeInfo(
       icon: Icons.science_outlined,
@@ -113,13 +115,98 @@ class RecordTypeInfo {
       label: 'Procedure',
       recordType: 'procedure',
     ),
-    'follow_up': RecordTypeInfo(
-      icon: Icons.event_repeat,
-      color: MedicalRecordConstants.followUpColor,
-      label: 'Follow-up Visit',
-      recordType: 'follow_up',
+    'referral': RecordTypeInfo(
+      icon: Icons.send_outlined,
+      color: Color(0xFF8B5CF6),
+      label: 'Referral',
+      recordType: 'referral',
     ),
-    'general': _defaultRecordType,
+    'certificate': RecordTypeInfo(
+      icon: Icons.description_outlined,
+      color: Color(0xFF0EA5E9),
+      label: 'Medical Certificate',
+      recordType: 'certificate',
+    ),
+    // Mental health types
+    'pulmonary_evaluation': RecordTypeInfo(
+      icon: Icons.air,
+      color: MedicalRecordConstants.pulmonaryColor,
+      label: 'Pulmonary Evaluation',
+      recordType: 'pulmonary_evaluation',
+    ),
+    'psychiatric_assessment': RecordTypeInfo(
+      icon: Icons.psychology,
+      color: MedicalRecordConstants.psychiatricColor,
+      label: 'Psychiatric Assessment',
+      recordType: 'psychiatric_assessment',
+    ),
+    'therapy_session': RecordTypeInfo(
+      icon: Icons.self_improvement,
+      color: Color(0xFF10B981),
+      label: 'Therapy Session Note',
+      recordType: 'therapy_session',
+    ),
+    'psychiatrist_note': RecordTypeInfo(
+      icon: Icons.note_alt_outlined,
+      color: Color(0xFF6366F1),
+      label: 'Psychiatrist Note',
+      recordType: 'psychiatrist_note',
+    ),
+    // Specialty examination types
+    'cardiac_examination': RecordTypeInfo(
+      icon: Icons.favorite_outlined,
+      color: Color(0xFFEF4444),
+      label: 'Cardiac Examination',
+      recordType: 'cardiac_examination',
+    ),
+    'pediatric_checkup': RecordTypeInfo(
+      icon: Icons.child_care_outlined,
+      color: Color(0xFFF59E0B),
+      label: 'Pediatric Checkup',
+      recordType: 'pediatric_checkup',
+    ),
+    'eye_examination': RecordTypeInfo(
+      icon: Icons.visibility_outlined,
+      color: Color(0xFF06B6D4),
+      label: 'Eye Examination',
+      recordType: 'eye_examination',
+    ),
+    'skin_examination': RecordTypeInfo(
+      icon: Icons.brush_outlined,
+      color: Color(0xFFF97316),
+      label: 'Skin Examination',
+      recordType: 'skin_examination',
+    ),
+    'ent_examination': RecordTypeInfo(
+      icon: Icons.hearing_outlined,
+      color: Color(0xFF8B5CF6),
+      label: 'ENT Examination',
+      recordType: 'ent_examination',
+    ),
+    'orthopedic_examination': RecordTypeInfo(
+      icon: Icons.accessibility_new_outlined,
+      color: Color(0xFF14B8A6),
+      label: 'Orthopedic Examination',
+      recordType: 'orthopedic_examination',
+    ),
+    'gyn_examination': RecordTypeInfo(
+      icon: Icons.pregnant_woman_outlined,
+      color: Color(0xFFEC4899),
+      label: 'Gynecological Examination',
+      recordType: 'gyn_examination',
+    ),
+    'neuro_examination': RecordTypeInfo(
+      icon: Icons.psychology_alt_outlined,
+      color: Color(0xFF6366F1),
+      label: 'Neurological Examination',
+      recordType: 'neuro_examination',
+    ),
+    'gi_examination': RecordTypeInfo(
+      icon: Icons.restaurant_outlined,
+      color: Color(0xFF84CC16),
+      label: 'GI Examination',
+      recordType: 'gi_examination',
+    ),
   };
 
   /// Get all available record types for filtering

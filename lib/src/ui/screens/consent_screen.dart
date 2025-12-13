@@ -3,7 +3,6 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../db/doctor_db.dart';
 import '../../extensions/drift_extensions.dart';
-import '../../models/consent.dart';
 import '../../providers/db_provider.dart';
 import '../../services/consent_service.dart';
 import '../../theme/app_theme.dart';
@@ -544,7 +543,7 @@ class _ConsentScreenState extends ConsumerState<ConsentScreen>
                         width: 40,
                         height: 4,
                         decoration: BoxDecoration(
-                          color: Colors.grey[300],
+                          color: isDark ? Colors.grey[600] : Colors.grey[300],
                           borderRadius: BorderRadius.circular(2),
                         ),
                       ),
@@ -761,6 +760,8 @@ class _ConsentScreenState extends ConsumerState<ConsentScreen>
     DateTime? expirationDate;
     final descriptionController = TextEditingController();
     final witnessController = TextEditingController();
+    int? selectedPatientId;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
 
     final consentTypes = ['treatment', 'procedure', 'hipaa', 'research', 'telehealth', 'medication'];
 
@@ -789,7 +790,7 @@ class _ConsentScreenState extends ConsumerState<ConsentScreen>
                           width: 40,
                           height: 4,
                           decoration: BoxDecoration(
-                            color: Colors.grey[300],
+                            color: isDark ? Colors.grey[600] : Colors.grey[300],
                             borderRadius: BorderRadius.circular(2),
                           ),
                         ),
@@ -803,6 +804,32 @@ class _ConsentScreenState extends ConsumerState<ConsentScreen>
                         ),
                       ),
                       const SizedBox(height: 20),
+                      // Patient selector
+                      FutureBuilder<List<Patient>>(
+                        future: ref.read(doctorDbProvider).value?.getAllPatients() ?? Future.value([]),
+                        builder: (context, snapshot) {
+                          if (snapshot.connectionState == ConnectionState.waiting) {
+                            return const Center(child: CircularProgressIndicator());
+                          }
+                          final patientList = snapshot.data ?? [];
+                          return DropdownButtonFormField<int>(
+                            decoration: const InputDecoration(
+                              labelText: 'Select Patient *',
+                              border: OutlineInputBorder(),
+                              prefixIcon: Icon(Icons.person),
+                            ),
+                            value: selectedPatientId,
+                            items: patientList.map((p) => DropdownMenuItem(
+                              value: p.id,
+                              child: Text('${p.firstName} ${p.lastName}'),
+                            )).toList(),
+                            onChanged: (value) {
+                              setModalState(() => selectedPatientId = value);
+                            },
+                          );
+                        },
+                      ),
+                      const SizedBox(height: 16),
                       const Text('Consent Type'),
                       const SizedBox(height: 8),
                       Wrap(
@@ -888,9 +915,9 @@ class _ConsentScreenState extends ConsumerState<ConsentScreen>
                       SizedBox(
                         width: double.infinity,
                         child: ElevatedButton(
-                          onPressed: () async {
+                          onPressed: selectedPatientId == null ? null : () async {
                             await _consentService.recordConsent(
-                              patientId: 1, // placeholder
+                              patientId: selectedPatientId!,
                               consentType: selectedType,
                               consentDate: consentDate,
                               expirationDate: expirationDate,

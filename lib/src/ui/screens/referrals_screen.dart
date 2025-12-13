@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import '../../db/doctor_db.dart';
 import '../../services/referral_service.dart';
 import '../../theme/app_theme.dart';
 import '../../core/theme/design_tokens.dart';

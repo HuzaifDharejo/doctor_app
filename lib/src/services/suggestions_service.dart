@@ -736,12 +736,103 @@ abstract class PsychiatricSuggestions {
     'Psychotherapy', 'CBT', 'IPT', 'Family therapy', 'ECT advised',
   ];
 
+  // Medications list with dosages
+  static const List<String> medications = [
+    // SSRIs
+    'Escitalopram 5mg OD', 'Escitalopram 10mg OD', 'Escitalopram 20mg OD',
+    'Sertraline 25mg OD', 'Sertraline 50mg OD', 'Sertraline 100mg OD',
+    'Fluoxetine 20mg OD', 'Fluoxetine 40mg OD', 'Fluoxetine 60mg OD',
+    'Paroxetine 12.5mg OD', 'Paroxetine 25mg OD', 'Paroxetine CR 25mg OD',
+    'Fluvoxamine 50mg OD', 'Fluvoxamine 100mg OD',
+    // SNRIs
+    'Venlafaxine 37.5mg OD', 'Venlafaxine 75mg OD', 'Venlafaxine XR 150mg OD',
+    'Duloxetine 20mg OD', 'Duloxetine 30mg OD', 'Duloxetine 60mg OD',
+    'Desvenlafaxine 50mg OD', 'Desvenlafaxine 100mg OD',
+    // TCAs
+    'Amitriptyline 10mg HS', 'Amitriptyline 25mg HS', 'Amitriptyline 50mg HS',
+    'Clomipramine 25mg OD', 'Clomipramine 50mg OD', 'Clomipramine 75mg OD',
+    'Imipramine 25mg OD', 'Imipramine 75mg OD',
+    // Other antidepressants
+    'Mirtazapine 7.5mg HS', 'Mirtazapine 15mg HS', 'Mirtazapine 30mg HS',
+    'Bupropion 150mg OD', 'Bupropion SR 150mg BD', 'Bupropion XL 300mg OD',
+    'Trazodone 25mg HS', 'Trazodone 50mg HS', 'Trazodone 100mg HS',
+    // Typical antipsychotics
+    'Haloperidol 1.5mg OD', 'Haloperidol 5mg OD', 'Haloperidol 10mg OD',
+    'Chlorpromazine 25mg HS', 'Chlorpromazine 100mg BD',
+    'Trifluoperazine 5mg BD',
+    // Atypical antipsychotics
+    'Risperidone 1mg OD', 'Risperidone 2mg OD', 'Risperidone 4mg OD',
+    'Olanzapine 2.5mg HS', 'Olanzapine 5mg HS', 'Olanzapine 10mg HS',
+    'Quetiapine 25mg HS', 'Quetiapine 100mg HS', 'Quetiapine 200mg BD',
+    'Aripiprazole 5mg OD', 'Aripiprazole 10mg OD', 'Aripiprazole 15mg OD',
+    'Clozapine 25mg OD', 'Clozapine 100mg BD', 'Clozapine 200mg BD',
+    'Amisulpride 50mg OD', 'Amisulpride 200mg BD', 'Amisulpride 400mg BD',
+    'Ziprasidone 40mg BD', 'Lurasidone 40mg OD',
+    // Mood stabilizers
+    'Lithium 300mg BD', 'Lithium 400mg BD', 'Lithium 450mg ER OD',
+    'Valproate 250mg BD', 'Valproate 500mg BD', 'Divalproex ER 500mg HS',
+    'Carbamazepine 200mg BD', 'Carbamazepine 400mg BD',
+    'Lamotrigine 25mg OD', 'Lamotrigine 50mg OD', 'Lamotrigine 100mg OD',
+    'Oxcarbazepine 150mg BD', 'Oxcarbazepine 300mg BD',
+    // Anxiolytics/Sedatives
+    'Clonazepam 0.25mg OD', 'Clonazepam 0.5mg BD', 'Clonazepam 1mg HS',
+    'Lorazepam 0.5mg SOS', 'Lorazepam 1mg SOS', 'Lorazepam 2mg HS',
+    'Alprazolam 0.25mg SOS', 'Alprazolam 0.5mg SOS',
+    'Diazepam 5mg SOS', 'Diazepam 10mg HS',
+    'Etizolam 0.25mg SOS', 'Etizolam 0.5mg SOS',
+    'Buspirone 5mg TDS', 'Buspirone 10mg BD',
+    // Anticholinergics
+    'Trihexyphenidyl 2mg BD', 'Trihexyphenidyl 2mg TDS',
+    'Promethazine 25mg HS',
+    // Sleep aids
+    'Zolpidem 5mg HS', 'Zolpidem 10mg HS',
+    'Melatonin 3mg HS', 'Melatonin 5mg HS',
+    // Injectables
+    'Inj. Haloperidol 5mg IM', 'Inj. Lorazepam 2mg IM',
+    'Inj. Fluphenazine Decanoate 25mg IM monthly',
+    'Inj. Risperidone Consta 25mg IM bi-weekly',
+    'Inj. Paliperidone Palmitate 150mg IM monthly',
+  ];
+
+  // Treatment plan suggestions (non-medication)
+  static const List<String> treatmentPlan = [
+    // Psychotherapy
+    'Individual psychotherapy weekly', 'Cognitive Behavioral Therapy (CBT)',
+    'Dialectical Behavior Therapy (DBT)', 'Interpersonal Therapy (IPT)',
+    'Psychodynamic psychotherapy', 'Supportive psychotherapy',
+    'Family therapy', 'Couples therapy', 'Group therapy',
+    'Exposure and Response Prevention (ERP)', 'EMDR for trauma',
+    'Mindfulness-Based Cognitive Therapy (MBCT)',
+    'Acceptance and Commitment Therapy (ACT)',
+    // Biological treatments
+    'Electroconvulsive Therapy (ECT) advised', 'rTMS evaluation',
+    // Lifestyle modifications
+    'Sleep hygiene counseling', 'Exercise 30 min daily',
+    'Relaxation techniques taught', 'Stress management strategies',
+    'Substance abstinence counseling', 'Dietary modifications',
+    // Psychoeducation
+    'Psychoeducation about illness', 'Medication compliance emphasized',
+    'Side effects explained', 'Warning signs discussed',
+    'Family psychoeducation session', 'Relapse prevention plan',
+    // Referrals
+    'Refer to psychologist', 'Refer to occupational therapist',
+    'Vocational rehabilitation', 'Social skills training',
+    'Substance abuse program referral', 'Day care program',
+    // Combined approaches
+    'Pharmacotherapy + CBT', 'Medication optimization',
+    'Continue current medications', 'Dose titration planned',
+  ];
+
   // Follow-up suggestions
   static const List<String> followUp = [
-    'Review after 2 weeks', 'Review after 1 month', 'Review after 3 months',
+    'Review after 1 week', 'Review after 2 weeks', 'Review after 1 month', 
+    'Review after 3 months', 'Review after 6 months',
     'SOS if required', 'Bring all previous records', 'Lab investigations advised',
     'Continue same treatment', 'Dose adjustment done',
     'Side effects monitoring', 'Compliance reinforced',
+    'Lithium levels before next visit', 'CBC, LFT before next visit',
+    'Blood glucose and lipid monitoring', 'ECG before next visit',
+    'Weight monitoring', 'Prolactin levels if indicated',
   ];
 
   // Chief complaints - psychiatric
@@ -772,6 +863,106 @@ abstract class PsychiatricSuggestions {
 
   // Alias for compatibility
   static const List<String> durations = duration;
+
+  // Safety Plan suggestions
+  static const List<String> safetyPlan = [
+    // Warning signs
+    'Warning signs identified: mood changes, social withdrawal, sleep disturbance',
+    'Recognizes early warning signs of crisis',
+    'Warning signs: increased agitation, hopelessness, substance use',
+    
+    // Coping strategies
+    'Coping strategies: deep breathing, grounding techniques, distraction activities',
+    'Internal coping: meditation, journaling, exercise, music',
+    'Relaxation techniques reviewed and practiced',
+    'Crisis coping skills discussed and documented',
+    
+    // Social support
+    'Emergency contact: [Name] - [Phone]',
+    'Family member for support: [Name]',
+    'Trusted friend for support: [Name]',
+    'Social supports identified and informed',
+    'Support network: family, friends, colleagues aware of condition',
+    
+    // Professional contacts
+    'Psychiatrist contact: [Name] - [Phone]',
+    'Therapist contact: [Name] - [Phone]',
+    'Crisis helpline: 988 (Suicide & Crisis Lifeline)',
+    'Local emergency services: 911',
+    'Hospital emergency room identified as safe place',
+    'Nearest psychiatric emergency: [Hospital name]',
+    
+    // Environmental safety
+    'Lethal means restriction discussed',
+    'Firearms removed from home',
+    'Medications secured with family member',
+    'Sharp objects removed/secured',
+    'Safe environment ensured',
+    
+    // Commitment statements
+    'Patient agrees to call crisis line before acting on urges',
+    'Patient commits to reaching out to support before self-harm',
+    'Verbal safety contract obtained',
+    'Written safety plan provided to patient',
+    'Copy given to family member',
+    'Plan reviewed and patient demonstrates understanding',
+    
+    // Action plans
+    'If suicidal thoughts increase: contact therapist immediately',
+    'If unable to reach therapist: call crisis line or go to ER',
+    'Daily check-in with family member arranged',
+    'Follow-up appointment scheduled within 24-48 hours',
+    'Reasons for living documented and discussed',
+    
+    // Quick templates
+    'Low risk - continue current management with follow-up',
+    'Moderate risk - increased monitoring, family involved, means restriction',
+    'High risk - emergency evaluation recommended, escort to ER if needed',
+  ];
+
+  // Alias for pastHistory (combines past psychiatric and past medical)
+  static const List<String> pastHistory = [
+    'No significant past psychiatric history',
+    'First psychiatric episode',
+    'Previous depressive episode(s)',
+    'Previous manic episode(s)',
+    'Previous psychotic episode(s)',
+    'Previous anxiety disorder',
+    'Previous OCD',
+    'Previous PTSD',
+    'History of substance use disorder',
+    'Previous psychiatric hospitalization(s)',
+    'Previous suicide attempt(s)',
+    'Previous self-harm behavior',
+    'History of ECT treatment',
+    'Treatment-resistant depression',
+    'History of medication non-compliance',
+    'Previous good response to [medication]',
+    'History of adverse reaction to [medication]',
+    'Childhood psychiatric history',
+    'History of developmental disorder',
+    'History of eating disorder',
+  ];
+
+  // Socioeconomic and psychosocial factors
+  static const List<String> socioeconomic = [
+    'Employed full-time', 'Employed part-time', 'Unemployed',
+    'Student', 'Retired', 'Disabled - on benefits',
+    'Self-employed', 'Homemaker',
+    'Lives alone', 'Lives with spouse/partner', 'Lives with family',
+    'Lives with roommates', 'Homeless', 'In shelter',
+    'Good social support', 'Limited social support', 'Socially isolated',
+    'Financial stress', 'Stable income', 'Dependent on family financially',
+    'Recent job loss', 'Workplace stress', 'Legal problems',
+    'Recent divorce/separation', 'Recent bereavement',
+    'Caregiver burden', 'Relationship problems',
+    'Housing instability', 'Adequate housing',
+    'Access to healthcare', 'Limited healthcare access',
+    'Transportation available', 'Transportation barriers',
+    'Cultural/religious factors affecting treatment',
+    'Language barrier', 'Immigrant/refugee status',
+    'Victim of discrimination', 'Member of vulnerable population',
+  ];
 }
 
 /// Pulmonary Evaluation suggestions

@@ -80,6 +80,7 @@ class PdfService {
     String? clinicPhone,
     String? clinicAddress,
     String? signatureData, // Base64 encoded signature
+    List<Map<String, dynamic>>? medicationsList, // V5: Pre-loaded from normalized table
   }) async {
     await _initFonts();
     final pdf = await _generatePrescriptionPdf(
@@ -90,6 +91,7 @@ class PdfService {
       clinicPhone: clinicPhone,
       clinicAddress: clinicAddress,
       signatureData: signatureData,
+      medicationsList: medicationsList,
     );
     
     await Printing.sharePdf(
@@ -107,6 +109,7 @@ class PdfService {
     String? clinicAddress,
     String? signatureData, // Base64 encoded signature
     String? doctorName,
+    List<Map<String, dynamic>>? lineItemsList, // V5: Pre-loaded from normalized table
   }) async {
     await _initFonts();
     final pdf = await _generateInvoicePdf(
@@ -117,6 +120,7 @@ class PdfService {
       clinicAddress: clinicAddress,
       signatureData: signatureData,
       doctorName: doctorName,
+      lineItemsList: lineItemsList,
     );
     
     await Printing.sharePdf(
@@ -1389,6 +1393,7 @@ class PdfService {
     String? clinicPhone,
     String? clinicAddress,
     String? signatureData,
+    List<Map<String, dynamic>>? medicationsList, // V5: Pre-loaded from normalized table
   }) async {
     final theme = _getTheme();
     final pdf = theme != null ? pw.Document(theme: theme) : pw.Document();
@@ -1404,10 +1409,39 @@ class PdfService {
       }
     }
     
-    List<dynamic> medications = [];
+    // V5: Use pre-loaded medications if provided, otherwise parse from itemsJson
+    List<dynamic> medications = medicationsList ?? [];
+    List<dynamic> labTests = [];
+    Map<String, dynamic> followUp = {};
+    String notes = '';
+    String diagnosis = prescription.diagnosis;
+    String chiefComplaint = prescription.chiefComplaint;
+    
+    // Parse additional data from itemsJson (lab tests, follow-up, notes)
     try {
-      medications = jsonDecode(prescription.itemsJson) as List<dynamic>;
-    } catch (_) {}
+      final parsed = jsonDecode(prescription.itemsJson);
+      if (parsed is List) {
+        // Old format: just array of medications
+        if (medications.isEmpty) medications = parsed;
+      } else if (parsed is Map<String, dynamic>) {
+        // New format: full prescription object
+        if (medications.isEmpty) {
+          medications = (parsed['medications'] as List<dynamic>?) ?? [];
+        }
+        labTests = (parsed['lab_tests'] as List<dynamic>?) ?? [];
+        followUp = (parsed['follow_up'] as Map<String, dynamic>?) ?? {};
+        notes = (parsed['notes'] as String?) ?? '';
+        // Use from JSON if available (may have more complete data)
+        if ((parsed['diagnosis'] as String?)?.isNotEmpty == true) {
+          diagnosis = parsed['diagnosis'] as String;
+        }
+        if ((parsed['symptoms'] as String?)?.isNotEmpty == true) {
+          chiefComplaint = parsed['symptoms'] as String;
+        }
+      }
+    } catch (e) {
+      log.w('PDF', 'Error parsing prescription itemsJson: $e');
+    }
 
     // Parse vitals from vitalsJson
     Map<String, dynamic> vitals = {};
@@ -1522,6 +1556,50 @@ class PdfService {
                 pw.SizedBox(height: 12),
               ],
               
+              // Chief Complaint / Symptoms
+              if (chiefComplaint.isNotEmpty) ...[
+                pw.Container(
+                  width: double.infinity,
+                  padding: const pw.EdgeInsets.all(10),
+                  decoration: pw.BoxDecoration(
+                    border: pw.Border.all(color: PdfColors.orange200),
+                    borderRadius: pw.BorderRadius.circular(6),
+                    color: PdfColors.orange50,
+                  ),
+                  child: pw.Column(
+                    crossAxisAlignment: pw.CrossAxisAlignment.start,
+                    children: [
+                      pw.Text('Chief Complaint:', style: pw.TextStyle(fontWeight: pw.FontWeight.bold, fontSize: 11, color: PdfColors.orange800)),
+                      pw.SizedBox(height: 4),
+                      pw.Text(chiefComplaint, style: const pw.TextStyle(fontSize: 10)),
+                    ],
+                  ),
+                ),
+                pw.SizedBox(height: 12),
+              ],
+              
+              // Diagnosis
+              if (diagnosis.isNotEmpty) ...[
+                pw.Container(
+                  width: double.infinity,
+                  padding: const pw.EdgeInsets.all(10),
+                  decoration: pw.BoxDecoration(
+                    border: pw.Border.all(color: PdfColors.purple200),
+                    borderRadius: pw.BorderRadius.circular(6),
+                    color: PdfColors.purple50,
+                  ),
+                  child: pw.Column(
+                    crossAxisAlignment: pw.CrossAxisAlignment.start,
+                    children: [
+                      pw.Text('Diagnosis:', style: pw.TextStyle(fontWeight: pw.FontWeight.bold, fontSize: 11, color: PdfColors.purple800)),
+                      pw.SizedBox(height: 4),
+                      pw.Text(diagnosis, style: const pw.TextStyle(fontSize: 10)),
+                    ],
+                  ),
+                ),
+                pw.SizedBox(height: 12),
+              ],
+              
               // Rx Symbol
               pw.Row(
                 children: [
@@ -1539,46 +1617,85 @@ class PdfService {
               pw.SizedBox(height: 12),
               
               // Medications Table
-              pw.Table(
-                border: pw.TableBorder.all(color: PdfColors.grey400),
-                columnWidths: {
-                  0: const pw.FlexColumnWidth(0.5),
-                  1: const pw.FlexColumnWidth(2.5),
-                  2: const pw.FlexColumnWidth(),
-                  3: const pw.FlexColumnWidth(1.5),
-                  4: const pw.FlexColumnWidth(),
-                },
-                children: [
-                  // Header row
-                  pw.TableRow(
-                    decoration: const pw.BoxDecoration(color: PdfColors.blue100),
+              if (medications.isNotEmpty) ...[
+                pw.Table(
+                  border: pw.TableBorder.all(color: PdfColors.grey400),
+                  columnWidths: {
+                    0: const pw.FlexColumnWidth(0.5),
+                    1: const pw.FlexColumnWidth(2.5),
+                    2: const pw.FlexColumnWidth(),
+                    3: const pw.FlexColumnWidth(1.5),
+                    4: const pw.FlexColumnWidth(),
+                  },
+                  children: [
+                    // Header row
+                    pw.TableRow(
+                      decoration: const pw.BoxDecoration(color: PdfColors.blue100),
+                      children: [
+                        _tableCell('#', isHeader: true),
+                        _tableCell('Medication', isHeader: true),
+                        _tableCell('Dosage', isHeader: true),
+                        _tableCell('Frequency', isHeader: true),
+                        _tableCell('Duration', isHeader: true),
+                      ],
+                    ),
+                    // Medication rows
+                    ...medications.asMap().entries.map((entry) {
+                      final index = entry.key;
+                      final med = entry.value as Map<String, dynamic>;
+                      return pw.TableRow(
+                        children: [
+                          _tableCell('${index + 1}'),
+                          _tableCell((med['name'] as String?) ?? 'Unknown'),
+                          _tableCell((med['dosage'] as String?) ?? '-'),
+                          _tableCell((med['frequency'] as String?) ?? '-'),
+                          _tableCell((med['duration'] as String?) ?? '-'),
+                        ],
+                      );
+                    }),
+                  ],
+                ),
+                pw.SizedBox(height: 16),
+              ],
+              
+              // Lab Tests / Investigations
+              if (labTests.isNotEmpty) ...[
+                pw.Container(
+                  width: double.infinity,
+                  padding: const pw.EdgeInsets.all(10),
+                  decoration: pw.BoxDecoration(
+                    border: pw.Border.all(color: PdfColors.teal200),
+                    borderRadius: pw.BorderRadius.circular(6),
+                    color: PdfColors.teal50,
+                  ),
+                  child: pw.Column(
+                    crossAxisAlignment: pw.CrossAxisAlignment.start,
                     children: [
-                      _tableCell('#', isHeader: true),
-                      _tableCell('Medication', isHeader: true),
-                      _tableCell('Dosage', isHeader: true),
-                      _tableCell('Frequency', isHeader: true),
-                      _tableCell('Duration', isHeader: true),
+                      pw.Text('Investigations Advised:', style: pw.TextStyle(fontWeight: pw.FontWeight.bold, fontSize: 11, color: PdfColors.teal800)),
+                      pw.SizedBox(height: 6),
+                      pw.Wrap(
+                        spacing: 8,
+                        runSpacing: 4,
+                        children: labTests.map((test) {
+                          final testName = test is Map ? (test['name'] as String? ?? test.toString()) : test.toString();
+                          return pw.Container(
+                            padding: const pw.EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                            decoration: pw.BoxDecoration(
+                              color: PdfColors.white,
+                              border: pw.Border.all(color: PdfColors.teal300),
+                              borderRadius: pw.BorderRadius.circular(4),
+                            ),
+                            child: pw.Text(testName, style: const pw.TextStyle(fontSize: 9)),
+                          );
+                        }).toList(),
+                      ),
                     ],
                   ),
-                  // Medication rows
-                  ...medications.asMap().entries.map((entry) {
-                    final index = entry.key;
-                    final med = entry.value as Map<String, dynamic>;
-                    return pw.TableRow(
-                      children: [
-                        _tableCell('${index + 1}'),
-                        _tableCell((med['name'] as String?) ?? 'Unknown'),
-                        _tableCell((med['dosage'] as String?) ?? '-'),
-                        _tableCell((med['frequency'] as String?) ?? '-'),
-                        _tableCell((med['duration'] as String?) ?? '-'),
-                      ],
-                    );
-                  }),
-                ],
-              ),
-              pw.SizedBox(height: 20),
+                ),
+                pw.SizedBox(height: 12),
+              ],
               
-              // Instructions
+              // Instructions / Advice
               if (prescription.instructions.isNotEmpty) ...[
                 pw.Text(
                   'Instructions:',
@@ -1589,12 +1706,59 @@ class PdfService {
                 ),
                 pw.SizedBox(height: 8),
                 pw.Container(
+                  width: double.infinity,
                   padding: const pw.EdgeInsets.all(10),
                   decoration: pw.BoxDecoration(
                     border: pw.Border.all(color: PdfColors.grey400),
                     borderRadius: pw.BorderRadius.circular(4),
                   ),
                   child: pw.Text(prescription.instructions),
+                ),
+                pw.SizedBox(height: 12),
+              ],
+              
+              // Follow-up
+              if (followUp.isNotEmpty && followUp['date'] != null) ...[
+                pw.Container(
+                  width: double.infinity,
+                  padding: const pw.EdgeInsets.all(10),
+                  decoration: pw.BoxDecoration(
+                    border: pw.Border.all(color: PdfColors.green200),
+                    borderRadius: pw.BorderRadius.circular(6),
+                    color: PdfColors.green50,
+                  ),
+                  child: pw.Row(
+                    children: [
+                      pw.Text('Follow-up: ', style: pw.TextStyle(fontWeight: pw.FontWeight.bold, fontSize: 11, color: PdfColors.green800)),
+                      pw.Text(_formatDate(DateTime.parse(followUp['date'] as String)), style: const pw.TextStyle(fontSize: 11)),
+                      if ((followUp['notes'] as String?)?.isNotEmpty == true) ...[
+                        pw.Text(' - ', style: const pw.TextStyle(fontSize: 11)),
+                        pw.Expanded(child: pw.Text(followUp['notes'] as String, style: const pw.TextStyle(fontSize: 10))),
+                      ],
+                    ],
+                  ),
+                ),
+                pw.SizedBox(height: 12),
+              ],
+              
+              // Clinical Notes (if available)
+              if (notes.isNotEmpty) ...[
+                pw.Container(
+                  width: double.infinity,
+                  padding: const pw.EdgeInsets.all(10),
+                  decoration: pw.BoxDecoration(
+                    border: pw.Border.all(color: PdfColors.grey300),
+                    borderRadius: pw.BorderRadius.circular(4),
+                    color: PdfColors.grey100,
+                  ),
+                  child: pw.Column(
+                    crossAxisAlignment: pw.CrossAxisAlignment.start,
+                    children: [
+                      pw.Text('Clinical Notes:', style: pw.TextStyle(fontWeight: pw.FontWeight.bold, fontSize: 10, color: PdfColors.grey700)),
+                      pw.SizedBox(height: 4),
+                      pw.Text(notes, style: const pw.TextStyle(fontSize: 9)),
+                    ],
+                  ),
                 ),
               ],
               
@@ -1639,6 +1803,7 @@ class PdfService {
     String? clinicAddress,
     String? signatureData,
     String? doctorName,
+    List<Map<String, dynamic>>? lineItemsList, // V5: Pre-loaded from normalized table
   }) async {
     final theme = _getTheme();
     final pdf = theme != null ? pw.Document(theme: theme) : pw.Document();
@@ -1654,10 +1819,13 @@ class PdfService {
       }
     }
     
-    List<dynamic> items = [];
-    try {
-      items = jsonDecode(invoice.itemsJson) as List<dynamic>;
-    } catch (_) {}
+    // V5: Use pre-loaded items if provided, otherwise parse from itemsJson
+    List<dynamic> items = lineItemsList ?? [];
+    if (items.isEmpty) {
+      try {
+        items = jsonDecode(invoice.itemsJson) as List<dynamic>;
+      } catch (_) {}
+    }
 
     pdf.addPage(
       pw.Page(

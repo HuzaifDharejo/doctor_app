@@ -36,6 +36,31 @@ class _AddPulmonaryScreenState extends ConsumerState<AddPulmonaryScreen> {
   int? _selectedPatientId;
   DateTime _recordDate = DateTime.now();
 
+  // Section navigation keys and expansion state
+  final Map<String, GlobalKey> _sectionKeys = {
+    'complaint': GlobalKey(),
+    'symptoms': GlobalKey(),
+    'history': GlobalKey(),
+    'vitals': GlobalKey(),
+    'auscultation': GlobalKey(),
+    'investigations': GlobalKey(),
+    'diagnosis': GlobalKey(),
+    'treatment': GlobalKey(),
+  };
+  final Map<String, bool> _expandedSections = {
+    'complaint': true,
+    'symptoms': true,
+    'history': true,
+    'vitals': true,
+    'auscultation': true,
+    'investigations': true,
+    'diagnosis': true,
+    'treatment': true,
+  };
+
+  // Quick fill templates
+  late List<QuickFillTemplateItem> _templates;
+
   // Pulmonary Evaluation Fields
   final _chiefComplaintController = TextEditingController();
   final _durationController = TextEditingController();
@@ -83,7 +108,193 @@ class _AddPulmonaryScreenState extends ConsumerState<AddPulmonaryScreen> {
     if (widget.existingRecord != null) {
       _loadExistingRecord();
     }
+    
+    // Initialize pulmonary-specific templates
+    _templates = [
+      QuickFillTemplateItem(
+        label: 'Asthma',
+        icon: Icons.air_rounded,
+        color: Colors.blue,
+        description: 'Bronchial Asthma template',
+        data: {
+          'chief_complaint': 'Difficulty breathing, wheezing, chest tightness',
+          'symptom_character': 'Episodic, worse at night/early morning',
+          'systemic_symptoms': ['Cough', 'Shortness of breath'],
+          'added_sounds': ['Wheeze', 'Rhonchi'],
+          'breath_sounds': 'Bilateral wheeze',
+          'diagnosis': 'Bronchial Asthma',
+          'treatment': 'Inhaled bronchodilators (SABA), Inhaled corticosteroids (ICS)',
+        },
+      ),
+      QuickFillTemplateItem(
+        label: 'COPD',
+        icon: Icons.smoke_free,
+        color: Colors.orange,
+        description: 'Chronic Obstructive Pulmonary Disease template',
+        data: {
+          'chief_complaint': 'Progressive dyspnea, chronic cough with sputum',
+          'symptom_character': 'Chronic, progressive',
+          'duration': 'Several years',
+          'systemic_symptoms': ['Cough', 'Shortness of breath', 'Fatigue'],
+          'comorbidities': ['Smoking', 'Chronic Bronchitis'],
+          'added_sounds': ['Rhonchi', 'Diminished breath sounds'],
+          'breath_sounds': 'Diminished with prolonged expiration',
+          'diagnosis': 'COPD',
+          'treatment': 'LABA/LAMA, ICS if frequent exacerbations, Pulmonary rehabilitation',
+        },
+      ),
+      QuickFillTemplateItem(
+        label: 'Pneumonia',
+        icon: Icons.coronavirus_outlined,
+        color: Colors.red,
+        description: 'Community-acquired Pneumonia template',
+        data: {
+          'chief_complaint': 'Fever, productive cough, pleuritic chest pain',
+          'symptom_character': 'Acute onset',
+          'duration': '3-7 days',
+          'systemic_symptoms': ['Fever', 'Cough', 'Shortness of breath', 'Fatigue'],
+          'red_flags': ['High fever', 'Hypoxia', 'Altered sensorium'],
+          'added_sounds': ['Crepitations', 'Bronchial breath sounds'],
+          'investigations': ['Chest X-ray', 'CBC', 'Sputum culture'],
+          'breath_sounds': 'Bronchial breath sounds over affected area',
+          'diagnosis': 'Community-acquired Pneumonia',
+          'treatment': 'Antibiotics (Amoxicillin-Clavulanate or Respiratory fluoroquinolone), Supportive care',
+        },
+      ),
+      QuickFillTemplateItem(
+        label: 'Bronchitis',
+        icon: Icons.sick_outlined,
+        color: Colors.teal,
+        description: 'Acute Bronchitis template',
+        data: {
+          'chief_complaint': 'Cough with or without sputum, chest discomfort',
+          'symptom_character': 'Acute onset, usually following viral URTI',
+          'duration': '1-2 weeks',
+          'systemic_symptoms': ['Cough', 'Mild fever'],
+          'added_sounds': ['Rhonchi'],
+          'breath_sounds': 'Scattered rhonchi, clear with coughing',
+          'diagnosis': 'Acute Bronchitis',
+          'treatment': 'Symptomatic treatment, cough suppressants, hydration, rest',
+        },
+      ),
+      QuickFillTemplateItem(
+        label: 'Normal Chest Exam',
+        icon: Icons.check_circle_rounded,
+        color: Colors.green,
+        description: 'Normal chest examination',
+        data: {
+          'breath_sounds': 'Vesicular, bilateral equal air entry',
+          'diagnosis': 'Normal Chest Examination',
+          'treatment': 'No specific treatment required. General advice given.',
+        },
+      ),
+    ];
   }
+
+  void _applyTemplate(QuickFillTemplateItem template) {
+    setState(() {
+      final data = template.data;
+      
+      if (data['chief_complaint'] != null) {
+        _chiefComplaintController.text = data['chief_complaint'] as String;
+      }
+      if (data['symptom_character'] != null) {
+        _symptomCharacterController.text = data['symptom_character'] as String;
+      }
+      if (data['duration'] != null) {
+        _durationController.text = data['duration'] as String;
+      }
+      if (data['systemic_symptoms'] != null) {
+        _selectedSystemicSymptoms = List<String>.from(data['systemic_symptoms'] as List);
+      }
+      if (data['red_flags'] != null) {
+        _selectedRedFlags = List<String>.from(data['red_flags'] as List);
+      }
+      if (data['comorbidities'] != null) {
+        _selectedComorbidities = List<String>.from(data['comorbidities'] as List);
+      }
+      if (data['added_sounds'] != null) {
+        _selectedAddedSounds = List<String>.from(data['added_sounds'] as List);
+      }
+      if (data['investigations'] != null) {
+        _selectedInvestigations = List<String>.from(data['investigations'] as List);
+      }
+      if (data['breath_sounds'] != null) {
+        _breathSoundsController.text = data['breath_sounds'] as String;
+      }
+      if (data['diagnosis'] != null) {
+        _diagnosisController.text = data['diagnosis'] as String;
+      }
+      if (data['treatment'] != null) {
+        _treatmentController.text = data['treatment'] as String;
+      }
+    });
+    
+    showTemplateAppliedSnackbar(context, template.label, color: template.color);
+  }
+
+  void _scrollToSection(String sectionKey) {
+    final key = _sectionKeys[sectionKey];
+    if (key?.currentContext != null) {
+      Scrollable.ensureVisible(
+        key!.currentContext!,
+        duration: const Duration(milliseconds: 400),
+        curve: Curves.easeInOut,
+        alignment: 0.1,
+      );
+    }
+  }
+
+  List<SectionInfo> get _sections => [
+    SectionInfo(
+      key: 'complaint',
+      title: 'Complaint',
+      icon: Icons.air,
+      isComplete: _chiefComplaintController.text.isNotEmpty,
+    ),
+    SectionInfo(
+      key: 'symptoms',
+      title: 'Symptoms',
+      icon: Icons.thermostat_outlined,
+      isComplete: _selectedSystemicSymptoms.isNotEmpty || _selectedRedFlags.isNotEmpty,
+    ),
+    SectionInfo(
+      key: 'history',
+      title: 'History',
+      icon: Icons.history,
+      isComplete: _pastPulmonaryHistoryController.text.isNotEmpty || _selectedComorbidities.isNotEmpty,
+    ),
+    SectionInfo(
+      key: 'vitals',
+      title: 'Vitals',
+      icon: Icons.favorite_outline,
+      isComplete: _bpController.text.isNotEmpty || _spo2Controller.text.isNotEmpty,
+    ),
+    SectionInfo(
+      key: 'auscultation',
+      title: 'Auscultation',
+      icon: Icons.hearing,
+      isComplete: _breathSoundsController.text.isNotEmpty || _selectedAddedSounds.isNotEmpty,
+    ),
+    SectionInfo(
+      key: 'investigations',
+      title: 'Investigations',
+      icon: Icons.biotech,
+      isComplete: _selectedInvestigations.isNotEmpty,
+    ),
+    SectionInfo(
+      key: 'diagnosis',
+      title: 'Diagnosis',
+      icon: Icons.medical_information,
+      isComplete: _diagnosisController.text.isNotEmpty,
+    ),
+    SectionInfo(
+      key: 'treatment',
+      title: 'Treatment',
+      icon: Icons.healing,
+      isComplete: _treatmentController.text.isNotEmpty,
+    ),
+  ];
 
   void _loadExistingRecord() {
     final record = widget.existingRecord!;
@@ -273,6 +484,25 @@ class _AddPulmonaryScreenState extends ConsumerState<AddPulmonaryScreen> {
     }
   }
 
+  // Total sections for progress calculation
+  static const int _totalSections = 8; // Patient, Date, Complaint, Symptoms, Auscultation, Vitals, Diagnosis, Treatment
+
+  int _calculateCompletedSections() {
+    int completed = 0;
+    if (_selectedPatientId != null || widget.preselectedPatient != null) completed++;
+    if (_chiefComplaintController.text.isNotEmpty) completed++;
+    if (_durationController.text.isNotEmpty) completed++;
+    if (_selectedSystemicSymptoms.isNotEmpty) completed++;
+    if (_breathSoundsController.text.isNotEmpty || _selectedAddedSounds.isNotEmpty) completed++;
+    // Vitals - check if any vital is filled
+    if (_bpController.text.isNotEmpty || _pulseController.text.isNotEmpty || _spo2Controller.text.isNotEmpty) {
+      completed++;
+    }
+    if (_diagnosisController.text.isNotEmpty) completed++;
+    if (_treatmentController.text.isNotEmpty) completed++;
+    return completed;
+  }
+
   @override
   Widget build(BuildContext context) {
     final dbAsync = ref.watch(doctorDbProvider);
@@ -296,225 +526,52 @@ class _AddPulmonaryScreenState extends ConsumerState<AddPulmonaryScreen> {
     );
   }
 
-  Widget _buildQuickFillSection(BuildContext context, bool isDark) {
-    return Container(
-      padding: const EdgeInsets.all(AppSpacing.lg),
-      decoration: BoxDecoration(
-        color: isDark ? Colors.grey.shade800.withValues(alpha: 0.5) : Colors.white,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(
-          color: isDark ? Colors.grey.shade700 : Colors.grey.shade200,
-        ),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              Icon(
-                Icons.flash_on_rounded,
-                color: Colors.amber.shade600,
-                size: 20,
-              ),
-              const SizedBox(width: 8),
-              Text(
-                'Quick Fill Templates',
-                style: TextStyle(
-                  fontSize: 14,
-                  fontWeight: FontWeight.w600,
-                  color: isDark ? Colors.white : Colors.grey.shade800,
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 12),
-          Wrap(
-            spacing: 8,
-            runSpacing: 8,
-            children: [
-              _buildQuickFillChip(
-                label: 'Asthma',
-                icon: Icons.air_rounded,
-                color: Colors.blue,
-                onTap: () => _fillAsthmaTemplate(),
-              ),
-              _buildQuickFillChip(
-                label: 'COPD',
-                icon: Icons.smoke_free,
-                color: Colors.orange,
-                onTap: () => _fillCOPDTemplate(),
-              ),
-              _buildQuickFillChip(
-                label: 'Pneumonia',
-                icon: Icons.coronavirus_outlined,
-                color: Colors.red,
-                onTap: () => _fillPneumoniaTemplate(),
-              ),
-              _buildQuickFillChip(
-                label: 'Bronchitis',
-                icon: Icons.sick_outlined,
-                color: Colors.teal,
-                onTap: () => _fillBronchitisTemplate(),
-              ),
-              _buildQuickFillChip(
-                label: 'TB',
-                icon: Icons.medical_services_outlined,
-                color: Colors.purple,
-                onTap: () => _fillTBTemplate(),
-              ),
-              _buildQuickFillChip(
-                label: 'URTI',
-                icon: Icons.thermostat_outlined,
-                color: Colors.green,
-                onTap: () => _fillURTITemplate(),
-              ),
-            ],
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildQuickFillChip({
-    required String label,
-    required IconData icon,
-    required Color color,
-    required VoidCallback onTap,
-  }) {
-    return ActionChip(
-      avatar: Icon(icon, size: 18, color: color),
-      label: Text(label),
-      onPressed: onTap,
-      backgroundColor: color.withValues(alpha: 0.1),
-      side: BorderSide(color: color.withValues(alpha: 0.3)),
-      labelStyle: TextStyle(
-        color: color,
-        fontWeight: FontWeight.w500,
-      ),
-    );
-  }
-
-  void _fillAsthmaTemplate() {
-    _chiefComplaintController.text = 'Difficulty breathing, wheezing, chest tightness';
-    _symptomCharacterController.text = 'Episodic, worse at night/early morning';
-    setState(() {
-      _selectedSystemicSymptoms = ['Cough', 'Shortness of breath'];
-      _selectedAddedSounds = ['Wheeze', 'Rhonchi'];
-    });
-    _breathSoundsController.text = 'Bilateral wheeze';
-    _diagnosisController.text = 'Bronchial Asthma';
-    _treatmentController.text = 'Inhaled bronchodilators (SABA), Inhaled corticosteroids (ICS)';
-    _showQuickFillSnackbar('Asthma template applied');
-  }
-
-  void _fillCOPDTemplate() {
-    _chiefComplaintController.text = 'Progressive dyspnea, chronic cough with sputum';
-    _symptomCharacterController.text = 'Chronic, progressive';
-    _durationController.text = 'Several years';
-    setState(() {
-      _selectedSystemicSymptoms = ['Cough', 'Shortness of breath', 'Fatigue'];
-      _selectedComorbidities = ['Smoking', 'Chronic Bronchitis'];
-      _selectedAddedSounds = ['Rhonchi', 'Diminished breath sounds'];
-    });
-    _breathSoundsController.text = 'Diminished with prolonged expiration';
-    _diagnosisController.text = 'COPD';
-    _treatmentController.text = 'LABA/LAMA, ICS if frequent exacerbations, Pulmonary rehabilitation';
-    _showQuickFillSnackbar('COPD template applied');
-  }
-
-  void _fillPneumoniaTemplate() {
-    _chiefComplaintController.text = 'Fever, productive cough, pleuritic chest pain';
-    _symptomCharacterController.text = 'Acute onset';
-    _durationController.text = '3-7 days';
-    setState(() {
-      _selectedSystemicSymptoms = ['Fever', 'Cough', 'Shortness of breath', 'Fatigue'];
-      _selectedRedFlags = ['High fever', 'Hypoxia', 'Altered sensorium'];
-      _selectedAddedSounds = ['Crepitations', 'Bronchial breath sounds'];
-      _selectedInvestigations = ['Chest X-ray', 'CBC', 'Sputum culture'];
-    });
-    _breathSoundsController.text = 'Bronchial breath sounds over affected area';
-    _diagnosisController.text = 'Community-acquired Pneumonia';
-    _treatmentController.text = 'Antibiotics (Amoxicillin-Clavulanate or Respiratory fluoroquinolone), Supportive care';
-    _showQuickFillSnackbar('Pneumonia template applied');
-  }
-
-  void _fillBronchitisTemplate() {
-    _chiefComplaintController.text = 'Cough with or without sputum, chest discomfort';
-    _symptomCharacterController.text = 'Acute onset, usually following viral URTI';
-    _durationController.text = '1-2 weeks';
-    setState(() {
-      _selectedSystemicSymptoms = ['Cough', 'Mild fever'];
-      _selectedAddedSounds = ['Rhonchi'];
-    });
-    _breathSoundsController.text = 'Scattered rhonchi, clear with coughing';
-    _diagnosisController.text = 'Acute Bronchitis';
-    _treatmentController.text = 'Symptomatic treatment, cough suppressants, hydration, rest';
-    _showQuickFillSnackbar('Bronchitis template applied');
-  }
-
-  void _fillTBTemplate() {
-    _chiefComplaintController.text = 'Chronic cough >2 weeks, hemoptysis, weight loss, night sweats';
-    _symptomCharacterController.text = 'Chronic, progressive';
-    _durationController.text = '>3 weeks';
-    setState(() {
-      _selectedSystemicSymptoms = ['Fever', 'Weight loss', 'Night sweats', 'Fatigue'];
-      _selectedRedFlags = ['Hemoptysis', 'Significant weight loss'];
-      _selectedAddedSounds = ['Crepitations'];
-      _selectedInvestigations = ['Chest X-ray', 'Sputum AFB', 'Gene Xpert', 'Mantoux test'];
-    });
-    _breathSoundsController.text = 'Crepitations over upper zones';
-    _diagnosisController.text = 'Pulmonary Tuberculosis';
-    _treatmentController.text = 'Anti-TB regimen (HRZE) as per DOTS protocol';
-    _showQuickFillSnackbar('TB template applied');
-  }
-
-  void _fillURTITemplate() {
-    _chiefComplaintController.text = 'Sore throat, nasal congestion, mild cough';
-    _symptomCharacterController.text = 'Acute onset';
-    _durationController.text = '2-5 days';
-    setState(() {
-      _selectedSystemicSymptoms = ['Mild fever', 'Cough'];
-    });
-    _breathSoundsController.text = 'Normal/Clear';
-    _diagnosisController.text = 'Upper Respiratory Tract Infection';
-    _treatmentController.text = 'Symptomatic treatment, rest, hydration, analgesics';
-    _showQuickFillSnackbar('URTI template applied');
-  }
-
-  void _showQuickFillSnackbar(String message) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Row(
-          children: [
-            const Icon(Icons.check_circle, color: Colors.white),
-            const SizedBox(width: 8),
-            Text(message),
-          ],
-        ),
-        backgroundColor: Colors.green.shade600,
-        behavior: SnackBarBehavior.floating,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-        duration: const Duration(seconds: 2),
-      ),
-    );
-  }
-
   Widget _buildFormContent(BuildContext context, DoctorDatabase db, bool isDark) {
+    final completedSections = _calculateCompletedSections();
+
     return Form(
       key: _formKey,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Quick Fill Templates
-          _buildQuickFillSection(context, isDark),
+          // Progress Indicator
+          FormProgressIndicator(
+            completedSections: completedSections,
+            totalSections: _totalSections,
+            accentColor: const Color(0xFF06B6D4),
+          ),
+          const SizedBox(height: AppSpacing.md),
+
+          // Section Navigation Bar
+          SectionNavigationBar(
+            sections: _sections,
+            onSectionTap: _scrollToSection,
+            accentColor: const Color(0xFF06B6D4),
+          ),
+          const SizedBox(height: AppSpacing.md),
+
+          // Quick Fill Templates (using new component)
+          QuickFillTemplateBar(
+            templates: _templates,
+            onTemplateSelected: _applyTemplate,
+            collapsible: true,
+            initiallyExpanded: false,
+          ),
           const SizedBox(height: AppSpacing.lg),
 
-          // Patient Selection
-          PatientSelectorCard(
-            db: db,
-            selectedPatientId: _selectedPatientId,
-            onChanged: (id) => setState(() => _selectedPatientId = id),
-          ),
+          // Patient Selection / Info Card
+          if (widget.preselectedPatient != null)
+            PatientInfoCard(
+              patient: widget.preselectedPatient!,
+              gradientColors: const [Color(0xFF3B82F6), Color(0xFF1D4ED8)],
+              icon: Icons.air_rounded,
+            )
+          else
+            PatientSelectorCard(
+              db: db,
+              selectedPatientId: _selectedPatientId,
+              onChanged: (id) => setState(() => _selectedPatientId = id),
+            ),
           const SizedBox(height: AppSpacing.lg),
 
           // Date Selection
@@ -527,8 +584,13 @@ class _AddPulmonaryScreenState extends ConsumerState<AddPulmonaryScreen> {
 
           // Chief Complaint
           RecordFormSection(
+            key: _sectionKeys['complaint'],
             title: 'Presenting Complaint',
             icon: Icons.air,
+            accentColor: const Color(0xFF06B6D4),
+            collapsible: true,
+            initiallyExpanded: _expandedSections['complaint'] ?? true,
+            onToggle: (expanded) => setState(() => _expandedSections['complaint'] = expanded),
             child: Column(
               children: [
                 SuggestionTextField(
@@ -568,33 +630,48 @@ class _AddPulmonaryScreenState extends ConsumerState<AddPulmonaryScreen> {
           ),
           const SizedBox(height: AppSpacing.lg),
 
-          // Systemic Symptoms
-          ChipSelectorSection(
-            title: 'Systemic Symptoms',
+          // Symptoms Section (Systemic Symptoms + Red Flags)
+          RecordFormSection(
+            key: _sectionKeys['symptoms'],
+            title: 'Symptoms & Red Flags',
             icon: Icons.thermostat_outlined,
-            options: PulmonarySuggestions.systemicSymptoms,
-            selectedOptions: _selectedSystemicSymptoms,
-            onChanged: (list) => setState(() => _selectedSystemicSymptoms = list),
-            chipColor: AppColors.warning,
-          ),
-          const SizedBox(height: AppSpacing.lg),
-
-          // Red Flags
-          ChipSelectorSection(
-            title: 'Red Flags',
-            icon: Icons.warning_amber_rounded,
-            options: PulmonarySuggestions.redFlags,
-            selectedOptions: _selectedRedFlags,
-            onChanged: (list) => setState(() => _selectedRedFlags = list),
-            chipColor: AppColors.error,
+            accentColor: AppColors.warning,
+            collapsible: true,
+            initiallyExpanded: _expandedSections['symptoms'] ?? true,
+            onToggle: (expanded) => setState(() => _expandedSections['symptoms'] = expanded),
+            child: Column(
+              children: [
+                ChipSelectorSection(
+                  title: 'Systemic Symptoms',
+                  options: PulmonarySuggestions.systemicSymptoms,
+                  selected: _selectedSystemicSymptoms,
+                  onChanged: (list) => setState(() => _selectedSystemicSymptoms = list),
+                  accentColor: AppColors.warning,
+                  showClearButton: true,
+                ),
+                const SizedBox(height: AppSpacing.lg),
+                ChipSelectorSection(
+                  title: 'Red Flags',
+                  options: PulmonarySuggestions.redFlags,
+                  selected: _selectedRedFlags,
+                  onChanged: (list) => setState(() => _selectedRedFlags = list),
+                  accentColor: AppColors.error,
+                  showClearButton: true,
+                ),
+              ],
+            ),
           ),
           const SizedBox(height: AppSpacing.lg),
 
           // Clinical History
           RecordFormSection(
+            key: _sectionKeys['history'],
             title: 'Clinical History',
             icon: Icons.history,
             accentColor: const Color(0xFF3B82F6),
+            collapsible: true,
+            initiallyExpanded: _expandedSections['history'] ?? true,
+            onToggle: (expanded) => setState(() => _expandedSections['history'] = expanded),
             child: Column(
               children: [
                 SuggestionTextField(
@@ -626,30 +703,33 @@ class _AddPulmonaryScreenState extends ConsumerState<AddPulmonaryScreen> {
                 const SizedBox(height: AppSpacing.md),
                 RecordTextField(
                   controller: _currentMedicationsController,
+                  label: 'Current Medications',
                   hint: 'Current medications (comma-separated)...',
                   maxLines: 2,
+                ),
+                const SizedBox(height: AppSpacing.lg),
+                ChipSelectorSection(
+                  title: 'Comorbidities',
+                  options: PulmonarySuggestions.comorbidities,
+                  selected: _selectedComorbidities,
+                  onChanged: (list) => setState(() => _selectedComorbidities = list),
+                  accentColor: AppColors.info,
+                  showClearButton: true,
                 ),
               ],
             ),
           ),
           const SizedBox(height: AppSpacing.lg),
 
-          // Comorbidities
-          ChipSelectorSection(
-            title: 'Comorbidities',
-            icon: Icons.medical_services_outlined,
-            options: PulmonarySuggestions.comorbidities,
-            selectedOptions: _selectedComorbidities,
-            onChanged: (list) => setState(() => _selectedComorbidities = list),
-            chipColor: AppColors.info,
-          ),
-          const SizedBox(height: AppSpacing.lg),
-
           // Vital Signs
           RecordFormSection(
+            key: _sectionKeys['vitals'],
             title: 'Vital Signs',
             icon: Icons.favorite_outline,
             accentColor: const Color(0xFF3B82F6),
+            collapsible: true,
+            initiallyExpanded: _expandedSections['vitals'] ?? true,
+            onToggle: (expanded) => setState(() => _expandedSections['vitals'] = expanded),
             child: Column(
               children: [
                 RecordFieldGrid(
@@ -716,9 +796,13 @@ class _AddPulmonaryScreenState extends ConsumerState<AddPulmonaryScreen> {
 
           // Chest Auscultation
           RecordFormSection(
+            key: _sectionKeys['auscultation'],
             title: 'Chest Auscultation',
             icon: Icons.hearing,
             accentColor: const Color(0xFF3B82F6),
+            collapsible: true,
+            initiallyExpanded: _expandedSections['auscultation'] ?? true,
+            onToggle: (expanded) => setState(() => _expandedSections['auscultation'] = expanded),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
@@ -730,21 +814,13 @@ class _AddPulmonaryScreenState extends ConsumerState<AddPulmonaryScreen> {
                   suggestions: PulmonarySuggestions.breathSounds,
                 ),
                 const SizedBox(height: AppSpacing.md),
-                Text(
-                  'Added Sounds',
-                  style: TextStyle(
-                    fontSize: 14,
-                    fontWeight: FontWeight.w600,
-                    color: isDark ? AppColors.darkTextPrimary : AppColors.textPrimary,
-                  ),
-                ),
-                const SizedBox(height: AppSpacing.sm),
-                RecordFormWidgets.buildChipSelector(
-                  context: context,
+                ChipSelectorSection(
+                  title: 'Added Sounds',
                   options: PulmonarySuggestions.addedSounds,
-                  selectedOptions: _selectedAddedSounds,
+                  selected: _selectedAddedSounds,
                   onChanged: (list) => setState(() => _selectedAddedSounds = list),
-                  color: AppColors.accent,
+                  accentColor: AppColors.accent,
+                  showClearButton: true,
                 ),
                 const SizedBox(height: AppSpacing.lg),
                 Text(
@@ -809,6 +885,7 @@ class _AddPulmonaryScreenState extends ConsumerState<AddPulmonaryScreen> {
                 const SizedBox(height: AppSpacing.md),
                 RecordTextField(
                   controller: _additionalFindingsController,
+                  label: 'Additional Findings',
                   hint: 'Additional auscultation findings...',
                   maxLines: 2,
                 ),
@@ -818,19 +895,34 @@ class _AddPulmonaryScreenState extends ConsumerState<AddPulmonaryScreen> {
           const SizedBox(height: AppSpacing.lg),
 
           // Investigations
-          ChipSelectorSection(
+          RecordFormSection(
+            key: _sectionKeys['investigations'],
             title: 'Investigations Required',
             icon: Icons.biotech,
-            options: PulmonarySuggestions.investigations,
-            selectedOptions: _selectedInvestigations,
-            onChanged: (list) => setState(() => _selectedInvestigations = list),
+            accentColor: Colors.cyan,
+            collapsible: true,
+            initiallyExpanded: _expandedSections['investigations'] ?? true,
+            onToggle: (expanded) => setState(() => _expandedSections['investigations'] = expanded),
+            child: ChipSelectorSection(
+              title: 'Select Investigations',
+              options: PulmonarySuggestions.investigations,
+              selected: _selectedInvestigations,
+              onChanged: (list) => setState(() => _selectedInvestigations = list),
+              accentColor: Colors.cyan,
+              showClearButton: true,
+            ),
           ),
           const SizedBox(height: AppSpacing.lg),
 
           // Diagnosis
           RecordFormSection(
+            key: _sectionKeys['diagnosis'],
             title: 'Diagnosis',
             icon: Icons.medical_information,
+            accentColor: Colors.green,
+            collapsible: true,
+            initiallyExpanded: _expandedSections['diagnosis'] ?? true,
+            onToggle: (expanded) => setState(() => _expandedSections['diagnosis'] = expanded),
             child: SuggestionTextField(
               controller: _diagnosisController,
               label: 'Diagnosis',
@@ -856,36 +948,36 @@ class _AddPulmonaryScreenState extends ConsumerState<AddPulmonaryScreen> {
 
           // Treatment Plan
           RecordFormSection(
-            title: 'Treatment Plan',
+            key: _sectionKeys['treatment'],
+            title: 'Treatment & Follow-up',
             icon: Icons.healing,
-            child: RecordNotesField(
-              controller: _treatmentController,
-              hint: 'Enter treatment plan...',
-              maxLines: 4,
-            ),
-          ),
-          const SizedBox(height: AppSpacing.lg),
-
-          // Follow-up Plan
-          RecordFormSection(
-            title: 'Follow-up Plan',
-            icon: Icons.event_note,
-            child: RecordNotesField(
-              controller: _followUpPlanController,
-              hint: 'Follow-up instructions and plan...',
-              maxLines: 3,
-            ),
-          ),
-          const SizedBox(height: AppSpacing.lg),
-
-          // Clinical Notes
-          RecordFormSection(
-            title: 'Additional Notes',
-            icon: Icons.note_alt,
-            child: RecordNotesField(
-              controller: _clinicalNotesController,
-              hint: 'Additional clinical notes...',
-              maxLines: 4,
+            accentColor: Colors.purple,
+            collapsible: true,
+            initiallyExpanded: _expandedSections['treatment'] ?? true,
+            onToggle: (expanded) => setState(() => _expandedSections['treatment'] = expanded),
+            child: Column(
+              children: [
+                RecordNotesField(
+                  controller: _treatmentController,
+                  label: 'Treatment Plan',
+                  hint: 'Enter treatment plan...',
+                  maxLines: 4,
+                ),
+                const SizedBox(height: AppSpacing.md),
+                RecordNotesField(
+                  controller: _followUpPlanController,
+                  label: 'Follow-up Plan',
+                  hint: 'Follow-up instructions and plan...',
+                  maxLines: 3,
+                ),
+                const SizedBox(height: AppSpacing.md),
+                RecordNotesField(
+                  controller: _clinicalNotesController,
+                  label: 'Additional Notes',
+                  hint: 'Additional clinical notes...',
+                  maxLines: 4,
+                ),
+              ],
             ),
           ),
           const SizedBox(height: AppSpacing.xl),
@@ -895,7 +987,7 @@ class _AddPulmonaryScreenState extends ConsumerState<AddPulmonaryScreen> {
             isSaving: _isSaving,
             label: widget.existingRecord != null ? 'Update Evaluation' : 'Save Evaluation',
             onPressed: () => _saveRecord(db),
-            gradientColors: [const Color(0xFF06B6D4), const Color(0xFF0891B2)], // Info Cyan
+            gradientColors: [const Color(0xFF06B6D4), const Color(0xFF0891B2)],
           ),
           const SizedBox(height: AppSpacing.xxl),
         ],

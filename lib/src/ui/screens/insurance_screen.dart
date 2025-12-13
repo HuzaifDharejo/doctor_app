@@ -3,7 +3,6 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../db/doctor_db.dart';
 import '../../extensions/drift_extensions.dart';
-import '../../models/insurance.dart';
 import '../../providers/db_provider.dart';
 import '../../services/insurance_service.dart';
 import '../../theme/app_theme.dart';
@@ -920,6 +919,8 @@ class _InsuranceScreenState extends ConsumerState<InsuranceScreen>
     final policyController = TextEditingController();
     final groupController = TextEditingController();
     bool isPrimary = true;
+    int? selectedPatientId;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
 
     showModalBottomSheet(
       context: context,
@@ -936,15 +937,53 @@ class _InsuranceScreenState extends ConsumerState<InsuranceScreen>
               ),
               child: Container(
                 padding: const EdgeInsets.all(AppSpacing.lg),
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    const Text(
-                      'Add Insurance',
-                      style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
-                    ),
-                    const SizedBox(height: 16),
+                child: SingleChildScrollView(
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Center(
+                        child: Container(
+                          width: 40,
+                          height: 4,
+                          decoration: BoxDecoration(
+                            color: isDark ? Colors.grey[600] : Colors.grey[300],
+                            borderRadius: BorderRadius.circular(2),
+                          ),
+                        ),
+                      ),
+                      const SizedBox(height: 16),
+                      const Text(
+                        'Add Insurance',
+                        style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+                      ),
+                      const SizedBox(height: 16),
+                      // Patient selector
+                      FutureBuilder<List<Patient>>(
+                        future: ref.read(doctorDbProvider).value?.getAllPatients() ?? Future.value([]),
+                        builder: (context, snapshot) {
+                          if (snapshot.connectionState == ConnectionState.waiting) {
+                            return const Center(child: CircularProgressIndicator());
+                          }
+                          final patientList = snapshot.data ?? [];
+                          return DropdownButtonFormField<int>(
+                            decoration: const InputDecoration(
+                              labelText: 'Select Patient *',
+                              border: OutlineInputBorder(),
+                              prefixIcon: Icon(Icons.person),
+                            ),
+                            value: selectedPatientId,
+                            items: patientList.map((p) => DropdownMenuItem(
+                              value: p.id,
+                              child: Text('${p.firstName} ${p.lastName}'),
+                            )).toList(),
+                            onChanged: (value) {
+                              setModalState(() => selectedPatientId = value);
+                            },
+                          );
+                        },
+                      ),
+                      const SizedBox(height: 16),
                     TextField(
                       controller: insurerController,
                       decoration: const InputDecoration(
@@ -978,9 +1017,9 @@ class _InsuranceScreenState extends ConsumerState<InsuranceScreen>
                     SizedBox(
                       width: double.infinity,
                       child: ElevatedButton(
-                        onPressed: () async {
+                        onPressed: selectedPatientId == null ? null : () async {
                           await _insuranceService.addInsuranceInfo(
-                            patientId: 1,
+                            patientId: selectedPatientId!,
                             insurerName: insurerController.text,
                             policyNumber: policyController.text,
                             groupNumber: groupController.text.isNotEmpty ? groupController.text : null,
@@ -1003,6 +1042,7 @@ class _InsuranceScreenState extends ConsumerState<InsuranceScreen>
                     ),
                   ],
                 ),
+                ),
               ),
             );
           },
@@ -1015,6 +1055,8 @@ class _InsuranceScreenState extends ConsumerState<InsuranceScreen>
     final amountController = TextEditingController();
     final cptController = TextEditingController();
     final diagnosisController = TextEditingController();
+    int? selectedPatientId;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
 
     showModalBottomSheet(
       context: context,
@@ -1023,77 +1065,120 @@ class _InsuranceScreenState extends ConsumerState<InsuranceScreen>
         borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
       ),
       builder: (context) {
-        return Padding(
-          padding: EdgeInsets.only(
-            bottom: MediaQuery.of(context).viewInsets.bottom,
-          ),
-          child: Container(
-            padding: const EdgeInsets.all(AppSpacing.lg),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                const Text(
-                  'New Claim',
-                  style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
-                ),
-                const SizedBox(height: 16),
-                TextField(
-                  controller: cptController,
-                  decoration: const InputDecoration(
-                    labelText: 'CPT Code',
-                    border: OutlineInputBorder(),
+        return StatefulBuilder(
+          builder: (context, setModalState) {
+            return Padding(
+              padding: EdgeInsets.only(
+                bottom: MediaQuery.of(context).viewInsets.bottom,
+              ),
+              child: Container(
+                padding: const EdgeInsets.all(AppSpacing.lg),
+                child: SingleChildScrollView(
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Center(
+                        child: Container(
+                          width: 40,
+                          height: 4,
+                          decoration: BoxDecoration(
+                            color: isDark ? Colors.grey[600] : Colors.grey[300],
+                            borderRadius: BorderRadius.circular(2),
+                          ),
+                        ),
+                      ),
+                      const SizedBox(height: 16),
+                      const Text(
+                        'New Claim',
+                        style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+                      ),
+                      const SizedBox(height: 16),
+                      // Patient selector
+                      FutureBuilder<List<Patient>>(
+                        future: ref.read(doctorDbProvider).value?.getAllPatients() ?? Future.value([]),
+                        builder: (context, snapshot) {
+                          if (snapshot.connectionState == ConnectionState.waiting) {
+                            return const Center(child: CircularProgressIndicator());
+                          }
+                          final patientList = snapshot.data ?? [];
+                          return DropdownButtonFormField<int>(
+                            decoration: const InputDecoration(
+                              labelText: 'Select Patient *',
+                              border: OutlineInputBorder(),
+                              prefixIcon: Icon(Icons.person),
+                            ),
+                            value: selectedPatientId,
+                            items: patientList.map((p) => DropdownMenuItem(
+                              value: p.id,
+                              child: Text('${p.firstName} ${p.lastName}'),
+                            )).toList(),
+                            onChanged: (value) {
+                              setModalState(() => selectedPatientId = value);
+                            },
+                          );
+                        },
+                      ),
+                      const SizedBox(height: 16),
+                      TextField(
+                        controller: cptController,
+                        decoration: const InputDecoration(
+                          labelText: 'CPT Code',
+                          border: OutlineInputBorder(),
+                        ),
+                      ),
+                      const SizedBox(height: 16),
+                      TextField(
+                        controller: diagnosisController,
+                        decoration: const InputDecoration(
+                          labelText: 'Diagnosis Code (ICD-10)',
+                          border: OutlineInputBorder(),
+                        ),
+                      ),
+                      const SizedBox(height: 16),
+                      TextField(
+                        controller: amountController,
+                        keyboardType: TextInputType.number,
+                        decoration: const InputDecoration(
+                          labelText: 'Billed Amount',
+                          prefixText: '\$ ',
+                          border: OutlineInputBorder(),
+                        ),
+                      ),
+                      const SizedBox(height: 24),
+                      SizedBox(
+                        width: double.infinity,
+                        child: ElevatedButton(
+                          onPressed: selectedPatientId == null ? null : () async {
+                            await _insuranceService.submitClaim(
+                              patientId: selectedPatientId!,
+                              insuranceId: insurance?.id ?? 1,
+                              serviceDate: DateTime.now(),
+                              billedAmount: double.tryParse(amountController.text),
+                              diagnosisCodes: diagnosisController.text.isNotEmpty ? diagnosisController.text : null,
+                              procedureCodes: cptController.text.isNotEmpty ? cptController.text : null,
+                            );
+                            if (context.mounted) {
+                              Navigator.pop(context);
+                              setState(() {});
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                const SnackBar(content: Text('Claim submitted')),
+                              );
+                            }
+                          },
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: const Color(0xFF3B82F6),
+                            padding: const EdgeInsets.symmetric(vertical: 16),
+                          ),
+                          child: const Text('Submit Claim'),
+                        ),
+                      ),
+                    ],
                   ),
                 ),
-                const SizedBox(height: 16),
-                TextField(
-                  controller: diagnosisController,
-                  decoration: const InputDecoration(
-                    labelText: 'Diagnosis Code (ICD-10)',
-                    border: OutlineInputBorder(),
-                  ),
-                ),
-                const SizedBox(height: 16),
-                TextField(
-                  controller: amountController,
-                  keyboardType: TextInputType.number,
-                  decoration: const InputDecoration(
-                    labelText: 'Billed Amount',
-                    prefixText: '\$ ',
-                    border: OutlineInputBorder(),
-                  ),
-                ),
-                const SizedBox(height: 24),
-                SizedBox(
-                  width: double.infinity,
-                  child: ElevatedButton(
-                    onPressed: () async {
-                      await _insuranceService.submitClaim(
-                        patientId: 1,
-                        insuranceId: insurance?.id ?? 1,
-                        serviceDate: DateTime.now(),
-                        billedAmount: double.tryParse(amountController.text),
-                        diagnosisCodes: diagnosisController.text.isNotEmpty ? diagnosisController.text : null,
-                        procedureCodes: cptController.text.isNotEmpty ? cptController.text : null,
-                      );
-                      if (context.mounted) {
-                        Navigator.pop(context);
-                        setState(() {});
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(content: Text('Claim submitted')),
-                        );
-                      }
-                    },
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: const Color(0xFF3B82F6),
-                      padding: const EdgeInsets.symmetric(vertical: 16),
-                    ),
-                    child: const Text('Submit Claim'),
-                  ),
-                ),
-              ],
-            ),
-          ),
+              ),
+            );
+          },
         );
       },
     );
@@ -1103,6 +1188,8 @@ class _InsuranceScreenState extends ConsumerState<InsuranceScreen>
     final procedureController = TextEditingController();
     final descriptionController = TextEditingController();
     final reasonController = TextEditingController();
+    int? selectedPatientId;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
 
     showModalBottomSheet(
       context: context,
@@ -1111,75 +1198,118 @@ class _InsuranceScreenState extends ConsumerState<InsuranceScreen>
         borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
       ),
       builder: (context) {
-        return Padding(
-          padding: EdgeInsets.only(
-            bottom: MediaQuery.of(context).viewInsets.bottom,
-          ),
-          child: Container(
-            padding: const EdgeInsets.all(AppSpacing.lg),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                const Text(
-                  'Pre-Authorization Request',
-                  style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
-                ),
-                const SizedBox(height: 16),
-                TextField(
-                  controller: procedureController,
-                  decoration: const InputDecoration(
-                    labelText: 'Procedure Code',
-                    border: OutlineInputBorder(),
+        return StatefulBuilder(
+          builder: (context, setModalState) {
+            return Padding(
+              padding: EdgeInsets.only(
+                bottom: MediaQuery.of(context).viewInsets.bottom,
+              ),
+              child: Container(
+                padding: const EdgeInsets.all(AppSpacing.lg),
+                child: SingleChildScrollView(
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Center(
+                        child: Container(
+                          width: 40,
+                          height: 4,
+                          decoration: BoxDecoration(
+                            color: isDark ? Colors.grey[600] : Colors.grey[300],
+                            borderRadius: BorderRadius.circular(2),
+                          ),
+                        ),
+                      ),
+                      const SizedBox(height: 16),
+                      const Text(
+                        'Pre-Authorization Request',
+                        style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+                      ),
+                      const SizedBox(height: 16),
+                      // Patient selector
+                      FutureBuilder<List<Patient>>(
+                        future: ref.read(doctorDbProvider).value?.getAllPatients() ?? Future.value([]),
+                        builder: (context, snapshot) {
+                          if (snapshot.connectionState == ConnectionState.waiting) {
+                            return const Center(child: CircularProgressIndicator());
+                          }
+                          final patientList = snapshot.data ?? [];
+                          return DropdownButtonFormField<int>(
+                            decoration: const InputDecoration(
+                              labelText: 'Select Patient *',
+                              border: OutlineInputBorder(),
+                              prefixIcon: Icon(Icons.person),
+                            ),
+                            value: selectedPatientId,
+                            items: patientList.map((p) => DropdownMenuItem(
+                              value: p.id,
+                              child: Text('${p.firstName} ${p.lastName}'),
+                            )).toList(),
+                            onChanged: (value) {
+                              setModalState(() => selectedPatientId = value);
+                            },
+                          );
+                        },
+                      ),
+                      const SizedBox(height: 16),
+                      TextField(
+                        controller: procedureController,
+                        decoration: const InputDecoration(
+                          labelText: 'Procedure Code',
+                          border: OutlineInputBorder(),
+                        ),
+                      ),
+                      const SizedBox(height: 16),
+                      TextField(
+                        controller: descriptionController,
+                        decoration: const InputDecoration(
+                          labelText: 'Procedure Description',
+                          border: OutlineInputBorder(),
+                        ),
+                      ),
+                      const SizedBox(height: 16),
+                      TextField(
+                        controller: reasonController,
+                        maxLines: 2,
+                        decoration: const InputDecoration(
+                          labelText: 'Medical Necessity',
+                          border: OutlineInputBorder(),
+                        ),
+                      ),
+                      const SizedBox(height: 24),
+                      SizedBox(
+                        width: double.infinity,
+                        child: ElevatedButton(
+                          onPressed: selectedPatientId == null ? null : () async {
+                            await _insuranceService.requestPreAuthorization(
+                              patientId: selectedPatientId!,
+                              insuranceId: 1,
+                              procedureCode: procedureController.text.isNotEmpty ? procedureController.text : null,
+                              procedureDescription: descriptionController.text.isNotEmpty ? descriptionController.text : null,
+                              clinicalReason: reasonController.text.isNotEmpty ? reasonController.text : null,
+                            );
+                            if (context.mounted) {
+                              Navigator.pop(context);
+                              setState(() {});
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                const SnackBar(content: Text('Pre-authorization requested')),
+                              );
+                            }
+                          },
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: const Color(0xFF3B82F6),
+                            padding: const EdgeInsets.symmetric(vertical: 16),
+                          ),
+                          child: const Text('Submit Request'),
+                        ),
+                      ),
+                    ],
                   ),
                 ),
-                const SizedBox(height: 16),
-                TextField(
-                  controller: descriptionController,
-                  decoration: const InputDecoration(
-                    labelText: 'Procedure Description',
-                    border: OutlineInputBorder(),
-                  ),
-                ),
-                const SizedBox(height: 16),
-                TextField(
-                  controller: reasonController,
-                  maxLines: 2,
-                  decoration: const InputDecoration(
-                    labelText: 'Medical Necessity',
-                    border: OutlineInputBorder(),
-                  ),
-                ),
-                const SizedBox(height: 24),
-                SizedBox(
-                  width: double.infinity,
-                  child: ElevatedButton(
-                    onPressed: () async {
-                      await _insuranceService.requestPreAuthorization(
-                        patientId: 1,
-                        insuranceId: 1,
-                        procedureCode: procedureController.text.isNotEmpty ? procedureController.text : null,
-                        procedureDescription: descriptionController.text.isNotEmpty ? descriptionController.text : null,
-                        clinicalReason: reasonController.text.isNotEmpty ? reasonController.text : null,
-                      );
-                      if (context.mounted) {
-                        Navigator.pop(context);
-                        setState(() {});
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(content: Text('Pre-authorization requested')),
-                        );
-                      }
-                    },
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: const Color(0xFF3B82F6),
-                      padding: const EdgeInsets.symmetric(vertical: 16),
-                    ),
-                    child: const Text('Submit Request'),
-                  ),
-                ),
-              ],
-            ),
-          ),
+              ),
+            );
+          },
         );
       },
     );

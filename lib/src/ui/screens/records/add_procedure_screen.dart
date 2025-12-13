@@ -43,6 +43,30 @@ class _AddProcedureScreenState extends ConsumerState<AddProcedureScreen> {
   static const _primaryColor = Color(0xFFEC4899); // Medication Pink
   static const _secondaryColor = Color(0xFFDB2777);
   static const _gradientColors = [_primaryColor, _secondaryColor];
+  static const int _totalSections = 7;
+
+  // Section navigation keys and expansion state
+  final Map<String, GlobalKey> _sectionKeys = {
+    'procedure': GlobalKey(),
+    'anesthesia': GlobalKey(),
+    'vitals_pre': GlobalKey(),
+    'notes': GlobalKey(),
+    'findings': GlobalKey(),
+    'vitals_post': GlobalKey(),
+    'postop': GlobalKey(),
+  };
+  final Map<String, bool> _expandedSections = {
+    'procedure': true,
+    'anesthesia': true,
+    'vitals_pre': true,
+    'notes': true,
+    'findings': true,
+    'vitals_post': true,
+    'postop': true,
+  };
+
+  // Quick fill templates
+  late List<QuickFillTemplateItem> _templates;
 
   // Common fields
   int? _selectedPatientId;
@@ -79,6 +103,73 @@ class _AddProcedureScreenState extends ConsumerState<AddProcedureScreen> {
     super.initState();
     _selectedPatientId = widget.preselectedPatient?.id;
     
+    // Initialize procedure-specific templates
+    _templates = [
+      QuickFillTemplateItem(
+        label: 'Minor Procedure',
+        icon: Icons.healing_rounded,
+        color: Colors.blue,
+        description: 'Standard minor procedure template',
+        data: {
+          'procedure_name': 'Minor Surgical Procedure',
+          'anesthesia': 'Local anesthesia',
+          'post_op_instructions': 'Keep wound clean and dry. Watch for signs of infection. Return if increased pain, redness, or discharge.',
+        },
+      ),
+      QuickFillTemplateItem(
+        label: 'Wound Care',
+        icon: Icons.local_hospital_rounded,
+        color: Colors.orange,
+        description: 'Wound care and dressing template',
+        data: {
+          'procedure_name': 'Wound Care and Dressing',
+          'indication': 'Wound requiring debridement and dressing',
+          'anesthesia': 'Local anesthesia',
+          'procedure_notes': 'Wound cleaned with normal saline. Debridement of necrotic tissue. Sterile dressing applied.',
+          'post_op_instructions': 'Keep dressing clean and dry. Return for dressing change as scheduled. Watch for signs of infection.',
+        },
+      ),
+      QuickFillTemplateItem(
+        label: 'Biopsy',
+        icon: Icons.biotech_rounded,
+        color: Colors.purple,
+        description: 'Skin/tissue biopsy template',
+        data: {
+          'procedure_name': 'Tissue Biopsy',
+          'indication': 'Suspicious lesion requiring histopathological examination',
+          'anesthesia': 'Local anesthesia',
+          'specimen': 'Tissue specimen sent for histopathology',
+          'post_op_instructions': 'Keep biopsy site clean and dry. Results expected in 5-7 working days.',
+        },
+      ),
+      QuickFillTemplateItem(
+        label: 'Injection',
+        icon: Icons.vaccines_rounded,
+        color: Colors.teal,
+        description: 'Joint/soft tissue injection template',
+        data: {
+          'procedure_name': 'Therapeutic Injection',
+          'indication': 'Pain/inflammation at injection site',
+          'anesthesia': 'None',
+          'procedure_notes': 'Injection administered under aseptic precautions. Patient tolerated procedure well.',
+          'post_op_instructions': 'Rest the area for 24-48 hours. Ice if needed. Report any worsening symptoms.',
+        },
+      ),
+      QuickFillTemplateItem(
+        label: 'Suturing',
+        icon: Icons.cut_rounded,
+        color: Colors.red,
+        description: 'Laceration repair template',
+        data: {
+          'procedure_name': 'Laceration Repair / Suturing',
+          'indication': 'Laceration requiring primary closure',
+          'anesthesia': 'Local anesthesia',
+          'procedure_notes': 'Wound cleaned and irrigated. Primary closure with sutures under aseptic technique.',
+          'post_op_instructions': 'Keep wound clean and dry. Return for suture removal in 7-10 days. Watch for signs of infection.',
+        },
+      ),
+    ];
+    
     if (widget.existingRecord != null) {
       _loadExistingRecord();
     } else {
@@ -87,6 +178,70 @@ class _AddProcedureScreenState extends ConsumerState<AddProcedureScreen> {
     
     _autoSaveTimer = Timer.periodic(_autoSaveInterval, (_) => _autoSave());
   }
+
+  void _scrollToSection(String sectionKey) {
+    final key = _sectionKeys[sectionKey];
+    if (key?.currentContext != null) {
+      Scrollable.ensureVisible(
+        key!.currentContext!,
+        duration: const Duration(milliseconds: 400),
+        curve: Curves.easeInOut,
+        alignment: 0.1,
+      );
+    }
+  }
+
+  List<SectionInfo> get _sections => [
+    SectionInfo(
+      key: 'procedure',
+      title: 'Procedure',
+      icon: Icons.healing_rounded,
+      isComplete: _procedureNameController.text.isNotEmpty,
+      isExpanded: _expandedSections['procedure'] ?? true,
+    ),
+    SectionInfo(
+      key: 'anesthesia',
+      title: 'Anesthesia',
+      icon: Icons.airline_seat_flat_rounded,
+      isComplete: _anesthesiaController.text.isNotEmpty,
+      isExpanded: _expandedSections['anesthesia'] ?? true,
+    ),
+    SectionInfo(
+      key: 'vitals_pre',
+      title: 'Pre-Vitals',
+      icon: Icons.favorite_rounded,
+      isComplete: _hasPreVitals(),
+      isExpanded: _expandedSections['vitals_pre'] ?? true,
+    ),
+    SectionInfo(
+      key: 'notes',
+      title: 'Notes',
+      icon: Icons.note_alt_rounded,
+      isComplete: _procedureNotesController.text.isNotEmpty,
+      isExpanded: _expandedSections['notes'] ?? true,
+    ),
+    SectionInfo(
+      key: 'findings',
+      title: 'Findings',
+      icon: Icons.search_rounded,
+      isComplete: _findingsController.text.isNotEmpty,
+      isExpanded: _expandedSections['findings'] ?? true,
+    ),
+    SectionInfo(
+      key: 'vitals_post',
+      title: 'Post-Vitals',
+      icon: Icons.monitor_heart_rounded,
+      isComplete: _hasPostVitals(),
+      isExpanded: _expandedSections['vitals_post'] ?? true,
+    ),
+    SectionInfo(
+      key: 'postop',
+      title: 'Post-Op',
+      icon: Icons.assignment_rounded,
+      isComplete: _postOpInstructionsController.text.isNotEmpty,
+      isExpanded: _expandedSections['postop'] ?? true,
+    ),
+  ];
 
   void _loadExistingRecord() {
     final record = widget.existingRecord!;
@@ -484,7 +639,7 @@ class _AddProcedureScreenState extends ConsumerState<AddProcedureScreen> {
     return completed;
   }
 
-  void _applyTemplate(QuickFillTemplate template) {
+  void _applyTemplate(QuickFillTemplateItem template) {
     final data = template.data;
     setState(() {
       if (data['procedure_name'] != null) {
@@ -506,7 +661,7 @@ class _AddProcedureScreenState extends ConsumerState<AddProcedureScreen> {
         _specimenController.text = data['specimen'] as String;
       }
     });
-    showTemplateAppliedSnackbar(context, template.label);
+    showTemplateAppliedSnackbar(context, template.label, color: template.color);
   }
 
   @override
@@ -539,64 +694,69 @@ class _AddProcedureScreenState extends ConsumerState<AddProcedureScreen> {
   Widget _buildFormContent(BuildContext context, DoctorDatabase db, bool isDark) {
     // Calculate form completion
     final completedSections = _calculateCompletedSections();
-    const totalSections = 5; // Patient, Procedure Name, Indication, Notes, Post-op
 
     return Form(
       key: _formKey,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
+          // Patient Selection / Info Card
+          if (widget.preselectedPatient != null)
+            PatientInfoCard(
+              patient: widget.preselectedPatient!,
+              gradientColors: _gradientColors,
+              icon: Icons.healing_rounded,
+            )
+          else
+            PatientSelectorCard(
+              db: db,
+              selectedPatientId: _selectedPatientId,
+              onChanged: (id) => setState(() => _selectedPatientId = id),
+            ),
+          const SizedBox(height: AppSpacing.lg),
+
+          // Date Picker
+          DatePickerCard(
+            selectedDate: _recordDate,
+            onDateSelected: (date) => setState(() => _recordDate = date),
+          ),
+          const SizedBox(height: AppSpacing.lg),
+
           // Progress Indicator
           FormProgressIndicator(
             completedSections: completedSections,
-            totalSections: totalSections,
+            totalSections: _totalSections,
             accentColor: _primaryColor,
           ),
-          const SizedBox(height: 16),
+          const SizedBox(height: AppSpacing.md),
 
-          // Quick Fill Templates
-          QuickFillSection(
-            title: 'Common Procedures',
-            templates: ProcedureTemplates.templates,
+          // Section Navigation Bar
+          SectionNavigationBar(
+            sections: _sections,
+            onSectionTap: _scrollToSection,
+            accentColor: _primaryColor,
+          ),
+          const SizedBox(height: AppSpacing.md),
+
+          // Quick Fill Templates (using new component)
+          QuickFillTemplateBar(
+            templates: _templates,
             onTemplateSelected: _applyTemplate,
+            title: 'Common Procedures',
+            collapsible: true,
+            initiallyExpanded: false,
           ),
-          const SizedBox(height: 16),
-
-          // Patient Selection
-          RecordFormSection(
-            title: 'Patient Information',
-            icon: Icons.person_outline,
-            accentColor: _primaryColor,
-            child: PatientSelectorCard(
-              db: db,
-              selectedPatientId: _selectedPatientId,
-              onPatientSelected: (patient) {
-                setState(() => _selectedPatientId = patient?.id);
-              },
-              label: 'Select Patient',
-            ),
-          ),
-          const SizedBox(height: 16),
-
-          // Date and Title Section
-          RecordFormSection(
-            title: 'Record Details',
-            icon: Icons.event_note,
-            accentColor: _primaryColor,
-            child: DatePickerCard(
-              selectedDate: _recordDate,
-              onDateSelected: (date) => setState(() => _recordDate = date),
-              label: 'Procedure Date',
-              accentColor: _primaryColor,
-            ),
-          ),
-          const SizedBox(height: 16),
+          const SizedBox(height: AppSpacing.lg),
 
           // Procedure Information
           RecordFormSection(
+            key: _sectionKeys['procedure'],
             title: 'Procedure Information',
             icon: Icons.healing_outlined,
             accentColor: _primaryColor,
+            collapsible: true,
+            initiallyExpanded: _expandedSections['procedure'] ?? true,
+            onToggle: (expanded) => setState(() => _expandedSections['procedure'] = expanded),
             child: Column(
               children: [
                 SuggestionTextField(
@@ -606,7 +766,7 @@ class _AddProcedureScreenState extends ConsumerState<AddProcedureScreen> {
                   prefixIcon: Icons.healing_outlined,
                   suggestions: MedicalRecordSuggestions.procedureNames,
                 ),
-                const SizedBox(height: 12),
+                const SizedBox(height: AppSpacing.md),
                 RecordFieldGrid(
                   children: [
                     CompactTextField(
@@ -618,32 +778,36 @@ class _AddProcedureScreenState extends ConsumerState<AddProcedureScreen> {
                     _buildStatusDropdown(isDark),
                   ],
                 ),
-                const SizedBox(height: 12),
+                const SizedBox(height: AppSpacing.md),
                 RecordTextField(
                   controller: _indicationController,
+                  label: 'Indication',
                   hint: 'Clinical indication for procedure...',
                   maxLines: 2,
                   accentColor: _primaryColor,
                 ),
-                const SizedBox(height: 12),
+                const SizedBox(height: AppSpacing.md),
                 Row(
                   children: [
                     Expanded(child: _buildTimeSelector('Start', _startTime, (t) => setState(() => _startTime = t), isDark)),
-                    const SizedBox(width: 12),
+                    const SizedBox(width: AppSpacing.md),
                     Expanded(child: _buildTimeSelector('End', _endTime, (t) => setState(() => _endTime = t), isDark)),
                   ],
                 ),
               ],
             ),
           ),
-          const SizedBox(height: 16),
+          const SizedBox(height: AppSpacing.lg),
 
           // Anesthesia
           RecordFormSection(
+            key: _sectionKeys['anesthesia'],
             title: 'Anesthesia',
             icon: Icons.airline_seat_flat,
             accentColor: Colors.purple,
             collapsible: true,
+            initiallyExpanded: _expandedSections['anesthesia'] ?? true,
+            onToggle: (expanded) => setState(() => _expandedSections['anesthesia'] = expanded),
             child: SuggestionTextField(
               controller: _anesthesiaController,
               label: 'Anesthesia Type',
@@ -662,14 +826,17 @@ class _AddProcedureScreenState extends ConsumerState<AddProcedureScreen> {
               ],
             ),
           ),
-          const SizedBox(height: 16),
+          const SizedBox(height: AppSpacing.lg),
 
           // Pre-Procedure Vitals
           RecordFormSection(
+            key: _sectionKeys['vitals_pre'],
             title: 'Pre-Procedure Vitals',
             icon: Icons.favorite_outline,
             accentColor: Colors.red,
             collapsible: true,
+            initiallyExpanded: _expandedSections['vitals_pre'] ?? true,
+            onToggle: (expanded) => setState(() => _expandedSections['vitals_pre'] = expanded),
             child: RecordFieldGrid(
               crossAxisCount: 3,
               children: [
@@ -699,13 +866,17 @@ class _AddProcedureScreenState extends ConsumerState<AddProcedureScreen> {
               ],
             ),
           ),
-          const SizedBox(height: 16),
+          const SizedBox(height: AppSpacing.lg),
 
           // Procedure Notes
           RecordFormSection(
+            key: _sectionKeys['notes'],
             title: 'Procedure Notes',
             icon: Icons.note_alt,
             accentColor: Colors.teal,
+            collapsible: true,
+            initiallyExpanded: _expandedSections['notes'] ?? true,
+            onToggle: (expanded) => setState(() => _expandedSections['notes'] = expanded),
             child: SuggestionTextField(
               controller: _procedureNotesController,
               label: 'Procedure Details',
@@ -716,31 +887,27 @@ class _AddProcedureScreenState extends ConsumerState<AddProcedureScreen> {
               separator: '. ',
             ),
           ),
-          const SizedBox(height: 16),
+          const SizedBox(height: AppSpacing.lg),
 
-          // Findings
+          // Findings & Specimen & Complications
           RecordFormSection(
-            title: 'Intra-operative Findings',
+            key: _sectionKeys['findings'],
+            title: 'Findings & Complications',
             icon: Icons.search,
             accentColor: Colors.blue,
             collapsible: true,
-            child: RecordTextField(
-              controller: _findingsController,
-              hint: 'Findings during procedure...',
-              maxLines: 4,
-              accentColor: Colors.blue,
-            ),
-          ),
-          const SizedBox(height: 16),
-
-          // Specimen & Complications
-          RecordFormSection(
-            title: 'Specimen & Complications',
-            icon: Icons.science_outlined,
-            accentColor: Colors.orange,
-            collapsible: true,
+            initiallyExpanded: _expandedSections['findings'] ?? true,
+            onToggle: (expanded) => setState(() => _expandedSections['findings'] = expanded),
             child: Column(
               children: [
+                RecordTextField(
+                  controller: _findingsController,
+                  label: 'Intra-operative Findings',
+                  hint: 'Findings during procedure...',
+                  maxLines: 4,
+                  accentColor: Colors.blue,
+                ),
+                const SizedBox(height: AppSpacing.md),
                 RecordTextField(
                   controller: _specimenController,
                   label: 'Specimen Collected',
@@ -748,7 +915,7 @@ class _AddProcedureScreenState extends ConsumerState<AddProcedureScreen> {
                   maxLines: 2,
                   accentColor: Colors.orange,
                 ),
-                const SizedBox(height: 12),
+                const SizedBox(height: AppSpacing.md),
                 RecordTextField(
                   controller: _complicationsController,
                   label: 'Complications',
@@ -760,14 +927,17 @@ class _AddProcedureScreenState extends ConsumerState<AddProcedureScreen> {
               ],
             ),
           ),
-          const SizedBox(height: 16),
+          const SizedBox(height: AppSpacing.lg),
 
           // Post-Procedure Vitals
           RecordFormSection(
+            key: _sectionKeys['vitals_post'],
             title: 'Post-Procedure Vitals',
             icon: Icons.monitor_heart_outlined,
             accentColor: Colors.green,
             collapsible: true,
+            initiallyExpanded: _expandedSections['vitals_post'] ?? true,
+            onToggle: (expanded) => setState(() => _expandedSections['vitals_post'] = expanded),
             child: RecordFieldGrid(
               crossAxisCount: 3,
               children: [
@@ -797,63 +967,54 @@ class _AddProcedureScreenState extends ConsumerState<AddProcedureScreen> {
               ],
             ),
           ),
-          const SizedBox(height: 16),
+          const SizedBox(height: AppSpacing.lg),
 
           // Post-Op Instructions
           RecordFormSection(
+            key: _sectionKeys['postop'],
             title: 'Post-Op Instructions',
             icon: Icons.assignment_outlined,
             accentColor: _primaryColor,
-            child: RecordTextField(
-              controller: _postOpInstructionsController,
-              hint: 'Post-procedure care instructions...',
-              maxLines: 4,
-              accentColor: _primaryColor,
-            ),
-          ),
-          const SizedBox(height: 16),
-
-          // Personnel
-          RecordFormSection(
-            title: 'Personnel',
-            icon: Icons.people_outline,
-            accentColor: Colors.blueGrey,
             collapsible: true,
-            initiallyExpanded: false,
-            child: RecordFieldGrid(
+            initiallyExpanded: _expandedSections['postop'] ?? true,
+            onToggle: (expanded) => setState(() => _expandedSections['postop'] = expanded),
+            child: Column(
               children: [
-                CompactTextField(
-                  controller: _performedByController,
-                  label: 'Performed By',
-                  hint: 'Name...',
-                  accentColor: Colors.blueGrey,
+                RecordTextField(
+                  controller: _postOpInstructionsController,
+                  label: 'Post-Op Instructions',
+                  hint: 'Post-procedure care instructions...',
+                  maxLines: 4,
+                  accentColor: _primaryColor,
                 ),
-                CompactTextField(
-                  controller: _assistedByController,
-                  label: 'Assisted By',
-                  hint: 'Name...',
-                  accentColor: Colors.blueGrey,
+                const SizedBox(height: AppSpacing.md),
+                RecordFieldGrid(
+                  children: [
+                    CompactTextField(
+                      controller: _performedByController,
+                      label: 'Performed By',
+                      hint: 'Name...',
+                      accentColor: Colors.blueGrey,
+                    ),
+                    CompactTextField(
+                      controller: _assistedByController,
+                      label: 'Assisted By',
+                      hint: 'Name...',
+                      accentColor: Colors.blueGrey,
+                    ),
+                  ],
+                ),
+                const SizedBox(height: AppSpacing.md),
+                RecordNotesField(
+                  controller: _clinicalNotesController,
+                  label: 'Additional Notes',
+                  hint: 'Additional clinical notes...',
+                  accentColor: Colors.indigo,
                 ),
               ],
             ),
           ),
-          const SizedBox(height: 16),
-
-          // Additional Notes
-          RecordFormSection(
-            title: 'Additional Notes',
-            icon: Icons.note_alt,
-            accentColor: Colors.indigo,
-            collapsible: true,
-            initiallyExpanded: false,
-            child: RecordNotesField(
-              controller: _clinicalNotesController,
-              label: '',
-              hint: 'Additional clinical notes...',
-              accentColor: Colors.indigo,
-            ),
-          ),
-          const SizedBox(height: 32),
+          const SizedBox(height: AppSpacing.xl),
 
           // Action Buttons
           RecordActionButtons(

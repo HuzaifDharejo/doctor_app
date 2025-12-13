@@ -8,6 +8,7 @@ import '../../../db/doctor_db.dart';
 import '../../../providers/db_provider.dart';
 import '../../../services/suggestions_service.dart';
 import '../../../theme/app_theme.dart';
+import '../../../core/theme/design_tokens.dart';
 import '../../widgets/suggestion_text_field.dart';
 import 'components/record_components.dart';
 import 'record_form_widgets.dart';
@@ -18,10 +19,16 @@ class AddLabResultScreen extends ConsumerStatefulWidget {
     super.key,
     this.preselectedPatient,
     this.existingRecord,
+    this.encounterId,
+    this.appointmentId,
   });
 
   final Patient? preselectedPatient;
   final MedicalRecord? existingRecord;
+  /// Associated encounter ID from workflow - links the record to a visit
+  final int? encounterId;
+  /// Associated appointment ID from workflow
+  final int? appointmentId;
 
   @override
   ConsumerState<AddLabResultScreen> createState() => _AddLabResultScreenState();
@@ -42,6 +49,24 @@ class _AddLabResultScreenState extends ConsumerState<AddLabResultScreen> {
   static const _primaryColor = Color(0xFF14B8A6); // Lab Teal
   static const _secondaryColor = Color(0xFF0D9488);
   static const _gradientColors = [_primaryColor, _secondaryColor];
+  static const int _totalSections = 5;
+
+  // Section navigation keys and expansion state
+  final Map<String, GlobalKey> _sectionKeys = {
+    'test_info': GlobalKey(),
+    'results': GlobalKey(),
+    'interpretation': GlobalKey(),
+    'notes': GlobalKey(),
+  };
+  final Map<String, bool> _expandedSections = {
+    'test_info': true,
+    'results': true,
+    'interpretation': true,
+    'notes': false,
+  };
+  
+  // Quick fill templates
+  late List<QuickFillTemplateItem> _templates;
 
   // Common fields
   int? _selectedPatientId;
@@ -65,6 +90,78 @@ class _AddLabResultScreenState extends ConsumerState<AddLabResultScreen> {
   void initState() {
     super.initState();
     _selectedPatientId = widget.preselectedPatient?.id;
+    
+    // Initialize lab-specific templates
+    _templates = [
+      QuickFillTemplateItem(
+        label: 'Normal CBC',
+        icon: Icons.bloodtype_rounded,
+        color: Colors.red,
+        description: 'Complete Blood Count - Normal values',
+        data: {
+          'test_name': 'Complete Blood Count (CBC)',
+          'category': 'Hematology',
+          'specimen': 'Blood',
+          'reference_range': 'WBC: 4.5-11.0 K/uL, RBC: 4.5-5.5 M/uL, Hgb: 12-16 g/dL, Plt: 150-400 K/uL',
+          'units': 'Various',
+          'result_status': 'Normal',
+        },
+      ),
+      QuickFillTemplateItem(
+        label: 'Normal LFT',
+        icon: Icons.monitor_heart_rounded,
+        color: Colors.amber,
+        description: 'Liver Function Tests - Normal values',
+        data: {
+          'test_name': 'Liver Function Tests (LFT)',
+          'category': 'Biochemistry',
+          'specimen': 'Blood',
+          'reference_range': 'ALT: 7-56 U/L, AST: 10-40 U/L, ALP: 44-147 U/L, Bilirubin: 0.1-1.2 mg/dL',
+          'units': 'U/L, mg/dL',
+          'result_status': 'Normal',
+        },
+      ),
+      QuickFillTemplateItem(
+        label: 'Normal RFT',
+        icon: Icons.water_drop_rounded,
+        color: Colors.blue,
+        description: 'Renal Function Tests - Normal values',
+        data: {
+          'test_name': 'Renal Function Tests (RFT)',
+          'category': 'Biochemistry',
+          'specimen': 'Blood',
+          'reference_range': 'Creatinine: 0.7-1.3 mg/dL, BUN: 7-20 mg/dL, eGFR: >90 mL/min/1.73m²',
+          'units': 'mg/dL, mL/min',
+          'result_status': 'Normal',
+        },
+      ),
+      QuickFillTemplateItem(
+        label: 'Diabetic Panel',
+        icon: Icons.opacity_rounded,
+        color: Colors.purple,
+        description: 'Diabetes monitoring panel',
+        data: {
+          'test_name': 'Diabetic Panel',
+          'category': 'Endocrinology',
+          'specimen': 'Blood',
+          'reference_range': 'FBS: 70-100 mg/dL, HbA1c: <5.7%, PPBS: <140 mg/dL',
+          'units': 'mg/dL, %',
+        },
+      ),
+      QuickFillTemplateItem(
+        label: 'Lipid Profile',
+        icon: Icons.favorite_rounded,
+        color: Colors.green,
+        description: 'Lipid panel for cardiovascular assessment',
+        data: {
+          'test_name': 'Lipid Profile',
+          'category': 'Lipid Panel',
+          'specimen': 'Blood',
+          'reference_range': 'Total Cholesterol: <200 mg/dL, LDL: <100 mg/dL, HDL: >40 mg/dL, TG: <150 mg/dL',
+          'units': 'mg/dL',
+        },
+      ),
+    ];
     
     if (widget.existingRecord != null) {
       _loadExistingRecord();
@@ -282,6 +379,7 @@ class _AddLabResultScreenState extends ConsumerState<AddLabResultScreen> {
     try {
       final companion = MedicalRecordsCompanion.insert(
         patientId: _selectedPatientId!,
+        encounterId: Value(widget.encounterId),
         recordType: 'lab_result',
         title: _testNameController.text.isNotEmpty 
             ? 'Lab: ${_testNameController.text} - ${DateFormat('MMM d').format(_recordDate)}'
@@ -300,6 +398,7 @@ class _AddLabResultScreenState extends ConsumerState<AddLabResultScreen> {
         final updatedRecord = MedicalRecord(
           id: widget.existingRecord!.id,
           patientId: _selectedPatientId!,
+          encounterId: widget.encounterId ?? widget.existingRecord!.encounterId,
           recordType: 'lab_result',
           title: _testNameController.text.isNotEmpty 
               ? 'Lab: ${_testNameController.text} - ${DateFormat('MMM d').format(_recordDate)}'
@@ -348,7 +447,7 @@ class _AddLabResultScreenState extends ConsumerState<AddLabResultScreen> {
     return completed;
   }
 
-  void _applyTemplate(QuickFillTemplate template) {
+  void _applyTemplate(QuickFillTemplateItem template) {
     final data = template.data;
     setState(() {
       if (data['test_name'] != null) {
@@ -366,9 +465,51 @@ class _AddLabResultScreenState extends ConsumerState<AddLabResultScreen> {
       if (data['units'] != null) {
         _unitsController.text = data['units'] as String;
       }
+      if (data['result_status'] != null) {
+        _resultStatus = data['result_status'] as String;
+      }
     });
-    showTemplateAppliedSnackbar(context, template.label);
+    showTemplateAppliedSnackbar(context, template.label, color: template.color);
   }
+
+  void _scrollToSection(String sectionKey) {
+    final key = _sectionKeys[sectionKey];
+    if (key?.currentContext != null) {
+      Scrollable.ensureVisible(
+        key!.currentContext!,
+        duration: const Duration(milliseconds: 400),
+        curve: Curves.easeInOut,
+        alignment: 0.1,
+      );
+    }
+  }
+
+  List<SectionInfo> get _sections => [
+    SectionInfo(
+      key: 'test_info',
+      title: 'Test Info',
+      icon: Icons.biotech,
+      isComplete: _testNameController.text.isNotEmpty,
+    ),
+    SectionInfo(
+      key: 'results',
+      title: 'Results',
+      icon: Icons.analytics_outlined,
+      isComplete: _resultController.text.isNotEmpty,
+    ),
+    SectionInfo(
+      key: 'interpretation',
+      title: 'Interpretation',
+      icon: Icons.analytics,
+      isComplete: _interpretationController.text.isNotEmpty,
+    ),
+    SectionInfo(
+      key: 'notes',
+      title: 'Notes',
+      icon: Icons.note_alt,
+      isComplete: _clinicalNotesController.text.isNotEmpty,
+    ),
+  ];
 
   @override
   Widget build(BuildContext context) {
@@ -398,71 +539,65 @@ class _AddLabResultScreenState extends ConsumerState<AddLabResultScreen> {
   }
 
   Widget _buildFormContent(BuildContext context, DoctorDatabase db, bool isDark) {
-    // Calculate form completion
-    final completedSections = _calculateCompletedSections();
-    const totalSections = 5; // Patient, Test Name, Result, Reference, Interpretation
-
     return Form(
       key: _formKey,
       child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
+        crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          // Progress Indicator
-          FormProgressIndicator(
-            completedSections: completedSections,
-            totalSections: totalSections,
-            accentColor: _primaryColor,
-          ),
-          const SizedBox(height: 16),
-
-          // Quick Fill Templates
-          QuickFillSection(
-            title: 'Common Lab Tests',
-            templates: LabResultTemplates.templates,
-            onTemplateSelected: _applyTemplate,
-          ),
-          const SizedBox(height: 16),
-
           // Patient Selection
-          RecordFormSection(
-            title: 'Patient Information',
-            icon: Icons.person_outline,
-            accentColor: _primaryColor,
-            child: PatientSelectorCard(
+          if (widget.preselectedPatient == null) ...[
+            PatientSelectorCard(
               db: db,
               selectedPatientId: _selectedPatientId,
-              onPatientSelected: (patient) {
-                setState(() => _selectedPatientId = patient?.id);
-              },
-              label: 'Select Patient',
+              onChanged: (id) => setState(() => _selectedPatientId = id),
             ),
-          ),
-          const SizedBox(height: 16),
-
-          // Date and Title Section
-          RecordFormSection(
-            title: 'Record Details',
-            icon: Icons.event_note,
+            const SizedBox(height: AppSpacing.lg),
+          ],
+          
+          // Date Picker
+          DatePickerCard(
+            selectedDate: _recordDate,
+            onDateSelected: (date) => setState(() => _recordDate = date),
+            label: 'Test Date',
             accentColor: _primaryColor,
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                DatePickerCard(
-                  selectedDate: _recordDate,
-                  onDateSelected: (date) => setState(() => _recordDate = date),
-                  label: 'Test Date',
-                  accentColor: _primaryColor,
-                ),
-              ],
-            ),
           ),
-          const SizedBox(height: 16),
+          const SizedBox(height: AppSpacing.lg),
+
+          // Progress Indicator
+          FormProgressIndicator(
+            completedSections: _calculateCompletedSections(),
+            totalSections: _totalSections,
+            accentColor: _primaryColor,
+          ),
+          const SizedBox(height: AppSpacing.md),
+
+          // Section Navigation Bar
+          SectionNavigationBar(
+            sections: _sections,
+            onSectionTap: _scrollToSection,
+            accentColor: _primaryColor,
+          ),
+          const SizedBox(height: AppSpacing.md),
+
+          // Quick Fill Templates (using new component)
+          QuickFillTemplateBar(
+            templates: _templates,
+            onTemplateSelected: _applyTemplate,
+            title: 'Common Lab Tests',
+            collapsible: true,
+            initiallyExpanded: false,
+          ),
+          const SizedBox(height: AppSpacing.lg),
 
           // Test Information Section
           RecordFormSection(
+            key: _sectionKeys['test_info'],
             title: 'Test Information',
             icon: Icons.biotech,
             accentColor: AppColors.info,
+            collapsible: true,
+            initiallyExpanded: _expandedSections['test_info'] ?? true,
+            onToggle: (expanded) => setState(() => _expandedSections['test_info'] = expanded),
             child: Column(
               children: [
                 SuggestionTextField(
@@ -472,7 +607,7 @@ class _AddLabResultScreenState extends ConsumerState<AddLabResultScreen> {
                   prefixIcon: Icons.science_outlined,
                   suggestions: MedicalRecordSuggestions.labTestNames,
                 ),
-                const SizedBox(height: 12),
+                const SizedBox(height: AppSpacing.md),
                 SuggestionTextField(
                   controller: _testCategoryController,
                   label: 'Category',
@@ -495,7 +630,7 @@ class _AddLabResultScreenState extends ConsumerState<AddLabResultScreen> {
                     'Thyroid Panel',
                   ],
                 ),
-                const SizedBox(height: 12),
+                const SizedBox(height: AppSpacing.md),
                 RecordFieldGrid(
                   children: [
                     CompactTextField(
@@ -515,13 +650,17 @@ class _AddLabResultScreenState extends ConsumerState<AddLabResultScreen> {
               ],
             ),
           ),
-          const SizedBox(height: 16),
+          const SizedBox(height: AppSpacing.lg),
 
           // Results Section
           RecordFormSection(
+            key: _sectionKeys['results'],
             title: 'Test Results',
             icon: Icons.analytics_outlined,
             accentColor: _getStatusColor(_resultStatus),
+            collapsible: true,
+            initiallyExpanded: _expandedSections['results'] ?? true,
+            onToggle: (expanded) => setState(() => _expandedSections['results'] = expanded),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
@@ -531,7 +670,7 @@ class _AddLabResultScreenState extends ConsumerState<AddLabResultScreen> {
                   maxLines: 4,
                   accentColor: _getStatusColor(_resultStatus),
                 ),
-                const SizedBox(height: 12),
+                const SizedBox(height: AppSpacing.md),
                 RecordFieldGrid(
                   children: [
                     CompactTextField(
@@ -548,7 +687,7 @@ class _AddLabResultScreenState extends ConsumerState<AddLabResultScreen> {
                     ),
                   ],
                 ),
-                const SizedBox(height: 16),
+                const SizedBox(height: AppSpacing.lg),
                 StatusSelector(
                   selectedStatus: _resultStatus,
                   onChanged: (status) {
@@ -560,14 +699,17 @@ class _AddLabResultScreenState extends ConsumerState<AddLabResultScreen> {
               ],
             ),
           ),
-          const SizedBox(height: 16),
+          const SizedBox(height: AppSpacing.lg),
 
-          // Interpretation
+          // Interpretation Section
           RecordFormSection(
+            key: _sectionKeys['interpretation'],
             title: 'Clinical Interpretation',
             icon: Icons.analytics,
             accentColor: Colors.purple,
             collapsible: true,
+            initiallyExpanded: _expandedSections['interpretation'] ?? true,
+            onToggle: (expanded) => setState(() => _expandedSections['interpretation'] = expanded),
             child: RecordTextField(
               controller: _interpretationController,
               hint: 'Clinical significance and interpretation...',
@@ -575,15 +717,17 @@ class _AddLabResultScreenState extends ConsumerState<AddLabResultScreen> {
               accentColor: Colors.purple,
             ),
           ),
-          const SizedBox(height: 16),
+          const SizedBox(height: AppSpacing.lg),
 
-          // Clinical Notes
+          // Clinical Notes Section
           RecordFormSection(
+            key: _sectionKeys['notes'],
             title: 'Clinical Notes',
             icon: Icons.note_alt,
             accentColor: Colors.indigo,
             collapsible: true,
-            initiallyExpanded: false,
+            initiallyExpanded: _expandedSections['notes'] ?? false,
+            onToggle: (expanded) => setState(() => _expandedSections['notes'] = expanded),
             child: RecordNotesField(
               controller: _clinicalNotesController,
               label: '',
@@ -591,7 +735,7 @@ class _AddLabResultScreenState extends ConsumerState<AddLabResultScreen> {
               accentColor: Colors.indigo,
             ),
           ),
-          const SizedBox(height: 32),
+          const SizedBox(height: AppSpacing.xl),
 
           // Action Buttons
           RecordActionButtons(
@@ -601,7 +745,7 @@ class _AddLabResultScreenState extends ConsumerState<AddLabResultScreen> {
             isLoading: _isSaving,
             canSave: _selectedPatientId != null,
           ),
-          const SizedBox(height: 40),
+          const SizedBox(height: AppSpacing.xxl),
         ],
       ),
     );

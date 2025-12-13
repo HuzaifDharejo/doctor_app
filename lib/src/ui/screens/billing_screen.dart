@@ -1,4 +1,3 @@
-import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
@@ -621,52 +620,51 @@ class _BillingScreenState extends ConsumerState<BillingScreen> {
     final dateFormat = DateFormat('MMMM d, yyyy');
     final currencyFormat = NumberFormat.currency(symbol: 'Rs. ', decimalDigits: 0);
     
-    List<dynamic> items = [];
-    try {
-      items = jsonDecode(invoice.itemsJson) as List<dynamic>;
-    } catch (_) {}
+    // V5: Use getLineItemsForInvoiceCompat for backwards compatibility
+    db.getLineItemsForInvoiceCompat(invoice.id).then((loadedItems) {
+      List<dynamic> items = loadedItems;
 
-    Color statusColor;
-    switch (invoice.paymentStatus) {
-      case 'Paid':
-        statusColor = AppColors.success;
-      case 'Pending':
-        statusColor = AppColors.warning;
-      case 'Overdue':
-        statusColor = AppColors.error;
-      default:
-        statusColor = AppColors.info;
-    }
+      Color statusColor;
+      switch (invoice.paymentStatus) {
+        case 'Paid':
+          statusColor = AppColors.success;
+        case 'Pending':
+          statusColor = AppColors.warning;
+        case 'Overdue':
+          statusColor = AppColors.error;
+        default:
+          statusColor = AppColors.info;
+      }
 
-    showModalBottomSheet<void>(
-      context: context,
-      isScrollControlled: true,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
-      ),
-      builder: (context) => DraggableScrollableSheet(
-        initialChildSize: 0.85,
-        minChildSize: 0.5,
-        maxChildSize: 0.95,
-        expand: false,
-        builder: (context, scrollController) {
-          final isDark = Theme.of(context).brightness == Brightness.dark;
-          return Container(
-            padding: const EdgeInsets.all(AppSpacing.xxl),
-            child: ListView(
-              controller: scrollController,
-              children: [
-                Center(
-                  child: Container(
-                    width: 40,
-                    height: 4,
-                    decoration: BoxDecoration(
-                      color: isDark ? AppColors.darkDivider : AppColors.divider,
-                      borderRadius: BorderRadius.circular(2),
+      showModalBottomSheet<void>(
+        context: context,
+        isScrollControlled: true,
+        shape: const RoundedRectangleBorder(
+          borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+        ),
+        builder: (context) => DraggableScrollableSheet(
+          initialChildSize: 0.85,
+          minChildSize: 0.5,
+          maxChildSize: 0.95,
+          expand: false,
+          builder: (context, scrollController) {
+            final isDark = Theme.of(context).brightness == Brightness.dark;
+            return Container(
+              padding: const EdgeInsets.all(AppSpacing.xxl),
+              child: ListView(
+                controller: scrollController,
+                children: [
+                  Center(
+                    child: Container(
+                      width: 40,
+                      height: 4,
+                      decoration: BoxDecoration(
+                        color: isDark ? AppColors.darkDivider : AppColors.divider,
+                        borderRadius: BorderRadius.circular(2),
+                      ),
                     ),
                   ),
-                ),
-                const SizedBox(height: 20),
+                  const SizedBox(height: 20),
                 
                 // Header
                 Row(
@@ -903,6 +901,7 @@ class _BillingScreenState extends ConsumerState<BillingScreen> {
                               invoice: invoice,
                               clinicName: profile.clinicName.isNotEmpty ? profile.clinicName : 'Medical Clinic',
                               clinicPhone: profile.clinicPhone,
+                              lineItemsList: items.cast<Map<String, dynamic>>(), // V5: Pass pre-loaded items
                             );
                           } else {
                             ScaffoldMessenger.of(context).showSnackBar(
@@ -938,6 +937,7 @@ class _BillingScreenState extends ConsumerState<BillingScreen> {
         },
       ),
     );
+    }); // End of .then()
   }
 
   Widget _buildInfoColumn(String label, String value) {

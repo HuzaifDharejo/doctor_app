@@ -1,9 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import '../../db/doctor_db.dart';
-import '../../models/clinical_reminder.dart';
-import '../../providers/db_provider.dart';
 import '../../services/clinical_reminder_service.dart';
 import '../../theme/app_theme.dart';
 import '../../core/theme/design_tokens.dart';

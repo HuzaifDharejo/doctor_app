@@ -15,6 +15,7 @@ export 'gradient_fab.dart';
 export 'info_row.dart';
 export 'loading_button.dart';
 export 'loading_state.dart';
+export 'responsive_scaffold.dart';
 export 'search_field.dart';
 export 'section_header.dart';
 export 'shimmer_loading.dart';

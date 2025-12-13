@@ -1,5 +1,4 @@
 import 'dart:async';
-import 'dart:convert';
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -7,6 +6,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 
 import '../../core/extensions/context_extensions.dart';
+import '../../core/routing/app_router.dart';
 import '../../core/theme/design_tokens.dart';
 import '../../core/widgets/app_card.dart';
 import '../../core/widgets/loading_state.dart';
@@ -17,6 +17,7 @@ import '../../services/allergy_checking_service.dart';
 import '../../theme/app_theme.dart';
 import 'follow_ups_screen.dart';
 import 'patients_screen.dart';
+import 'notifications_screen.dart';
 import 'vital_signs_screen.dart';
 
 /// Comprehensive Clinical Dashboard
@@ -244,7 +245,8 @@ class _ClinicalDashboardState extends ConsumerState<ClinicalDashboard>
         // Check for potential interactions between recent prescriptions
         for (int i = 0; i < patientRx.length && i < 3; i++) {
           try {
-            final items = jsonDecode(patientRx[i].itemsJson) as List;
+            // V5: Load medications from normalized table
+            final items = await db.getMedicationsForPrescriptionCompat(patientRx[i].id);
             for (final item in items) {
               final drugName = (item['name'] ?? item['drug'] ?? '') as String;
               if (drugName.isNotEmpty && patient.allergies.isNotEmpty) {
@@ -455,30 +457,40 @@ class _ClinicalDashboardState extends ConsumerState<ClinicalDashboard>
               ),
               const SizedBox(width: 10),
               // Alert indicator
-              Stack(
-                children: [
-                  Container(
-                    padding: const EdgeInsets.all(AppSpacing.md),
-                    decoration: BoxDecoration(
-                      color: isDark ? Colors.white.withValues(alpha: 0.08) : Colors.grey.withValues(alpha: 0.1),
-                      borderRadius: BorderRadius.circular(14),
+              GestureDetector(
+                onTap: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => const NotificationsScreen(),
                     ),
-                    child: Icon(Icons.notifications_outlined, 
-                        color: isDark ? AppColors.darkTextSecondary : AppColors.textSecondary, size: 22),
-                  ),
-                  if (data.hasAlerts)
-                    Positioned(
-                      right: 8, top: 8,
-                      child: Container(
-                        width: 10, height: 10,
-                        decoration: BoxDecoration(
-                          color: AppColors.error,
-                          shape: BoxShape.circle,
-                          border: Border.all(color: isDark ? AppColors.darkBackground : Colors.white, width: 2),
+                  );
+                },
+                child: Stack(
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.all(AppSpacing.md),
+                      decoration: BoxDecoration(
+                        color: isDark ? Colors.white.withValues(alpha: 0.08) : Colors.grey.withValues(alpha: 0.1),
+                        borderRadius: BorderRadius.circular(14),
+                      ),
+                      child: Icon(Icons.notifications_outlined, 
+                          color: isDark ? AppColors.darkTextSecondary : AppColors.textSecondary, size: 22),
+                    ),
+                    if (data.hasAlerts)
+                      Positioned(
+                        right: 8, top: 8,
+                        child: Container(
+                          width: 10, height: 10,
+                          decoration: BoxDecoration(
+                            color: AppColors.error,
+                            shape: BoxShape.circle,
+                            border: Border.all(color: isDark ? AppColors.darkBackground : Colors.white, width: 2),
+                          ),
                         ),
                       ),
-                    ),
-                ],
+                  ],
+                ),
               ),
             ],
           ),
@@ -628,7 +640,7 @@ class _ClinicalDashboardState extends ConsumerState<ClinicalDashboard>
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         _buildSectionHeader(context, 'Patient Overview', () {
-          Navigator.push(context, MaterialPageRoute(builder: (_) => const PatientsScreen()));
+          Navigator.push(context, AppRouter.route(const PatientsScreen()));
         }, isCompact),
         SizedBox(height: isCompact ? 12 : 16),
         Row(
@@ -946,7 +958,7 @@ class _ClinicalDashboardState extends ConsumerState<ClinicalDashboard>
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         _buildSectionHeader(context, 'Overdue Follow-ups', () {
-          Navigator.push(context, MaterialPageRoute(builder: (_) => const FollowUpsScreen()));
+          Navigator.push(context, AppRouter.route(const FollowUpsScreen()));
         }, isCompact, badgeCount: data.overdueFollowUps.length, badgeColor: const Color(0xFFEF4444)),
         SizedBox(height: isCompact ? 12 : 16),
         ...data.overdueFollowUps.take(4).map((followUp) => 
@@ -1021,7 +1033,7 @@ class _ClinicalDashboardState extends ConsumerState<ClinicalDashboard>
       children: [
         _buildSectionHeader(context, 'Treatment Progress', () {
           // Navigate to patients screen to view individual treatments
-          Navigator.push(context, MaterialPageRoute(builder: (_) => const PatientsScreen()));
+          Navigator.push(context, AppRouter.route(const PatientsScreen()));
         }, isCompact),
         SizedBox(height: isCompact ? 12 : 16),
         Container(

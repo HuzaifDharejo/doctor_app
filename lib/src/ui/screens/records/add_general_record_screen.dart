@@ -1,9 +1,12 @@
 import 'dart:async';
 import 'dart:convert';
+
 import 'package:drift/drift.dart' hide Column;
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
+
+import '../../../core/theme/design_tokens.dart';
 import '../../../db/doctor_db.dart';
 import '../../../providers/db_provider.dart';
 import '../../../services/suggestions_service.dart';
@@ -18,10 +21,16 @@ class AddGeneralRecordScreen extends ConsumerStatefulWidget {
     super.key,
     this.preselectedPatient,
     this.existingRecord,
+    this.encounterId,
+    this.appointmentId,
   });
 
   final Patient? preselectedPatient;
   final MedicalRecord? existingRecord;
+  /// Associated encounter ID from workflow - links the record to a visit
+  final int? encounterId;
+  /// Associated appointment ID from workflow
+  final int? appointmentId;
 
   @override
   ConsumerState<AddGeneralRecordScreen> createState() => _AddGeneralRecordScreenState();
@@ -44,6 +53,29 @@ class _AddGeneralRecordScreenState extends ConsumerState<AddGeneralRecordScreen>
   static const _secondaryColor = Color(0xFF059669);
   static const _gradientColors = [_primaryColor, _secondaryColor];
 
+  // Section navigation keys and expansion state
+  final Map<String, GlobalKey> _sectionKeys = {
+    'patient': GlobalKey(),
+    'details': GlobalKey(),
+    'complaints': GlobalKey(),
+    'history': GlobalKey(),
+    'vitals': GlobalKey(),
+    'examination': GlobalKey(),
+    'notes': GlobalKey(),
+  };
+  final Map<String, bool> _expandedSections = {
+    'patient': true,
+    'details': true,
+    'complaints': true,
+    'history': true,
+    'vitals': true,
+    'examination': false,
+    'notes': false,
+  };
+
+  // Quick fill templates
+  late List<QuickFillTemplateItem> _templates;
+
   // Common fields
   int? _selectedPatientId;
   DateTime _recordDate = DateTime.now();
@@ -58,6 +90,65 @@ class _AddGeneralRecordScreenState extends ConsumerState<AddGeneralRecordScreen>
   void initState() {
     super.initState();
     _selectedPatientId = widget.preselectedPatient?.id;
+    
+    // Initialize general consultation templates
+    _templates = [
+      QuickFillTemplateItem(
+        label: 'General Consultation',
+        icon: Icons.medical_services_rounded,
+        color: _primaryColor,
+        description: 'Standard general consultation template',
+        data: {
+          'chief_complaints': 'Patient presents for general consultation.',
+          'history': 'No significant past medical history.',
+          'examination': 'General examination unremarkable. Patient appears well.',
+        },
+      ),
+      QuickFillTemplateItem(
+        label: 'Follow-up Visit',
+        icon: Icons.event_repeat_rounded,
+        color: Colors.amber,
+        description: 'Routine follow-up visit template',
+        data: {
+          'chief_complaints': 'Patient returns for follow-up as scheduled.',
+          'history': 'Previous treatment reviewed. Compliance confirmed.',
+          'examination': 'Examination shows improvement from previous visit.',
+        },
+      ),
+      QuickFillTemplateItem(
+        label: 'Sick Visit',
+        icon: Icons.sick_rounded,
+        color: Colors.orange,
+        description: 'Acute illness visit template',
+        data: {
+          'chief_complaints': 'Patient presents with acute symptoms.',
+          'history': 'Onset of symptoms noted. Duration and severity assessed.',
+          'examination': 'Focused examination performed based on presenting complaint.',
+        },
+      ),
+      QuickFillTemplateItem(
+        label: 'Preventive Check',
+        icon: Icons.health_and_safety_rounded,
+        color: Colors.blue,
+        description: 'Preventive health check template',
+        data: {
+          'chief_complaints': 'Patient presents for routine preventive health check.',
+          'history': 'Complete medical history reviewed. Family history updated.',
+          'examination': 'Comprehensive physical examination performed. Age-appropriate screening discussed.',
+        },
+      ),
+      QuickFillTemplateItem(
+        label: 'Normal Exam',
+        icon: Icons.check_circle_rounded,
+        color: Colors.teal,
+        description: 'Normal examination findings template',
+        data: {
+          'chief_complaints': 'Patient presents for evaluation.',
+          'history': 'No acute concerns. General health maintained.',
+          'examination': 'Vital signs within normal limits. General examination unremarkable. No abnormalities detected.',
+        },
+      ),
+    ];
     
     if (widget.existingRecord != null) {
       _loadExistingRecord();
@@ -337,6 +428,7 @@ class _AddGeneralRecordScreenState extends ConsumerState<AddGeneralRecordScreen>
     try {
       final companion = MedicalRecordsCompanion.insert(
         patientId: _selectedPatientId!,
+        encounterId: Value(widget.encounterId),
         recordType: 'general',
         title: 'General Consultation - ${DateFormat('MMM d, yyyy').format(_recordDate)}',
         description: Value(_chiefComplaintsController.text),
@@ -353,6 +445,7 @@ class _AddGeneralRecordScreenState extends ConsumerState<AddGeneralRecordScreen>
         final updatedRecord = MedicalRecord(
           id: widget.existingRecord!.id,
           patientId: _selectedPatientId!,
+          encounterId: widget.encounterId ?? widget.existingRecord!.encounterId,
           recordType: 'general',
           title: 'General Consultation - ${DateFormat('MMM d, yyyy').format(_recordDate)}',
           description: _chiefComplaintsController.text,
@@ -433,6 +526,14 @@ class _AddGeneralRecordScreenState extends ConsumerState<AddGeneralRecordScreen>
     ));
   }
 
+  bool _hasVitalsData() {
+    final vitals = _vitalsKey.currentState?.getData();
+    if (vitals == null) return false;
+    return vitals.bpSystolic != null ||
+        vitals.heartRate != null ||
+        vitals.temperature != null;
+  }
+
   int _calculateCompletedSections() {
     int completed = 0;
     if (_selectedPatientId != null) completed++;
@@ -440,14 +541,82 @@ class _AddGeneralRecordScreenState extends ConsumerState<AddGeneralRecordScreen>
     if (_chiefComplaintsController.text.isNotEmpty) completed++;
     if (_historyController.text.isNotEmpty) completed++;
     // Vitals - check if any vital is filled
-    final vitals = _vitalsKey.currentState?.getData();
-    if (vitals != null && (vitals.bpSystolic != null || vitals.heartRate != null || vitals.temperature != null)) {
+    if (_hasVitalsData()) {
       completed++;
     }
+    if (_examinationController.text.isNotEmpty) completed++;
+    if (_doctorNotesController.text.isNotEmpty) completed++;
     return completed;
   }
 
-  void _applyTemplate(QuickFillTemplate template) {
+  void _scrollToSection(String sectionKey) {
+    final key = _sectionKeys[sectionKey];
+    if (key == null) return;
+    final context = key.currentContext;
+    if (context != null) {
+      setState(() => _expandedSections[sectionKey] = true);
+      Scrollable.ensureVisible(
+        context,
+        duration: const Duration(milliseconds: 400),
+        curve: Curves.easeInOut,
+        alignment: 0.1,
+      );
+    }
+  }
+
+  List<SectionInfo> get _sections => [
+    SectionInfo(
+      key: 'patient',
+      title: 'Patient',
+      icon: Icons.person_outline,
+      isComplete: _selectedPatientId != null || widget.preselectedPatient != null,
+      isExpanded: _expandedSections['patient'] ?? true,
+    ),
+    SectionInfo(
+      key: 'details',
+      title: 'Details',
+      icon: Icons.event_note,
+      isComplete: true, // Date is always set
+      isExpanded: _expandedSections['details'] ?? true,
+    ),
+    SectionInfo(
+      key: 'complaints',
+      title: 'Complaints',
+      icon: Icons.sick_outlined,
+      isComplete: _chiefComplaintsController.text.isNotEmpty,
+      isExpanded: _expandedSections['complaints'] ?? true,
+    ),
+    SectionInfo(
+      key: 'history',
+      title: 'History',
+      icon: Icons.history,
+      isComplete: _historyController.text.isNotEmpty,
+      isExpanded: _expandedSections['history'] ?? true,
+    ),
+    SectionInfo(
+      key: 'vitals',
+      title: 'Vitals',
+      icon: Icons.favorite_outline,
+      isComplete: _hasVitalsData(),
+      isExpanded: _expandedSections['vitals'] ?? true,
+    ),
+    SectionInfo(
+      key: 'examination',
+      title: 'Exam',
+      icon: Icons.accessibility_new,
+      isComplete: _examinationController.text.isNotEmpty,
+      isExpanded: _expandedSections['examination'] ?? false,
+    ),
+    SectionInfo(
+      key: 'notes',
+      title: 'Notes',
+      icon: Icons.note_alt,
+      isComplete: _doctorNotesController.text.isNotEmpty,
+      isExpanded: _expandedSections['notes'] ?? false,
+    ),
+  ];
+
+  void _applyTemplate(QuickFillTemplateItem template) {
     final data = template.data;
     setState(() {
       if (data['chief_complaints'] != null) {
@@ -473,7 +642,7 @@ class _AddGeneralRecordScreenState extends ConsumerState<AddGeneralRecordScreen>
         });
       }
     });
-    showTemplateAppliedSnackbar(context, template.label);
+    showTemplateAppliedSnackbar(context, template.label, color: template.color);
   }
 
   @override
@@ -506,7 +675,7 @@ class _AddGeneralRecordScreenState extends ConsumerState<AddGeneralRecordScreen>
   Widget _buildFormContent(BuildContext context, DoctorDatabase db, bool isDark) {
     // Calculate form completion
     final completedSections = _calculateCompletedSections();
-    const totalSections = 5; // Patient, Date, Complaints, History, Vitals
+    const totalSections = 7; // Patient, Details, Complaints, History, Vitals, Examination, Notes
 
     return Form(
       key: _formKey,
@@ -519,36 +688,62 @@ class _AddGeneralRecordScreenState extends ConsumerState<AddGeneralRecordScreen>
             totalSections: totalSections,
             accentColor: _primaryColor,
           ),
-          const SizedBox(height: 16),
+          const SizedBox(height: AppSpacing.sm),
 
-          // Quick Fill Templates
-          QuickFillSection(
-            templates: GeneralConsultationTemplates.templates,
-            onTemplateSelected: _applyTemplate,
-          ),
-          const SizedBox(height: 16),
-
-          // Patient Selection
-          RecordFormSection(
-            title: 'Patient Information',
-            icon: Icons.person_outline,
+          // Section Navigation Bar
+          SectionNavigationBar(
+            sections: _sections,
+            onSectionTap: _scrollToSection,
             accentColor: _primaryColor,
-            child: PatientSelectorCard(
-              db: db,
-              selectedPatientId: _selectedPatientId,
-              onPatientSelected: (patient) {
-                setState(() => _selectedPatientId = patient?.id);
-              },
-              label: 'Select Patient',
-            ),
           ),
-          const SizedBox(height: 16),
+          const SizedBox(height: AppSpacing.md),
+
+          // Quick Fill Templates (using new QuickFillTemplateBar)
+          QuickFillTemplateBar(
+            templates: _templates,
+            onTemplateSelected: _applyTemplate,
+            title: 'General Consultation Templates',
+            collapsible: true,
+            initiallyExpanded: false,
+          ),
+          const SizedBox(height: AppSpacing.lg),
+
+          // Patient Selection / Info Card
+          if (widget.preselectedPatient != null)
+            PatientInfoCard(
+              patient: widget.preselectedPatient!,
+              gradientColors: _gradientColors,
+              icon: Icons.medical_services_rounded,
+            )
+          else
+            RecordFormSection(
+              sectionKey: _sectionKeys['patient'],
+              title: 'Patient Information',
+              icon: Icons.person_outline,
+              accentColor: _primaryColor,
+              collapsible: true,
+              initiallyExpanded: _expandedSections['patient'] ?? true,
+              onToggle: (expanded) => setState(() => _expandedSections['patient'] = expanded),
+              child: PatientSelectorCard(
+                db: db,
+                selectedPatientId: _selectedPatientId,
+                onPatientSelected: (patient) {
+                  setState(() => _selectedPatientId = patient?.id);
+                },
+                label: 'Select Patient',
+              ),
+            ),
+          const SizedBox(height: AppSpacing.lg),
 
           // Date and Title Section
           RecordFormSection(
+            sectionKey: _sectionKeys['details'],
             title: 'Record Details',
             icon: Icons.event_note,
             accentColor: _primaryColor,
+            collapsible: true,
+            initiallyExpanded: _expandedSections['details'] ?? true,
+            onToggle: (expanded) => setState(() => _expandedSections['details'] = expanded),
             child: DatePickerCard(
               selectedDate: _recordDate,
               onDateSelected: (date) => setState(() => _recordDate = date),
@@ -556,13 +751,20 @@ class _AddGeneralRecordScreenState extends ConsumerState<AddGeneralRecordScreen>
               accentColor: _primaryColor,
             ),
           ),
-          const SizedBox(height: 16),
+          const SizedBox(height: AppSpacing.lg),
 
           // Chief Complaints
           RecordFormSection(
+            sectionKey: _sectionKeys['complaints'],
             title: 'Chief Complaints',
             icon: Icons.sick_outlined,
             accentColor: Colors.orange,
+            collapsible: true,
+            initiallyExpanded: _expandedSections['complaints'] ?? true,
+            onToggle: (expanded) => setState(() => _expandedSections['complaints'] = expanded),
+            completionSummary: _chiefComplaintsController.text.isNotEmpty
+                ? _chiefComplaintsController.text
+                : null,
             child: SuggestionTextField(
               controller: _chiefComplaintsController,
               label: 'Chief Complaints',
@@ -572,14 +774,20 @@ class _AddGeneralRecordScreenState extends ConsumerState<AddGeneralRecordScreen>
               suggestions: MedicalSuggestions.chiefComplaints,
             ),
           ),
-          const SizedBox(height: 16),
+          const SizedBox(height: AppSpacing.lg),
 
           // History
           RecordFormSection(
+            sectionKey: _sectionKeys['history'],
             title: 'Medical History',
             icon: Icons.history,
             accentColor: Colors.blue,
             collapsible: true,
+            initiallyExpanded: _expandedSections['history'] ?? true,
+            onToggle: (expanded) => setState(() => _expandedSections['history'] = expanded),
+            completionSummary: _historyController.text.isNotEmpty
+                ? _historyController.text
+                : null,
             child: RecordTextField(
               controller: _historyController,
               hint: 'Relevant medical history...',
@@ -587,27 +795,37 @@ class _AddGeneralRecordScreenState extends ConsumerState<AddGeneralRecordScreen>
               accentColor: Colors.blue,
             ),
           ),
-          const SizedBox(height: 16),
+          const SizedBox(height: AppSpacing.lg),
 
           // Vitals Section - Using new VitalsInputSection component
           RecordFormSection(
+            sectionKey: _sectionKeys['vitals'],
             title: 'Vital Signs',
             icon: Icons.favorite_outline,
             accentColor: Colors.red,
+            collapsible: true,
+            initiallyExpanded: _expandedSections['vitals'] ?? true,
+            onToggle: (expanded) => setState(() => _expandedSections['vitals'] = expanded),
             child: VitalsInputSection(
               key: _vitalsKey,
               accentColor: Colors.red,
               compact: true,
             ),
           ),
-          const SizedBox(height: 16),
+          const SizedBox(height: AppSpacing.lg),
 
           // Examination
           RecordFormSection(
+            sectionKey: _sectionKeys['examination'],
             title: 'Physical Examination',
             icon: Icons.accessibility_new,
             accentColor: Colors.purple,
             collapsible: true,
+            initiallyExpanded: _expandedSections['examination'] ?? false,
+            onToggle: (expanded) => setState(() => _expandedSections['examination'] = expanded),
+            completionSummary: _examinationController.text.isNotEmpty
+                ? _examinationController.text
+                : null,
             child: RecordTextField(
               controller: _examinationController,
               hint: 'Physical examination findings...',
@@ -615,15 +833,20 @@ class _AddGeneralRecordScreenState extends ConsumerState<AddGeneralRecordScreen>
               accentColor: Colors.purple,
             ),
           ),
-          const SizedBox(height: 16),
+          const SizedBox(height: AppSpacing.lg),
 
           // Doctor's Notes
           RecordFormSection(
+            sectionKey: _sectionKeys['notes'],
             title: "Doctor's Notes",
             icon: Icons.note_alt,
             accentColor: Colors.indigo,
             collapsible: true,
-            initiallyExpanded: false,
+            initiallyExpanded: _expandedSections['notes'] ?? false,
+            onToggle: (expanded) => setState(() => _expandedSections['notes'] = expanded),
+            completionSummary: _doctorNotesController.text.isNotEmpty
+                ? _doctorNotesController.text
+                : null,
             child: RecordNotesField(
               controller: _doctorNotesController,
               label: '',

@@ -14,6 +14,7 @@ import '../../core/widgets/app_card.dart';
 import '../../core/theme/design_tokens.dart';
 import '../../theme/app_theme.dart';
 import '../widgets/suggestion_text_field.dart';
+import '../../core/widgets/keyboard_aware_scaffold.dart';
 
 class AddPatientScreen extends ConsumerStatefulWidget {
   const AddPatientScreen({super.key, this.patient});
@@ -462,6 +463,8 @@ class _AddPatientScreenState extends ConsumerState<AddPatientScreen> {
             ),
           ),
         ),
+        // Keyboard-aware bottom padding
+        const SliverKeyboardPadding(),
       ],
     );
   }

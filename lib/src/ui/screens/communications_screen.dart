@@ -232,7 +232,14 @@ class _CommunicationsScreenState extends ConsumerState<CommunicationsScreen>
       },
     ];
 
-    return conversations.map((conv) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final cardColor = isDark ? AppColors.darkSurface : Colors.white;
+    final borderColor = isDark ? Colors.grey[800]! : Colors.grey[300]!;
+    final secondaryText = isDark ? Colors.grey[400] : Colors.grey[600];
+
+    return conversations.asMap().entries.map((entry) {
+      final index = entry.key;
+      final conv = entry.value;
       return Padding(
         padding: const EdgeInsets.only(bottom: 8),
         child: GestureDetector(
@@ -240,16 +247,16 @@ class _CommunicationsScreenState extends ConsumerState<CommunicationsScreen>
             showDialog(
               context: context,
               builder: (context) => MessageThreadDialog(
-                patientId: 1,
+                patientId: index + 1, // Use index-based ID for demo data
                 patientName: conv['name'] as String,
               ),
             );
           },
           child: Container(
             decoration: BoxDecoration(
-              color: Colors.grey[900],
+              color: cardColor,
               borderRadius: BorderRadius.circular(12),
-              border: Border.all(color: Colors.grey[800]!),
+              border: Border.all(color: borderColor),
             ),
             padding: const EdgeInsets.all(AppSpacing.md),
             child: Row(
@@ -277,7 +284,7 @@ class _CommunicationsScreenState extends ConsumerState<CommunicationsScreen>
                               ? Colors.green
                               : Colors.grey,
                           shape: BoxShape.circle,
-                          border: Border.all(color: Colors.grey[900]!, width: 2),
+                          border: Border.all(color: cardColor, width: 2),
                         ),
                       ),
                     ),
@@ -290,9 +297,10 @@ class _CommunicationsScreenState extends ConsumerState<CommunicationsScreen>
                     children: [
                       Text(
                         conv['name'] as String,
-                        style: const TextStyle(
+                        style: TextStyle(
                           fontWeight: FontWeight.w600,
                           fontSize: 13,
+                          color: isDark ? AppColors.darkTextPrimary : AppColors.textPrimary,
                         ),
                       ),
                       const SizedBox(height: 2),
@@ -302,7 +310,7 @@ class _CommunicationsScreenState extends ConsumerState<CommunicationsScreen>
                         overflow: TextOverflow.ellipsis,
                         style: TextStyle(
                           fontSize: 12,
-                          color: Colors.grey[500],
+                          color: secondaryText,
                         ),
                       ),
                     ],
@@ -315,7 +323,7 @@ class _CommunicationsScreenState extends ConsumerState<CommunicationsScreen>
                       conv['time'] as String,
                       style: TextStyle(
                         fontSize: 11,
-                        color: Colors.grey[600],
+                        color: secondaryText,
                       ),
                     ),
                     const SizedBox(height: 4),
@@ -350,6 +358,11 @@ class _CommunicationsScreenState extends ConsumerState<CommunicationsScreen>
   }
 
   Widget _buildHistoryTab(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final cardColor = isDark ? AppColors.darkSurface : Colors.white;
+    final borderColor = isDark ? Colors.grey[800]! : Colors.grey[300]!;
+    final textColor = isDark ? AppColors.darkTextPrimary : AppColors.textPrimary;
+
     return SingleChildScrollView(
       primary: false,
       padding: const EdgeInsets.all(AppSpacing.lg),
@@ -359,39 +372,41 @@ class _CommunicationsScreenState extends ConsumerState<CommunicationsScreen>
           // Communication statistics
           Container(
             decoration: BoxDecoration(
-              color: Colors.grey[900],
+              color: cardColor,
               borderRadius: BorderRadius.circular(12),
-              border: Border.all(color: Colors.grey[800]!),
+              border: Border.all(color: borderColor),
             ),
             padding: const EdgeInsets.all(AppSpacing.lg),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const Text(
+                Text(
                   'Communication Summary',
                   style: TextStyle(
                     fontSize: 14,
                     fontWeight: FontWeight.bold,
+                    color: textColor,
                   ),
                 ),
                 const SizedBox(height: 16),
-                _buildStatRow('Total Messages', '42', Colors.blue),
+                _buildStatRow(context, 'Total Messages', '42', Colors.blue),
                 const SizedBox(height: 12),
-                _buildStatRow('Total Calls', '7', Colors.green),
+                _buildStatRow(context, 'Total Calls', '7', Colors.green),
                 const SizedBox(height: 12),
-                _buildStatRow('Avg Response Time', '2 hours 15 min', Colors.orange),
+                _buildStatRow(context, 'Avg Response Time', '2 hours 15 min', Colors.orange),
                 const SizedBox(height: 12),
-                _buildStatRow('Message Success Rate', '98%', Colors.purple),
+                _buildStatRow(context, 'Message Success Rate', '98%', Colors.purple),
               ],
             ),
           ),
           const SizedBox(height: 20),
           // Recent activity
-          const Text(
+          Text(
             'Recent Activity',
             style: TextStyle(
               fontSize: 16,
               fontWeight: FontWeight.bold,
+              color: textColor,
             ),
           ),
           const SizedBox(height: 12),
@@ -401,7 +416,11 @@ class _CommunicationsScreenState extends ConsumerState<CommunicationsScreen>
     );
   }
 
-  Widget _buildStatRow(String label, String value, Color color) {
+  Widget _buildStatRow(BuildContext context, String label, String value, Color color) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final labelColor = isDark ? Colors.grey[400] : Colors.grey[600];
+    final valueColor = isDark ? AppColors.darkTextPrimary : AppColors.textPrimary;
+
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
@@ -420,17 +439,17 @@ class _CommunicationsScreenState extends ConsumerState<CommunicationsScreen>
               label,
               style: TextStyle(
                 fontSize: 13,
-                color: Colors.grey[400],
+                color: labelColor,
               ),
             ),
           ],
         ),
         Text(
           value,
-          style: const TextStyle(
+          style: TextStyle(
             fontSize: 13,
             fontWeight: FontWeight.w600,
-            color: Colors.white,
+            color: valueColor,
           ),
         ),
       ],
@@ -473,6 +492,11 @@ class _CommunicationsScreenState extends ConsumerState<CommunicationsScreen>
       },
     ];
 
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final textColor = isDark ? AppColors.darkTextPrimary : AppColors.textPrimary;
+    final secondaryText = isDark ? Colors.grey[400] : Colors.grey[600];
+    final lineColor = isDark ? Colors.grey[700] : Colors.grey[300];
+
     return activities.asMap().entries.map((entry) {
       final isLast = entry.key == activities.length - 1;
       final activity = entry.value;
@@ -496,7 +520,7 @@ class _CommunicationsScreenState extends ConsumerState<CommunicationsScreen>
                   Container(
                     width: 2,
                     height: 40,
-                    color: Colors.grey[800],
+                    color: lineColor,
                   ),
               ],
             ),
@@ -507,9 +531,10 @@ class _CommunicationsScreenState extends ConsumerState<CommunicationsScreen>
                 children: [
                   Text(
                     activity['patient'] as String,
-                    style: const TextStyle(
+                    style: TextStyle(
                       fontSize: 13,
                       fontWeight: FontWeight.w600,
+                      color: textColor,
                     ),
                   ),
                   const SizedBox(height: 4),
@@ -517,7 +542,7 @@ class _CommunicationsScreenState extends ConsumerState<CommunicationsScreen>
                     activity['detail'] as String,
                     style: TextStyle(
                       fontSize: 12,
-                      color: Colors.grey[500],
+                      color: secondaryText,
                     ),
                   ),
                   const SizedBox(height: 4),
@@ -525,7 +550,7 @@ class _CommunicationsScreenState extends ConsumerState<CommunicationsScreen>
                     activity['time'] as String,
                     style: TextStyle(
                       fontSize: 11,
-                      color: Colors.grey[600],
+                      color: secondaryText,
                     ),
                   ),
                 ],

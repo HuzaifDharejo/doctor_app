@@ -9,9 +9,11 @@ import '../../db/doctor_db.dart';
 import '../../providers/db_provider.dart';
 import '../../services/allergy_checking_service.dart';
 import '../../services/drug_interaction_service.dart';
+import '../../services/lab_order_service.dart';
 import '../../services/logger_service.dart';
 import '../../services/pdf_service.dart';
 import '../../services/prescription_templates.dart';
+import '../../services/lab_test_templates.dart';
 import '../../services/suggestions_service.dart';
 import '../../core/components/app_button.dart';
 import '../../core/components/app_input.dart';
@@ -21,6 +23,7 @@ import '../widgets/suggestion_text_field.dart';
 import '../widgets/allergy_check_dialog.dart';
 import '../widgets/drug_interaction_dialog.dart';
 import 'add_prescription/add_prescription.dart';
+import '../../core/widgets/keyboard_aware_scaffold.dart';
 
 class AddPrescriptionScreen extends ConsumerStatefulWidget {
 
@@ -83,24 +86,8 @@ class _AddPrescriptionScreenState extends ConsumerState<AddPrescriptionScreen> {
   DateTime? _followUpDate;
   final _followUpNotesController = TextEditingController();
 
-  // Lab Tests
-  final List<String> _selectedLabTests = [];
-  final List<String> _availableLabTests = [
-    'Complete Blood Count (CBC)',
-    'Blood Sugar Fasting',
-    'Blood Sugar Random',
-    'HbA1c',
-    'Lipid Profile',
-    'Liver Function Test (LFT)',
-    'Kidney Function Test (KFT)',
-    'Thyroid Profile',
-    'Urine Complete',
-    'X-Ray Chest',
-    'ECG',
-    'Ultrasound',
-    'CT Scan',
-    'MRI',
-  ];
+  // Lab Tests - using templates for richer data
+  final List<LabTestTemplate> _selectedLabTests = [];
 
   @override
   void initState() {
@@ -422,20 +409,23 @@ class _AddPrescriptionScreenState extends ConsumerState<AddPrescriptionScreen> {
         maxChildSize: 0.9,
         expand: false,
         builder: (context, scrollController) => _QuickMedicineSelectorSheet(
-          onSelectMedicine: (name, dosage) {
+          onSelectMedicines: (medicines) {
             setState(() {
-              final entry = MedicationEntry();
-              entry.nameController.text = name;
-              if (dosage.isNotEmpty) {
-                entry.dosageController.text = dosage;
+              for (final med in medicines) {
+                final entry = MedicationEntry();
+                entry.nameController.text = med['name'] ?? '';
+                if ((med['dosage'] ?? '').isNotEmpty) {
+                  entry.dosageController.text = med['dosage']!;
+                }
+                _medications.add(entry);
               }
-              _medications.add(entry);
             });
+            final count = medicines.length;
             ScaffoldMessenger.of(context).showSnackBar(
               SnackBar(
-                content: Text('$name added'),
+                content: Text('$count ${count == 1 ? 'medicine' : 'medicines'} added'),
                 behavior: SnackBarBehavior.floating,
-                duration: const Duration(seconds: 1),
+                duration: const Duration(seconds: 2),
               ),
             );
           },
@@ -492,6 +482,35 @@ class _AddPrescriptionScreenState extends ConsumerState<AddPrescriptionScreen> {
     if (lower.contains('as needed') || lower.contains('prn')) return 'SOS';
     if (lower.contains('every 4 hours')) return 'Q4H';
     return 'OD';
+  }
+
+  /// Apply a prescription template - adds all medications from the template
+  void _applyPrescriptionTemplate(PrescriptionTemplate template) {
+    setState(() {
+      for (final med in template.medications) {
+        final entry = MedicationEntry();
+        entry.nameController.text = med.name;
+        entry.dosageController.text = med.dosage;
+        entry.durationController.text = med.duration;
+        entry.frequency = _parseFrequency(med.frequency);
+        entry.timing = med.timing;
+        entry.instructionsController.text = med.instructions;
+        _medications.add(entry);
+      }
+    });
+    
+    // Run safety check after adding medications
+    _runSafetyCheck();
+    
+    // Show confirmation
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text('${template.name} template applied (${template.medications.length} medications)'),
+        behavior: SnackBarBehavior.floating,
+        duration: const Duration(seconds: 2),
+        backgroundColor: const Color(0xFFD946EF),
+      ),
+    );
   }
 
   void _removeMedication(int index) {
@@ -583,7 +602,7 @@ class _AddPrescriptionScreenState extends ConsumerState<AddPrescriptionScreen> {
       'symptoms': _symptomsController.text,
       'diagnosis': _diagnosisController.text,
       'medications': _medications.map((med) => med.toJson()).toList(),
-      'lab_tests': _selectedLabTests,
+      'lab_tests': _selectedLabTests.map((test) => test.toJson()).toList(),
       'advice': _adviceController.text,
       'notes': _notesController.text,
       'follow_up': {
@@ -623,26 +642,92 @@ class _AddPrescriptionScreenState extends ConsumerState<AddPrescriptionScreen> {
       }
 
       try {
-        // Save to database
+        // Save to database - use normalized tables (V5)
         final db = await ref.read(doctorDbProvider.future);
+        
+        // Insert prescription record (itemsJson kept for backwards compatibility but empty)
         final prescriptionId = await db.insertPrescription(
           PrescriptionsCompanion.insert(
             patientId: _selectedPatientId!,
-            itemsJson: jsonEncode(jsonData['medications']),
+            // V5: itemsJson is deprecated - use PrescriptionMedications table instead
+            itemsJson: '[]', // Empty JSON - data is in normalized table
             instructions: Value(jsonData['advice'] as String? ?? ''),
             diagnosis: Value(jsonData['diagnosis'] as String? ?? ''),
             chiefComplaint: Value(jsonData['symptoms'] as String? ?? ''),
-            vitalsJson: Value(jsonEncode(jsonData['vitals'] ?? {})),
+            vitalsJson: Value('{}'), // V5: vitals stored in VitalSigns table
             appointmentId: Value(widget.appointmentId),
             encounterId: Value(widget.encounterId),
           ),
         );
         
-        log.i('PRESCRIPTION', 'Prescription saved', extra: {
+        // V5: Save medications to normalized PrescriptionMedications table
+        for (int i = 0; i < _medications.length; i++) {
+          final med = _medications[i];
+          await db.insertPrescriptionMedication(
+            PrescriptionMedicationsCompanion.insert(
+              prescriptionId: prescriptionId,
+              patientId: _selectedPatientId!,
+              medicationName: med.nameController.text,
+              strength: Value(med.dosageController.text),
+              frequency: Value(med.frequency),
+              timing: Value(med.timing),
+              durationText: Value(med.durationController.text),
+              specialInstructions: Value(med.instructionsController.text),
+              displayOrder: Value(i),
+              // Parse timing to set meal-related flags
+              beforeFood: Value(med.timing.toLowerCase().contains('before')),
+              afterFood: Value(med.timing.toLowerCase().contains('after')),
+              withFood: Value(med.timing.toLowerCase().contains('with')),
+            ),
+          );
+        }
+        
+        log.i('PRESCRIPTION', 'Prescription saved with normalized medications', extra: {
           'prescriptionId': prescriptionId,
           'patientId': _selectedPatientId,
           'medicationCount': _medications.length,
         });
+
+        // Create lab orders for any selected lab tests (also normalized)
+        if (_selectedLabTests.isNotEmpty) {
+          final labOrderService = LabOrderService();
+          final orderNumber = 'LO-${DateTime.now().millisecondsSinceEpoch}';
+          
+          // Create the lab order
+          final labOrderId = await labOrderService.createLabOrder(
+            patientId: _selectedPatientId!,
+            orderNumber: orderNumber,
+            testCodes: '[]', // V5: empty - use LabTestResults table
+            testNames: '[]', // V5: empty - use LabTestResults table
+            orderingProvider: 'Doctor',
+            orderedDate: DateTime.now(),
+            encounterId: widget.encounterId,
+            orderType: 'lab',
+            priority: 'routine',
+            notes: 'Auto-created from prescription #$prescriptionId',
+          );
+          
+          // V5: Insert each lab test into normalized LabTestResults table
+          for (int i = 0; i < _selectedLabTests.length; i++) {
+            final test = _selectedLabTests[i];
+            await db.insertLabTestResult(
+              LabTestResultsCompanion.insert(
+                labOrderId: labOrderId,
+                patientId: _selectedPatientId!,
+                testName: test.name,
+                testCode: Value(test.testCode ?? ''),
+                category: Value(test.category ?? ''),
+                displayOrder: Value(i),
+              ),
+            );
+          }
+          
+          log.i('LAB_ORDER', 'Lab orders created with normalized test results', extra: {
+            'prescriptionId': prescriptionId,
+            'labOrderId': labOrderId,
+            'labTestCount': _selectedLabTests.length,
+          });
+        }
 
         // Get the created prescription to return
         final createdPrescription = await db.getPrescriptionById(prescriptionId);
@@ -741,15 +826,16 @@ class _AddPrescriptionScreenState extends ConsumerState<AddPrescriptionScreen> {
     );
 
     try {
-      // Create a temporary prescription object for PDF generation
-      final itemsJson = jsonEncode(_medications.map((med) => med.toJson()).toList());
+      // Build comprehensive prescription data for PDF
+      final fullPrescriptionData = _buildPrescriptionJson();
+      final itemsJson = jsonEncode(fullPrescriptionData);
       final vitalsJson = jsonEncode(_lastVisitVitals ?? {});
       
       final tempPrescription = Prescription(
         id: 0, // Temporary ID
         patientId: _selectedPatientId!,
         createdAt: DateTime.now(),
-        itemsJson: itemsJson,
+        itemsJson: itemsJson, // Contains full data including meds, lab tests, follow-up, notes
         instructions: _adviceController.text,
         isRefillable: false,
         diagnosis: _diagnosisController.text,
@@ -795,144 +881,170 @@ class _AddPrescriptionScreenState extends ConsumerState<AddPrescriptionScreen> {
     final colorScheme = theme.colorScheme;
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final screenWidth = MediaQuery.of(context).size.width;
-    final isCompact = screenWidth < 400;
-    final padding = isCompact ? 16.0 : 20.0;
+    final screenHeight = MediaQuery.of(context).size.height;
+    final isCompact = screenWidth < 600;
+    final isShort = screenHeight <= 600;
+    final isLarge = screenWidth >= 1200;
+    final padding = isCompact ? (isShort ? 12.0 : 16.0) : (isLarge ? 24.0 : 20.0);
 
     return Scaffold(
       backgroundColor: isDark ? const Color(0xFF0F0F0F) : const Color(0xFFF8F9FA),
       body: Form(
         key: _formKey,
-        child: CustomScrollView(
-          controller: _scrollController,
-          slivers: [
-            // Modern App Bar
-            SliverAppBar(
-              expandedHeight: 140,
-              pinned: true,
-              elevation: 0,
-              scrolledUnderElevation: 1,
-              backgroundColor: isDark ? const Color(0xFF1A1A1A) : Colors.white,
-              leading: Padding(
-                padding: const EdgeInsets.all(8),
-                child: GestureDetector(
-                  onTap: () => Navigator.pop(context),
-                  child: Container(
-                    decoration: BoxDecoration(
-                      color: isDark ? Colors.white.withValues(alpha: 0.1) : Colors.grey.withValues(alpha: 0.1),
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                    child: Icon(
-                      Icons.arrow_back_rounded,
-                      color: isDark ? Colors.white : Colors.black87,
-                      size: 22,
-                    ),
-                  ),
+        child: isLarge 
+            ? Center(
+                child: ConstrainedBox(
+                  constraints: const BoxConstraints(maxWidth: 1200),
+                  child: _buildScrollContent(context, colorScheme, isDark, isCompact, isShort, isLarge, padding),
+                ),
+              )
+            : _buildScrollContent(context, colorScheme, isDark, isCompact, isShort, isLarge, padding),
+      ),
+    );
+  }
+
+  Widget _buildScrollContent(
+    BuildContext context,
+    ColorScheme colorScheme,
+    bool isDark,
+    bool isCompact,
+    bool isShort,
+    bool isLarge,
+    double padding,
+  ) {
+    final appBarHeight = isShort ? 100.0 : 140.0;
+    
+    return CustomScrollView(
+      controller: _scrollController,
+      slivers: [
+        // Modern App Bar
+        SliverAppBar(
+          expandedHeight: appBarHeight,
+          pinned: true,
+          elevation: 0,
+          scrolledUnderElevation: 1,
+          backgroundColor: isDark ? const Color(0xFF1A1A1A) : Colors.white,
+          leading: Padding(
+            padding: EdgeInsets.all(isShort ? 6 : 8),
+            child: GestureDetector(
+              onTap: () => Navigator.pop(context),
+              child: Container(
+                decoration: BoxDecoration(
+                  color: isDark ? Colors.white.withValues(alpha: 0.1) : Colors.grey.withValues(alpha: 0.1),
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Icon(
+                  Icons.arrow_back_rounded,
+                  color: isDark ? Colors.white : Colors.black87,
+                  size: isShort ? 20 : 22,
                 ),
               ),
-              actions: [
-                Padding(
-                  padding: const EdgeInsets.all(8),
-                  child: GestureDetector(
-                    onTap: _printPrescription,
-                    child: Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                      decoration: BoxDecoration(
-                        color: AppColors.primary.withValues(alpha: 0.1),
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                      child: Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Icon(Icons.print_rounded, color: AppColors.primary, size: 18),
-                          const SizedBox(width: 6),
-                          Text(
-                            'Print',
-                            style: TextStyle(
-                              color: AppColors.primary,
-                              fontWeight: FontWeight.w600,
-                              fontSize: 13,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
-                ),
-                const SizedBox(width: 8),
-              ],
-              flexibleSpace: FlexibleSpaceBar(
-                background: Container(
+            ),
+          ),
+          actions: [
+            Padding(
+              padding: EdgeInsets.all(isShort ? 6 : 8),
+              child: GestureDetector(
+                onTap: _printPrescription,
+                child: Container(
+                  padding: EdgeInsets.symmetric(horizontal: isShort ? 10 : 12, vertical: isShort ? 6 : 8),
                   decoration: BoxDecoration(
-                    gradient: LinearGradient(
-                      colors: isDark 
-                          ? [const Color(0xFF1A1A1A), const Color(0xFF0F0F0F)]
-                          : [Colors.white, const Color(0xFFF8F9FA)],
-                      begin: Alignment.topCenter,
-                      end: Alignment.bottomCenter,
-                    ),
+                    color: AppColors.primary.withValues(alpha: 0.1),
+                    borderRadius: BorderRadius.circular(12),
                   ),
-                  child: SafeArea(
-                    child: Padding(
-                      padding: const EdgeInsets.fromLTRB(20, 50, 20, 0),
-                      child: Row(
-                        children: [
-                          Container(
-                            padding: const EdgeInsets.all(14),
-                            decoration: BoxDecoration(
-                              gradient: const LinearGradient(
-                                colors: [Color(0xFFFF9800), Color(0xFFFF5722)],
-                                begin: Alignment.topLeft,
-                                end: Alignment.bottomRight,
-                              ),
-                              borderRadius: BorderRadius.circular(16),
-                              boxShadow: [
-                                BoxShadow(
-                                  color: const Color(0xFFFF9800).withValues(alpha: 0.3),
-                                  blurRadius: 12,
-                                  offset: const Offset(0, 4),
-                                ),
-                              ],
-                            ),
-                            child: const Icon(Icons.medication_rounded, color: Colors.white, size: 28),
-                          ),
-                          const SizedBox(width: 16),
-                          Expanded(
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              mainAxisSize: MainAxisSize.min,
-                              children: [
-                                Text(
-                                  'New Prescription',
-                                  style: TextStyle(
-                                    fontSize: 22,
-                                    fontWeight: FontWeight.w800,
-                                    color: isDark ? Colors.white : Colors.black87,
-                                    letterSpacing: -0.5,
-                                  ),
-                                ),
-                                const SizedBox(height: 4),
-                                Text(
-                                  DateFormat('EEEE, dd MMMM yyyy').format(DateTime.now()),
-                                  style: TextStyle(
-                                    fontSize: 13,
-                                    color: isDark ? Colors.grey[400] : Colors.grey[600],
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-                        ],
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(Icons.print_rounded, color: AppColors.primary, size: isShort ? 16 : 18),
+                      const SizedBox(width: 6),
+                      Text(
+                        'Print',
+                        style: TextStyle(
+                          color: AppColors.primary,
+                          fontWeight: FontWeight.w600,
+                          fontSize: isShort ? 12 : 13,
+                        ),
                       ),
-                    ),
+                    ],
                   ),
                 ),
               ),
             ),
-            // Body Content
-            SliverPadding(
-              padding: EdgeInsets.all(padding),
-              sliver: SliverList(
-                delegate: SliverChildListDelegate([
+            SizedBox(width: isShort ? 4 : 8),
+          ],
+          flexibleSpace: FlexibleSpaceBar(
+            background: Container(
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  colors: isDark 
+                      ? [const Color(0xFF1A1A1A), const Color(0xFF0F0F0F)]
+                      : [Colors.white, const Color(0xFFF8F9FA)],
+                  begin: Alignment.topCenter,
+                  end: Alignment.bottomCenter,
+                ),
+              ),
+              child: SafeArea(
+                child: Padding(
+                  padding: EdgeInsets.fromLTRB(20, isShort ? 40 : 50, 20, 0),
+                  child: Row(
+                    children: [
+                      Container(
+                        padding: EdgeInsets.all(isShort ? 10 : 14),
+                        decoration: BoxDecoration(
+                          gradient: const LinearGradient(
+                            colors: [Color(0xFFFF9800), Color(0xFFFF5722)],
+                            begin: Alignment.topLeft,
+                            end: Alignment.bottomRight,
+                          ),
+                          borderRadius: BorderRadius.circular(isShort ? 12 : 16),
+                          boxShadow: [
+                            BoxShadow(
+                              color: const Color(0xFFFF9800).withValues(alpha: 0.3),
+                              blurRadius: isShort ? 8 : 12,
+                              offset: const Offset(0, 4),
+                            ),
+                          ],
+                        ),
+                        child: Icon(Icons.medication_rounded, color: Colors.white, size: isShort ? 24 : 28),
+                      ),
+                      SizedBox(width: isShort ? 12 : 16),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Text(
+                              'New Prescription',
+                              style: TextStyle(
+                                fontSize: isShort ? 18 : 22,
+                                fontWeight: FontWeight.w800,
+                                color: isDark ? Colors.white : Colors.black87,
+                                letterSpacing: -0.5,
+                              ),
+                            ),
+                            SizedBox(height: isShort ? 2 : 4),
+                            Text(
+                              DateFormat('EEEE, dd MMMM yyyy').format(DateTime.now()),
+                              style: TextStyle(
+                                fontSize: isShort ? 11 : 13,
+                                color: isDark ? Colors.grey[400] : Colors.grey[600],
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+          ),
+        ),
+        // Body Content
+        SliverPadding(
+          padding: EdgeInsets.all(padding),
+          sliver: SliverList(
+            delegate: SliverChildListDelegate([
               // Patient Selection
               _buildModernSectionCard(
                 title: 'Patient Information',
@@ -1017,6 +1129,12 @@ class _AddPrescriptionScreenState extends ConsumerState<AddPrescriptionScreen> {
                 ),
                 child: Column(
                   children: [
+                    // Quick Prescription Templates
+                    QuickPrescriptionSelector(
+                      compact: true,
+                      onSelect: (template) => _applyPrescriptionTemplate(template),
+                    ),
+                    const SizedBox(height: 12),
                     // Safety Alerts Banner
                     if (_drugInteractions.isNotEmpty || _allergyAlerts.isNotEmpty)
                       _buildSafetyAlertsBanner(colorScheme),
@@ -1129,12 +1247,12 @@ class _AddPrescriptionScreenState extends ConsumerState<AddPrescriptionScreen> {
                 ),
               ),
               const SizedBox(height: 32),
-                ]),
-              ),
-            ),
-          ],
+            ]),
+          ),
         ),
-      ),
+        // Keyboard-aware bottom padding
+        const SliverKeyboardPadding(),
+      ],
     );
   }
 
@@ -2050,50 +2168,303 @@ class _AddPrescriptionScreenState extends ConsumerState<AddPrescriptionScreen> {
     );
   }
 
+  void _openLabTestSelector() {
+    showModalBottomSheet<void>(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (context) => DraggableScrollableSheet(
+        initialChildSize: 0.75,
+        minChildSize: 0.5,
+        maxChildSize: 0.95,
+        expand: false,
+        builder: (context, scrollController) => LabTestTemplateBottomSheet(
+          onSelect: (template) {
+            setState(() {
+              // Don't add duplicates
+              if (!_selectedLabTests.any((t) => t.name == template.name)) {
+                _selectedLabTests.add(template);
+              }
+            });
+          },
+          onSelectMultiple: (templates) {
+            setState(() {
+              // Add all selected tests that aren't already selected
+              for (final template in templates) {
+                if (!_selectedLabTests.any((t) => t.name == template.name)) {
+                  _selectedLabTests.add(template);
+                }
+              }
+            });
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content: Row(
+                  children: [
+                    const Icon(Icons.check_circle, color: Colors.white),
+                    const SizedBox(width: 12),
+                    Text('Added ${templates.length} lab ${templates.length == 1 ? 'test' : 'tests'}'),
+                  ],
+                ),
+                behavior: SnackBarBehavior.floating,
+                backgroundColor: const Color(0xFFEC4899),
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                duration: const Duration(seconds: 2),
+              ),
+            );
+          },
+          onSelectPanel: (panel) {
+            setState(() {
+              // Add all tests from panel that aren't already selected
+              for (final test in panel.tests) {
+                if (!_selectedLabTests.any((t) => t.name == test.name)) {
+                  _selectedLabTests.add(test);
+                }
+              }
+            });
+            Navigator.pop(context);
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content: Row(
+                  children: [
+                    const Icon(Icons.check_circle, color: Colors.white),
+                    const SizedBox(width: 12),
+                    Text('Added ${panel.tests.length} tests from ${panel.name}'),
+                  ],
+                ),
+                behavior: SnackBarBehavior.floating,
+                backgroundColor: const Color(0xFF14B8A6),
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                duration: const Duration(seconds: 2),
+              ),
+            );
+          },
+        ),
+      ),
+    );
+  }
+
   Widget _buildLabTestsSection(ColorScheme colorScheme) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    const tealColor = Color(0xFF14B8A6);
+    
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Wrap(
-          spacing: 8,
-          runSpacing: 8,
-          children: _availableLabTests.map((test) {
-            final isSelected = _selectedLabTests.contains(test);
-            return FilterChip(
-              label: Text(test, style: const TextStyle(fontSize: 12)),
-              selected: isSelected,
-              onSelected: (selected) {
-                setState(() {
-                  if (selected) {
-                    _selectedLabTests.add(test);
-                  } else {
-                    _selectedLabTests.remove(test);
-                  }
-                });
-              },
-              selectedColor: colorScheme.primaryContainer,
-              checkmarkColor: colorScheme.primary,
-            );
-          }).toList(),
-        ),
-        if (_selectedLabTests.isNotEmpty) ...[
-          const SizedBox(height: 12),
-          Container(
-            padding: const EdgeInsets.all(AppSpacing.md),
+        // Add Test Button
+        InkWell(
+          onTap: _openLabTestSelector,
+          borderRadius: BorderRadius.circular(12),
+          child: Container(
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
             decoration: BoxDecoration(
-              color: colorScheme.tertiaryContainer.withValues(alpha: 0.3),
-              borderRadius: BorderRadius.circular(8),
+              gradient: LinearGradient(
+                colors: [
+                  tealColor.withValues(alpha: 0.1),
+                  tealColor.withValues(alpha: 0.05),
+                ],
+              ),
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(
+                color: tealColor.withValues(alpha: 0.3),
+              ),
+            ),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Container(
+                  padding: const EdgeInsets.all(8),
+                  decoration: BoxDecoration(
+                    color: tealColor.withValues(alpha: 0.15),
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: const Icon(Icons.add_rounded, color: tealColor, size: 20),
+                ),
+                const SizedBox(width: 12),
+                Text(
+                  _selectedLabTests.isEmpty ? 'Add Lab Tests' : 'Add More Tests',
+                  style: const TextStyle(
+                    color: tealColor,
+                    fontWeight: FontWeight.w600,
+                    fontSize: 14,
+                  ),
+                ),
+                const Spacer(),
+                Icon(
+                  Icons.science_rounded,
+                  color: tealColor.withValues(alpha: 0.5),
+                  size: 20,
+                ),
+              ],
+            ),
+          ),
+        ),
+        
+        // Selected Tests List
+        if (_selectedLabTests.isNotEmpty) ...[
+          const SizedBox(height: 16),
+          ...List.generate(_selectedLabTests.length, (index) {
+            final test = _selectedLabTests[index];
+            return TweenAnimationBuilder<double>(
+              duration: Duration(milliseconds: 200 + (index * 50)),
+              tween: Tween(begin: 0.0, end: 1.0),
+              builder: (context, value, child) {
+                return Transform.translate(
+                  offset: Offset(20 * (1 - value), 0),
+                  child: Opacity(opacity: value, child: child),
+                );
+              },
+              child: Container(
+                margin: const EdgeInsets.only(bottom: 10),
+                padding: const EdgeInsets.all(14),
+                decoration: BoxDecoration(
+                  color: isDark ? Colors.white.withValues(alpha: 0.05) : Colors.white,
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(
+                    color: isDark 
+                        ? Colors.white.withValues(alpha: 0.1)
+                        : tealColor.withValues(alpha: 0.15),
+                  ),
+                  boxShadow: isDark ? null : [
+                    BoxShadow(
+                      color: tealColor.withValues(alpha: 0.08),
+                      blurRadius: 8,
+                      offset: const Offset(0, 2),
+                    ),
+                  ],
+                ),
+                child: Row(
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.all(8),
+                      decoration: BoxDecoration(
+                        gradient: LinearGradient(
+                          colors: [
+                            tealColor.withValues(alpha: 0.15),
+                            tealColor.withValues(alpha: 0.1),
+                          ],
+                        ),
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      child: Text(
+                        '${index + 1}',
+                        style: const TextStyle(
+                          fontWeight: FontWeight.bold,
+                          color: tealColor,
+                          fontSize: 12,
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            test.name,
+                            style: TextStyle(
+                              fontWeight: FontWeight.w600,
+                              fontSize: 13,
+                              color: isDark ? Colors.white : AppColors.textPrimary,
+                            ),
+                          ),
+                          const SizedBox(height: 4),
+                          Row(
+                            children: [
+                              if (test.testCode != null) ...[
+                                Container(
+                                  padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                                  decoration: BoxDecoration(
+                                    color: tealColor.withValues(alpha: 0.1),
+                                    borderRadius: BorderRadius.circular(4),
+                                  ),
+                                  child: Text(
+                                    test.testCode!,
+                                    style: const TextStyle(
+                                      fontSize: 10,
+                                      fontWeight: FontWeight.w600,
+                                      color: tealColor,
+                                    ),
+                                  ),
+                                ),
+                                const SizedBox(width: 8),
+                              ],
+                              Icon(
+                                Icons.water_drop_rounded,
+                                size: 12,
+                                color: isDark ? AppColors.darkTextSecondary : AppColors.textSecondary,
+                              ),
+                              const SizedBox(width: 4),
+                              Text(
+                                test.specimenType.toUpperCase(),
+                                style: TextStyle(
+                                  fontSize: 10,
+                                  color: isDark ? AppColors.darkTextSecondary : AppColors.textSecondary,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ],
+                      ),
+                    ),
+                    IconButton(
+                      onPressed: () {
+                        setState(() {
+                          _selectedLabTests.removeAt(index);
+                        });
+                      },
+                      icon: Icon(
+                        Icons.close_rounded,
+                        color: AppColors.error.withValues(alpha: 0.7),
+                        size: 20,
+                      ),
+                      style: IconButton.styleFrom(
+                        backgroundColor: AppColors.error.withValues(alpha: 0.1),
+                        padding: const EdgeInsets.all(6),
+                        minimumSize: const Size(32, 32),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            );
+          }),
+          
+          // Summary
+          Container(
+            padding: const EdgeInsets.all(12),
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                colors: [
+                  tealColor.withValues(alpha: 0.1),
+                  tealColor.withValues(alpha: 0.05),
+                ],
+              ),
+              borderRadius: BorderRadius.circular(10),
             ),
             child: Row(
               children: [
-                Icon(Icons.checklist, color: colorScheme.tertiary, size: 20),
-                const SizedBox(width: 8),
+                Icon(Icons.checklist_rounded, color: tealColor, size: 18),
+                const SizedBox(width: 10),
                 Text(
-                  '${_selectedLabTests.length} test(s) selected',
-                  style: TextStyle(
-                    fontWeight: FontWeight.w500,
-                    color: colorScheme.tertiary,
+                  '${_selectedLabTests.length} investigation${_selectedLabTests.length > 1 ? 's' : ''} ordered',
+                  style: const TextStyle(
+                    fontWeight: FontWeight.w600,
+                    color: tealColor,
+                    fontSize: 13,
                   ),
+                ),
+                const Spacer(),
+                TextButton(
+                  onPressed: () {
+                    setState(() {
+                      _selectedLabTests.clear();
+                    });
+                  },
+                  style: TextButton.styleFrom(
+                    foregroundColor: AppColors.error,
+                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                  ),
+                  child: const Text('Clear All', style: TextStyle(fontSize: 12)),
                 ),
               ],
             ),
@@ -2263,11 +2634,11 @@ class MedicationEntry {
 // Quick Medicine Selector Bottom Sheet
 class _QuickMedicineSelectorSheet extends StatefulWidget {
   const _QuickMedicineSelectorSheet({
-    required this.onSelectMedicine,
+    required this.onSelectMedicines,
     required this.onAddCustom,
   });
   
-  final void Function(String name, String dosage) onSelectMedicine;
+  final void Function(List<Map<String, String>> medicines) onSelectMedicines;
   final VoidCallback onAddCustom;
 
   @override
@@ -2278,6 +2649,7 @@ class _QuickMedicineSelectorSheetState extends State<_QuickMedicineSelectorSheet
   final _searchController = TextEditingController();
   String _searchQuery = '';
   String _selectedCategory = 'All';
+  final Set<String> _selectedMedicines = {}; // Track selected medicines by key
   
   // Medicine categories with common medicines
   static const Map<String, List<Map<String, String>>> _medicineDatabase = {
@@ -2514,31 +2886,88 @@ class _QuickMedicineSelectorSheetState extends State<_QuickMedicineSelectorSheet
           // Add Custom button
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 16),
-            child: InkWell(
-              onTap: widget.onAddCustom,
-              borderRadius: BorderRadius.circular(12),
-              child: Container(
-                padding: const EdgeInsets.all(12),
-                decoration: BoxDecoration(
-                  color: colorScheme.primary.withValues(alpha: 0.1),
-                  borderRadius: BorderRadius.circular(12),
-                  border: Border.all(color: colorScheme.primary.withValues(alpha: 0.3)),
-                ),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    Icon(Icons.edit_note, color: colorScheme.primary, size: 20),
-                    const SizedBox(width: 8),
-                    Text(
-                      'Add Custom Medicine',
-                      style: TextStyle(
-                        color: colorScheme.primary,
-                        fontWeight: FontWeight.w600,
+            child: Row(
+              children: [
+                Expanded(
+                  child: InkWell(
+                    onTap: widget.onAddCustom,
+                    borderRadius: BorderRadius.circular(12),
+                    child: Container(
+                      padding: const EdgeInsets.all(12),
+                      decoration: BoxDecoration(
+                        color: colorScheme.primary.withValues(alpha: 0.1),
+                        borderRadius: BorderRadius.circular(12),
+                        border: Border.all(color: colorScheme.primary.withValues(alpha: 0.3)),
+                      ),
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Icon(Icons.edit_note, color: colorScheme.primary, size: 20),
+                          const SizedBox(width: 8),
+                          Text(
+                            'Custom',
+                            style: TextStyle(
+                              color: colorScheme.primary,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                        ],
                       ),
                     ),
-                  ],
+                  ),
                 ),
-              ),
+                const SizedBox(width: 12),
+                Expanded(
+                  flex: 2,
+                  child: InkWell(
+                    onTap: _selectedMedicines.isEmpty ? null : () {
+                      // Convert selected to list of maps
+                      final selectedList = <Map<String, String>>[];
+                      for (final key in _selectedMedicines) {
+                        final parts = key.split('|');
+                        if (parts.length == 2) {
+                          selectedList.add({'name': parts[0], 'dosage': parts[1]});
+                        }
+                      }
+                      widget.onSelectMedicines(selectedList);
+                      Navigator.pop(context);
+                    },
+                    borderRadius: BorderRadius.circular(12),
+                    child: Container(
+                      padding: const EdgeInsets.all(12),
+                      decoration: BoxDecoration(
+                        gradient: _selectedMedicines.isNotEmpty 
+                            ? const LinearGradient(colors: [Color(0xFF10B981), Color(0xFF059669)])
+                            : null,
+                        color: _selectedMedicines.isEmpty 
+                            ? (isDark ? Colors.white.withValues(alpha: 0.1) : Colors.grey.withValues(alpha: 0.2))
+                            : null,
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Icon(
+                            Icons.check_circle,
+                            color: _selectedMedicines.isNotEmpty ? Colors.white : Colors.grey,
+                            size: 20,
+                          ),
+                          const SizedBox(width: 8),
+                          Text(
+                            _selectedMedicines.isEmpty 
+                                ? 'Add Selected' 
+                                : 'Add ${_selectedMedicines.length} Selected',
+                            style: TextStyle(
+                              color: _selectedMedicines.isNotEmpty ? Colors.white : Colors.grey,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ),
+              ],
             ),
           ),
           const SizedBox(height: 8),
@@ -2575,15 +3004,22 @@ class _QuickMedicineSelectorSheetState extends State<_QuickMedicineSelectorSheet
                       final name = medicine['name'] ?? '';
                       final dosage = medicine['dosage'] ?? '';
                       final displayName = dosage.isNotEmpty ? '$name $dosage' : name;
+                      final key = '$name|$dosage';
+                      final isSelected = _selectedMedicines.contains(key);
                       
                       return Card(
                         margin: const EdgeInsets.only(bottom: 8),
                         elevation: 0,
-                        color: isDark ? Colors.white.withValues(alpha: 0.05) : Colors.grey.withValues(alpha: 0.05),
+                        color: isSelected 
+                            ? const Color(0xFF10B981).withValues(alpha: 0.15)
+                            : (isDark ? Colors.white.withValues(alpha: 0.05) : Colors.grey.withValues(alpha: 0.05)),
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(12),
                           side: BorderSide(
-                            color: isDark ? Colors.white.withValues(alpha: 0.1) : Colors.grey.withValues(alpha: 0.2),
+                            color: isSelected 
+                                ? const Color(0xFF10B981).withValues(alpha: 0.5)
+                                : (isDark ? Colors.white.withValues(alpha: 0.1) : Colors.grey.withValues(alpha: 0.2)),
+                            width: isSelected ? 2 : 1,
                           ),
                         ),
                         child: ListTile(
@@ -2591,10 +3027,16 @@ class _QuickMedicineSelectorSheetState extends State<_QuickMedicineSelectorSheet
                           leading: Container(
                             padding: const EdgeInsets.all(8),
                             decoration: BoxDecoration(
-                              color: const Color(0xFFF59E0B).withValues(alpha: 0.1),
+                              color: isSelected 
+                                  ? const Color(0xFF10B981).withValues(alpha: 0.2)
+                                  : const Color(0xFFF59E0B).withValues(alpha: 0.1),
                               borderRadius: BorderRadius.circular(8),
                             ),
-                            child: const Icon(Icons.medication, color: Color(0xFFF59E0B), size: 20),
+                            child: Icon(
+                              isSelected ? Icons.check : Icons.medication, 
+                              color: isSelected ? const Color(0xFF10B981) : const Color(0xFFF59E0B), 
+                              size: 20,
+                            ),
                           ),
                           title: Text(
                             displayName,
@@ -2603,16 +3045,28 @@ class _QuickMedicineSelectorSheetState extends State<_QuickMedicineSelectorSheet
                               color: isDark ? Colors.white : AppColors.textPrimary,
                             ),
                           ),
-                          trailing: IconButton(
-                            icon: const Icon(Icons.add_circle, color: Color(0xFF10B981)),
-                            onPressed: () {
-                              widget.onSelectMedicine(displayName, '1 tablet');
-                              Navigator.pop(context);
+                          trailing: Checkbox(
+                            value: isSelected,
+                            onChanged: (value) {
+                              setState(() {
+                                if (value == true) {
+                                  _selectedMedicines.add(key);
+                                } else {
+                                  _selectedMedicines.remove(key);
+                                }
+                              });
                             },
+                            activeColor: const Color(0xFF10B981),
+                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(4)),
                           ),
                           onTap: () {
-                            widget.onSelectMedicine(displayName, '1 tablet');
-                            Navigator.pop(context);
+                            setState(() {
+                              if (isSelected) {
+                                _selectedMedicines.remove(key);
+                              } else {
+                                _selectedMedicines.add(key);
+                              }
+                            });
                           },
                         ),
                       );

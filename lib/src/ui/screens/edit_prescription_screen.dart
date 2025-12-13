@@ -8,6 +8,7 @@ import '../../providers/db_provider.dart';
 import '../../services/suggestions_service.dart';
 import '../../theme/app_theme.dart';
 import '../widgets/suggestion_text_field.dart';
+import '../../core/widgets/keyboard_aware_scaffold.dart';
 
 class EditPrescriptionScreen extends ConsumerStatefulWidget {
   const EditPrescriptionScreen({
@@ -46,17 +47,53 @@ class _EditPrescriptionScreenState extends ConsumerState<EditPrescriptionScreen>
     _loadPrescriptionData();
   }
 
-  void _loadPrescriptionData() {
+  Future<void> _loadPrescriptionData() async {
     // Load existing prescription data
     _diagnosisController.text = widget.prescription.diagnosis;
     _symptomsController.text = widget.prescription.chiefComplaint;
     _instructionsController.text = widget.prescription.instructions;
     _isRefillable = widget.prescription.isRefillable;
 
-    // Parse medications from JSON
-    try {
-      final items = jsonDecode(widget.prescription.itemsJson);
-      if (items is List) {
+    // V5: Load medications from normalized table first
+    final db = await ref.read(doctorDbProvider.future);
+    final normalizedMeds = await db.getMedicationsForPrescriptionCompat(widget.prescription.id);
+    
+    if (normalizedMeds.isNotEmpty) {
+      // Use normalized data
+      for (final item in normalizedMeds) {
+        final entry = _MedicationEntry();
+        entry.nameController.text = item['name']?.toString() ?? '';
+        entry.dosageController.text = item['dosage']?.toString() ?? '';
+        entry.frequency = item['frequency']?.toString() ?? 'OD';
+        entry.durationController.text = item['duration']?.toString() ?? '';
+        entry.timing = item['timing']?.toString() ?? 'After Food';
+        entry.instructionsController.text = item['instructions']?.toString() ?? '';
+        _medications.add(entry);
+      }
+    } else {
+      // Fallback: Parse medications from JSON - handle both old and new formats
+      try {
+        final parsed = jsonDecode(widget.prescription.itemsJson);
+        List<dynamic> items = [];
+        
+        if (parsed is List) {
+          // Old format: just array of medications
+          items = parsed;
+        } else if (parsed is Map<String, dynamic>) {
+          // New format: full prescription object
+          items = (parsed['medications'] as List<dynamic>?) ?? [];
+          // Also load other data if not already present
+          if (_diagnosisController.text.isEmpty && parsed['diagnosis'] != null) {
+            _diagnosisController.text = parsed['diagnosis'] as String;
+          }
+          if (_symptomsController.text.isEmpty && parsed['symptoms'] != null) {
+            _symptomsController.text = parsed['symptoms'] as String;
+          }
+          if (_instructionsController.text.isEmpty && parsed['advice'] != null) {
+            _instructionsController.text = parsed['advice'] as String;
+          }
+        }
+        
         for (final item in items) {
           if (item is Map<String, dynamic>) {
             final entry = _MedicationEntry();
@@ -69,15 +106,19 @@ class _EditPrescriptionScreenState extends ConsumerState<EditPrescriptionScreen>
             _medications.add(entry);
           }
         }
+      } catch (e) {
+        // If parsing fails, add one empty entry
+        _medications.add(_MedicationEntry());
       }
-    } catch (e) {
-      // If parsing fails, add one empty entry
-      _medications.add(_MedicationEntry());
     }
 
     // Ensure at least one medication entry
     if (_medications.isEmpty) {
       _medications.add(_MedicationEntry());
+    }
+    
+    if (mounted) {
+      setState(() {});
     }
   }
 
@@ -190,6 +231,8 @@ class _EditPrescriptionScreenState extends ConsumerState<EditPrescriptionScreen>
                 ]),
               ),
             ),
+            // Keyboard-aware bottom padding
+            const SliverKeyboardPadding(),
           ],
         ),
       ),
@@ -775,19 +818,44 @@ class _EditPrescriptionScreenState extends ConsumerState<EditPrescriptionScreen>
     try {
       final db = await ref.read(doctorDbProvider.future);
 
-      // Build medications JSON
-      final medicationsJson = jsonEncode(
-        _medications
-            .where((med) => med.nameController.text.isNotEmpty)
-            .map((med) => med.toJson())
-            .toList(),
-      );
+      // Build medications list
+      final medications = _medications
+          .where((med) => med.nameController.text.isNotEmpty)
+          .map((med) => med.toJson())
+          .toList();
+
+      // Try to preserve additional data from original prescription
+      Map<String, dynamic> originalData = {};
+      try {
+        final parsed = jsonDecode(widget.prescription.itemsJson);
+        if (parsed is Map<String, dynamic>) {
+          originalData = parsed;
+        }
+      } catch (_) {}
+
+      // Build full prescription JSON (same format as add_prescription_screen)
+      final fullPrescriptionJson = jsonEncode({
+        'prescription_date': widget.prescription.createdAt.toIso8601String(),
+        'patient': {
+          'id': widget.prescription.patientId,
+        },
+        'vitals': widget.prescription.vitalsJson != null 
+            ? jsonDecode(widget.prescription.vitalsJson!) 
+            : null,
+        'symptoms': _symptomsController.text,
+        'diagnosis': _diagnosisController.text,
+        'medications': medications,
+        'lab_tests': originalData['lab_tests'] ?? [],
+        'advice': _instructionsController.text,
+        'notes': originalData['notes'] ?? '',
+        'follow_up': originalData['follow_up'],
+      });
 
       final updatedPrescription = PrescriptionsCompanion(
         id: Value(widget.prescription.id),
         patientId: Value(widget.prescription.patientId),
         createdAt: Value(widget.prescription.createdAt),
-        itemsJson: Value(medicationsJson),
+        itemsJson: Value(fullPrescriptionJson),
         instructions: Value(_instructionsController.text),
         isRefillable: Value(_isRefillable),
         appointmentId: Value(widget.prescription.appointmentId),

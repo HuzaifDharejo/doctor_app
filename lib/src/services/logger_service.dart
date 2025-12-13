@@ -16,6 +16,18 @@ enum LogLevel {
   final int priority;
   final String prefix;
   final String color;
+  
+  /// Get emoji for log level
+  String get emoji {
+    switch (this) {
+      case LogLevel.verbose: return '📝';
+      case LogLevel.debug: return '🔍';
+      case LogLevel.info: return '✅';
+      case LogLevel.warning: return '⚠️';
+      case LogLevel.error: return '❌';
+      case LogLevel.fatal: return '💀';
+    }
+  }
 }
 
 /// A single log entry
@@ -29,6 +41,7 @@ class LogEntry {
     this.error,
     this.stackTrace,
     this.extra,
+    this.caller,
   });
   final DateTime timestamp;
   final LogLevel level;
@@ -37,12 +50,14 @@ class LogEntry {
   final Object? error;
   final StackTrace? stackTrace;
   final Map<String, dynamic>? extra;
+  final String? caller; // File:line info
 
   Map<String, dynamic> toJson() => {
     'timestamp': timestamp.toIso8601String(),
     'level': level.name,
     'tag': tag,
     'message': message,
+    if (caller != null) 'caller': caller,
     if (error != null) 'error': error.toString(),
     if (stackTrace != null) 'stackTrace': stackTrace.toString(),
     if (extra != null) 'extra': extra,
@@ -55,16 +70,23 @@ class LogEntry {
         '${timestamp.second.toString().padLeft(2, '0')}.'
         '${timestamp.millisecond.toString().padLeft(3, '0')}';
     
-    buffer.write('${level.color}[${level.prefix}] $timeStr [$tag] $message\x1B[0m');
+    // Format: [LEVEL] TIME [TAG] message (file:line)
+    buffer.write('${level.color}[${level.prefix}] $timeStr [$tag] $message');
+    if (caller != null) {
+      buffer.write(' \x1B[90m($caller)\x1B[0m'); // Gray color for file:line
+    }
+    buffer.write('\x1B[0m');
     
     if (error != null) {
-      buffer.write('\n    Error: $error');
+      buffer.write('\n    ${level.color}└─ Error: $error\x1B[0m');
     }
     if (stackTrace != null) {
-      buffer.write('\n    StackTrace:\n');
-      final lines = stackTrace.toString().split('\n').take(10);
+      buffer.write('\n    └─ StackTrace:');
+      final lines = stackTrace.toString().split('\n').take(5);
       for (final line in lines) {
-        buffer.write('      $line\n');
+        if (line.trim().isNotEmpty) {
+          buffer.write('\n       $line');
+        }
       }
     }
     
@@ -185,8 +207,15 @@ class AppLogger {
     Object? error,
     StackTrace? stackTrace,
     Map<String, dynamic>? extra,
+    int stackFramesToSkip = 2, // Skip _log and the convenience method
   }) {
     if (level.priority < _minLevel.priority) return;
+
+    // Extract caller info from stack trace
+    String? caller;
+    if (kDebugMode) {
+      caller = _getCallerInfo(stackFramesToSkip);
+    }
 
     final entry = LogEntry(
       timestamp: DateTime.now(),
@@ -196,6 +225,7 @@ class AppLogger {
       error: error,
       stackTrace: stackTrace,
       extra: extra,
+      caller: caller,
     );
 
     // Add to storage
@@ -220,6 +250,37 @@ class AppLogger {
 
     // Stream update
     _logController.add(entry);
+  }
+
+  /// Extract file:line from stack trace
+  String? _getCallerInfo(int framesToSkip) {
+    try {
+      final frames = StackTrace.current.toString().split('\n');
+      // Skip the specified frames plus the _getCallerInfo frame itself
+      final targetFrameIndex = framesToSkip + 1;
+      
+      if (frames.length > targetFrameIndex) {
+        final frame = frames[targetFrameIndex];
+        // Parse the stack frame to extract file and line
+        // Format: #N      functionName (package:app/path/file.dart:line:col)
+        final match = RegExp(r'\((.+?):(\d+):\d+\)').firstMatch(frame);
+        if (match != null) {
+          final fullPath = match.group(1)!;
+          final line = match.group(2)!;
+          // Extract just the filename from the path
+          final fileName = fullPath.split('/').last;
+          return '$fileName:$line';
+        }
+        // Alternative format: package:app/path/file.dart line:col
+        final altMatch = RegExp(r'([^/\s]+\.dart)[:\s]+(\d+)').firstMatch(frame);
+        if (altMatch != null) {
+          return '${altMatch.group(1)}:${altMatch.group(2)}';
+        }
+      }
+    } catch (_) {
+      // Silently fail - caller info is optional
+    }
+    return null;
   }
 
   // Convenience logging methods
@@ -328,6 +389,61 @@ class AppLogger {
   // User action logging
   void logUserAction(String action, {String? target, Map<String, dynamic>? details}) {
     d('USER', '$action${target != null ? ' on $target' : ''}', extra: details);
+  }
+
+  // Workflow logging
+  void logWorkflow(String step, String action, {Map<String, dynamic>? data}) {
+    i('WORKFLOW', '$step: $action', extra: data);
+  }
+
+  // State change logging
+  void logStateChange(String component, String from, String to, {Map<String, dynamic>? details}) {
+    d('STATE', '$component: $from → $to', extra: details);
+  }
+
+  // Form logging
+  void logFormSubmit(String formName, {bool success = true, Map<String, dynamic>? data, Object? error}) {
+    if (success) {
+      i('FORM', '$formName submitted successfully', extra: data);
+    } else {
+      w('FORM', '$formName submission failed', error: error, extra: data);
+    }
+  }
+
+  // Business logic logging
+  void logBusiness(String operation, {Map<String, dynamic>? context, Object? result}) {
+    d('BIZ', operation, extra: {
+      if (context != null) ...context,
+      if (result != null) 'result': result.toString(),
+    });
+  }
+
+  // Lifecycle logging
+  void logLifecycle(String component, String event, {Map<String, dynamic>? details}) {
+    v('LIFECYCLE', '$component.$event', extra: details);
+  }
+
+  // Security logging (always logged, never filtered)
+  void logSecurity(String event, {Map<String, dynamic>? details, bool isAlert = false}) {
+    if (isAlert) {
+      w('SECURITY', '🔒 $event', extra: details);
+    } else {
+      i('SECURITY', '🔒 $event', extra: details);
+    }
+  }
+
+  // Validation logging
+  void logValidation(String field, bool isValid, {String? error, Map<String, dynamic>? details}) {
+    if (isValid) {
+      v('VALIDATION', '$field: valid', extra: details);
+    } else {
+      d('VALIDATION', '$field: invalid - $error', extra: details);
+    }
+  }
+
+  // Feature flag logging
+  void logFeatureFlag(String feature, bool enabled, {String? reason}) {
+    d('FEATURE', '$feature: ${enabled ? 'enabled' : 'disabled'}${reason != null ? ' ($reason)' : ''}');
   }
 
   // Export logs

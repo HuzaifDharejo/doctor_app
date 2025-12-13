@@ -13,10 +13,8 @@ import 'services/localization_service.dart';
 import 'services/logger_service.dart';
 import 'theme/app_theme.dart';
 import 'ui/screens/appointments_screen.dart';
-import 'ui/screens/dashboard_screen.dart';
-import 'ui/screens/global_search_screen.dart';
+import 'ui/screens/dashboard_screen_modern.dart';
 import 'ui/screens/lock_screen.dart';
-import 'ui/widgets/patient_picker_dialog.dart';
 import 'ui/screens/onboarding_screen.dart';
 import 'ui/screens/patients_screen.dart';
 import 'ui/screens/workflow_wizard_screen.dart';
@@ -148,11 +146,39 @@ class _AppLockWrapperState extends ConsumerState<_AppLockWrapper>
 
 /// Navigator observer for logging screen transitions
 class _LoggingNavigatorObserver extends NavigatorObserver {
+  // Store route to widget name mapping
+  final Map<Route<dynamic>, String> _routeNames = {};
+  
   @override
   void didPush(Route<dynamic> route, Route<dynamic>? previousRoute) {
     super.didPush(route, previousRoute);
-    final name = route.settings.name ?? route.runtimeType.toString();
-    final prevName = previousRoute?.settings.name ?? 'none';
+    // Skip logging for dialogs and popups to reduce noise
+    if (route is PopupRoute || route.runtimeType.toString().contains('Dialog')) {
+      return;
+    }
+    
+    // Extract widget name when route is pushed
+    String name = route.settings.name ?? '';
+    if (name.isEmpty && route is ModalRoute) {
+      // Try to get the widget name from the route's current result
+      try {
+        // Access the route's subtreeContext to get widget info
+        final context = route.subtreeContext;
+        if (context != null) {
+          final widget = context.widget;
+          name = '/${_camelToKebab(widget.runtimeType.toString())}';
+        }
+      } catch (_) {
+        // Fallback
+      }
+    }
+    
+    if (name.isEmpty) {
+      name = _extractNameFromRoute(route);
+    }
+    
+    _routeNames[route] = name;
+    final prevName = previousRoute?.settings.name ?? _routeNames[previousRoute] ?? '/';
     log
       ..logNavigation(prevName, name)
       ..trackScreen(name);
@@ -161,8 +187,42 @@ class _LoggingNavigatorObserver extends NavigatorObserver {
   @override
   void didPop(Route<dynamic> route, Route<dynamic>? previousRoute) {
     super.didPop(route, previousRoute);
-    final name = previousRoute?.settings.name ?? 'back';
+    // Skip logging for dialogs and popups
+    if (route is PopupRoute || route.runtimeType.toString().contains('Dialog')) {
+      return;
+    }
+    _routeNames.remove(route);
+    final name = previousRoute?.settings.name ?? _routeNames[previousRoute] ?? '/';
     log.d('NAV', 'Popped to: $name');
+  }
+  
+  String _extractNameFromRoute(Route<dynamic> route) {
+    // Try settings arguments
+    if (route.settings.arguments is Map) {
+      final args = route.settings.arguments as Map;
+      if (args.containsKey('screenName')) return '/${args['screenName']}';
+      if (args.containsKey('screen')) return '/${args['screen']}';
+    }
+    
+    // Try to get from route's debug label or string representation
+    final routeStr = route.toString();
+    
+    // Look for common patterns in route string
+    // Pattern: "MaterialPageRoute<void>(RouteSettings(...), animation: ...)"
+    final settingsMatch = RegExp(r'RouteSettings\("([^"]+)"').firstMatch(routeStr);
+    if (settingsMatch != null) {
+      return settingsMatch.group(1)!;
+    }
+    
+    // Fallback to route type
+    return route.runtimeType.toString().replaceAll(RegExp(r'<.*>'), '');
+  }
+  
+  String _camelToKebab(String input) {
+    return input.replaceAllMapped(
+      RegExp(r'([A-Z])'),
+      (match) => '-${match.group(1)!.toLowerCase()}',
+    ).replaceFirst('-', '');
   }
 }
 
@@ -217,7 +277,7 @@ class _HomeShellState extends ConsumerState<HomeShell> {
   void initState() {
     super.initState();
     _pages = [
-      DashboardScreen(onMenuTap: _openDrawer),
+      DashboardScreenModern(onMenuTap: _openDrawer),
       const PatientsScreen(),
       const AppointmentsScreen(),
     ];
@@ -605,8 +665,8 @@ class _HomeShellState extends ConsumerState<HomeShell> {
                   
                   _buildModernDrawerItem(
                     icon: Icons.play_circle_rounded,
-                    title: 'Patient Workflow',
-                    subtitle: 'Guided visit wizard',
+                    title: 'New Visit',
+                    subtitle: 'Guided patient workflow',
                     onTap: () {
                       context.pop<void>();
                       Navigator.push(
@@ -617,61 +677,6 @@ class _HomeShellState extends ConsumerState<HomeShell> {
                       );
                     },
                     color: const Color(0xFF059669),
-                    isDark: isDarkMode,
-                  ),
-                  
-                  _buildModernDrawerItem(
-                    icon: Icons.medical_services_rounded,
-                    title: 'New Visit',
-                    subtitle: 'Start clinical visit',
-                    onTap: () {
-                      context.pop<void>();
-                      _startNewEncounterFromDrawer(context, ref);
-                    },
-                    color: const Color(0xFFEC4899),
-                    isDark: isDarkMode,
-                  ),
-                  
-                  _buildModernDrawerItem(
-                    icon: Icons.search_rounded,
-                    title: 'Global Search',
-                    subtitle: 'Search everything',
-                    onTap: () {
-                      context.pop<void>();
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute<void>(
-                          builder: (_) => const GlobalSearchScreen(),
-                        ),
-                      );
-                    },
-                    color: const Color(0xFFF59E0B),
-                    isDark: isDarkMode,
-                  ),
-                  
-                  _buildModernDrawerItem(
-                    icon: Icons.dashboard_rounded,
-                    title: 'Clinical Dashboard',
-                    subtitle: 'Full clinical overview',
-                    onTap: () {
-                      context
-                        ..pop<void>()
-                        ..goToClinicalDashboard();
-                    },
-                    color: const Color(0xFF8B5CF6),
-                    isDark: isDarkMode,
-                  ),
-                  
-                  _buildModernDrawerItem(
-                    icon: Icons.folder_special_rounded,
-                    title: 'Medical Records',
-                    subtitle: 'View all records',
-                    onTap: () {
-                      context
-                        ..pop<void>()
-                        ..goToMedicalRecordsList();
-                    },
-                    color: const Color(0xFF10B981),
                     isDark: isDarkMode,
                   ),
                   
@@ -703,23 +708,22 @@ class _HomeShellState extends ConsumerState<HomeShell> {
                     badge: _overdueFollowUps > 0 ? '$_overdueFollowUps' : null,
                   ),
                   
+                  const SizedBox(height: 16),
+                  _buildSectionTitle('CLINICAL TOOLS', isDarkMode),
+                  const SizedBox(height: 8),
+                  
                   _buildModernDrawerItem(
-                    icon: Icons.warning_rounded,
-                    title: 'Allergy Management',
-                    subtitle: 'Patient allergies',
+                    icon: Icons.dashboard_rounded,
+                    title: 'Clinical Dashboard',
+                    subtitle: 'Patient care overview',
                     onTap: () {
                       context
                         ..pop<void>()
-                        ..goToAllergyManagement();
+                        ..goToClinicalDashboard();
                     },
-                    color: const Color(0xFFDC2626),
+                    color: const Color(0xFFEC4899),
                     isDark: isDarkMode,
                   ),
-                  
-                  const SizedBox(height: 16),
-                  _buildSectionTitle('CLINICAL FEATURES', isDarkMode),
-                  const SizedBox(height: 8),
-                  
                   _buildModernDrawerItem(
                     icon: Icons.send_rounded,
                     title: 'Referrals',
@@ -730,42 +734,6 @@ class _HomeShellState extends ConsumerState<HomeShell> {
                         ..goToReferrals();
                     },
                     color: const Color(0xFF3B82F6),
-                    isDark: isDarkMode,
-                  ),
-                  _buildModernDrawerItem(
-                    icon: Icons.vaccines_rounded,
-                    title: 'Immunizations',
-                    subtitle: 'Vaccine tracking',
-                    onTap: () {
-                      context
-                        ..pop<void>()
-                        ..goToImmunizations();
-                    },
-                    color: const Color(0xFF10B981),
-                    isDark: isDarkMode,
-                  ),
-                  _buildModernDrawerItem(
-                    icon: Icons.family_restroom_rounded,
-                    title: 'Family History',
-                    subtitle: 'Hereditary conditions',
-                    onTap: () {
-                      context
-                        ..pop<void>()
-                        ..goToFamilyHistory();
-                    },
-                    color: const Color(0xFFEC4899),
-                    isDark: isDarkMode,
-                  ),
-                  _buildModernDrawerItem(
-                    icon: Icons.list_alt_rounded,
-                    title: 'Problem List',
-                    subtitle: 'Active conditions',
-                    onTap: () {
-                      context
-                        ..pop<void>()
-                        ..goToProblemList();
-                    },
-                    color: const Color(0xFFEF4444),
                     isDark: isDarkMode,
                   ),
                   _buildModernDrawerItem(
@@ -781,42 +749,6 @@ class _HomeShellState extends ConsumerState<HomeShell> {
                     isDark: isDarkMode,
                   ),
                   _buildModernDrawerItem(
-                    icon: Icons.alarm_rounded,
-                    title: 'Clinical Reminders',
-                    subtitle: 'Care gaps & alerts',
-                    onTap: () {
-                      context
-                        ..pop<void>()
-                        ..goToClinicalReminders();
-                    },
-                    color: const Color(0xFFF59E0B),
-                    isDark: isDarkMode,
-                  ),
-                  _buildModernDrawerItem(
-                    icon: Icons.queue_rounded,
-                    title: 'Waitlist',
-                    subtitle: 'Appointment waitlist',
-                    onTap: () {
-                      context
-                        ..pop<void>()
-                        ..goToWaitlist();
-                    },
-                    color: const Color(0xFF06B6D4),
-                    isDark: isDarkMode,
-                  ),
-                  _buildModernDrawerItem(
-                    icon: Icons.event_repeat_rounded,
-                    title: 'Recurring Appts',
-                    subtitle: 'Appointment patterns',
-                    onTap: () {
-                      context
-                        ..pop<void>()
-                        ..goToRecurringAppointments();
-                    },
-                    color: const Color(0xFF84CC16),
-                    isDark: isDarkMode,
-                  ),
-                  _buildModernDrawerItem(
                     icon: Icons.description_rounded,
                     title: 'Clinical Letters',
                     subtitle: 'Letters & documents',
@@ -829,122 +761,9 @@ class _HomeShellState extends ConsumerState<HomeShell> {
                     isDark: isDarkMode,
                   ),
                   _buildModernDrawerItem(
-                    icon: Icons.verified_user_rounded,
-                    title: 'Consents',
-                    subtitle: 'Consent management',
-                    onTap: () {
-                      context
-                        ..pop<void>()
-                        ..goToConsents();
-                    },
-                    color: const Color(0xFF059669),
-                    isDark: isDarkMode,
-                  ),
-                  _buildModernDrawerItem(
-                    icon: Icons.health_and_safety_rounded,
-                    title: 'Insurance',
-                    subtitle: 'Claims & billing',
-                    onTap: () {
-                      context
-                        ..pop<void>()
-                        ..goToInsurance();
-                    },
-                    color: const Color(0xFFD946EF),
-                    isDark: isDarkMode,
-                  ),
-                  
-                  const SizedBox(height: 16),
-                  _buildSectionTitle('MORE', isDarkMode),
-                  const SizedBox(height: 8),
-                  
-                  _buildModernDrawerItem(
-                    icon: Icons.notifications_outlined,
-                    title: AppStrings.notifications,
-                    subtitle: 'Alerts & reminders',
-                    onTap: () {
-                      context
-                        ..pop<void>()
-                        ..goToNotifications();
-                    },
-                    color: const Color(0xFFF59E0B),
-                    isDark: isDarkMode,
-                  ),
-                  _buildModernDrawerItem(
-                    icon: Icons.message_outlined,
-                    title: 'Communications',
-                    subtitle: 'Messages & calls',
-                    onTap: () {
-                      context
-                        ..pop<void>()
-                        ..goToCommunications();
-                    },
-                    color: const Color(0xFF6366F1),
-                    isDark: isDarkMode,
-                  ),
-                  _buildModernDrawerItem(
-                    icon: Icons.menu_book_outlined,
-                    title: 'Medical Reference',
-                    subtitle: 'Drugs & warnings',
-                    onTap: () {
-                      context
-                        ..pop<void>()
-                        ..goToMedicalReference();
-                    },
-                    color: const Color(0xFF8B5CF6),
-                    isDark: isDarkMode,
-                  ),
-                  _buildModernDrawerItem(
-                    icon: Icons.analytics_outlined,
-                    title: 'Analytics',
-                    subtitle: 'Trends & insights',
-                    onTap: () {
-                      context
-                        ..pop<void>()
-                        ..goToClinicalAnalytics();
-                    },
-                    color: const Color(0xFF3B82F6),
-                    isDark: isDarkMode,
-                  ),
-                  _buildModernDrawerItem(
-                    icon: Icons.cloud_done_outlined,
-                    title: 'Offline Sync',
-                    subtitle: 'Manage sync',
-                    onTap: () {
-                      context
-                        ..pop<void>()
-                        ..goToOfflineSync();
-                    },
-                    color: const Color(0xFFEA580C),
-                    isDark: isDarkMode,
-                  ),
-                  _buildModernDrawerItem(
-                    icon: Icons.download_outlined,
-                    title: 'Data Export',
-                    subtitle: 'Reports & export',
-                    onTap: () {
-                      context
-                        ..pop<void>()
-                        ..goToDataExport();
-                    },
-                    color: const Color(0xFF8B5CF6),
-                    isDark: isDarkMode,
-                  ),
-                  _buildModernDrawerItem(
-                    icon: Icons.cloud_sync_outlined,
-                    title: AppStrings.backupSync,
-                    subtitle: 'Cloud backup',
-                    onTap: () {
-                      context
-                        ..pop<void>()
-                        ..pushNamed<void>(AppRoutes.backupSettings);
-                    },
-                    color: const Color(0xFF14B8A6),
-                    isDark: isDarkMode,
-                  ),
-                  _buildModernDrawerItem(
                     icon: Icons.help_outline_rounded,
                     title: AppStrings.helpSupport,
-                    subtitle: 'Get help',
+                    subtitle: 'User manual & help',
                     onTap: () {
                       context
                         ..pop<void>()
@@ -1142,19 +961,4 @@ class _HomeShellState extends ConsumerState<HomeShell> {
       ),
     );
   }
-}
-
-/// Helper function to start a new encounter from the drawer
-Future<void> _startNewEncounterFromDrawer(BuildContext context, WidgetRef ref) async {
-  final dbAsync = ref.read(doctorDbProvider);
-  
-  final db = dbAsync.valueOrNull;
-  if (db == null) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Database not available')),
-    );
-    return;
-  }
-
-  await startNewEncounterWithPicker(context, db);
 }

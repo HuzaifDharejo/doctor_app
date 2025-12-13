@@ -7,11 +7,15 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:share_plus/share_plus.dart';
 import 'package:url_launcher/url_launcher.dart';
+import '../../../core/routing/app_router.dart';
 import '../../../db/doctor_db.dart';
 import '../../../providers/audit_provider.dart';
 import '../../../providers/db_provider.dart';
 import '../../../services/pdf_service.dart';
 import '../../../services/whatsapp_service.dart';
+import '../../../services/family_history_service.dart';
+import '../../../services/problem_list_service.dart';
+import '../../../services/immunization_service.dart';
 import '../../../core/components/app_button.dart';
 import '../../../core/mixins/responsive_mixin.dart';
 import '../../../theme/app_theme.dart';
@@ -21,20 +25,23 @@ import '../add_patient_screen.dart';
 import '../add_prescription_screen.dart';
 import '../diagnoses_screen.dart';
 import '../follow_ups_screen.dart';
-import '../lab_results_screen.dart';
-import '../treatment_outcomes_screen.dart';
+import '../lab_orders_screen.dart';
 import '../treatment_progress_screen.dart';
 import '../vital_signs_screen.dart';
+import '../workflow_wizard_screen.dart';
+import '../allergy_management_screen.dart';
+import '../family_history_screen.dart';
+import '../problem_list_screen.dart';
+import '../immunizations_screen.dart';
 import '../records/records.dart';
 
 // Import modular tab components
-import 'patient_prescriptions_tab.dart';
-import 'patient_records_tab.dart';
+import 'patient_clinical_tab.dart';
 import 'patient_billing_tab.dart';
-import 'patient_documents_tab.dart';
 import 'patient_timeline_tab.dart';
 import 'patient_visits_tab.dart';
 import 'patient_view_widgets.dart';
+import 'widgets/patient_view_widgets.dart' as widgets;
 
 /// Alias for backward compatibility with PatientViewScreenModern
 typedef PatientViewScreenModern = PatientViewScreen;
@@ -63,6 +70,7 @@ class _PatientViewScreenState extends ConsumerState<PatientViewScreen>
   bool _hasChanges = false;
   bool _isSaving = false;
   bool _isEditingProfile = false;
+  int _dataRefreshKey = 0; // Used to force refresh of child tabs
   
   // Store initial values
   late String _initialPhone;
@@ -76,12 +84,29 @@ class _PatientViewScreenState extends ConsumerState<PatientViewScreen>
   VitalSign? _latestVitals;
   Appointment? _nextAppointment;
   int _totalEncounters = 0;
+  
+  // Clinical features data counts
+  int _familyHistoryCount = 0;
+  int _problemListCount = 0;
+  int _immunizationCount = 0;
+  List<ProblemListData> _activeProblems = [];
+  List<FamilyMedicalHistoryData> _recentFamilyHistory = [];
+  
+  // Enhanced UI data
+  int _activePrescriptionCount = 0;
+  int _upcomingAppointmentCount = 0;
+  int _unpaidInvoiceCount = 0;
+  int _clinicalRecordsCount = 0;
+  int _timelineEventsCount = 0;
+  List<VitalSign> _recentVitals = [];
+  List<widgets.ActivityItem> _recentActivities = [];
+  DateTime? _lastVisitDate;
 
   @override
   void initState() {
     super.initState();
-    // 7 tabs: Summary, Visits, Rx, Records, Billing, Documents, Timeline
-    _tabController = TabController(length: 7, vsync: this);
+    // 5 tabs: Summary, Visits, Clinical (Rx+Records+Docs), Billing, Timeline
+    _tabController = TabController(length: 5, vsync: this);
     _initializeControllers();
     _loadPatientData();
     _logPatientView();
@@ -93,6 +118,26 @@ class _PatientViewScreenState extends ConsumerState<PatientViewScreen>
     final appointments = await db.getAppointmentsForPatient(widget.patient.id);
     final encounters = await db.getEncountersForPatient(widget.patient.id);
     
+    // Load clinical features data
+    final familyHistoryService = FamilyHistoryService(db: db);
+    final problemListService = ProblemListService(db: db);
+    final immunizationService = ImmunizationService(db: db);
+    
+    final familyHistory = await familyHistoryService.getFamilyHistoryForPatient(widget.patient.id);
+    final problems = await problemListService.getProblemsForPatient(widget.patient.id);
+    final activeProblems = await problemListService.getActiveProblems(widget.patient.id);
+    final immunizations = await immunizationService.getImmunizationsForPatient(widget.patient.id);
+    
+    // Load enhanced UI data
+    final prescriptions = await db.getPrescriptionsForPatient(widget.patient.id);
+    // Prescriptions are considered active if created within 30 days
+    final activePrescriptions = prescriptions.where((p) => 
+        DateTime.now().difference(p.createdAt).inDays <= 30).toList();
+    final invoices = await db.getInvoicesForPatient(widget.patient.id);
+    final unpaidInvoices = invoices.where((i) => i.paymentStatus != 'paid').toList();
+    final medicalRecords = await db.getMedicalRecordsForPatient(widget.patient.id);
+    final allVitals = await db.getVitalSignsForPatient(widget.patient.id);
+    
     // Find next upcoming appointment
     final now = DateTime.now();
     final upcoming = appointments
@@ -100,20 +145,97 @@ class _PatientViewScreenState extends ConsumerState<PatientViewScreen>
         .toList()
       ..sort((a, b) => a.appointmentDateTime.compareTo(b.appointmentDateTime));
     
+    // Get last visit date from encounters
+    DateTime? lastVisit;
+    if (encounters.isNotEmpty) {
+      final sortedEncounters = List<Encounter>.from(encounters)
+        ..sort((a, b) => b.encounterDate.compareTo(a.encounterDate));
+      lastVisit = sortedEncounters.first.encounterDate;
+    }
+    
+    // Build recent activities list
+    final activities = <widgets.ActivityItem>[];
+    
+    // Add recent appointments
+    for (final apt in appointments.take(2)) {
+      activities.add(widgets.ActivityItem(
+        type: widgets.ActivityType.appointment,
+        title: apt.reason.isNotEmpty ? apt.reason : 'Appointment',
+        timestamp: apt.appointmentDateTime,
+        subtitle: apt.status,
+      ));
+    }
+    
+    // Add recent prescriptions
+    for (final rx in prescriptions.take(2)) {
+      // Parse itemsJson to get medication info
+      final rxTitle = rx.diagnosis.isNotEmpty ? rx.diagnosis : 'Prescription';
+      activities.add(widgets.ActivityItem(
+        type: widgets.ActivityType.prescription,
+        title: rxTitle,
+        timestamp: rx.createdAt,
+        subtitle: rx.instructions.isNotEmpty ? rx.instructions.split('\n').first : 'Medication',
+      ));
+    }
+    
+    // Add recent vitals
+    if (allVitals.isNotEmpty) {
+      for (final v in allVitals.take(2)) {
+        activities.add(widgets.ActivityItem(
+          type: widgets.ActivityType.vitalSigns,
+          title: 'Vital Signs Recorded',
+          timestamp: v.recordedAt,
+          subtitle: 'BP: ${v.systolicBp?.toInt() ?? '--'}/${v.diastolicBp?.toInt() ?? '--'}',
+        ));
+      }
+    }
+    
+    // Sort by timestamp descending
+    activities.sort((a, b) => b.timestamp.compareTo(a.timestamp));
+    
     if (mounted) {
       setState(() {
         _latestVitals = vitals;
         _nextAppointment = upcoming.isNotEmpty ? upcoming.first : null;
         _totalEncounters = encounters.length;
+        _familyHistoryCount = familyHistory.length;
+        _problemListCount = problems.length;
+        _immunizationCount = immunizations.length;
+        _activeProblems = activeProblems.take(3).toList();
+        _recentFamilyHistory = familyHistory.take(3).toList();
+        // Enhanced UI data
+        _activePrescriptionCount = activePrescriptions.length;
+        _upcomingAppointmentCount = upcoming.length;
+        _unpaidInvoiceCount = unpaidInvoices.length;
+        _clinicalRecordsCount = medicalRecords.length + prescriptions.length;
+        _timelineEventsCount = appointments.length + prescriptions.length + invoices.length + medicalRecords.length;
+        _recentVitals = allVitals.take(5).toList();
+        _recentActivities = activities.take(5).toList();
+        _lastVisitDate = lastVisit;
       });
     }
   }
   
+  /// Refresh all patient data and trigger child widget rebuilds
+  void _refreshAllData() {
+    _loadPatientData();
+    // Increment refresh key to force child widgets to rebuild
+    setState(() {
+      _dataRefreshKey++;
+    });
+  }
+  
   Future<void> _logPatientView() async {
+    final db = await ref.read(doctorDbProvider.future);
     final auditService = ref.read(auditServiceProvider);
     final patient = widget.patient;
     final patientName = '${patient.firstName} ${patient.lastName ?? ''}'.trim();
+    
+    // Log to audit trail
     await auditService.logPatientViewed(patient.id, patientName);
+    
+    // Track for recent patients quick access
+    await db.trackRecentPatient(patient.id, accessType: 'view');
   }
   
   void _initializeControllers() {
@@ -540,7 +662,7 @@ Address: ${patient.address}
           preselectedPatient: widget.patient,
         ),
       ),
-    );
+    ).then((_) => _refreshAllData());
   }
 
   @override
@@ -565,7 +687,8 @@ Address: ${patient.address}
             SliverAppBar(
               expandedHeight: expandedHeight,
               pinned: true,
-              stretch: true,
+              floating: true,
+              snap: false,
               elevation: 0,
               backgroundColor: isDark ? AppColors.darkSurface : Colors.white,
               surfaceTintColor: Colors.transparent,
@@ -652,17 +775,29 @@ Address: ${patient.address}
                   ),
                   child: TabBar(
                     controller: _tabController,
-                    isScrollable: true,
-                    tabAlignment: TabAlignment.start,
+                    isScrollable: false,
                     padding: const EdgeInsets.symmetric(horizontal: 8),
-                    tabs: const [
-                      Tab(text: 'Summary'),
-                      Tab(text: 'Visits'),
-                      Tab(text: 'Rx'),
-                      Tab(text: 'Records'),
-                      Tab(text: 'Billing'),
-                      Tab(text: 'Documents'),
-                      Tab(text: 'Timeline'),
+                    tabs: [
+                      const Tab(text: 'Summary'),
+                      widgets.BadgedTab(
+                        text: 'Visits',
+                        count: _upcomingAppointmentCount,
+                        showBadge: _upcomingAppointmentCount > 0,
+                      ),
+                      widgets.BadgedTab(
+                        text: 'Clinical',
+                        count: _activePrescriptionCount,
+                      ),
+                      widgets.BadgedTab(
+                        text: 'Billing',
+                        count: _unpaidInvoiceCount,
+                        showBadge: _unpaidInvoiceCount > 0,
+                      ),
+                      widgets.BadgedTab(
+                        text: 'Timeline',
+                        count: _timelineEventsCount > 9 ? 0 : _timelineEventsCount,
+                        showBadge: _timelineEventsCount > 0,
+                      ),
                     ],
                     labelColor: AppColors.primary,
                     unselectedLabelColor: isDark ? AppColors.darkTextSecondary : AppColors.textSecondary,
@@ -681,20 +816,16 @@ Address: ${patient.address}
         body: TabBarView(
           controller: _tabController,
           children: [
-            // Summary tab - combines overview with clinical quick-glance
+            // Summary tab - overview with clinical quick-glance
             _buildSummaryTab(patient, isDark),
             // Visits - unified view combining appointments + clinical data
-            PatientVisitsTab(patient: patient),
-            // Prescriptions
-            PatientPrescriptionsTab(patient: patient),
-            // Records - medical records, labs, etc
-            PatientRecordsTab(patient: patient),
+            PatientVisitsTab(key: ValueKey('visits_$_dataRefreshKey'), patient: patient),
+            // Clinical - combined Rx + Records + Documents
+            PatientClinicalTab(key: ValueKey('clinical_$_dataRefreshKey'), patient: patient),
             // Billing - invoices and payments
-            PatientBillingTab(patient: patient),
-            // Documents - uploaded documents
-            PatientDocumentsTab(patient: patient),
-            // Timeline - chronological view (at end)
-            PatientTimelineTab(patient: patient),
+            PatientBillingTab(key: ValueKey('billing_$_dataRefreshKey'), patient: patient),
+            // Timeline - chronological view
+            PatientTimelineTab(key: ValueKey('timeline_$_dataRefreshKey'), patient: patient),
           ],
         ),
       ),
@@ -708,22 +839,64 @@ Address: ${patient.address}
     final secondaryColor = isDark ? AppColors.darkTextSecondary : AppColors.textSecondary;
     
     return SingleChildScrollView(
+      primary: false,
       padding: const EdgeInsets.all(16),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
+          // QUICK ACTIONS STRIP
+          _buildQuickActionsStrip(patient),
+          
+          const SizedBox(height: 16),
+          
+          // CLINICAL FLAGS RIBBON
+          _buildClinicalFlagsRibbon(patient),
+          
+          const SizedBox(height: 16),
+          
           // CRITICAL ALERTS SECTION (Always First)
           _buildCriticalAlertsSection(patient, isDark),
           
           const SizedBox(height: 16),
           
-          // QUICK STATS DASHBOARD
-          _buildQuickStatsDashboard(isDark, textColor),
+          // APPOINTMENT COUNTDOWN (if next appointment exists)
+          if (_nextAppointment != null)
+            widgets.AppointmentCountdown(
+              appointmentDateTime: _nextAppointment!.appointmentDateTime,
+              appointmentType: _nextAppointment!.reason.isNotEmpty ? _nextAppointment!.reason : 'Check-up',
+              onReschedule: () => _navigateToRescheduleAppointment(_nextAppointment!),
+            ),
+          
+          if (_nextAppointment != null)
+            const SizedBox(height: 16),
+          
+          // HEALTH SCORE AND QUICK STATS ROW
+          _buildHealthScoreRow(isDark),
           
           const SizedBox(height: 16),
           
-          // LATEST VITALS CARD
-          _buildVitalsCard(cardColor, textColor, secondaryColor, isDark),
+          // VITALS TREND SPARKLINES
+          if (_recentVitals.isNotEmpty)
+            _buildVitalsTrendSection(isDark),
+          
+          if (_recentVitals.isNotEmpty)
+            const SizedBox(height: 16),
+          
+          // MEDICATION ADHERENCE
+          widgets.MedicationAdherenceWidget(
+            activePrescriptions: _activePrescriptionCount,
+            onViewMedications: () => _tabController.animateTo(2), // Clinical tab
+            onAddPrescription: () => _navigateToAddPrescription(patient),
+          ),
+          
+          const SizedBox(height: 16),
+          
+          // RECENT ACTIVITY TIMELINE
+          widgets.RecentActivityTimeline(
+            activities: _recentActivities,
+            maxItems: 4,
+            onViewAll: () => _tabController.animateTo(4), // Timeline tab
+          ),
           
           const SizedBox(height: 16),
           
@@ -748,10 +921,251 @@ Address: ${patient.address}
           // CLINICAL FEATURES
           _buildClinicalFeaturesSection(patient, isDark, textColor),
           
-          const SizedBox(height: 80), // Space for FAB
+          const SizedBox(height: 100), // Space for FAB + emergency button
         ],
       ),
     );
+  }
+  
+  /// Build quick actions strip
+  Widget _buildQuickActionsStrip(Patient patient) {
+    return widgets.QuickActionStrip(
+      padding: EdgeInsets.zero,
+      actions: [
+        widgets.QuickAction(
+          icon: Icons.event_rounded,
+          label: 'Schedule',
+          color: const Color(0xFF3B82F6),
+          onTap: () => _navigateToAddAppointment(patient),
+        ),
+        widgets.QuickAction(
+          icon: Icons.medication_rounded,
+          label: 'Prescribe',
+          color: const Color(0xFF8B5CF6),
+          onTap: () => _navigateToAddPrescription(patient),
+        ),
+        widgets.QuickAction(
+          icon: Icons.science_rounded,
+          label: 'Lab Order',
+          color: const Color(0xFFF59E0B),
+          onTap: () => Navigator.push(
+            context,
+            AppRouter.route(LabOrdersScreen(patientId: patient.id)),
+          ).then((_) => _refreshAllData()),
+        ),
+        widgets.QuickAction(
+          icon: Icons.description_rounded,
+          label: 'Record',
+          color: const Color(0xFF10B981),
+          onTap: () => _navigateToAddRecord(),
+        ),
+        widgets.QuickAction(
+          icon: Icons.receipt_long_rounded,
+          label: 'Invoice',
+          color: const Color(0xFF6366F1),
+          onTap: () => Navigator.push(
+            context,
+            AppRouter.route(AddInvoiceScreen(preselectedPatient: patient)),
+          ).then((_) => _refreshAllData()),
+        ),
+      ],
+    );
+  }
+  
+  /// Build clinical flags ribbon
+  Widget _buildClinicalFlagsRibbon(Patient patient) {
+    final flags = <widgets.ClinicalFlag>[];
+    
+    // Check for allergies
+    if (patient.allergies.isNotEmpty && 
+        patient.allergies.toLowerCase() != 'none' &&
+        patient.allergies.toLowerCase() != 'nkda') {
+      flags.add(widgets.ClinicalFlag(
+        type: widgets.ClinicalFlagType.allergy,
+        label: 'Allergy',
+        details: patient.allergies.split(',').first.trim(),
+        severity: widgets.FlagSeverity.critical,
+        onTap: () => Navigator.push(
+          context,
+          AppRouter.route(AllergyManagementScreen(patientId: patient.id)),
+        ),
+      ));
+    }
+    
+    // Check for overdue immunizations
+    if (_immunizationCount == 0) {
+      flags.add(widgets.ClinicalFlag(
+        type: widgets.ClinicalFlagType.overdueImmunization,
+        label: 'Immunization',
+        details: 'Check Due',
+        severity: widgets.FlagSeverity.medium,
+        onTap: () => Navigator.push(
+          context,
+          AppRouter.route(ImmunizationsScreen(patientId: patient.id)),
+        ),
+      ));
+    }
+    
+    // Check for chronic conditions
+    if (patient.chronicConditions.isNotEmpty && 
+        patient.chronicConditions.toLowerCase() != 'none') {
+      flags.add(widgets.ClinicalFlag(
+        type: widgets.ClinicalFlagType.chronicPain,
+        label: 'Chronic',
+        details: patient.chronicConditions.split(',').first.trim(),
+        severity: widgets.FlagSeverity.high,
+      ));
+    }
+    
+    // Check risk level
+    if (patient.riskLevel >= 4) {
+      flags.add(widgets.ClinicalFlag(
+        type: widgets.ClinicalFlagType.fallRisk,
+        label: 'High Risk',
+        severity: widgets.FlagSeverity.high,
+      ));
+    }
+    
+    if (flags.isEmpty) return const SizedBox.shrink();
+    
+    return widgets.ClinicalFlagsRibbon(flags: flags);
+  }
+  
+  /// Build health score and stats row
+  Widget _buildHealthScoreRow(bool isDark) {
+    // Calculate a simple health score based on available data
+    int healthScore = 70; // Base score
+    
+    // Adjust based on vitals
+    if (_latestVitals != null) {
+      healthScore += 10;
+      // Check BP
+      if (_latestVitals!.systolicBp != null && 
+          _latestVitals!.systolicBp! >= 90 && _latestVitals!.systolicBp! <= 140) {
+        healthScore += 5;
+      }
+    }
+    
+    // Adjust based on appointments
+    if (_nextAppointment != null) healthScore += 5;
+    
+    // Adjust based on risk level
+    healthScore -= (widget.patient.riskLevel * 5);
+    
+    // Clamp score
+    healthScore = healthScore.clamp(0, 100);
+    
+    return Row(
+      children: [
+        // Compact health score
+        widgets.PatientHealthScoreCompact(
+          score: healthScore,
+          previousScore: healthScore - 3, // Simulated previous score
+        ),
+        const SizedBox(width: 12),
+        // Quick stats
+        Expanded(child: _buildQuickStatsDashboard(isDark, isDark ? AppColors.darkTextPrimary : AppColors.textPrimary)),
+      ],
+    );
+  }
+  
+  /// Build vitals trend section with sparklines
+  Widget _buildVitalsTrendSection(bool isDark) {
+    // Extract values for sparklines
+    final bpSystolic = _recentVitals
+        .where((v) => v.systolicBp != null)
+        .map((v) => v.systolicBp!)
+        .toList();
+    final heartRates = _recentVitals
+        .where((v) => v.heartRate != null)
+        .map((v) => v.heartRate!.toDouble())
+        .toList();
+    final spO2Values = _recentVitals
+        .where((v) => v.oxygenSaturation != null)
+        .map((v) => v.oxygenSaturation!)
+        .toList();
+    final temps = _recentVitals
+        .where((v) => v.temperature != null)
+        .map((v) => v.temperature!)
+        .toList();
+    
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Padding(
+          padding: const EdgeInsets.only(left: 4, bottom: 10),
+          child: Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.all(6),
+                decoration: BoxDecoration(
+                  gradient: const LinearGradient(
+                    colors: [Color(0xFFEC4899), Color(0xFFDB2777)],
+                  ),
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: const Icon(Icons.show_chart_rounded, size: 14, color: Colors.white),
+              ),
+              const SizedBox(width: 8),
+              Text(
+                'Vitals Trend',
+                style: TextStyle(
+                  fontSize: 14,
+                  fontWeight: FontWeight.w700,
+                  color: isDark ? AppColors.darkTextPrimary : AppColors.textPrimary,
+                ),
+              ),
+              const Spacer(),
+              GestureDetector(
+                onTap: () => Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => VitalSignsScreen(
+                      patientId: widget.patient.id,
+                      patientName: '${widget.patient.firstName} ${widget.patient.lastName}'.trim(),
+                    ),
+                  ),
+                ),
+                child: Text(
+                  'View All',
+                  style: TextStyle(
+                    fontSize: 12,
+                    fontWeight: FontWeight.w600,
+                    color: AppColors.primary,
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+        widgets.VitalsTrendRow(
+          bpSystolic: bpSystolic,
+          bpDiastolic: [], // Can add diastolic if needed
+          heartRate: heartRates,
+          spO2: spO2Values,
+          temperature: temps.isNotEmpty ? temps : null,
+        ),
+      ],
+    );
+  }
+  
+  void _navigateToAddAppointment(Patient patient) {
+    Navigator.push(
+      context,
+      AppRouter.route(AddAppointmentScreen(preselectedPatient: patient)),
+    ).then((_) => _refreshAllData());
+  }
+  
+  void _navigateToAddPrescription(Patient patient) {
+    Navigator.push(
+      context,
+      AppRouter.route(AddPrescriptionScreen(preselectedPatient: patient)),
+    ).then((_) => _refreshAllData());
+  }
+  
+  void _navigateToRescheduleAppointment(Appointment apt) {
+    // Navigate to reschedule - for now just show the appointments tab
+    _tabController.animateTo(1);
   }
   
   Widget _buildCriticalAlertsSection(Patient patient, bool isDark) {
@@ -929,12 +1343,15 @@ Address: ${patient.address}
             children: [
               Icon(icon, size: 16, color: color),
               const SizedBox(width: 6),
-              Text(
-                label,
-                style: TextStyle(
-                  fontSize: 11,
-                  fontWeight: FontWeight.w600,
-                  color: color,
+              Flexible(
+                child: Text(
+                  label,
+                  style: TextStyle(
+                    fontSize: 11,
+                    fontWeight: FontWeight.w600,
+                    color: color,
+                  ),
+                  overflow: TextOverflow.ellipsis,
                 ),
               ),
             ],
@@ -947,6 +1364,7 @@ Address: ${patient.address}
               fontWeight: FontWeight.w800,
               color: isDark ? AppColors.darkTextPrimary : AppColors.textPrimary,
             ),
+            overflow: TextOverflow.ellipsis,
           ),
         ],
       ),
@@ -1391,6 +1809,222 @@ Address: ${patient.address}
     );
   }
   
+  Widget _buildClinicalDataSummary(Patient patient, bool isDark, Color textColor, Color cardColor) {
+    final patientName = '${patient.firstName} ${patient.lastName}';
+    
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: cardColor,
+        borderRadius: BorderRadius.circular(16),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: isDark ? 0.2 : 0.05),
+            blurRadius: 10,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.all(8),
+                decoration: BoxDecoration(
+                  gradient: const LinearGradient(
+                    colors: [Color(0xFF10B981), Color(0xFF059669)],
+                  ),
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                child: const Icon(Icons.analytics_rounded, color: Colors.white, size: 18),
+              ),
+              const SizedBox(width: 10),
+              Text(
+                'Clinical Records',
+                style: TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.w700,
+                  color: textColor,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 16),
+          
+          // Clinical data counts row
+          Row(
+            children: [
+              Expanded(
+                child: _buildClinicalCountItem(
+                  icon: Icons.list_alt_rounded,
+                  label: 'Problems',
+                  count: _problemListCount,
+                  color: const Color(0xFFEF4444),
+                  onTap: () => Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => ProblemListScreen(patientId: patient.id),
+                    ),
+                  ).then((_) => _loadPatientData()),
+                ),
+              ),
+              Expanded(
+                child: _buildClinicalCountItem(
+                  icon: Icons.family_restroom_rounded,
+                  label: 'Family Hx',
+                  count: _familyHistoryCount,
+                  color: const Color(0xFFF59E0B),
+                  onTap: () => Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => FamilyHistoryScreen(patientId: patient.id),
+                    ),
+                  ).then((_) => _loadPatientData()),
+                ),
+              ),
+              Expanded(
+                child: _buildClinicalCountItem(
+                  icon: Icons.vaccines_rounded,
+                  label: 'Vaccines',
+                  count: _immunizationCount,
+                  color: const Color(0xFF10B981),
+                  onTap: () => Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => ImmunizationsScreen(patientId: patient.id),
+                    ),
+                  ).then((_) => _loadPatientData()),
+                ),
+              ),
+            ],
+          ),
+          
+          // Active problems preview
+          if (_activeProblems.isNotEmpty) ...[
+            const SizedBox(height: 16),
+            const Divider(height: 1),
+            const SizedBox(height: 12),
+            Text(
+              'Active Problems',
+              style: TextStyle(
+                fontSize: 13,
+                fontWeight: FontWeight.w600,
+                color: textColor.withValues(alpha: 0.7),
+              ),
+            ),
+            const SizedBox(height: 8),
+            ...(_activeProblems.map((problem) => Padding(
+              padding: const EdgeInsets.only(bottom: 6),
+              child: Row(
+                children: [
+                  Container(
+                    width: 6,
+                    height: 6,
+                    decoration: BoxDecoration(
+                      color: _getSeverityColor(problem.severity),
+                      shape: BoxShape.circle,
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: Text(
+                      problem.problemName,
+                      style: TextStyle(
+                        fontSize: 13,
+                        color: textColor,
+                      ),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ),
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                    decoration: BoxDecoration(
+                      color: _getSeverityColor(problem.severity).withValues(alpha: 0.1),
+                      borderRadius: BorderRadius.circular(4),
+                    ),
+                    child: Text(
+                      problem.severity,
+                      style: TextStyle(
+                        fontSize: 10,
+                        fontWeight: FontWeight.w600,
+                        color: _getSeverityColor(problem.severity),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ))),
+          ],
+        ],
+      ),
+    );
+  }
+  
+  Widget _buildClinicalCountItem({
+    required IconData icon,
+    required String label,
+    required int count,
+    required Color color,
+    required VoidCallback onTap,
+  }) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 8),
+        margin: const EdgeInsets.symmetric(horizontal: 4),
+        decoration: BoxDecoration(
+          color: color.withValues(alpha: isDark ? 0.15 : 0.08),
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(color: color.withValues(alpha: 0.2)),
+        ),
+        child: Column(
+          children: [
+            Icon(icon, color: color, size: 22),
+            const SizedBox(height: 6),
+            Text(
+              count.toString(),
+              style: TextStyle(
+                fontSize: 18,
+                fontWeight: FontWeight.w800,
+                color: color,
+              ),
+            ),
+            const SizedBox(height: 2),
+            Text(
+              label,
+              style: TextStyle(
+                fontSize: 11,
+                fontWeight: FontWeight.w500,
+                color: isDark ? AppColors.darkTextSecondary : AppColors.textSecondary,
+              ),
+              textAlign: TextAlign.center,
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+  
+  Color _getSeverityColor(String severity) {
+    switch (severity.toLowerCase()) {
+      case 'mild':
+        return const Color(0xFF10B981);
+      case 'moderate':
+        return const Color(0xFFF59E0B);
+      case 'severe':
+        return const Color(0xFFEF4444);
+      case 'life_threatening':
+        return const Color(0xFF7C3AED);
+      default:
+        return const Color(0xFF64748B);
+    }
+  }
+  
   Widget _buildClinicalFeaturesSection(Patient patient, bool isDark, Color textColor) {
     final patientName = '${patient.firstName} ${patient.lastName}';
 
@@ -1429,6 +2063,7 @@ Address: ${patient.address}
           ],
         ),
         const SizedBox(height: 14),
+        // Row 1: Core Clinical
         Row(
           children: [
             Expanded(
@@ -1451,14 +2086,14 @@ Address: ${patient.address}
             const SizedBox(width: 12),
             Expanded(
               child: QuickActionCard(
-                icon: Icons.medical_services_rounded,
+                icon: Icons.trending_up_rounded,
                 title: 'Treatments',
-                subtitle: 'Track outcomes',
-                color: Colors.purple,
+                subtitle: 'Progress & outcomes',
+                color: const Color(0xFF8B5CF6),
                 onTap: () => Navigator.push(
                   context,
                   MaterialPageRoute(
-                    builder: (context) => TreatmentOutcomesScreen(
+                    builder: (context) => TreatmentProgressScreen(
                       patientId: patient.id,
                       patientName: patientName,
                     ),
@@ -1469,48 +2104,26 @@ Address: ${patient.address}
           ],
         ),
         const SizedBox(height: 12),
+        // Row 2: Labs & Diagnoses
         Row(
           children: [
             Expanded(
               child: QuickActionCard(
-                icon: Icons.event_repeat_rounded,
-                title: 'Follow-ups',
-                subtitle: 'Manage follow-ups',
-                color: Colors.orange,
+                icon: Icons.science_rounded,
+                title: 'Lab Orders',
+                subtitle: 'Orders & results',
+                color: Colors.teal,
                 onTap: () => Navigator.push(
                   context,
                   MaterialPageRoute(
-                    builder: (context) => FollowUpsScreen(
+                    builder: (context) => LabOrdersScreen(
                       patientId: patient.id,
-                      patientName: patientName,
                     ),
                   ),
                 ),
               ),
             ),
             const SizedBox(width: 12),
-            Expanded(
-              child: QuickActionCard(
-                icon: Icons.science_rounded,
-                title: 'Lab Results',
-                subtitle: 'View lab tests',
-                color: Colors.teal,
-                onTap: () => Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (context) => LabResultsScreen(
-                      patientId: patient.id,
-                      patientName: patientName,
-                    ),
-                  ),
-                ),
-              ),
-            ),
-          ],
-        ),
-        const SizedBox(height: 12),
-        Row(
-          children: [
             Expanded(
               child: QuickActionCard(
                 icon: Icons.medical_information_rounded,
@@ -1528,17 +2141,22 @@ Address: ${patient.address}
                 ),
               ),
             ),
-            const SizedBox(width: 12),
+          ],
+        ),
+        const SizedBox(height: 12),
+        // Row 3: Follow-ups & Allergies
+        Row(
+          children: [
             Expanded(
               child: QuickActionCard(
-                icon: Icons.trending_up_rounded,
-                title: 'Treatment Progress',
-                subtitle: 'Sessions & goals',
-                color: const Color(0xFF8B5CF6),
+                icon: Icons.event_repeat_rounded,
+                title: 'Follow-ups',
+                subtitle: 'Scheduled visits',
+                color: Colors.orange,
                 onTap: () => Navigator.push(
                   context,
                   MaterialPageRoute(
-                    builder: (context) => TreatmentProgressScreen(
+                    builder: (context) => FollowUpsScreen(
                       patientId: patient.id,
                       patientName: patientName,
                     ),
@@ -1546,6 +2164,86 @@ Address: ${patient.address}
                 ),
               ),
             ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: QuickActionCard(
+                icon: Icons.warning_rounded,
+                title: 'Allergies',
+                subtitle: 'Manage allergies',
+                color: const Color(0xFFDC2626),
+                onTap: () => Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => AllergyManagementScreen(
+                      patientId: patient.id,
+                    ),
+                  ),
+                ),
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: 12),
+        // Row 4: History & Problems
+        Row(
+          children: [
+            Expanded(
+              child: QuickActionCard(
+                icon: Icons.family_restroom_rounded,
+                title: 'Family History',
+                subtitle: 'Hereditary info',
+                color: const Color(0xFFEC4899),
+                onTap: () => Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => FamilyHistoryScreen(
+                      patientId: patient.id,
+                    ),
+                  ),
+                ),
+              ),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: QuickActionCard(
+                icon: Icons.list_alt_rounded,
+                title: 'Problem List',
+                subtitle: 'Active conditions',
+                color: const Color(0xFFEF4444),
+                onTap: () => Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => ProblemListScreen(
+                      patientId: patient.id,
+                    ),
+                  ),
+                ),
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: 12),
+        // Row 5: Immunizations (single item, centered)
+        Row(
+          children: [
+            Expanded(
+              child: QuickActionCard(
+                icon: Icons.vaccines_rounded,
+                title: 'Immunizations',
+                subtitle: 'Vaccine records',
+                color: const Color(0xFF10B981),
+                onTap: () => Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => ImmunizationsScreen(
+                      patientId: patient.id,
+                    ),
+                  ),
+                ),
+              ),
+            ),
+            const SizedBox(width: 12),
+            const Expanded(child: SizedBox()), // Placeholder
           ],
         ),
       ],
@@ -1838,42 +2536,58 @@ Address: ${patient.address}
   }
 
   Widget _buildModernFAB() {
-    return FloatingActionButton.extended(
-      heroTag: 'patient_actions',
-      onPressed: _showQuickActionsSheet,
-      tooltip: 'Quick Actions',
-      backgroundColor: Colors.transparent,
-      elevation: 0,
-      extendedPadding: EdgeInsets.zero,
-      label: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
-        decoration: BoxDecoration(
-          gradient: AppColors.primaryGradient,
-          borderRadius: BorderRadius.circular(28),
-          boxShadow: [
-            BoxShadow(
-              color: AppColors.primary.withValues(alpha: 0.4),
-              blurRadius: 16,
-              offset: const Offset(0, 6),
-            ),
-          ],
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      crossAxisAlignment: CrossAxisAlignment.end,
+      children: [
+        // Emergency Info Button
+        widgets.EmergencyInfoButton(
+          patientName: '${widget.patient.firstName} ${widget.patient.lastName}'.trim(),
+          bloodType: widget.patient.bloodType,
+          allergies: widget.patient.allergies,
+          emergencyContactName: widget.patient.emergencyContactName,
+          emergencyContactPhone: widget.patient.emergencyContactPhone,
         ),
-        child: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            const Icon(Icons.add_rounded, color: Colors.white, size: 22),
-            const SizedBox(width: 8),
-            const Text(
-              'New Action',
-              style: TextStyle(
-                color: Colors.white,
-                fontWeight: FontWeight.w700,
-                fontSize: 14,
-              ),
+        const SizedBox(height: 12),
+        // Main FAB
+        FloatingActionButton.extended(
+          heroTag: 'patient_actions',
+          onPressed: _showQuickActionsSheet,
+          tooltip: 'Quick Actions',
+          backgroundColor: Colors.transparent,
+          elevation: 0,
+          extendedPadding: EdgeInsets.zero,
+          label: Container(
+            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
+            decoration: BoxDecoration(
+              gradient: AppColors.primaryGradient,
+              borderRadius: BorderRadius.circular(28),
+              boxShadow: [
+                BoxShadow(
+                  color: AppColors.primary.withValues(alpha: 0.4),
+                  blurRadius: 16,
+                  offset: const Offset(0, 6),
+                ),
+              ],
             ),
-          ],
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                const Icon(Icons.add_rounded, color: Colors.white, size: 22),
+                const SizedBox(width: 8),
+                const Text(
+                  'New Action',
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontWeight: FontWeight.w700,
+                    fontSize: 14,
+                  ),
+                ),
+              ],
+            ),
+          ),
         ),
-      ),
+      ],
     );
   }
 
@@ -1952,6 +2666,32 @@ Address: ${patient.address}
                   ),
                 ),
                 const SizedBox(height: 24),
+                // Start Visit - Main Action
+                SizedBox(
+                  width: double.infinity,
+                  child: _buildQuickActionCard(
+                    icon: Icons.play_circle_filled_rounded,
+                    label: 'Start Visit Workflow',
+                    color: const Color(0xFF10B981),
+                    isDark: isDark,
+                    isLarge: true,
+                    onTap: () {
+                      Navigator.pop(context);
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => WorkflowWizardScreen(
+                            existingPatient: widget.patient,
+                          ),
+                        ),
+                      ).then((_) {
+                        // Refresh data when returning from workflow
+                        _refreshAllData();
+                      });
+                    },
+                  ),
+                ),
+                const SizedBox(height: 12),
                 // Actions Grid - Row 1
                 Row(
                   children: [
@@ -1970,7 +2710,7 @@ Address: ${patient.address}
                                 preselectedPatient: widget.patient,
                               ),
                             ),
-                          );
+                          ).then((_) => _refreshAllData());
                         },
                       ),
                     ),
@@ -1990,7 +2730,7 @@ Address: ${patient.address}
                                 preselectedPatient: widget.patient,
                               ),
                             ),
-                          );
+                          ).then((_) => _refreshAllData());
                         },
                       ),
                     ),
@@ -2028,7 +2768,7 @@ Address: ${patient.address}
                                 patientId: widget.patient.id,
                               ),
                             ),
-                          );
+                          ).then((_) => _refreshAllData());
                         },
                       ),
                     ),
@@ -2054,7 +2794,7 @@ Address: ${patient.address}
                                 patientName: '${widget.patient.firstName} ${widget.patient.lastName}',
                               ),
                             ),
-                          );
+                          ).then((_) => _refreshAllData());
                         },
                       ),
                     ),
@@ -2096,11 +2836,15 @@ Address: ${patient.address}
     required Color color,
     required bool isDark,
     required VoidCallback onTap,
+    bool isLarge = false,
   }) {
     return GestureDetector(
       onTap: onTap,
       child: Container(
-        padding: const EdgeInsets.symmetric(vertical: 18, horizontal: 12),
+        padding: EdgeInsets.symmetric(
+          vertical: isLarge ? 16 : 18, 
+          horizontal: isLarge ? 20 : 12,
+        ),
         decoration: BoxDecoration(
           color: isDark ? color.withValues(alpha: 0.15) : color.withValues(alpha: 0.08),
           borderRadius: BorderRadius.circular(18),
@@ -2109,7 +2853,41 @@ Address: ${patient.address}
             width: 1.5,
           ),
         ),
-        child: Column(
+        child: isLarge
+            ? Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Container(
+                    padding: const EdgeInsets.all(12),
+                    decoration: BoxDecoration(
+                      gradient: LinearGradient(
+                        begin: Alignment.topLeft,
+                        end: Alignment.bottomRight,
+                        colors: [color, color.withValues(alpha: 0.8)],
+                      ),
+                      borderRadius: BorderRadius.circular(12),
+                      boxShadow: [
+                        BoxShadow(
+                          color: color.withValues(alpha: 0.4),
+                          blurRadius: 10,
+                          offset: const Offset(0, 4),
+                        ),
+                      ],
+                    ),
+                    child: Icon(icon, color: Colors.white, size: 24),
+                  ),
+                  const SizedBox(width: 14),
+                  Text(
+                    label,
+                    style: TextStyle(
+                      fontWeight: FontWeight.w700,
+                      fontSize: 16,
+                      color: isDark ? AppColors.darkTextPrimary : AppColors.textPrimary,
+                    ),
+                  ),
+                ],
+              )
+            : Column(
           mainAxisSize: MainAxisSize.min,
           children: [
             Container(

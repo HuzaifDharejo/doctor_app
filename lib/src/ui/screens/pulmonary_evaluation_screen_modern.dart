@@ -11,6 +11,7 @@ import '../../db/doctor_db.dart';
 import '../../providers/db_provider.dart';
 import '../../theme/app_theme.dart';
 import '../../core/theme/design_tokens.dart';
+import '../../core/widgets/keyboard_aware_scaffold.dart';
 
 class PulmonaryEvaluationScreenModern extends ConsumerStatefulWidget {
   
@@ -430,36 +431,39 @@ class _PulmonaryEvaluationScreenModernState
               const SizedBox(height: 20),
 
               // Section 1: Patient Information
-              _buildSection(
-                title: 'Patient Information',
-                icon: Icons.person,
-                children: [
-                  _buildTextField(
-                    controller: _patientNameController,
-                    label: 'Patient Name',
-                    required: true,
-                  ),
-                  const SizedBox(height: 12),
-                  Row(
-                    children: [
-                      Expanded(
-                        child: _buildTextField(
-                          controller: _ageController,
-                          label: 'Age',
-                          keyboardType: TextInputType.number,
+              if (widget.preselectedPatient != null)
+                _buildPatientCard(context)
+              else
+                _buildSection(
+                  title: 'Patient Information',
+                  icon: Icons.person,
+                  children: [
+                    _buildTextField(
+                      controller: _patientNameController,
+                      label: 'Patient Name',
+                      required: true,
+                    ),
+                    const SizedBox(height: 12),
+                    Row(
+                      children: [
+                        Expanded(
+                          child: _buildTextField(
+                            controller: _ageController,
+                            label: 'Age',
+                            keyboardType: TextInputType.number,
+                          ),
                         ),
-                      ),
-                      const SizedBox(width: 12),
-                      Expanded(
-                        child: _buildTextField(
-                          controller: _genderController,
-                          label: 'Gender',
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: _buildTextField(
+                            controller: _genderController,
+                            label: 'Gender',
+                          ),
                         ),
-                      ),
-                    ],
-                  ),
-                ],
-              ),
+                      ],
+                    ),
+                  ],
+                ),
               const SizedBox(height: 16),
 
               // Section 2: Chief Complaint
@@ -747,6 +751,8 @@ class _PulmonaryEvaluationScreenModernState
             ]),
               ),
             ),
+            // Keyboard-aware bottom padding
+            const SliverKeyboardPadding(),
           ],
         ),
       ),
@@ -820,6 +826,173 @@ class _PulmonaryEvaluationScreenModernState
               ),
             ),
           ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildPatientCard(BuildContext context) {
+    final patient = widget.preselectedPatient!;
+    final initials = '${patient.firstName.isNotEmpty ? patient.firstName[0] : ''}${patient.lastName.isNotEmpty ? patient.lastName[0] : ''}'.toUpperCase();
+    
+    return Container(
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        gradient: const LinearGradient(
+          colors: [Color(0xFF3B82F6), Color(0xFF1D4ED8)],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+        ),
+        borderRadius: BorderRadius.circular(20),
+        boxShadow: [
+          BoxShadow(
+            color: const Color(0xFF3B82F6).withValues(alpha: 0.35),
+            blurRadius: 16,
+            offset: const Offset(0, 6),
+          ),
+        ],
+      ),
+      child: Row(
+        children: [
+          // Patient Avatar
+          Container(
+            width: 60,
+            height: 60,
+            decoration: BoxDecoration(
+              color: Colors.white.withValues(alpha: 0.2),
+              borderRadius: BorderRadius.circular(16),
+              border: Border.all(
+                color: Colors.white.withValues(alpha: 0.3),
+                width: 2,
+              ),
+            ),
+            child: Center(
+              child: Text(
+                initials,
+                style: const TextStyle(
+                  color: Colors.white,
+                  fontSize: 22,
+                  fontWeight: FontWeight.w700,
+                  letterSpacing: 1,
+                ),
+              ),
+            ),
+          ),
+          const SizedBox(width: 16),
+          // Patient Info
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    const Icon(
+                      Icons.person_rounded,
+                      color: Colors.white70,
+                      size: 16,
+                    ),
+                    const SizedBox(width: 6),
+                    Expanded(
+                      child: Text(
+                        '${patient.firstName} ${patient.lastName}',
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontSize: 18,
+                          fontWeight: FontWeight.w700,
+                          letterSpacing: -0.3,
+                        ),
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 8),
+                SingleChildScrollView(
+                  scrollDirection: Axis.horizontal,
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                    decoration: BoxDecoration(
+                      color: Colors.white.withValues(alpha: 0.15),
+                      borderRadius: BorderRadius.circular(20),
+                      border: Border.all(
+                        color: Colors.white.withValues(alpha: 0.2),
+                      ),
+                    ),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        _buildPatientInfoBadge(Icons.tag_rounded, 'P-${patient.id.toString().padLeft(4, '0')}'),
+                        if (patient.age != null) ...[
+                          _buildPatientDividerDot(),
+                          _buildPatientInfoBadge(Icons.cake_outlined, '${patient.age} yrs'),
+                        ],
+                        if (patient.gender != null && patient.gender!.isNotEmpty) ...[
+                          _buildPatientDividerDot(),
+                          _buildPatientInfoBadge(
+                            patient.gender == 'Male' ? Icons.male_rounded 
+                                : patient.gender == 'Female' ? Icons.female_rounded 
+                                : Icons.person_outline,
+                            patient.gender!,
+                          ),
+                        ],
+                      ],
+                    ),
+                  ),
+                ),
+                if (patient.phone.isNotEmpty) ...[
+                  const SizedBox(height: 8),
+                  Row(
+                    children: [
+                      Icon(Icons.phone_rounded, color: Colors.white.withValues(alpha: 0.7), size: 14),
+                      const SizedBox(width: 6),
+                      Text(
+                        patient.phone,
+                        style: TextStyle(
+                          color: Colors.white.withValues(alpha: 0.85),
+                          fontSize: 13,
+                          fontWeight: FontWeight.w500,
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
+              ],
+            ),
+          ),
+          // Pulmonary Icon
+          Container(
+            padding: const EdgeInsets.all(10),
+            decoration: BoxDecoration(
+              color: Colors.white.withValues(alpha: 0.15),
+              borderRadius: BorderRadius.circular(12),
+            ),
+            child: const Icon(Icons.air_rounded, color: Colors.white, size: 24),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildPatientInfoBadge(IconData icon, String text) {
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Icon(icon, color: Colors.white70, size: 12),
+        const SizedBox(width: 4),
+        Text(text, style: const TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.w500)),
+      ],
+    );
+  }
+
+  Widget _buildPatientDividerDot() {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 8),
+      child: Container(
+        width: 4,
+        height: 4,
+        decoration: BoxDecoration(
+          color: Colors.white.withValues(alpha: 0.5),
+          shape: BoxShape.circle,
         ),
       ),
     );

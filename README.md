@@ -50,6 +50,8 @@ A comprehensive **offline-first** Flutter application for single-doctor clinic m
 - **📷 OCR Scanning** — Extract text from lab reports and documents with auto-fill
 - **🔍 Global Search** — Instant search across patients, appointments, and records
 - **📈 Treatment Analytics** — Outcome tracking, medication response, and visual charts
+- **⚡ Quick-Fill Templates** — One-tap templates for common findings (Normal Exam, Common Conditions)
+- **🧩 Collapsible Sections** — Expandable form sections with section navigation bar
 
 ### 🔐 Security & Compliance
 - **🔒 App Lock** — PIN and biometric (fingerprint/Face ID) authentication
@@ -139,6 +141,7 @@ This project follows modern Flutter best practices and clean architecture princi
 - **Result Type** — Functional error handling with `Result<T, E>` sealed classes (no exceptions for expected errors)
 - **Repository Pattern** — Clean data layer abstraction between UI and database
 - **Provider Pattern** — Riverpod for dependency injection and state management
+- **Reusable Components** — DRY architecture with 6+ specialized form components used across 15+ screens
 
 ### Utilities
 - **Validators** — Centralized form validation with composable validators
@@ -198,10 +201,26 @@ lib/
         │   ├── clinical_letters_screen.dart
         │   ├── clinical_reminders_screen.dart
         │   ├── referrals_screen.dart
+        │   ├── add_prescription/         # Prescription module
+        │   │   ├── components/           # Medication components
+        │   │   │   ├── medication_models.dart
+        │   │   │   ├── medication_selectors.dart
+        │   │   │   ├── medication_cards.dart
+        │   │   │   ├── medicine_database.dart
+        │   │   │   ├── medication_edit_sheet.dart
+        │   │   │   └── prescription_common_widgets.dart
+        │   │   └── ...
         │   └── ...
-        └── widgets/             # Reusable UI components (30+ widgets)
+        └── widgets/             # Reusable UI components (50+ widgets)
             ├── voice_dictation_button.dart
             ├── suggestion_text_field.dart
+            ├── records/components/   # Medical record form components
+            │   ├── chip_selector_section.dart
+            │   ├── quick_fill_template_bar.dart
+            │   ├── styled_dropdown.dart
+            │   ├── switch_components.dart
+            │   ├── text_field_components.dart
+            │   └── findings_components.dart
             └── ...
 
 test/
@@ -240,6 +259,7 @@ test/
 - **Pulmonary Evaluation** — Respiratory symptoms, red flags, and common diagnoses
 - **Vital Signs** — Comprehensive vitals with trending and alerts
 - **Lab Orders** — Order management and results review with abnormal flagging
+- **Specialty Exams** — 15+ specialty screens (ENT, Eye, GI, Neuro, Ortho, Cardiac, Skin, Peds, Gyn) with quick-fill templates
 
 ### Administrative Screens
 - **Doctor Profile** — Clinic and doctor information with digital signature
@@ -330,9 +350,10 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 | **Services** | 50+ |
 | **Database Tables** | 35+ |
 | **Models** | 19+ |
-| **Widgets** | 30+ |
+| **Widgets** | 50+ |
+| **Reusable Components** | 15+ |
 | **Unit Tests** | 776+ |
-| **Features** | 34 |
+| **Features** | 36 |
 
 ---
 

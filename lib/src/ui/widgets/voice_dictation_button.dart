@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import '../../services/voice_dictation_service.dart';
 import '../../theme/app_theme.dart';
@@ -128,21 +129,25 @@ class _VoiceDictationButtonState extends State<VoiceDictationButton>
         }
       },
       onStatusChange: (isListening) {
-        if (mounted && !isListening && _currentText.isNotEmpty) {
-          // Listening stopped, send final text
-          _sendText();
-        }
+        // Status change is handled in _stopListening
+        // Don't send text here to avoid race condition
+        debugPrint('VoiceDictation status: $isListening, text: $_currentText');
       },
     );
   }
 
   Future<void> _stopListening() async {
+    // Capture the current text before stopping
+    final textToSend = _currentText;
+    
     await _dictationService.stopListening();
     _pulseController.stop();
     _pulseController.reset();
     
-    if (_currentText.isNotEmpty) {
-      _sendText();
+    // Send the captured text if not empty
+    if (textToSend.isNotEmpty) {
+      final finalText = widget.appendText ? '$textToSend ' : textToSend;
+      widget.onTextReceived(finalText);
     }
     
     if (mounted) {
@@ -158,7 +163,7 @@ class _VoiceDictationButtonState extends State<VoiceDictationButton>
     
     final textToSend = widget.appendText ? '$_currentText ' : _currentText;
     widget.onTextReceived(textToSend);
-    _currentText = '';
+    // Don't clear _currentText here, let the caller handle it
   }
 
   void _showError(String message) {

@@ -45,5 +45,10 @@
 	<true/>
 	<key>UIApplicationSupportsIndirectInputEvents</key>
 	<true/>
+	<!-- Speech Recognition Permissions -->
+	<key>NSMicrophoneUsageDescription</key>
+	<string>This app uses the microphone for voice dictation to help you quickly enter notes during patient exams.</string>
+	<key>NSSpeechRecognitionUsageDescription</key>
+	<string>This app uses speech recognition for voice-to-text dictation during patient documentation.</string>
 </dict>
 </plist>

@@ -243,26 +243,41 @@ class PrescriptionsScreen extends ConsumerWidget {
   }
 
   Widget _buildPrescriptionCard(BuildContext context, WidgetRef ref, DoctorDatabase db, Prescription prescription) {
-    List<dynamic> medications = [];
-    try {
-      medications = jsonDecode(prescription.itemsJson) as List<dynamic>;
-    } catch (_) {}
+    // V5: Use compatibility method to get medications from either normalized table or legacy JSON
+    return FutureBuilder<List<Map<String, dynamic>>>(
+      future: db.getMedicationsForPrescriptionCompat(prescription.id),
+      builder: (context, medsSnapshot) {
+        final medications = medsSnapshot.data ?? [];
+        
+        // Parse lab tests, follow-up, notes from itemsJson (still stored there for now)
+        List<dynamic> labTests = [];
+        Map<String, dynamic> followUp = {};
+        String notes = '';
+        
+        try {
+          final parsed = jsonDecode(prescription.itemsJson);
+          if (parsed is Map<String, dynamic>) {
+            labTests = (parsed['lab_tests'] as List<dynamic>?) ?? [];
+            followUp = (parsed['follow_up'] as Map<String, dynamic>?) ?? {};
+            notes = (parsed['notes'] as String?) ?? '';
+          }
+        } catch (_) {}
     
-    return FutureBuilder<Patient?>(
-      future: db.getPatientById(prescription.patientId),
-      builder: (context, patientSnapshot) {
-        final patient = patientSnapshot.data;
-        final patientName = patient != null 
-            ? '${patient.firstName} ${patient.lastName}'
-            : 'Patient #${prescription.patientId}';
-        
-        final theme = Theme.of(context);
-        final screenWidth = MediaQuery.of(context).size.width;
-        final isCompact = screenWidth < 400;
-        
-        return AppCard(
-          margin: EdgeInsets.only(bottom: isCompact ? 12 : 16),
-          color: theme.colorScheme.surface,
+        return FutureBuilder<Patient?>(
+          future: db.getPatientById(prescription.patientId),
+          builder: (context, patientSnapshot) {
+            final patient = patientSnapshot.data;
+            final patientName = patient != null 
+                ? '${patient.firstName} ${patient.lastName}'
+                : 'Patient #${prescription.patientId}';
+            
+            final theme = Theme.of(context);
+            final screenWidth = MediaQuery.of(context).size.width;
+            final isCompact = screenWidth < 400;
+            
+            return AppCard(
+              margin: EdgeInsets.only(bottom: isCompact ? 12 : 16),
+              color: theme.colorScheme.surface,
           borderRadius: BorderRadius.circular(24),
           borderColor: theme.dividerColor.withValues(alpha: 0.5),
           borderWidth: 1,
@@ -273,7 +288,16 @@ class PrescriptionsScreen extends ConsumerWidget {
               offset: const Offset(0, 8),
             ),
           ],
-          onTap: () => _showPrescriptionDetails(context, ref, prescription, medications, patient),
+          onTap: () => _showPrescriptionDetails(
+            context, 
+            ref, 
+            prescription, 
+            medications, 
+            patient,
+            labTests: labTests,
+            followUp: followUp,
+            notes: notes,
+          ),
           child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
@@ -552,6 +576,8 @@ class PrescriptionsScreen extends ConsumerWidget {
                 ],
               ),
         );
+          },
+        );
       },
     );
   }
@@ -561,8 +587,11 @@ class PrescriptionsScreen extends ConsumerWidget {
     WidgetRef ref,
     Prescription prescription,
     List<dynamic> medications,
-    Patient? patient,
-  ) {
+    Patient? patient, {
+    List<dynamic> labTests = const [],
+    Map<String, dynamic> followUp = const {},
+    String notes = '',
+  }) {
     final dateFormat = DateFormat('MMMM d, yyyy');
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
@@ -926,6 +955,215 @@ class PrescriptionsScreen extends ConsumerWidget {
                         ),
                       ),
                     ],
+                    
+                    // Chief Complaint / Symptoms
+                    if (prescription.chiefComplaint.isNotEmpty) ...[
+                      const SizedBox(height: 16),
+                      Row(
+                        children: [
+                          Icon(Icons.sick_outlined, color: Colors.orange[700], size: 20),
+                          const SizedBox(width: 8),
+                          Text(
+                            'Chief Complaint',
+                            style: theme.textTheme.titleMedium?.copyWith(
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 12),
+                      Container(
+                        padding: const EdgeInsets.all(AppSpacing.lg),
+                        decoration: BoxDecoration(
+                          color: Colors.orange.withValues(alpha: 0.1),
+                          borderRadius: BorderRadius.circular(12),
+                          border: Border.all(color: Colors.orange.withValues(alpha: 0.3)),
+                        ),
+                        child: Text(
+                          prescription.chiefComplaint,
+                          style: TextStyle(
+                            color: theme.textTheme.bodyLarge?.color,
+                            height: 1.5,
+                          ),
+                        ),
+                      ),
+                    ],
+                    
+                    // Diagnosis
+                    if (prescription.diagnosis.isNotEmpty) ...[
+                      const SizedBox(height: 16),
+                      Row(
+                        children: [
+                          Icon(Icons.medical_information_outlined, color: Colors.purple[700], size: 20),
+                          const SizedBox(width: 8),
+                          Text(
+                            'Diagnosis',
+                            style: theme.textTheme.titleMedium?.copyWith(
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 12),
+                      Container(
+                        padding: const EdgeInsets.all(AppSpacing.lg),
+                        decoration: BoxDecoration(
+                          color: Colors.purple.withValues(alpha: 0.1),
+                          borderRadius: BorderRadius.circular(12),
+                          border: Border.all(color: Colors.purple.withValues(alpha: 0.3)),
+                        ),
+                        child: Text(
+                          prescription.diagnosis,
+                          style: TextStyle(
+                            color: theme.textTheme.bodyLarge?.color,
+                            height: 1.5,
+                          ),
+                        ),
+                      ),
+                    ],
+                    
+                    // Lab Tests / Investigations
+                    if (labTests.isNotEmpty) ...[
+                      const SizedBox(height: 16),
+                      Row(
+                        children: [
+                          Icon(Icons.science_outlined, color: Colors.teal[700], size: 20),
+                          const SizedBox(width: 8),
+                          Text(
+                            'Investigations (${labTests.length})',
+                            style: theme.textTheme.titleMedium?.copyWith(
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 12),
+                      Container(
+                        padding: const EdgeInsets.all(AppSpacing.lg),
+                        decoration: BoxDecoration(
+                          color: Colors.teal.withValues(alpha: 0.1),
+                          borderRadius: BorderRadius.circular(12),
+                          border: Border.all(color: Colors.teal.withValues(alpha: 0.3)),
+                        ),
+                        child: Wrap(
+                          spacing: 8,
+                          runSpacing: 8,
+                          children: labTests.map((test) {
+                            final testName = test is Map ? (test['name'] as String? ?? test.toString()) : test.toString();
+                            return Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                              decoration: BoxDecoration(
+                                color: Colors.teal.withValues(alpha: 0.1),
+                                borderRadius: BorderRadius.circular(20),
+                                border: Border.all(color: Colors.teal.withValues(alpha: 0.3)),
+                              ),
+                              child: Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  Icon(Icons.check_circle_outline, size: 14, color: Colors.teal[700]),
+                                  const SizedBox(width: 6),
+                                  Text(
+                                    testName,
+                                    style: TextStyle(
+                                      fontSize: 12,
+                                      color: Colors.teal[800],
+                                      fontWeight: FontWeight.w500,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            );
+                          }).toList(),
+                        ),
+                      ),
+                    ],
+                    
+                    // Follow-up
+                    if (followUp.isNotEmpty && followUp['date'] != null) ...[
+                      const SizedBox(height: 16),
+                      Row(
+                        children: [
+                          Icon(Icons.event_outlined, color: Colors.green[700], size: 20),
+                          const SizedBox(width: 8),
+                          Text(
+                            'Follow-up',
+                            style: theme.textTheme.titleMedium?.copyWith(
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 12),
+                      Container(
+                        padding: const EdgeInsets.all(AppSpacing.lg),
+                        decoration: BoxDecoration(
+                          color: Colors.green.withValues(alpha: 0.1),
+                          borderRadius: BorderRadius.circular(12),
+                          border: Border.all(color: Colors.green.withValues(alpha: 0.3)),
+                        ),
+                        child: Row(
+                          children: [
+                            Icon(Icons.calendar_today, size: 18, color: Colors.green[700]),
+                            const SizedBox(width: 12),
+                            Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  dateFormat.format(DateTime.parse(followUp['date'] as String)),
+                                  style: TextStyle(
+                                    fontWeight: FontWeight.w600,
+                                    color: Colors.green[800],
+                                  ),
+                                ),
+                                if ((followUp['notes'] as String?)?.isNotEmpty == true)
+                                  Text(
+                                    followUp['notes'] as String,
+                                    style: TextStyle(
+                                      fontSize: 13,
+                                      color: theme.textTheme.bodySmall?.color,
+                                    ),
+                                  ),
+                              ],
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
+                    
+                    // Clinical Notes
+                    if (notes.isNotEmpty) ...[
+                      const SizedBox(height: 16),
+                      Row(
+                        children: [
+                          Icon(Icons.note_alt_outlined, color: Colors.grey[700], size: 20),
+                          const SizedBox(width: 8),
+                          Text(
+                            'Clinical Notes',
+                            style: theme.textTheme.titleMedium?.copyWith(
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 12),
+                      Container(
+                        padding: const EdgeInsets.all(AppSpacing.lg),
+                        decoration: BoxDecoration(
+                          color: Colors.grey.withValues(alpha: 0.1),
+                          borderRadius: BorderRadius.circular(12),
+                          border: Border.all(color: Colors.grey.withValues(alpha: 0.3)),
+                        ),
+                        child: Text(
+                          notes,
+                          style: TextStyle(
+                            color: theme.textTheme.bodyLarge?.color,
+                            height: 1.5,
+                            fontStyle: FontStyle.italic,
+                          ),
+                        ),
+                      ),
+                    ],
+                    
                     const SizedBox(height: 16),
                     // Action buttons - Row 1
                     Row(

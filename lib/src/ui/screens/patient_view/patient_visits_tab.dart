@@ -1,7 +1,6 @@
 // Patient View - Unified Visits Tab
 // Combines Appointments + Encounters into a single "Visit" concept
 import 'dart:async';
-import 'dart:convert';
 import 'package:drift/drift.dart' hide Column;
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -65,57 +64,107 @@ class PatientVisitsTab extends ConsumerStatefulWidget {
 
 class _PatientVisitsTabState extends ConsumerState<PatientVisitsTab> {
   String _filter = 'all'; // 'all', 'upcoming', 'past', 'completed'
+  List<PatientVisit>? _visits;
+  bool _isLoading = true;
+  String? _error;
+  int _refreshKey = 0; // Used to force refresh
+
+  @override
+  void initState() {
+    super.initState();
+    _loadData();
+  }
+
+  @override
+  void didUpdateWidget(PatientVisitsTab oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.patient.id != widget.patient.id) {
+      _loadData();
+    }
+  }
+
+  Future<void> _loadData() async {
+    if (!mounted) return;
+    
+    setState(() {
+      _isLoading = true;
+      _error = null;
+    });
+
+    try {
+      final db = await ref.read(doctorDbProvider.future);
+      final visits = await _loadVisits(db);
+      
+      if (mounted) {
+        setState(() {
+          _visits = visits;
+          _isLoading = false;
+        });
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() {
+          _error = e.toString();
+          _isLoading = false;
+        });
+      }
+    }
+  }
+
+  /// Public method to trigger refresh from parent widget
+  void refresh() {
+    _refreshKey++;
+    _loadData();
+  }
 
   @override
   Widget build(BuildContext context) {
-    final dbAsync = ref.watch(doctorDbProvider);
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
-    return dbAsync.when(
-      data: (db) => FutureBuilder<List<PatientVisit>>(
-        future: _loadVisits(db),
-        builder: (context, snapshot) {
-          if (snapshot.connectionState == ConnectionState.waiting) {
-            return const Center(child: CircularProgressIndicator());
-          }
+    if (_isLoading) {
+      return const Center(child: CircularProgressIndicator());
+    }
 
-          var visits = snapshot.data ?? [];
+    if (_error != null) {
+      return Center(child: Text('Error: $_error'));
+    }
+
+    var visits = _visits ?? [];
+    
+    // Apply filter
+    final now = DateTime.now();
+    if (_filter == 'upcoming') {
+      visits = visits.where((v) => v.appointment.appointmentDateTime.isAfter(now)).toList();
+    } else if (_filter == 'past') {
+      visits = visits.where((v) => v.appointment.appointmentDateTime.isBefore(now)).toList();
+    } else if (_filter == 'completed') {
+      visits = visits.where((v) => v.appointment.status == 'completed').toList();
+    }
+
+    return RefreshIndicator(
+      onRefresh: _loadData,
+      child: Column(
+        children: [
+          // Filter chips
+          _buildFilterChips(isDark),
           
-          // Apply filter
-          final now = DateTime.now();
-          if (_filter == 'upcoming') {
-            visits = visits.where((v) => v.appointment.appointmentDateTime.isAfter(now)).toList();
-          } else if (_filter == 'past') {
-            visits = visits.where((v) => v.appointment.appointmentDateTime.isBefore(now)).toList();
-          } else if (_filter == 'completed') {
-            visits = visits.where((v) => v.appointment.status == 'completed').toList();
-          }
-
-          return Column(
-            children: [
-              // Filter chips
-              _buildFilterChips(isDark),
-              
-              // Visits list
-              Expanded(
-                child: visits.isEmpty
-                    ? _buildEmptyState(context, isDark)
-                    : ListView.builder(
-                        padding: const EdgeInsets.all(16),
-                        itemCount: visits.length,
-                        itemBuilder: (context, index) => _VisitCard(
-                          visit: visits[index],
-                          isDark: isDark,
-                          onTap: () => _showVisitDetails(visits[index]),
-                        ),
-                      ),
-              ),
-            ],
-          );
-        },
+          // Visits list
+          Expanded(
+            child: visits.isEmpty
+                ? _buildEmptyState(context, isDark)
+                : ListView.builder(
+                    primary: false,
+                    padding: const EdgeInsets.all(16),
+                    itemCount: visits.length,
+                    itemBuilder: (context, index) => _VisitCard(
+                      visit: visits[index],
+                      isDark: isDark,
+                      onTap: () => _showVisitDetails(visits[index]),
+                    ),
+                  ),
+          ),
+        ],
       ),
-      loading: () => const Center(child: CircularProgressIndicator()),
-      error: (err, _) => Center(child: Text('Error: $err')),
     );
   }
 
@@ -211,79 +260,124 @@ class _PatientVisitsTabState extends ConsumerState<PatientVisitsTab> {
 
   Widget _buildFilterChips(bool isDark) {
     final filters = [
-      ('all', 'All'),
-      ('upcoming', 'Upcoming'),
-      ('past', 'Past'),
-      ('completed', 'Completed'),
+      ('all', 'All', Icons.list_alt_rounded),
+      ('upcoming', 'Upcoming', Icons.upcoming_rounded),
+      ('past', 'Past', Icons.history_rounded),
+      ('completed', 'Completed', Icons.check_circle_outline_rounded),
     ];
 
-    return SingleChildScrollView(
-      scrollDirection: Axis.horizontal,
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-      child: Row(
-        children: filters.map((f) {
-          final isSelected = _filter == f.$1;
-          return Padding(
-            padding: const EdgeInsets.only(right: 8),
-            child: FilterChip(
-              label: Text(f.$2),
-              selected: isSelected,
-              onSelected: (_) => setState(() => _filter = f.$1),
-              backgroundColor: isDark ? AppColors.darkSurface : Colors.grey.shade100,
-              selectedColor: AppColors.primary.withValues(alpha: 0.2),
-              labelStyle: TextStyle(
-                color: isSelected ? AppColors.primary : (isDark ? Colors.white70 : Colors.black87),
-                fontWeight: isSelected ? FontWeight.w600 : FontWeight.normal,
+    return Container(
+      margin: const EdgeInsets.fromLTRB(16, 8, 16, 8),
+      decoration: BoxDecoration(
+        color: isDark ? AppColors.darkSurface : Colors.grey.shade100,
+        borderRadius: BorderRadius.circular(12),
+      ),
+      child: SingleChildScrollView(
+        scrollDirection: Axis.horizontal,
+        padding: const EdgeInsets.all(4),
+        child: Row(
+          children: filters.map((f) {
+            final isSelected = _filter == f.$1;
+            return Padding(
+              padding: const EdgeInsets.only(right: 4),
+              child: GestureDetector(
+                onTap: () => setState(() => _filter = f.$1),
+                child: AnimatedContainer(
+                  duration: const Duration(milliseconds: 200),
+                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                  decoration: BoxDecoration(
+                    color: isSelected ? AppColors.primary : Colors.transparent,
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(
+                        f.$3,
+                        size: 16,
+                        color: isSelected 
+                            ? Colors.white 
+                            : (isDark ? AppColors.darkTextSecondary : AppColors.textSecondary),
+                      ),
+                      const SizedBox(width: 6),
+                      Text(
+                        f.$2,
+                        style: TextStyle(
+                          fontSize: 13,
+                          fontWeight: FontWeight.w600,
+                          color: isSelected 
+                              ? Colors.white 
+                              : (isDark ? AppColors.darkTextSecondary : AppColors.textSecondary),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
               ),
-            ),
-          );
-        }).toList(),
+            );
+          }).toList(),
+        ),
       ),
     );
   }
 
   Widget _buildEmptyState(BuildContext context, bool isDark) {
-    return Center(
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Icon(
-            Icons.calendar_today_outlined,
-            size: 64,
-            color: AppColors.primary.withValues(alpha: 0.5),
-          ),
-          const SizedBox(height: 16),
-          Text(
-            'No Visits',
-            style: TextStyle(
-              fontSize: 18,
-              fontWeight: FontWeight.bold,
-              color: isDark ? Colors.white : AppColors.textPrimary,
-            ),
-          ),
-          const SizedBox(height: 8),
-          Text(
-            'Schedule an appointment to start tracking visits',
-            style: TextStyle(
-              color: isDark ? Colors.white70 : AppColors.textSecondary,
-            ),
-          ),
-          const SizedBox(height: 24),
-          ElevatedButton.icon(
-            onPressed: () => Navigator.push(
-              context,
-              MaterialPageRoute(
-                builder: (_) => AddAppointmentScreen(preselectedPatient: widget.patient),
+    return SingleChildScrollView(
+      primary: false,
+      physics: const AlwaysScrollableScrollPhysics(),
+      child: SizedBox(
+        height: MediaQuery.of(context).size.height * 0.6,
+        child: Center(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(
+                Icons.calendar_today_outlined,
+                size: 64,
+                color: AppColors.primary.withValues(alpha: 0.5),
               ),
-            ),
-            icon: const Icon(Icons.add),
-            label: const Text('Schedule Visit'),
-            style: ElevatedButton.styleFrom(
-              backgroundColor: AppColors.primary,
-              foregroundColor: Colors.white,
-            ),
+              const SizedBox(height: 16),
+              Text(
+                'No Visits',
+                style: TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.bold,
+                  color: isDark ? Colors.white : AppColors.textPrimary,
+                ),
+              ),
+              const SizedBox(height: 8),
+              Text(
+                'Schedule an appointment to start tracking visits',
+                style: TextStyle(
+                  color: isDark ? Colors.white70 : AppColors.textSecondary,
+                ),
+              ),
+              const SizedBox(height: 16),
+              Text(
+                'Pull down to refresh',
+                style: TextStyle(
+                  fontSize: 12,
+                  color: isDark ? Colors.white54 : AppColors.textSecondary.withValues(alpha: 0.7),
+                ),
+              ),
+              const SizedBox(height: 24),
+              ElevatedButton.icon(
+                onPressed: () => Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (_) => AddAppointmentScreen(preselectedPatient: widget.patient),
+                  ),
+                ),
+                icon: const Icon(Icons.add),
+                label: const Text('Schedule Visit'),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: AppColors.primary,
+                  foregroundColor: Colors.white,
+                ),
+              ),
+            ],
           ),
-        ],
+        ),
       ),
     );
   }
@@ -299,7 +393,7 @@ class _PatientVisitsTabState extends ConsumerState<PatientVisitsTab> {
         visit: visit,
         isDark: isDark,
         patient: widget.patient,
-        onVisitUpdated: () => setState(() {}),
+        onVisitUpdated: () => _loadData(), // Refresh data when visit is updated
       ),
     );
   }
@@ -1574,67 +1668,75 @@ class _VisitDetailSheetState extends ConsumerState<_VisitDetailSheet> {
   }
 
   Widget _buildPrescriptionItem(Prescription rx, bool isDark) {
-    List<dynamic> medications = [];
-    try {
-      medications = jsonDecode(rx.itemsJson) as List<dynamic>;
-    } catch (e) {
-      // Handle parsing error
-    }
+    // V5: Use FutureBuilder to load medications from normalized table
+    final dbAsync = ref.read(doctorDbProvider);
+    final db = dbAsync.when(
+      data: (db) => db,
+      loading: () => null,
+      error: (_, __) => null,
+    );
     
     final dateFormat = DateFormat('MMM d, yyyy');
     
-    return Container(
-      margin: const EdgeInsets.only(bottom: 10),
-      padding: const EdgeInsets.all(12),
-      decoration: BoxDecoration(
-        color: isDark ? AppColors.darkSurface : Colors.grey.shade50,
-        borderRadius: BorderRadius.circular(10),
-        border: Border.all(
-          color: const Color(0xFF8B5CF6).withValues(alpha: 0.2),
-        ),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          // Header
-          Row(
+    return FutureBuilder<List<dynamic>>(
+      future: db != null 
+          ? db.getMedicationsForPrescriptionCompat(rx.id)
+          : Future.value(<dynamic>[]),
+      builder: (context, snapshot) {
+        final medications = snapshot.data ?? [];
+    
+        return Container(
+          margin: const EdgeInsets.only(bottom: 10),
+          padding: const EdgeInsets.all(12),
+          decoration: BoxDecoration(
+            color: isDark ? AppColors.darkSurface : Colors.grey.shade50,
+            borderRadius: BorderRadius.circular(10),
+            border: Border.all(
+              color: const Color(0xFF8B5CF6).withValues(alpha: 0.2),
+            ),
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Container(
-                padding: const EdgeInsets.all(6),
-                decoration: BoxDecoration(
-                  color: const Color(0xFF8B5CF6).withValues(alpha: 0.1),
-                  borderRadius: BorderRadius.circular(6),
-                ),
-                child: const Icon(Icons.medication, size: 16, color: Color(0xFF8B5CF6)),
-              ),
-              const SizedBox(width: 10),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      'Rx #${rx.id}',
-                      style: TextStyle(
-                        fontSize: 13,
-                        fontWeight: FontWeight.w600,
-                        color: isDark ? Colors.white : AppColors.textPrimary,
-                      ),
+              // Header
+              Row(
+                children: [
+                  Container(
+                    padding: const EdgeInsets.all(6),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFF8B5CF6).withValues(alpha: 0.1),
+                      borderRadius: BorderRadius.circular(6),
                     ),
-                    Text(
-                      dateFormat.format(rx.createdAt),
-                      style: TextStyle(
-                        fontSize: 11,
-                        color: isDark ? Colors.white54 : AppColors.textSecondary,
-                      ),
+                    child: const Icon(Icons.medication, size: 16, color: Color(0xFF8B5CF6)),
+                  ),
+                  const SizedBox(width: 10),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          'Rx #${rx.id}',
+                          style: TextStyle(
+                            fontSize: 13,
+                            fontWeight: FontWeight.w600,
+                            color: isDark ? Colors.white : AppColors.textPrimary,
+                          ),
+                        ),
+                        Text(
+                          dateFormat.format(rx.createdAt),
+                          style: TextStyle(
+                            fontSize: 11,
+                            color: isDark ? Colors.white54 : AppColors.textSecondary,
+                          ),
+                        ),
+                      ],
                     ),
-                  ],
-                ),
-              ),
-              Text(
-                '${medications.length} items',
-                style: TextStyle(
-                  fontSize: 11,
-                  color: isDark ? Colors.white54 : AppColors.textSecondary,
+                  ),
+                  Text(
+                    '${medications.length} items',
+                    style: TextStyle(
+                      fontSize: 11,
+                      color: isDark ? Colors.white54 : AppColors.textSecondary,
                 ),
               ),
             ],
@@ -1679,6 +1781,8 @@ class _VisitDetailSheetState extends ConsumerState<_VisitDetailSheet> {
         ],
       ),
     );
+      }, // End of FutureBuilder builder
+    ); // End of FutureBuilder
   }
 
   Widget _buildRecordItem(MedicalRecord record, bool isDark) {

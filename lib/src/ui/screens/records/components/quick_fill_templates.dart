@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import '../../../../core/theme/design_tokens.dart';
-import '../../../../theme/app_theme.dart';
 
 /// Data class for a quick fill template
 class QuickFillTemplate {
@@ -728,7 +727,7 @@ class PsychiatricTemplates {
         'perception': 'Flashbacks (dissociative), hypervigilance',
         'cognition': 'Concentration impaired, memory gaps around trauma',
         'insight': 'Good',
-        'suicide_risk': 'Low to Moderate - assess carefully',
+        'suicide_risk': 'Moderate',
         'diagnosis': 'Post-Traumatic Stress Disorder',
         'treatment': 'SSRI (Sertraline 50mg), Trauma-focused CBT or EMDR referral, Sleep hygiene',
         'follow_up': 'Review in 2 weeks',
@@ -749,7 +748,7 @@ class PsychiatricTemplates {
         'perception': 'May have grandiose delusions in severe cases',
         'cognition': 'Distractible, poor judgment',
         'insight': 'Poor - lacks awareness of illness',
-        'suicide_risk': 'Moderate - impulsivity risk',
+        'suicide_risk': 'Moderate',
         'diagnosis': 'Bipolar I Disorder, Current Episode Manic',
         'treatment': 'Mood stabilizer (Lithium/Valproate), Antipsychotic if severe, Hospitalization if needed',
         'follow_up': 'Urgent review in 1 week, consider admission',
@@ -770,7 +769,7 @@ class PsychiatricTemplates {
         'perception': 'Auditory hallucinations (voices commenting/commanding)',
         'cognition': 'Impaired attention and executive function',
         'insight': 'Poor',
-        'suicide_risk': 'Moderate - especially in command hallucinations',
+        'suicide_risk': 'Moderate',
         'diagnosis': 'Schizophrenia, Paranoid type',
         'treatment': 'Atypical antipsychotic (Risperidone 2-4mg), Family psychoeducation, Rehabilitation',
         'follow_up': 'Review in 1-2 weeks',

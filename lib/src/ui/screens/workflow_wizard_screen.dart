@@ -1,11 +1,11 @@
-import 'dart:convert';
-
 import 'package:drift/drift.dart' hide Column;
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 
+import '../../core/routing/app_router.dart';
+import '../../core/theme/design_tokens.dart';
 import '../../db/doctor_db.dart';
 import '../../providers/db_provider.dart';
 import '../../providers/encounter_provider.dart';
@@ -51,6 +51,7 @@ class _WorkflowWizardScreenState extends ConsumerState<WorkflowWizardScreen> {
   MedicalRecord? _medicalRecord;
   TreatmentOutcome? _treatmentPlan; // Treatment plan for this visit
   Prescription? _prescription;
+  int _prescriptionMedicationCount = 0; // V5: Cached count from normalized table
   ScheduledFollowUp? _followUp;
   Invoice? _invoice;
   
@@ -58,15 +59,43 @@ class _WorkflowWizardScreenState extends ConsumerState<WorkflowWizardScreen> {
   String _currentDiagnosis = '';
   List<String> _currentDiagnoses = [];
   
+  // Chief Complaint data
+  String _chiefComplaint = '';
+  String _historyOfPresentIllness = '';
+  
+  // Lab Orders data
+  List<Map<String, dynamic>> _labOrders = [];
+  
+  // Clinical Notes data
+  String _subjective = '';
+  String _objective = '';
+  String _assessment = '';
+  String _plan = '';
+  
   // Step completion status
   final Map<int, bool> _completedSteps = {};
   
   // Optional steps
+  bool _skipChiefComplaint = false;
   bool _skipVitals = false;
   bool _skipDiagnosis = false;
-  bool _skipTreatmentPlan = false;
+  bool _skipLabOrders = true; // Default skip
   bool _skipPrescription = false;
   bool _skipFollowUp = true; // Default skip
+  bool _skipClinicalNotes = false;
+  
+  // New optimized workflow steps:
+  // 0: Register Patient
+  // 1: Schedule Appointment  
+  // 2: Check-In Patient
+  // 3: Chief Complaint & History (NEW)
+  // 4: Record Vitals
+  // 5: Examination & Diagnosis
+  // 6: Lab Orders (NEW)
+  // 7: Prescription & Treatment (MERGED)
+  // 8: Schedule Follow-Up
+  // 9: Clinical Notes/SOAP (NEW)
+  // 10: Complete & Invoice
   
   final List<_WorkflowStep> _steps = [
     _WorkflowStep(
@@ -87,33 +116,40 @@ class _WorkflowWizardScreenState extends ConsumerState<WorkflowWizardScreen> {
       title: 'Check-In Patient',
       subtitle: 'Start the consultation',
       icon: Icons.login_rounded,
-      color: const Color(0xFF8B5CF6),
+      color: AppColors.billing,
       isRequired: true,
+    ),
+    _WorkflowStep(
+      title: 'Chief Complaint',
+      subtitle: 'Patient\'s main concern & history',
+      icon: Icons.speaker_notes_rounded,
+      color: AppColors.warning,
+      isRequired: false,
     ),
     _WorkflowStep(
       title: 'Record Vitals',
       subtitle: 'Blood pressure, temperature, etc.',
       icon: Icons.monitor_heart_rounded,
-      color: const Color(0xFFEC4899),
+      color: const Color(0xFFEC4899), // Pink for vitals
       isRequired: false,
     ),
     _WorkflowStep(
-      title: 'Add Diagnosis',
-      subtitle: 'Document diagnoses and findings',
+      title: 'Examination & Diagnosis',
+      subtitle: 'Physical exam and diagnoses',
       icon: Icons.medical_information_rounded,
-      color: const Color(0xFF10B981),
+      color: AppColors.success,
       isRequired: false,
     ),
     _WorkflowStep(
-      title: 'Treatment Plan',
-      subtitle: 'Plan treatment and medications',
-      icon: Icons.assignment_rounded,
-      color: const Color(0xFF8B5CF6),
+      title: 'Lab Orders',
+      subtitle: 'Order laboratory tests',
+      icon: Icons.science_rounded,
+      color: AppColors.billing,
       isRequired: false,
     ),
     _WorkflowStep(
-      title: 'Create Prescription',
-      subtitle: 'Medications with diagnosis',
+      title: 'Prescription & Treatment',
+      subtitle: 'Medications and treatment plan',
       icon: Icons.medication_rounded,
       color: AppColors.warning,
       isRequired: false,
@@ -122,7 +158,14 @@ class _WorkflowWizardScreenState extends ConsumerState<WorkflowWizardScreen> {
       title: 'Schedule Follow-Up',
       subtitle: 'Book next visit if needed',
       icon: Icons.event_repeat_rounded,
-      color: Colors.orange,
+      color: AppColors.prescriptions,
+      isRequired: false,
+    ),
+    _WorkflowStep(
+      title: 'Clinical Notes',
+      subtitle: 'SOAP notes and summary',
+      icon: Icons.note_alt_rounded,
+      color: AppColors.info,
       isRequired: false,
     ),
     _WorkflowStep(
@@ -160,18 +203,50 @@ class _WorkflowWizardScreenState extends ConsumerState<WorkflowWizardScreen> {
 
   bool _isStepSkipped(int index) {
     switch (index) {
-      case 3: return _skipVitals;          // Vitals step
-      case 4: return _skipDiagnosis;       // Diagnosis step
-      case 5: return _skipTreatmentPlan;   // Treatment Plan step
-      case 6: return _skipPrescription;    // Prescription step
-      case 7: return _skipFollowUp;        // Follow-up step
+      case 3: return _skipChiefComplaint;  // Chief Complaint step
+      case 4: return _skipVitals;          // Vitals step
+      case 5: return _skipDiagnosis;       // Diagnosis step
+      case 6: return _skipLabOrders;       // Lab Orders step
+      case 7: return _skipPrescription;    // Prescription step
+      case 8: return _skipFollowUp;        // Follow-up step
+      case 9: return _skipClinicalNotes;   // Clinical Notes step
       default: return false;
     }
   }
 
   bool _isStepCompleted(int index) {
     if (_isStepSkipped(index)) return true;
-    return _completedSteps[index] == true;
+    
+    // Check both the flag AND the actual data presence
+    // This ensures button is active when record exists
+    switch (index) {
+      case 0: // Patient
+        return _completedSteps[index] == true || _patient != null;
+      case 1: // Appointment
+        return _completedSteps[index] == true || _appointment != null;
+      case 2: // Check-in
+        return _completedSteps[index] == true || _encounter != null;
+      case 3: // Chief Complaint
+        return _completedSteps[index] == true || _chiefComplaint.isNotEmpty;
+      case 4: // Vitals
+        return _completedSteps[index] == true; // Vitals are recorded in encounter
+      case 5: // Diagnosis
+        return _completedSteps[index] == true || _currentDiagnoses.isNotEmpty || _medicalRecord != null;
+      case 6: // Lab Orders
+        return _completedSteps[index] == true || _labOrders.isNotEmpty;
+      case 7: // Prescription
+        return _completedSteps[index] == true || _prescription != null;
+      case 8: // Follow-up
+        return _completedSteps[index] == true || _followUp != null;
+      case 9: // Clinical Notes
+        return _completedSteps[index] == true || 
+               _subjective.isNotEmpty || _objective.isNotEmpty || 
+               _assessment.isNotEmpty || _plan.isNotEmpty;
+      case 10: // Invoice
+        return _completedSteps[index] == true || _invoice != null;
+      default:
+        return _completedSteps[index] == true;
+    }
   }
 
   bool _canProceed() {
@@ -324,11 +399,11 @@ class _WorkflowWizardScreenState extends ConsumerState<WorkflowWizardScreen> {
 
   Widget _buildProgressStepper(bool isDark, Color surfaceColor) {
     return Container(
-      padding: const EdgeInsets.symmetric(vertical: 16),
+      padding: EdgeInsets.symmetric(vertical: AppSpacing.lg),
       color: surfaceColor,
       child: SingleChildScrollView(
         scrollDirection: Axis.horizontal,
-        padding: const EdgeInsets.symmetric(horizontal: 16),
+        padding: EdgeInsets.symmetric(horizontal: AppSpacing.lg),
         child: Row(
           children: List.generate(_steps.length, (index) {
             final step = _steps[index];
@@ -343,7 +418,7 @@ class _WorkflowWizardScreenState extends ConsumerState<WorkflowWizardScreen> {
                       ? () => setState(() => _currentStep = index)
                       : null,
                   child: AnimatedContainer(
-                    duration: const Duration(milliseconds: 200),
+                    duration: AppDuration.quick,
                     width: isActive ? 48 : 36,
                     height: isActive ? 48 : 36,
                     decoration: BoxDecoration(
@@ -397,7 +472,7 @@ class _WorkflowWizardScreenState extends ConsumerState<WorkflowWizardScreen> {
     final step = _steps[_currentStep];
     
     return SingleChildScrollView(
-      padding: const EdgeInsets.all(20),
+      padding: EdgeInsets.all(AppSpacing.xl),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -405,14 +480,14 @@ class _WorkflowWizardScreenState extends ConsumerState<WorkflowWizardScreen> {
           Row(
             children: [
               Container(
-                padding: const EdgeInsets.all(12),
+                padding: EdgeInsets.all(AppSpacing.md),
                 decoration: BoxDecoration(
                   color: step.color.withValues(alpha: 0.1),
-                  borderRadius: BorderRadius.circular(12),
+                  borderRadius: BorderRadius.circular(AppRadius.md),
                 ),
                 child: Icon(step.icon, color: step.color, size: 28),
               ),
-              const SizedBox(width: 16),
+              SizedBox(width: AppSpacing.lg),
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -423,33 +498,34 @@ class _WorkflowWizardScreenState extends ConsumerState<WorkflowWizardScreen> {
                           child: Text(
                             step.title,
                             style: TextStyle(
-                              fontSize: 20,
+                              fontSize: AppFontSize.xxxl,
                               fontWeight: FontWeight.bold,
-                              color: isDark ? Colors.white : AppColors.textPrimary,
+                              color: isDark ? AppColors.darkTextPrimary : AppColors.textPrimary,
                             ),
                           ),
                         ),
                         if (!step.isRequired)
                           Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                            padding: EdgeInsets.symmetric(horizontal: AppSpacing.sm, vertical: AppSpacing.xxs),
                             decoration: BoxDecoration(
-                              color: Colors.grey.withValues(alpha: 0.2),
-                              borderRadius: BorderRadius.circular(8),
+                              color: (isDark ? AppColors.darkTextSecondary : AppColors.textSecondary).withValues(alpha: 0.2),
+                              borderRadius: BorderRadius.circular(AppRadius.sm),
                             ),
                             child: Text(
                               'Optional',
                               style: TextStyle(
-                                fontSize: 11,
-                                color: isDark ? Colors.grey[400] : Colors.grey[600],
+                                fontSize: AppFontSize.xs,
+                                color: isDark ? AppColors.darkTextSecondary : AppColors.textSecondary,
                               ),
                             ),
                           ),
                       ],
                     ),
-                    const SizedBox(height: 4),
+                    SizedBox(height: AppSpacing.xs),
                     Text(
                       step.subtitle,
                       style: TextStyle(
+                        fontSize: AppFontSize.lg,
                         color: isDark ? AppColors.darkTextSecondary : AppColors.textSecondary,
                       ),
                     ),
@@ -459,7 +535,7 @@ class _WorkflowWizardScreenState extends ConsumerState<WorkflowWizardScreen> {
             ],
           ),
           
-          const SizedBox(height: 24),
+          SizedBox(height: AppSpacing.xxl),
           
           // Step-specific content
           _buildStepSpecificContent(_currentStep, isDark),
@@ -477,16 +553,20 @@ class _WorkflowWizardScreenState extends ConsumerState<WorkflowWizardScreen> {
       case 2:
         return _buildCheckInStep(isDark);
       case 3:
-        return _buildVitalsStep(isDark);
+        return _buildChiefComplaintStep(isDark);
       case 4:
-        return _buildDiagnosisStep(isDark);
+        return _buildVitalsStep(isDark);
       case 5:
-        return _buildTreatmentPlanStep(isDark);
+        return _buildDiagnosisStep(isDark);
       case 6:
-        return _buildPrescriptionStep(isDark);
+        return _buildLabOrdersStep(isDark);
       case 7:
-        return _buildFollowUpStep(isDark);
+        return _buildPrescriptionStep(isDark);
       case 8:
+        return _buildFollowUpStep(isDark);
+      case 9:
+        return _buildClinicalNotesStep(isDark);
+      case 10:
         return _buildInvoiceStep(isDark);
       default:
         return const SizedBox.shrink();
@@ -539,29 +619,46 @@ class _WorkflowWizardScreenState extends ConsumerState<WorkflowWizardScreen> {
     if (_appointment != null) {
       final dateFormat = DateFormat('EEEE, MMM d, yyyy');
       final timeFormat = DateFormat('h:mm a');
+      final isWalkIn = _appointment!.notes.contains('Walk-in');
       
       return _buildCompletedCard(
         isDark: isDark,
         title: _appointment!.reason,
-        subtitle: 'Appointment scheduled',
-        icon: Icons.calendar_month_rounded,
+        subtitle: isWalkIn ? 'Walk-in appointment' : 'Appointment scheduled',
+        icon: isWalkIn ? Icons.directions_walk_rounded : Icons.calendar_month_rounded,
         color: AppColors.appointments,
         onEdit: () => _scheduleAppointment(),
         details: [
           'Date: ${dateFormat.format(_appointment!.appointmentDateTime)}',
           'Time: ${timeFormat.format(_appointment!.appointmentDateTime)}',
-          'Duration: ${_appointment!.durationMinutes} minutes',
+          if (!isWalkIn) 'Duration: ${_appointment!.durationMinutes} minutes',
+          if (isWalkIn) 'Type: Walk-In (Current Time)',
         ],
       );
     }
 
-    return _buildActionCard(
-      isDark: isDark,
-      title: 'Schedule Appointment',
-      subtitle: 'Book a consultation time for ${_patient?.firstName ?? "patient"}',
-      icon: Icons.calendar_month_rounded,
-      color: AppColors.appointments,
-      onTap: () => _scheduleAppointment(),
+    return Column(
+      children: [
+        // Walk-In / Instant Appointment (Primary option for workflow)
+        _buildActionCard(
+          isDark: isDark,
+          title: 'Walk-In Appointment',
+          subtitle: 'Start consultation now (current time)',
+          icon: Icons.directions_walk_rounded,
+          color: const Color(0xFF10B981),
+          onTap: () => _createWalkInAppointment(),
+        ),
+        const SizedBox(height: 12),
+        // Schedule for later
+        _buildActionCard(
+          isDark: isDark,
+          title: 'Schedule Appointment',
+          subtitle: 'Book for a specific date/time',
+          icon: Icons.calendar_month_rounded,
+          color: AppColors.appointments,
+          onTap: () => _scheduleAppointment(),
+        ),
+      ],
     );
   }
 
@@ -646,6 +743,62 @@ class _WorkflowWizardScreenState extends ConsumerState<WorkflowWizardScreen> {
     );
   }
 
+  // Step 3: Chief Complaint & History
+  Widget _buildChiefComplaintStep(bool isDark) {
+    final hasData = _chiefComplaint.isNotEmpty;
+    
+    return Column(
+      children: [
+        _buildSkipOption(
+          isDark: isDark,
+          title: 'Skip Chief Complaint',
+          value: _skipChiefComplaint,
+          onChanged: (value) => setState(() {
+            _skipChiefComplaint = value;
+            if (value) _completedSteps[3] = true;
+          }),
+        ),
+        const SizedBox(height: 16),
+        
+        if (!_skipChiefComplaint) ...[
+          if (hasData)
+            _buildCompletedCard(
+              isDark: isDark,
+              title: 'Chief Complaint Recorded',
+              subtitle: _chiefComplaint,
+              icon: Icons.speaker_notes_rounded,
+              color: const Color(0xFFF59E0B),
+              onEdit: () => _recordChiefComplaint(),
+              details: [
+                if (_historyOfPresentIllness.isNotEmpty) 
+                  'HPI: ${_historyOfPresentIllness.length > 50 ? '${_historyOfPresentIllness.substring(0, 50)}...' : _historyOfPresentIllness}',
+              ],
+            )
+          else
+            _buildActionCard(
+              isDark: isDark,
+              title: 'Record Chief Complaint',
+              subtitle: 'Document patient\'s main concern',
+              icon: Icons.speaker_notes_rounded,
+              color: const Color(0xFFF59E0B),
+              onTap: () => _recordChiefComplaint(),
+            ),
+          
+          const SizedBox(height: 12),
+          
+          _buildActionCard(
+            isDark: isDark,
+            title: 'Quick Complaint Entry',
+            subtitle: 'Common complaints quick select',
+            icon: Icons.flash_on_rounded,
+            color: Colors.amber,
+            onTap: () => _showQuickComplaintPicker(isDark),
+          ),
+        ],
+      ],
+    );
+  }
+
   // Step 4: Vitals
   Widget _buildVitalsStep(bool isDark) {
     return Column(
@@ -657,19 +810,19 @@ class _WorkflowWizardScreenState extends ConsumerState<WorkflowWizardScreen> {
           value: _skipVitals,
           onChanged: (value) => setState(() {
             _skipVitals = value;
-            if (value) _completedSteps[3] = true;
+            if (value) _completedSteps[4] = true;
           }),
         ),
-        const SizedBox(height: 16),
+        SizedBox(height: AppSpacing.lg),
         
         if (!_skipVitals) ...[
-          if (_completedSteps[3] == true)
+          if (_completedSteps[4] == true)
             _buildCompletedCard(
               isDark: isDark,
               title: 'Vitals Recorded',
               subtitle: 'Patient vital signs saved',
               icon: Icons.monitor_heart_rounded,
-              color: const Color(0xFFEC4899),
+              color: const Color(0xFFEC4899), // Pink for vitals
               onEdit: () => _recordVitals(),
             )
           else
@@ -678,7 +831,7 @@ class _WorkflowWizardScreenState extends ConsumerState<WorkflowWizardScreen> {
               title: 'Record Vital Signs',
               subtitle: 'BP, heart rate, temperature, SpO2',
               icon: Icons.monitor_heart_rounded,
-              color: const Color(0xFFEC4899),
+              color: const Color(0xFFEC4899), // Pink for vitals
               onTap: () => _recordVitals(),
             ),
         ],
@@ -686,7 +839,7 @@ class _WorkflowWizardScreenState extends ConsumerState<WorkflowWizardScreen> {
     );
   }
 
-  // Step 5: Diagnosis
+  // Step 6: Diagnosis (index 5)
   Widget _buildDiagnosisStep(bool isDark) {
     return Column(
       children: [
@@ -696,10 +849,10 @@ class _WorkflowWizardScreenState extends ConsumerState<WorkflowWizardScreen> {
           value: _skipDiagnosis,
           onChanged: (value) => setState(() {
             _skipDiagnosis = value;
-            if (value) _completedSteps[4] = true;
+            if (value) _completedSteps[5] = true;
           }),
         ),
-        const SizedBox(height: 16),
+        SizedBox(height: AppSpacing.lg),
         
         if (!_skipDiagnosis) ...[
           // Show current diagnoses if any
@@ -709,17 +862,17 @@ class _WorkflowWizardScreenState extends ConsumerState<WorkflowWizardScreen> {
               title: 'Diagnoses Added',
               subtitle: '${_currentDiagnoses.length} diagnosis(es)',
               icon: Icons.medical_information_rounded,
-              color: const Color(0xFF10B981),
+              color: AppColors.success,
               onEdit: () => _addDiagnosis(),
               details: _currentDiagnoses.take(3).toList(),
             ),
-            const SizedBox(height: 12),
+            SizedBox(height: AppSpacing.md),
             _buildActionCard(
               isDark: isDark,
               title: 'Add More Diagnoses',
               subtitle: 'Add additional diagnoses',
               icon: Icons.add_circle_outline_rounded,
-              color: const Color(0xFF10B981),
+              color: AppColors.success,
               onTap: () => _addDiagnosis(),
             ),
           ] else ...[
@@ -728,12 +881,12 @@ class _WorkflowWizardScreenState extends ConsumerState<WorkflowWizardScreen> {
               title: 'Add Diagnosis',
               subtitle: 'Document patient diagnoses (ICD-10)',
               icon: Icons.medical_information_rounded,
-              color: const Color(0xFF10B981),
+              color: AppColors.success,
               onTap: () => _addDiagnosis(),
             ),
           ],
           
-          const SizedBox(height: 16),
+          SizedBox(height: AppSpacing.lg),
           
           // Also allow adding a medical record for detailed findings
           if (_medicalRecord != null)
@@ -742,10 +895,12 @@ class _WorkflowWizardScreenState extends ConsumerState<WorkflowWizardScreen> {
               title: _medicalRecord!.recordType,
               subtitle: 'Medical record added',
               icon: Icons.folder_rounded,
-              color: Colors.teal,
+              color: AppColors.accent,
               onEdit: () => _addMedicalRecord(),
               details: [
                 'Date: ${DateFormat('MMM d, yyyy').format(_medicalRecord!.recordDate)}',
+                if (_medicalRecord!.diagnosis.isNotEmpty)
+                  'Diagnosis: ${_medicalRecord!.diagnosis}',
               ],
             )
           else
@@ -754,7 +909,7 @@ class _WorkflowWizardScreenState extends ConsumerState<WorkflowWizardScreen> {
               title: 'Add Medical Record',
               subtitle: 'Document detailed findings (optional)',
               icon: Icons.folder_rounded,
-              color: Colors.teal,
+              color: AppColors.accent,
               onTap: () => _addMedicalRecord(),
             ),
         ],
@@ -762,17 +917,19 @@ class _WorkflowWizardScreenState extends ConsumerState<WorkflowWizardScreen> {
     );
   }
 
-  // Step 6: Treatment Plan
-  Widget _buildTreatmentPlanStep(bool isDark) {
+  // Step 6: Lab Orders
+  Widget _buildLabOrdersStep(bool isDark) {
+    final hasOrders = _labOrders.isNotEmpty;
+    
     return Column(
       children: [
         _buildSkipOption(
           isDark: isDark,
-          title: 'Skip Treatment Plan',
-          value: _skipTreatmentPlan,
+          title: 'No Lab Tests Needed',
+          value: _skipLabOrders,
           onChanged: (value) => setState(() {
-            _skipTreatmentPlan = value;
-            if (value) _completedSteps[5] = true;
+            _skipLabOrders = value;
+            if (value) _completedSteps[6] = true;
           }),
         ),
         const SizedBox(height: 16),
@@ -781,7 +938,7 @@ class _WorkflowWizardScreenState extends ConsumerState<WorkflowWizardScreen> {
         if (_currentDiagnoses.isNotEmpty) ...[
           _buildInfoCard(
             isDark: isDark,
-            title: 'Diagnoses for Treatment',
+            title: 'Diagnosis',
             message: _currentDiagnoses.join(', '),
             icon: Icons.medical_information_rounded,
             color: const Color(0xFF10B981),
@@ -789,36 +946,48 @@ class _WorkflowWizardScreenState extends ConsumerState<WorkflowWizardScreen> {
           const SizedBox(height: 16),
         ],
         
-        if (!_skipTreatmentPlan) ...[
-          if (_treatmentPlan != null)
+        if (!_skipLabOrders) ...[
+          if (hasOrders) ...[
             _buildCompletedCard(
               isDark: isDark,
-              title: 'Treatment Plan Created',
-              subtitle: _treatmentPlan!.treatmentDescription,
-              icon: Icons.assignment_rounded,
+              title: '${_labOrders.length} Lab Test${_labOrders.length > 1 ? 's' : ''} Ordered',
+              subtitle: _labOrders.map((o) => o['name'] ?? 'Test').take(3).join(', '),
+              icon: Icons.science_rounded,
               color: const Color(0xFF8B5CF6),
-              onEdit: () => _addTreatmentPlan(),
-              details: [
-                'Status: ${_treatmentPlan!.outcome}',
-                if (_treatmentPlan!.startDate != null)
-                  'Started: ${DateFormat('MMM d, yyyy').format(_treatmentPlan!.startDate!)}',
-              ],
-            )
-          else
-            _buildActionCard(
-              isDark: isDark,
-              title: 'Create Treatment Plan',
-              subtitle: 'Define treatment goals and medications',
-              icon: Icons.assignment_rounded,
-              color: const Color(0xFF8B5CF6),
-              onTap: () => _addTreatmentPlan(),
+              onEdit: () => _orderLabTests(),
+              details: _labOrders.length > 3 
+                  ? ['...and ${_labOrders.length - 3} more']
+                  : [],
             ),
+            const SizedBox(height: 12),
+          ],
+          
+          _buildActionCard(
+            isDark: isDark,
+            title: hasOrders ? 'Add More Lab Tests' : 'Order Lab Tests',
+            subtitle: 'Blood work, imaging, and other tests',
+            icon: Icons.science_rounded,
+            color: const Color(0xFF8B5CF6),
+            onTap: () => _orderLabTests(),
+          ),
+          
+          const SizedBox(height: 12),
+          
+          // Quick common tests
+          _buildActionCard(
+            isDark: isDark,
+            title: 'Quick Lab Panels',
+            subtitle: 'CBC, LFT, RFT, Lipid Profile, etc.',
+            icon: Icons.flash_on_rounded,
+            color: Colors.purple[300]!,
+            onTap: () => _showQuickLabPanels(isDark),
+          ),
         ],
       ],
     );
   }
 
-  // Step 7: Prescription
+  // Step 7: Prescription & Treatment
   Widget _buildPrescriptionStep(bool isDark) {
     return Column(
       children: [
@@ -828,13 +997,13 @@ class _WorkflowWizardScreenState extends ConsumerState<WorkflowWizardScreen> {
           value: _skipPrescription,
           onChanged: (value) => setState(() {
             _skipPrescription = value;
-            if (value) _completedSteps[6] = true;
+            if (value) _completedSteps[7] = true;
           }),
         ),
         const SizedBox(height: 16),
         
-        // Show diagnosis and treatment plan summary
-        if (_currentDiagnoses.isNotEmpty || _treatmentPlan != null) ...[
+        // Show diagnosis summary
+        if (_currentDiagnoses.isNotEmpty) ...[
           Container(
             padding: const EdgeInsets.all(12),
             decoration: BoxDecoration(
@@ -859,19 +1028,26 @@ class _WorkflowWizardScreenState extends ConsumerState<WorkflowWizardScreen> {
                   ],
                 ),
                 const SizedBox(height: 8),
-                if (_currentDiagnoses.isNotEmpty)
+                Padding(
+                  padding: const EdgeInsets.only(left: 26),
+                  child: Text(
+                    '• Diagnosis: ${_currentDiagnoses.join(", ")}',
+                    style: TextStyle(fontSize: 13, color: isDark ? Colors.white70 : Colors.black87),
+                  ),
+                ),
+                if (_chiefComplaint.isNotEmpty)
                   Padding(
                     padding: const EdgeInsets.only(left: 26),
                     child: Text(
-                      '• Diagnosis: ${_currentDiagnoses.join(", ")}',
+                      '• Chief Complaint: $_chiefComplaint',
                       style: TextStyle(fontSize: 13, color: isDark ? Colors.white70 : Colors.black87),
                     ),
                   ),
-                if (_treatmentPlan != null)
+                if (_labOrders.isNotEmpty)
                   Padding(
                     padding: const EdgeInsets.only(left: 26),
                     child: Text(
-                      '• Treatment: ${_treatmentPlan!.treatmentDescription}',
+                      '• Lab Orders: ${_labOrders.length} test(s)',
                       style: TextStyle(fontSize: 13, color: isDark ? Colors.white70 : Colors.black87),
                     ),
                   ),
@@ -910,6 +1086,28 @@ class _WorkflowWizardScreenState extends ConsumerState<WorkflowWizardScreen> {
               color: AppColors.warning,
               onTap: () => _createPrescription(),
             ),
+            
+          const SizedBox(height: 12),
+          
+          // Treatment plan option (integrated)
+          if (_treatmentPlan != null)
+            _buildCompletedCard(
+              isDark: isDark,
+              title: 'Treatment Plan',
+              subtitle: _treatmentPlan!.treatmentDescription,
+              icon: Icons.assignment_rounded,
+              color: const Color(0xFF8B5CF6),
+              onEdit: () => _addTreatmentPlan(),
+            )
+          else
+            _buildActionCard(
+              isDark: isDark,
+              title: 'Add Treatment Plan',
+              subtitle: 'Define treatment goals (optional)',
+              icon: Icons.assignment_rounded,
+              color: const Color(0xFF8B5CF6),
+              onTap: () => _addTreatmentPlan(),
+            ),
         ],
       ],
     );
@@ -925,7 +1123,7 @@ class _WorkflowWizardScreenState extends ConsumerState<WorkflowWizardScreen> {
           value: _skipFollowUp,
           onChanged: (value) => setState(() {
             _skipFollowUp = value;
-            if (value) _completedSteps[7] = true;
+            if (value) _completedSteps[8] = true;
           }),
         ),
         const SizedBox(height: 16),
@@ -957,7 +1155,65 @@ class _WorkflowWizardScreenState extends ConsumerState<WorkflowWizardScreen> {
     );
   }
 
-  // Step 9: Invoice
+  // Step 9: Clinical Notes (SOAP)
+  Widget _buildClinicalNotesStep(bool isDark) {
+    final hasNotes = _subjective.isNotEmpty || _objective.isNotEmpty || 
+                     _assessment.isNotEmpty || _plan.isNotEmpty;
+    
+    return Column(
+      children: [
+        _buildSkipOption(
+          isDark: isDark,
+          title: 'Skip Clinical Notes',
+          value: _skipClinicalNotes,
+          onChanged: (value) => setState(() {
+            _skipClinicalNotes = value;
+            if (value) _completedSteps[9] = true;
+          }),
+        ),
+        const SizedBox(height: 16),
+        
+        if (!_skipClinicalNotes) ...[
+          if (hasNotes)
+            _buildCompletedCard(
+              isDark: isDark,
+              title: 'Clinical Notes Recorded',
+              subtitle: 'SOAP notes documented',
+              icon: Icons.note_alt_rounded,
+              color: const Color(0xFF06B6D4),
+              onEdit: () => _recordClinicalNotes(),
+              details: [
+                if (_subjective.isNotEmpty) 'S: ${_subjective.length > 30 ? '${_subjective.substring(0, 30)}...' : _subjective}',
+                if (_assessment.isNotEmpty) 'A: ${_assessment.length > 30 ? '${_assessment.substring(0, 30)}...' : _assessment}',
+              ],
+            )
+          else
+            _buildActionCard(
+              isDark: isDark,
+              title: 'Record Clinical Notes',
+              subtitle: 'SOAP notes and visit summary',
+              icon: Icons.note_alt_rounded,
+              color: const Color(0xFF06B6D4),
+              onTap: () => _recordClinicalNotes(),
+            ),
+          
+          const SizedBox(height: 12),
+          
+          // Auto-generate from visit data
+          _buildActionCard(
+            isDark: isDark,
+            title: 'Auto-Generate Notes',
+            subtitle: 'Create notes from visit data',
+            icon: Icons.auto_awesome_rounded,
+            color: Colors.cyan[300]!,
+            onTap: () => _autoGenerateNotes(),
+          ),
+        ],
+      ],
+    );
+  }
+
+  // Step 10: Invoice
   Widget _buildInvoiceStep(bool isDark) {
     return Column(
       children: [
@@ -995,8 +1251,9 @@ class _WorkflowWizardScreenState extends ConsumerState<WorkflowWizardScreen> {
     final items = <String>[];
     if (_patient != null) items.add('Patient: ${_patient!.firstName} ${_patient!.lastName}');
     if (_appointment != null) items.add('Reason: ${_appointment!.reason}');
+    if (_chiefComplaint.isNotEmpty) items.add('Chief Complaint: $_chiefComplaint');
     if (_currentDiagnoses.isNotEmpty) items.add('Diagnosis: ${_currentDiagnoses.join(", ")}');
-    if (_treatmentPlan != null) items.add('Treatment: ${_treatmentPlan!.treatmentDescription}');
+    if (_labOrders.isNotEmpty) items.add('Lab Orders: ${_labOrders.length} test(s)');
     if (_prescription != null) items.add('Prescription: Created');
     if (_followUp != null) items.add('Follow-up: ${DateFormat('MMM d').format(_followUp!.scheduledDate)}');
 
@@ -1062,7 +1319,7 @@ class _WorkflowWizardScreenState extends ConsumerState<WorkflowWizardScreen> {
     final isFirstStep = _currentStep == 0;
     
     return Container(
-      padding: const EdgeInsets.all(16),
+      padding: EdgeInsets.all(AppSpacing.lg),
       decoration: BoxDecoration(
         color: surfaceColor,
         boxShadow: [
@@ -1083,11 +1340,11 @@ class _WorkflowWizardScreenState extends ConsumerState<WorkflowWizardScreen> {
                   icon: const Icon(Icons.arrow_back_rounded),
                   label: const Text('Back'),
                   style: OutlinedButton.styleFrom(
-                    padding: const EdgeInsets.symmetric(vertical: 14),
+                    padding: EdgeInsets.symmetric(vertical: AppSpacing.md),
                   ),
                 ),
               ),
-            if (!isFirstStep) const SizedBox(width: 12),
+            if (!isFirstStep) SizedBox(width: AppSpacing.md),
             Expanded(
               flex: 2,
               child: ElevatedButton.icon(
@@ -1099,7 +1356,7 @@ class _WorkflowWizardScreenState extends ConsumerState<WorkflowWizardScreen> {
                 style: ElevatedButton.styleFrom(
                   backgroundColor: isLastStep ? AppColors.success : AppColors.primary,
                   foregroundColor: Colors.white,
-                  padding: const EdgeInsets.symmetric(vertical: 14),
+                  padding: EdgeInsets.symmetric(vertical: AppSpacing.md),
                 ),
               ),
             ),
@@ -1120,29 +1377,33 @@ class _WorkflowWizardScreenState extends ConsumerState<WorkflowWizardScreen> {
   }) {
     return Material(
       color: isDark ? AppColors.darkSurface : Colors.white,
-      borderRadius: BorderRadius.circular(12),
+      borderRadius: BorderRadius.circular(AppRadius.md),
       child: InkWell(
         onTap: onTap,
-        borderRadius: BorderRadius.circular(12),
+        borderRadius: BorderRadius.circular(AppRadius.md),
+        splashColor: color.withValues(alpha: 0.1),
+        highlightColor: color.withValues(alpha: 0.05),
+        hoverColor: color.withValues(alpha: 0.05),
+        focusColor: color.withValues(alpha: 0.08),
         child: Container(
-          padding: const EdgeInsets.all(16),
+          padding: EdgeInsets.all(AppSpacing.lg),
           decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(12),
+            borderRadius: BorderRadius.circular(AppRadius.md),
             border: Border.all(
-              color: isDark ? Colors.grey[800]! : Colors.grey[200]!,
+              color: isDark ? AppColors.darkDivider : AppColors.divider,
             ),
           ),
           child: Row(
             children: [
               Container(
-                padding: const EdgeInsets.all(10),
+                padding: EdgeInsets.all(AppSpacing.sm + 2),
                 decoration: BoxDecoration(
                   color: color.withValues(alpha: 0.1),
-                  borderRadius: BorderRadius.circular(10),
+                  borderRadius: BorderRadius.circular(AppRadius.sm + 2),
                 ),
                 child: Icon(icon, color: color, size: 24),
               ),
-              const SizedBox(width: 16),
+              SizedBox(width: AppSpacing.lg),
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -1151,15 +1412,15 @@ class _WorkflowWizardScreenState extends ConsumerState<WorkflowWizardScreen> {
                       title,
                       style: TextStyle(
                         fontWeight: FontWeight.w600,
-                        fontSize: 15,
-                        color: isDark ? Colors.white : AppColors.textPrimary,
+                        fontSize: AppFontSize.headlineSmall,
+                        color: isDark ? AppColors.darkTextPrimary : AppColors.textPrimary,
                       ),
                     ),
-                    const SizedBox(height: 2),
+                    SizedBox(height: AppSpacing.xxs),
                     Text(
                       subtitle,
                       style: TextStyle(
-                        fontSize: 13,
+                        fontSize: AppFontSize.bodyMedium,
                         color: isDark ? AppColors.darkTextSecondary : AppColors.textSecondary,
                       ),
                     ),
@@ -1169,7 +1430,7 @@ class _WorkflowWizardScreenState extends ConsumerState<WorkflowWizardScreen> {
               Icon(
                 Icons.arrow_forward_ios_rounded,
                 size: 16,
-                color: isDark ? Colors.grey[600] : Colors.grey[400],
+                color: isDark ? AppColors.darkTextHint : AppColors.textHint,
               ),
             ],
           ),
@@ -1188,10 +1449,10 @@ class _WorkflowWizardScreenState extends ConsumerState<WorkflowWizardScreen> {
     List<String>? details,
   }) {
     return Container(
-      padding: const EdgeInsets.all(16),
+      padding: EdgeInsets.all(AppSpacing.lg),
       decoration: BoxDecoration(
         color: color.withValues(alpha: 0.1),
-        borderRadius: BorderRadius.circular(12),
+        borderRadius: BorderRadius.circular(AppRadius.md),
         border: Border.all(color: color.withValues(alpha: 0.3)),
       ),
       child: Column(
@@ -1200,14 +1461,14 @@ class _WorkflowWizardScreenState extends ConsumerState<WorkflowWizardScreen> {
           Row(
             children: [
               Container(
-                padding: const EdgeInsets.all(8),
+                padding: EdgeInsets.all(AppSpacing.sm),
                 decoration: BoxDecoration(
                   color: color,
                   shape: BoxShape.circle,
                 ),
-                child: Icon(Icons.check_rounded, color: Colors.white, size: 16),
+                child: const Icon(Icons.check_rounded, color: Colors.white, size: 16),
               ),
-              const SizedBox(width: 12),
+              SizedBox(width: AppSpacing.md),
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -1216,13 +1477,14 @@ class _WorkflowWizardScreenState extends ConsumerState<WorkflowWizardScreen> {
                       title,
                       style: TextStyle(
                         fontWeight: FontWeight.bold,
-                        color: isDark ? Colors.white : AppColors.textPrimary,
+                        fontSize: AppFontSize.titleLarge,
+                        color: isDark ? AppColors.darkTextPrimary : AppColors.textPrimary,
                       ),
                     ),
                     Text(
                       subtitle,
                       style: TextStyle(
-                        fontSize: 13,
+                        fontSize: AppFontSize.bodyMedium,
                         color: color,
                       ),
                     ),
@@ -1237,14 +1499,14 @@ class _WorkflowWizardScreenState extends ConsumerState<WorkflowWizardScreen> {
             ],
           ),
           if (details != null && details.isNotEmpty) ...[
-            const SizedBox(height: 12),
+            SizedBox(height: AppSpacing.md),
             ...details.map((detail) => Padding(
-              padding: const EdgeInsets.only(bottom: 4),
+              padding: EdgeInsets.only(bottom: AppSpacing.xs),
               child: Text(
                 detail,
                 style: TextStyle(
-                  fontSize: 13,
-                  color: isDark ? Colors.grey[400] : Colors.grey[600],
+                  fontSize: AppFontSize.bodyMedium,
+                  color: isDark ? AppColors.darkTextSecondary : AppColors.textSecondary,
                 ),
               ),
             )),
@@ -1262,16 +1524,16 @@ class _WorkflowWizardScreenState extends ConsumerState<WorkflowWizardScreen> {
     required Color color,
   }) {
     return Container(
-      padding: const EdgeInsets.all(16),
+      padding: EdgeInsets.all(AppSpacing.lg),
       decoration: BoxDecoration(
         color: color.withValues(alpha: 0.1),
-        borderRadius: BorderRadius.circular(12),
+        borderRadius: BorderRadius.circular(AppRadius.md),
         border: Border.all(color: color.withValues(alpha: 0.3)),
       ),
       child: Row(
         children: [
           Icon(icon, color: color),
-          const SizedBox(width: 12),
+          SizedBox(width: AppSpacing.md),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -1280,15 +1542,16 @@ class _WorkflowWizardScreenState extends ConsumerState<WorkflowWizardScreen> {
                   title,
                   style: TextStyle(
                     fontWeight: FontWeight.bold,
+                    fontSize: AppFontSize.titleMedium,
                     color: color,
                   ),
                 ),
-                const SizedBox(height: 4),
+                SizedBox(height: AppSpacing.xs),
                 Text(
                   message,
                   style: TextStyle(
-                    fontSize: 13,
-                    color: isDark ? Colors.grey[300] : Colors.grey[700],
+                    fontSize: AppFontSize.bodyMedium,
+                    color: isDark ? AppColors.darkTextSecondary : AppColors.textSecondary,
                   ),
                 ),
               ],
@@ -1306,33 +1569,34 @@ class _WorkflowWizardScreenState extends ConsumerState<WorkflowWizardScreen> {
     required IconData icon,
   }) {
     return Container(
-      padding: const EdgeInsets.all(16),
+      padding: EdgeInsets.all(AppSpacing.lg),
       decoration: BoxDecoration(
         color: AppColors.error.withValues(alpha: 0.1),
-        borderRadius: BorderRadius.circular(12),
+        borderRadius: BorderRadius.circular(AppRadius.md),
         border: Border.all(color: AppColors.error.withValues(alpha: 0.3)),
       ),
       child: Row(
         children: [
           Icon(icon, color: AppColors.error),
-          const SizedBox(width: 12),
+          SizedBox(width: AppSpacing.md),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
                   title,
-                  style: const TextStyle(
+                  style: TextStyle(
                     fontWeight: FontWeight.bold,
+                    fontSize: AppFontSize.titleMedium,
                     color: AppColors.error,
                   ),
                 ),
-                const SizedBox(height: 4),
+                SizedBox(height: AppSpacing.xs),
                 Text(
                   message,
                   style: TextStyle(
-                    fontSize: 13,
-                    color: isDark ? Colors.grey[300] : Colors.grey[700],
+                    fontSize: AppFontSize.bodyMedium,
+                    color: isDark ? AppColors.darkTextSecondary : AppColors.textSecondary,
                   ),
                 ),
               ],
@@ -1386,7 +1650,7 @@ class _WorkflowWizardScreenState extends ConsumerState<WorkflowWizardScreen> {
   Future<void> _addNewPatient() async {
     final result = await Navigator.push<Patient>(
       context,
-      MaterialPageRoute(builder: (_) => const AddPatientScreen()),
+      AppRouter.route(const AddPatientScreen()),
     );
     
     if (result != null && mounted) {
@@ -1422,6 +1686,109 @@ class _WorkflowWizardScreenState extends ConsumerState<WorkflowWizardScreen> {
       });
     } else {
       log.d('WORKFLOW', 'Patient selection cancelled');
+    }
+  }
+
+  Future<void> _createWalkInAppointment() async {
+    if (_patient == null) {
+      log.w('WORKFLOW', 'Cannot create walk-in appointment - no patient selected');
+      return;
+    }
+    
+    log.d('WORKFLOW', 'Creating walk-in appointment for patient: ${_patient!.firstName}');
+    
+    // Show quick reason picker
+    final reason = await showModalBottomSheet<String>(
+      context: context,
+      backgroundColor: Colors.transparent,
+      builder: (context) => _WalkInReasonPicker(patientName: _patient!.firstName),
+    );
+    
+    if (reason == null || !mounted) {
+      log.d('WORKFLOW', 'Walk-in appointment cancelled');
+      return;
+    }
+    
+    try {
+      final db = await ref.read(doctorDbProvider.future);
+      final now = DateTime.now();
+      
+      // Create appointment at current time - mark as Walk-in in notes
+      final appointmentId = await db.insertAppointment(
+        AppointmentsCompanion.insert(
+          patientId: _patient!.id,
+          appointmentDateTime: now,
+          durationMinutes: const Value(15),
+          reason: Value(reason),
+          status: const Value('checked_in'), // Already checked in for walk-ins
+          notes: const Value('Walk-in patient'),
+        ),
+      );
+      
+      // Fetch the created appointment
+      final appointment = await db.getAppointmentById(appointmentId);
+      
+      if (appointment != null && mounted) {
+        log.i('WORKFLOW', 'Walk-in appointment created', extra: {
+          'appointmentId': appointmentId,
+          'time': now.toIso8601String(),
+          'reason': reason,
+        });
+        
+        setState(() {
+          _appointment = appointment;
+          _completedSteps[1] = true;
+          // Also auto-complete check-in for walk-ins
+          _completedSteps[2] = true;
+        });
+        
+        // Auto-create encounter for walk-in
+        await _autoCreateEncounterForWalkIn(reason);
+        
+        // Move to next step after check-in (skip check-in step)
+        _goToNextStep();
+        _goToNextStep(); // Skip check-in since it's already done
+      }
+    } catch (e) {
+      log.e('WORKFLOW', 'Failed to create walk-in appointment', error: e);
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Error creating appointment: $e'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    }
+  }
+
+  Future<void> _autoCreateEncounterForWalkIn(String chiefComplaint) async {
+    if (_patient == null || _appointment == null) return;
+    
+    try {
+      final db = await ref.read(doctorDbProvider.future);
+      final encounterService = EncounterService(db: db);
+      
+      final encounterId = await encounterService.startEncounter(
+        patientId: _patient!.id,
+        appointmentId: _appointment!.id,
+        chiefComplaint: chiefComplaint,
+        encounterType: _getEncounterType(chiefComplaint),
+      );
+      
+      _encounter = await db.getEncounterById(encounterId);
+      
+      // Also set the chief complaint for the workflow
+      setState(() {
+        _chiefComplaint = chiefComplaint;
+        _completedSteps[3] = true; // Chief complaint also done
+      });
+      
+      log.i('WORKFLOW', 'Auto-created encounter for walk-in', extra: {
+        'encounterId': encounterId,
+      });
+    } catch (e) {
+      log.e('WORKFLOW', 'Failed to auto-create encounter for walk-in', error: e);
     }
   }
 
@@ -1536,8 +1903,8 @@ class _WorkflowWizardScreenState extends ConsumerState<WorkflowWizardScreen> {
           _encounter = updatedEncounter;
           // Auto-complete steps based on encounter data
           if (updatedEncounter.status == 'completed') {
-            _completedSteps[3] = true; // Vitals
-            _completedSteps[4] = true; // Medical Record
+            _completedSteps[4] = true; // Vitals
+            _completedSteps[5] = true; // Diagnosis
           }
         });
       }
@@ -1566,21 +1933,34 @@ class _WorkflowWizardScreenState extends ConsumerState<WorkflowWizardScreen> {
     // Navigate to dedicated vital signs screen or use encounter vitals modal
     if (_encounter != null) {
       // Use the new encounter-based vitals modal
-      await showModalBottomSheet<void>(
+      final vitalId = await showModalBottomSheet<int>(
         context: context,
         isScrollControlled: true,
         backgroundColor: Colors.transparent,
-        builder: (context) => VitalsEntryModal(
-          encounterId: _encounter!.id,
-          patientId: _patient!.id,
-          onSaved: (vitalId) {
-            log.i('WORKFLOW', 'Vitals saved via encounter modal', extra: {
-              'vitalId': vitalId,
-              'encounterId': _encounter!.id,
-            });
-          },
+        builder: (context) => DraggableScrollableSheet(
+          initialChildSize: 0.9,
+          minChildSize: 0.5,
+          maxChildSize: 0.95,
+          builder: (context, scrollController) => VitalsEntryModal(
+            encounterId: _encounter!.id,
+            patientId: _patient!.id,
+            onSaved: (vitalId) {
+              log.i('WORKFLOW', 'Vitals saved via encounter modal', extra: {
+                'vitalId': vitalId,
+                'encounterId': _encounter!.id,
+              });
+            },
+          ),
         ),
       );
+      
+      // Mark as completed only if vitals were actually saved
+      if (vitalId != null && mounted) {
+        log.i('WORKFLOW', 'Vitals recorded successfully', extra: {'vitalId': vitalId});
+        setState(() {
+          _completedSteps[4] = true;
+        });
+      }
     } else {
       // Fallback to original vitals screen
       await Navigator.push(
@@ -1592,15 +1972,427 @@ class _WorkflowWizardScreenState extends ConsumerState<WorkflowWizardScreen> {
           ),
         ),
       );
+      
+      // Mark as completed after visiting vitals screen
+      if (mounted) {
+        log.i('WORKFLOW', 'Vitals screen visited for patient: ${_patient!.firstName}');
+        setState(() {
+          _completedSteps[4] = true;
+        });
+      }
+    }
+  }
+
+  // Chief Complaint Actions
+  Future<void> _recordChiefComplaint() async {
+    if (_patient == null) {
+      log.w('WORKFLOW', 'Cannot record chief complaint - no patient selected');
+      return;
     }
     
-    // Mark as completed after visiting vitals screen
-    if (mounted) {
-      log.i('WORKFLOW', 'Vitals screen visited for patient: ${_patient!.firstName}');
+    log.d('WORKFLOW', 'Opening chief complaint form');
+    
+    final result = await showModalBottomSheet<Map<String, String>>(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (context) => _ChiefComplaintModal(
+        chiefComplaint: _chiefComplaint,
+        historyOfPresentIllness: _historyOfPresentIllness,
+      ),
+    );
+    
+    if (result != null && mounted) {
+      log.i('WORKFLOW', 'Chief complaint recorded', extra: {
+        'complaint': result['chiefComplaint'],
+      });
       setState(() {
-        _completedSteps[3] = true;
+        _chiefComplaint = result['chiefComplaint'] ?? '';
+        _historyOfPresentIllness = result['hpi'] ?? '';
+        if (_chiefComplaint.isNotEmpty) {
+          _completedSteps[3] = true;
+        }
       });
     }
+  }
+
+  void _showQuickComplaintPicker(bool isDark) {
+    final commonComplaints = [
+      ('Fever', Icons.thermostat_rounded),
+      ('Cough', Icons.air_rounded),
+      ('Cold', Icons.ac_unit_rounded),
+      ('Headache', Icons.psychology_rounded),
+      ('Body Pain', Icons.accessibility_new_rounded),
+      ('Stomach Pain', Icons.restaurant_rounded),
+      ('Vomiting', Icons.sick_rounded),
+      ('Diarrhea', Icons.water_drop_rounded),
+      ('Chest Pain', Icons.favorite_rounded),
+      ('Shortness of Breath', Icons.airline_seat_flat_rounded),
+      ('Dizziness', Icons.rotate_right_rounded),
+      ('Fatigue', Icons.battery_1_bar_rounded),
+      ('Back Pain', Icons.accessibility_rounded),
+      ('Joint Pain', Icons.sports_martial_arts_rounded),
+      ('Skin Rash', Icons.blur_on_rounded),
+      ('Sore Throat', Icons.record_voice_over_rounded),
+    ];
+    
+    // Parse existing complaints into a set for multi-select
+    final selectedComplaints = <String>{};
+    if (_chiefComplaint.isNotEmpty) {
+      selectedComplaints.addAll(_chiefComplaint.split(', ').map((s) => s.trim()).where((s) => s.isNotEmpty));
+    }
+    
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: isDark ? const Color(0xFF1E1E1E) : Colors.white,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (context) => StatefulBuilder(
+        builder: (context, setModalState) => Padding(
+          padding: const EdgeInsets.all(20),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                children: [
+                  Container(
+                    padding: const EdgeInsets.all(8),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFF59E0B).withValues(alpha: 0.15),
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                    child: const Icon(Icons.flash_on_rounded, size: 20, color: Color(0xFFF59E0B)),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          'Quick Select Complaints',
+                          style: TextStyle(
+                            fontSize: 18,
+                            fontWeight: FontWeight.bold,
+                            color: isDark ? Colors.white : Colors.black87,
+                          ),
+                        ),
+                        Text(
+                          'Tap to select multiple',
+                          style: TextStyle(
+                            fontSize: 12,
+                            color: isDark ? Colors.grey.shade400 : Colors.grey.shade600,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  if (selectedComplaints.isNotEmpty)
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFFF59E0B),
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: Text(
+                        '${selectedComplaints.length}',
+                        style: const TextStyle(
+                          fontSize: 12,
+                          fontWeight: FontWeight.bold,
+                          color: Colors.white,
+                        ),
+                      ),
+                    ),
+                ],
+              ),
+              const SizedBox(height: 16),
+              Container(
+                decoration: BoxDecoration(
+                  color: isDark ? AppColors.darkSurface : Colors.grey.shade100,
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                padding: const EdgeInsets.all(8),
+                child: Wrap(
+                  spacing: 8,
+                  runSpacing: 8,
+                  children: commonComplaints.map((complaint) {
+                    final isSelected = selectedComplaints.contains(complaint.$1);
+                    return GestureDetector(
+                      onTap: () {
+                        setModalState(() {
+                          if (isSelected) {
+                            selectedComplaints.remove(complaint.$1);
+                          } else {
+                            selectedComplaints.add(complaint.$1);
+                          }
+                        });
+                      },
+                      child: AnimatedContainer(
+                        duration: const Duration(milliseconds: 200),
+                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                        decoration: BoxDecoration(
+                          color: isSelected ? const Color(0xFFF59E0B) : Colors.transparent,
+                          borderRadius: BorderRadius.circular(10),
+                          border: Border.all(
+                            color: isSelected 
+                                ? const Color(0xFFF59E0B) 
+                                : (isDark ? Colors.grey.shade600 : Colors.grey.shade300),
+                          ),
+                        ),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Icon(
+                              isSelected ? Icons.check_rounded : complaint.$2,
+                              size: 16,
+                              color: isSelected 
+                                  ? Colors.white 
+                                  : (isDark ? AppColors.darkTextSecondary : AppColors.textSecondary),
+                            ),
+                            const SizedBox(width: 6),
+                            Text(
+                              complaint.$1,
+                              style: TextStyle(
+                                fontSize: 13,
+                                fontWeight: FontWeight.w600,
+                                color: isSelected 
+                                    ? Colors.white 
+                                    : (isDark ? AppColors.darkTextSecondary : AppColors.textSecondary),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    );
+                  }).toList(),
+                ),
+              ),
+              const SizedBox(height: 16),
+              Row(
+                children: [
+                  Expanded(
+                    child: OutlinedButton(
+                      onPressed: () {
+                        setModalState(() => selectedComplaints.clear());
+                      },
+                      style: OutlinedButton.styleFrom(
+                        padding: const EdgeInsets.symmetric(vertical: 12),
+                        side: BorderSide(color: isDark ? Colors.grey.shade600 : Colors.grey.shade300),
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                      ),
+                      child: Text(
+                        'Clear All',
+                        style: TextStyle(
+                          color: isDark ? Colors.grey.shade400 : Colors.grey.shade600,
+                        ),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    flex: 2,
+                    child: ElevatedButton(
+                      onPressed: selectedComplaints.isNotEmpty ? () {
+                        Navigator.pop(context);
+                        setState(() {
+                          _chiefComplaint = selectedComplaints.join(', ');
+                          _completedSteps[3] = true;
+                        });
+                      } : null,
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: const Color(0xFFF59E0B),
+                        disabledBackgroundColor: isDark ? Colors.grey.shade700 : Colors.grey.shade300,
+                        padding: const EdgeInsets.symmetric(vertical: 12),
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                      ),
+                      child: Text(
+                        selectedComplaints.isEmpty 
+                            ? 'Select Complaints' 
+                            : 'Done (${selectedComplaints.length})',
+                        style: TextStyle(
+                          fontWeight: FontWeight.w600,
+                          color: selectedComplaints.isNotEmpty ? Colors.white : (isDark ? Colors.grey.shade500 : Colors.grey.shade500),
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 8),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  // Lab Orders Actions
+  Future<void> _orderLabTests() async {
+    if (_patient == null) {
+      log.w('WORKFLOW', 'Cannot order lab tests - no patient selected');
+      return;
+    }
+    
+    log.d('WORKFLOW', 'Opening lab orders');
+    
+    final result = await showModalBottomSheet<List<Map<String, dynamic>>>(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (context) => _LabOrderModal(
+        patientId: _patient!.id,
+        existingOrders: _labOrders,
+        diagnosis: _currentDiagnoses.isNotEmpty ? _currentDiagnoses.first : null,
+      ),
+    );
+    
+    if (result != null && mounted) {
+      log.i('WORKFLOW', 'Lab tests ordered', extra: {
+        'count': result.length,
+      });
+      setState(() {
+        _labOrders = result;
+        if (_labOrders.isNotEmpty) {
+          _completedSteps[6] = true;
+        }
+      });
+    }
+  }
+
+  void _showQuickLabPanels(bool isDark) {
+    final quickPanels = [
+      {'name': 'CBC (Complete Blood Count)', 'code': 'CBC'},
+      {'name': 'LFT (Liver Function Test)', 'code': 'LFT'},
+      {'name': 'RFT (Renal Function Test)', 'code': 'RFT'},
+      {'name': 'Lipid Profile', 'code': 'LIPID'},
+      {'name': 'Thyroid Profile', 'code': 'THYROID'},
+      {'name': 'HbA1c', 'code': 'HBA1C'},
+      {'name': 'Fasting Blood Sugar', 'code': 'FBS'},
+      {'name': 'Urine Routine', 'code': 'URINE'},
+      {'name': 'Chest X-Ray', 'code': 'CXR'},
+      {'name': 'ECG', 'code': 'ECG'},
+    ];
+    
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: isDark ? const Color(0xFF1E1E1E) : Colors.white,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (context) => Padding(
+        padding: const EdgeInsets.all(20),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              'Quick Lab Panels',
+              style: TextStyle(
+                fontSize: 18,
+                fontWeight: FontWeight.bold,
+                color: isDark ? Colors.white : Colors.black87,
+              ),
+            ),
+            const SizedBox(height: 16),
+            Wrap(
+              spacing: 8,
+              runSpacing: 8,
+              children: quickPanels.map((panel) => 
+                ActionChip(
+                  label: Text(panel['name']!),
+                  backgroundColor: const Color(0xFF8B5CF6).withValues(alpha: 0.1),
+                  labelStyle: TextStyle(color: const Color(0xFF8B5CF6)),
+                  onPressed: () {
+                    Navigator.pop(context);
+                    setState(() {
+                      if (!_labOrders.any((o) => o['code'] == panel['code'])) {
+                        _labOrders.add(panel);
+                      }
+                      _completedSteps[6] = true;
+                    });
+                  },
+                ),
+              ).toList(),
+            ),
+            const SizedBox(height: 20),
+          ],
+        ),
+      ),
+    );
+  }
+
+  // Clinical Notes Actions
+  Future<void> _recordClinicalNotes() async {
+    if (_patient == null) {
+      log.w('WORKFLOW', 'Cannot record clinical notes - no patient selected');
+      return;
+    }
+    
+    log.d('WORKFLOW', 'Opening clinical notes form');
+    
+    final result = await showModalBottomSheet<Map<String, String>>(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (context) => _ClinicalNotesModal(
+        subjective: _subjective,
+        objective: _objective,
+        assessment: _assessment,
+        plan: _plan,
+        chiefComplaint: _chiefComplaint,
+        diagnoses: _currentDiagnoses,
+      ),
+    );
+    
+    if (result != null && mounted) {
+      log.i('WORKFLOW', 'Clinical notes recorded');
+      setState(() {
+        _subjective = result['subjective'] ?? '';
+        _objective = result['objective'] ?? '';
+        _assessment = result['assessment'] ?? '';
+        _plan = result['plan'] ?? '';
+        _completedSteps[9] = true;
+      });
+    }
+  }
+
+  void _autoGenerateNotes() {
+    // Auto-generate SOAP notes from visit data
+    setState(() {
+      _subjective = _chiefComplaint.isNotEmpty 
+          ? 'Patient presents with: $_chiefComplaint\n${_historyOfPresentIllness.isNotEmpty ? 'HPI: $_historyOfPresentIllness' : ''}'
+          : '';
+      
+      _objective = ''; // Would need vitals data
+      
+      _assessment = _currentDiagnoses.isNotEmpty 
+          ? _currentDiagnoses.join('\n')
+          : '';
+      
+      _plan = '';
+      if (_prescription != null) _plan += 'Medications prescribed\n';
+      if (_labOrders.isNotEmpty) _plan += 'Lab tests ordered: ${_labOrders.map((o) => o['name']).join(", ")}\n';
+      if (_followUp != null) _plan += 'Follow-up scheduled: ${DateFormat('MMM d, yyyy').format(_followUp!.scheduledDate)}';
+      
+      if (_subjective.isNotEmpty || _assessment.isNotEmpty || _plan.isNotEmpty) {
+        _completedSteps[9] = true;
+      }
+    });
+    
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Row(
+          children: [
+            Icon(Icons.auto_awesome, color: Colors.white),
+            SizedBox(width: 12),
+            Text('Notes auto-generated from visit data'),
+          ],
+        ),
+        backgroundColor: const Color(0xFF06B6D4),
+        behavior: SnackBarBehavior.floating,
+      ),
+    );
   }
 
   Future<void> _addMedicalRecord() async {
@@ -1617,6 +2409,8 @@ class _WorkflowWizardScreenState extends ConsumerState<WorkflowWizardScreen> {
           preselectedPatient: _patient,
           encounterId: _encounter?.id,
           appointmentId: _appointment?.id,
+          chiefComplaint: _chiefComplaint,
+          historyOfPresentIllness: _historyOfPresentIllness,
         ),
       ),
     );
@@ -1634,6 +2428,8 @@ class _WorkflowWizardScreenState extends ConsumerState<WorkflowWizardScreen> {
           _currentDiagnoses.add(result.diagnosis);
           _currentDiagnosis = result.diagnosis;
         }
+        // Mark diagnosis step as complete since we have a medical record
+        _completedSteps[5] = true;
       });
     } else {
       log.d('WORKFLOW', 'Medical record creation cancelled');
@@ -1714,7 +2510,7 @@ class _WorkflowWizardScreenState extends ConsumerState<WorkflowWizardScreen> {
         _currentDiagnoses = diagnoses;
         if (diagnoses.isNotEmpty) {
           _currentDiagnosis = diagnoses.first;
-          _completedSteps[4] = true;
+          _completedSteps[5] = true; // Diagnosis is step 5
         }
       });
     } else {
@@ -1830,8 +2626,14 @@ class _WorkflowWizardScreenState extends ConsumerState<WorkflowWizardScreen> {
         'prescriptionId': result.id,
         'patientId': result.patientId,
       });
+      
+      // V5: Load medication count from normalized table
+      final db = await ref.read(doctorDbProvider.future);
+      final medications = await db.getMedicationsForPrescriptionCompat(result.id);
+      
       setState(() {
         _prescription = result;
+        _prescriptionMedicationCount = medications.length;
         _completedSteps[6] = true;
       });
     } else {
@@ -1953,12 +2755,8 @@ class _WorkflowWizardScreenState extends ConsumerState<WorkflowWizardScreen> {
   }
 
   String _getPrescriptionItemCount(Prescription prescription) {
-    try {
-      final items = jsonDecode(prescription.itemsJson) as List<dynamic>;
-      return '${items.length} medication(s)';
-    } catch (_) {
-      return 'Prescription created';
-    }
+    // V5: Use cached count loaded from normalized table
+    return '$_prescriptionMedicationCount medication(s)';
   }
 }
 
@@ -2136,15 +2934,15 @@ class _WorkflowCompleteDialog extends StatelessWidget {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     
     return Dialog(
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(AppRadius.xl)),
       child: Padding(
-        padding: const EdgeInsets.all(24),
+        padding: EdgeInsets.all(AppSpacing.xxl),
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
             // Success icon
             Container(
-              padding: const EdgeInsets.all(16),
+              padding: EdgeInsets.all(AppSpacing.lg),
               decoration: BoxDecoration(
                 color: AppColors.success.withValues(alpha: 0.1),
                 shape: BoxShape.circle,
@@ -2155,31 +2953,32 @@ class _WorkflowCompleteDialog extends StatelessWidget {
                 size: 48,
               ),
             ),
-            const SizedBox(height: 16),
+            SizedBox(height: AppSpacing.lg),
             Text(
               'Visit Complete!',
               style: TextStyle(
-                fontSize: 22,
+                fontSize: AppFontSize.display,
                 fontWeight: FontWeight.bold,
-                color: isDark ? Colors.white : AppColors.textPrimary,
+                color: isDark ? AppColors.darkTextPrimary : AppColors.textPrimary,
               ),
             ),
-            const SizedBox(height: 8),
+            SizedBox(height: AppSpacing.sm),
             Text(
               '${patient.firstName} ${patient.lastName}\'s visit has been completed successfully.',
               textAlign: TextAlign.center,
               style: TextStyle(
+                fontSize: AppFontSize.bodyLarge,
                 color: isDark ? AppColors.darkTextSecondary : AppColors.textSecondary,
               ),
             ),
-            const SizedBox(height: 24),
+            SizedBox(height: AppSpacing.xxl),
             
             // Summary
             Container(
-              padding: const EdgeInsets.all(16),
+              padding: EdgeInsets.all(AppSpacing.lg),
               decoration: BoxDecoration(
-                color: isDark ? Colors.grey[900] : Colors.grey[50],
-                borderRadius: BorderRadius.circular(12),
+                color: isDark ? AppColors.darkSurface : AppColors.background,
+                borderRadius: BorderRadius.circular(AppRadius.md),
               ),
               child: Column(
                 children: [
@@ -2194,7 +2993,7 @@ class _WorkflowCompleteDialog extends StatelessWidget {
                 ],
               ),
             ),
-            const SizedBox(height: 24),
+            SizedBox(height: AppSpacing.xxl),
             
             // Close button
             SizedBox(
@@ -2204,7 +3003,7 @@ class _WorkflowCompleteDialog extends StatelessWidget {
                 style: ElevatedButton.styleFrom(
                   backgroundColor: AppColors.primary,
                   foregroundColor: Colors.white,
-                  padding: const EdgeInsets.symmetric(vertical: 14),
+                  padding: EdgeInsets.symmetric(vertical: AppSpacing.md),
                 ),
                 child: const Text('Done'),
               ),
@@ -2217,15 +3016,15 @@ class _WorkflowCompleteDialog extends StatelessWidget {
 
   Widget _buildSummaryRow(IconData icon, String text) {
     return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 4),
+      padding: EdgeInsets.symmetric(vertical: AppSpacing.xs),
       child: Row(
         children: [
           Icon(icon, size: 18, color: AppColors.success),
-          const SizedBox(width: 12),
+          SizedBox(width: AppSpacing.md),
           Expanded(
             child: Text(
               text,
-              style: const TextStyle(fontSize: 14),
+              style: TextStyle(fontSize: AppFontSize.bodyLarge),
             ),
           ),
         ],
@@ -2509,6 +3308,315 @@ class _TreatmentPlanModalState extends State<_TreatmentPlanModal> {
   
   String _selectedDiagnosis = '';
   
+  // Treatment plan templates organized by diagnosis category
+  static const Map<String, List<Map<String, String>>> _treatmentTemplates = {
+    // Cardiovascular
+    'Hypertension': [
+      {
+        'name': 'Standard HTN - Lifestyle + ACE-I',
+        'description': '1. Start Lisinopril 10mg once daily\n2. Low sodium diet (<2g/day)\n3. Regular aerobic exercise 30min/day\n4. Weight management if overweight\n5. Limit alcohol intake',
+        'goals': 'Target BP: <130/80 mmHg within 3 months\nReduce cardiovascular risk',
+        'instructions': 'Take medication in the morning. Monitor BP at home twice daily. Report dizziness, persistent cough, or swelling. Follow DASH diet. Exercise regularly.',
+      },
+      {
+        'name': 'HTN - CCB First Line',
+        'description': '1. Start Amlodipine 5mg once daily\n2. Dietary sodium restriction\n3. Regular physical activity\n4. Smoking cessation if applicable',
+        'goals': 'Target BP: <130/80 mmHg\nPrevent end-organ damage',
+        'instructions': 'Take medication at same time daily. May cause ankle swelling initially. Avoid grapefruit juice. Monitor BP regularly.',
+      },
+      {
+        'name': 'HTN - Combination Therapy',
+        'description': '1. Amlodipine 5mg + Losartan 50mg daily\n2. Low sodium diet\n3. Weight loss goal: 5-10% if overweight\n4. Stress management',
+        'goals': 'Target BP: <130/80 mmHg\nCardiovascular risk reduction',
+        'instructions': 'Take both medications together in morning. Stay hydrated. Report any unusual symptoms.',
+      },
+    ],
+    
+    'Type 2 Diabetes': [
+      {
+        'name': 'T2DM - Metformin First Line',
+        'description': '1. Start Metformin 500mg twice daily with meals\n2. Increase to 1000mg BID after 2 weeks if tolerated\n3. Diabetic diet counseling\n4. Regular exercise\n5. Blood glucose monitoring',
+        'goals': 'HbA1c target: <7%\nFasting glucose: 80-130 mg/dL\nPost-meal glucose: <180 mg/dL',
+        'instructions': 'Take with meals to reduce GI upset. Check blood sugar as directed. Report nausea, vomiting, or unusual fatigue. Follow diabetic diet. Exercise 150 min/week.',
+      },
+      {
+        'name': 'T2DM - Add Sulfonylurea',
+        'description': '1. Continue Metformin 1000mg BID\n2. Add Glimepiride 2mg once daily before breakfast\n3. Blood glucose monitoring\n4. Hypoglycemia education',
+        'goals': 'HbA1c target: <7%\nAvoid hypoglycemia\nWeight maintenance',
+        'instructions': 'Take Glimepiride before breakfast. Carry glucose tablets for low sugar. Know hypoglycemia symptoms. Never skip meals.',
+      },
+      {
+        'name': 'T2DM - Insulin Initiation',
+        'description': '1. Start Insulin Glargine 10 units at bedtime\n2. Continue oral medications\n3. Titrate insulin by 2 units every 3 days until FBG <130\n4. Intensive glucose monitoring',
+        'goals': 'HbA1c: <7%\nFasting glucose: <130 mg/dL\nSafe insulin titration',
+        'instructions': 'Inject insulin at same time each night. Rotate injection sites. Store insulin properly. Check blood sugar daily. Report hypoglycemia.',
+      },
+    ],
+    
+    'Diabetes Mellitus': [
+      {
+        'name': 'Standard Diabetes Management',
+        'description': '1. Metformin 500mg BID with meals\n2. Diabetic diet - low carb, high fiber\n3. Regular glucose monitoring\n4. Annual eye and foot exams',
+        'goals': 'HbA1c <7%\nFasting glucose 80-130 mg/dL\nPrevent complications',
+        'instructions': 'Take medication with food. Monitor blood sugar regularly. Follow diabetic diet. Exercise 30 minutes daily. Annual screening tests.',
+      },
+    ],
+    
+    // Respiratory
+    'Asthma': [
+      {
+        'name': 'Mild Intermittent Asthma',
+        'description': '1. Salbutamol inhaler PRN for symptoms\n2. Avoid known triggers\n3. Peak flow monitoring\n4. Asthma action plan provided',
+        'goals': 'Symptom control\nNo nighttime symptoms\nNormal activity level',
+        'instructions': 'Use rescue inhaler as needed (max 2 puffs every 4-6 hours). Identify and avoid triggers. Seek emergency care if inhaler not helping.',
+      },
+      {
+        'name': 'Mild Persistent Asthma',
+        'description': '1. Fluticasone 100mcg 2 puffs BID (controller)\n2. Salbutamol inhaler PRN (rescue)\n3. Spacer device use\n4. Trigger avoidance',
+        'goals': 'Minimal symptoms\nNo nocturnal awakening\nNormal lung function',
+        'instructions': 'Use controller inhaler daily even when feeling well. Rinse mouth after steroid inhaler. Keep rescue inhaler available. Review technique.',
+      },
+      {
+        'name': 'Moderate Persistent Asthma',
+        'description': '1. Fluticasone/Salmeterol 250/50 1 puff BID\n2. Salbutamol PRN\n3. Consider oral steroids for exacerbations\n4. Pulmonology referral if needed',
+        'goals': 'Well-controlled asthma\nReduced exacerbations\nImproved quality of life',
+        'instructions': 'Use combination inhaler twice daily. Never stop suddenly. Rescue inhaler for breakthrough symptoms. Report increased rescue use.',
+      },
+    ],
+    
+    'Upper Respiratory Tract Infection': [
+      {
+        'name': 'Viral URTI - Symptomatic',
+        'description': '1. Rest and adequate hydration\n2. Paracetamol 500mg q6h PRN for fever/pain\n3. Saline nasal spray\n4. Honey for cough (if >1 year old)\n5. No antibiotics needed',
+        'goals': 'Symptom relief\nPrevention of complications\nRecovery in 7-10 days',
+        'instructions': 'This is a viral infection - antibiotics won\'t help. Rest well. Drink plenty of fluids. Use paracetamol for fever. Return if symptoms worsen or persist >10 days.',
+      },
+      {
+        'name': 'URTI with Bacterial Suspicion',
+        'description': '1. Amoxicillin 500mg TID x 7 days\n2. Paracetamol PRN for fever\n3. Steam inhalation\n4. Rest and hydration',
+        'goals': 'Resolution of infection\nPrevention of complications',
+        'instructions': 'Complete full course of antibiotics. Take with food. Rest and stay hydrated. Return if not improving in 48-72 hours.',
+      },
+    ],
+    
+    // Gastrointestinal
+    'Gastroesophageal Reflux Disease': [
+      {
+        'name': 'GERD - PPI First Line',
+        'description': '1. Omeprazole 20mg once daily before breakfast x 4-8 weeks\n2. Lifestyle modifications\n3. Avoid trigger foods\n4. Elevate head of bed',
+        'goals': 'Symptom relief\nHealing of esophagitis if present\nPrevent complications',
+        'instructions': 'Take PPI 30 min before breakfast. Avoid spicy, acidic, fatty foods. No eating 3 hours before bed. Elevate head of bed 6 inches. Lose weight if overweight.',
+      },
+      {
+        'name': 'GERD - Step-up Therapy',
+        'description': '1. Omeprazole 40mg daily (or 20mg BID)\n2. Add H2 blocker at bedtime if nocturnal symptoms\n3. Strict dietary compliance\n4. Consider GI referral',
+        'goals': 'Complete symptom control\nQuality of life improvement',
+        'instructions': 'Higher dose PPI for refractory symptoms. Strict diet adherence. May add Ranitidine at bedtime. Follow up in 4 weeks.',
+      },
+    ],
+    
+    // Mental Health
+    'Depression': [
+      {
+        'name': 'Mild-Moderate Depression - SSRI',
+        'description': '1. Start Sertraline 50mg once daily\n2. Psychotherapy referral\n3. Regular exercise\n4. Sleep hygiene\n5. Social support',
+        'goals': 'Symptom improvement in 4-6 weeks\nImproved functioning\nSuicide risk monitoring',
+        'instructions': 'Take medication at same time daily. May take 2-4 weeks to feel better. Do not stop suddenly. Report any thoughts of self-harm immediately. Follow up in 2 weeks.',
+      },
+      {
+        'name': 'Depression - Dose Optimization',
+        'description': '1. Increase Sertraline to 100mg daily\n2. Continue therapy\n3. Monitor response and side effects\n4. Consider augmentation if partial response',
+        'goals': 'Full remission of symptoms\nFunctional recovery',
+        'instructions': 'Gradual dose increase. Continue medication even if feeling better. Regular follow-ups essential. Report side effects.',
+      },
+    ],
+    
+    'Anxiety Disorder': [
+      {
+        'name': 'GAD - SSRI + CBT',
+        'description': '1. Escitalopram 10mg daily\n2. CBT therapy referral\n3. Relaxation techniques\n4. Limit caffeine\n5. Regular exercise',
+        'goals': 'Reduced anxiety symptoms\nImproved daily functioning\nDevelop coping skills',
+        'instructions': 'Take medication daily. May cause initial anxiety increase - this improves. Practice relaxation techniques. Attend therapy sessions. Avoid alcohol.',
+      },
+      {
+        'name': 'Acute Anxiety - Short-term',
+        'description': '1. Alprazolam 0.25mg PRN (max 3x daily)\n2. Short-term use only (2-4 weeks)\n3. Start SSRI for long-term management\n4. Behavioral therapy',
+        'goals': 'Acute symptom relief\nTransition to long-term treatment',
+        'instructions': 'Use only when needed. Do not drive after taking. Can cause drowsiness. Not for long-term use. Start SSRI for ongoing treatment.',
+      },
+    ],
+    
+    // Pain
+    'Migraine': [
+      {
+        'name': 'Acute Migraine Treatment',
+        'description': '1. Sumatriptan 50mg at onset, may repeat in 2 hours\n2. NSAIDs as alternative\n3. Rest in dark, quiet room\n4. Identify and avoid triggers',
+        'goals': 'Abort acute attacks\nReturn to function within 2 hours',
+        'instructions': 'Take at first sign of migraine. Limit to 10 days/month to avoid rebound. Keep headache diary. Identify triggers. Rest when possible.',
+      },
+      {
+        'name': 'Migraine Prophylaxis',
+        'description': '1. Propranolol 40mg BID (or Amitriptyline 25mg at bedtime)\n2. Lifestyle modifications\n3. Headache diary\n4. Acute treatment PRN',
+        'goals': 'Reduce migraine frequency by 50%\nImprove quality of life',
+        'instructions': 'Take preventive medication daily. May take 2-3 months to see full benefit. Do not stop suddenly. Continue headache diary.',
+      },
+    ],
+    
+    'Low Back Pain': [
+      {
+        'name': 'Acute LBP - Conservative',
+        'description': '1. NSAIDs: Ibuprofen 400mg TID with food x 5-7 days\n2. Muscle relaxant if spasm: Cyclobenzaprine 10mg at bedtime\n3. Heat/ice therapy\n4. Gentle activity as tolerated\n5. Avoid bed rest',
+        'goals': 'Pain relief\nReturn to normal activity\nPrevent chronicity',
+        'instructions': 'Stay active - bed rest worsens outcomes. Take NSAIDs with food. Apply heat for muscle spasm. Gentle stretching. Return if weakness, numbness, or bladder issues.',
+      },
+      {
+        'name': 'Chronic LBP - Multimodal',
+        'description': '1. Physical therapy referral\n2. NSAIDs PRN\n3. Core strengthening exercises\n4. Consider duloxetine if neuropathic component\n5. Weight management',
+        'goals': 'Functional improvement\nPain management\nPrevent disability',
+        'instructions': 'Attend all PT sessions. Exercise daily. Maintain healthy weight. Use proper lifting techniques. Ergonomic workstation.',
+      },
+    ],
+    
+    // Infections
+    'Urinary Tract Infection': [
+      {
+        'name': 'Uncomplicated UTI - Female',
+        'description': '1. Nitrofurantoin 100mg BID x 5 days\n2. Increased fluid intake\n3. Urinate after intercourse\n4. Cranberry products optional',
+        'goals': 'Resolution of symptoms in 24-48 hours\nCure of infection',
+        'instructions': 'Complete full course even if feeling better. Drink plenty of water. Take with food. Return if fever, back pain, or not improving in 48 hours.',
+      },
+      {
+        'name': 'UTI - Alternative Regimen',
+        'description': '1. Trimethoprim-Sulfamethoxazole DS BID x 3 days\n2. Hydration\n3. Urine culture if recurrent',
+        'goals': 'Infection resolution\nPrevention of recurrence',
+        'instructions': 'Take with full glass of water. Complete entire course. May cause sun sensitivity. Report rash or difficulty breathing.',
+      },
+    ],
+    
+    // Allergies
+    'Allergic Rhinitis': [
+      {
+        'name': 'Seasonal Allergic Rhinitis',
+        'description': '1. Cetirizine 10mg once daily\n2. Fluticasone nasal spray 2 sprays each nostril daily\n3. Avoid allergen exposure\n4. Saline nasal irrigation',
+        'goals': 'Symptom control\nImproved quality of life',
+        'instructions': 'Start nasal spray before allergy season. Use antihistamine daily during season. Keep windows closed. Shower after outdoor activities.',
+      },
+      {
+        'name': 'Perennial Allergic Rhinitis',
+        'description': '1. Intranasal corticosteroid daily\n2. Second-gen antihistamine\n3. Allergen avoidance measures\n4. Consider allergy testing/immunotherapy',
+        'goals': 'Year-round symptom control\nIdentify specific allergens',
+        'instructions': 'Use nasal spray consistently. Dust mite covers for bedding. HEPA filters. Consider allergy specialist referral.',
+      },
+    ],
+    
+    // Musculoskeletal
+    'Osteoarthritis': [
+      {
+        'name': 'OA - Conservative Management',
+        'description': '1. Paracetamol 1g QID (max 4g/day)\n2. Topical NSAIDs to affected joints\n3. Physical therapy\n4. Weight loss if overweight\n5. Low-impact exercise',
+        'goals': 'Pain reduction\nMaintain joint function\nDelay disease progression',
+        'instructions': 'Regular paracetamol more effective than PRN. Apply topical gel 3-4 times daily. Exercise in water if joint pain. Lose weight to reduce joint stress.',
+      },
+      {
+        'name': 'OA - Step-up Therapy',
+        'description': '1. Add oral NSAID: Naproxen 500mg BID with food\n2. Consider PPI for GI protection\n3. Intra-articular injection if severe\n4. Orthopedic referral if failing conservative',
+        'goals': 'Improved pain control\nMaintain mobility',
+        'instructions': 'Take NSAIDs with food. Report GI symptoms. Continue exercises. Joint injections available for severe cases.',
+      },
+    ],
+    
+    // Thyroid
+    'Hypothyroidism': [
+      {
+        'name': 'Hypothyroidism - Levothyroxine',
+        'description': '1. Start Levothyroxine 50mcg daily (25mcg if elderly/cardiac)\n2. Take on empty stomach, 30-60 min before breakfast\n3. Recheck TSH in 6-8 weeks\n4. Titrate by 25mcg increments',
+        'goals': 'Normalize TSH (0.5-4.0 mIU/L)\nResolve symptoms',
+        'instructions': 'Take on empty stomach with water. Wait 4 hours before calcium or iron supplements. Same brand preferred. Annual monitoring once stable.',
+      },
+    ],
+    
+    // Lipids
+    'Hyperlipidemia': [
+      {
+        'name': 'Dyslipidemia - Statin Therapy',
+        'description': '1. Atorvastatin 20mg at bedtime\n2. Low cholesterol diet\n3. Regular exercise\n4. Recheck lipids in 6-8 weeks',
+        'goals': 'LDL <100 mg/dL (or <70 if high risk)\nReduce cardiovascular risk',
+        'instructions': 'Take at bedtime for best effect. Report muscle pain or weakness. Limit alcohol. Follow heart-healthy diet. Regular exercise.',
+      },
+    ],
+  };
+  
+  // Get templates for selected diagnosis
+  List<Map<String, String>> _getTemplatesForDiagnosis(String diagnosis) {
+    // Try exact match first
+    if (_treatmentTemplates.containsKey(diagnosis)) {
+      return _treatmentTemplates[diagnosis]!;
+    }
+    
+    // Try partial match
+    final lowerDiag = diagnosis.toLowerCase();
+    for (final entry in _treatmentTemplates.entries) {
+      if (lowerDiag.contains(entry.key.toLowerCase()) || 
+          entry.key.toLowerCase().contains(lowerDiag)) {
+        return entry.value;
+      }
+    }
+    
+    // Check for keywords
+    if (lowerDiag.contains('hypertension') || lowerDiag.contains('high blood pressure') || lowerDiag.contains('htn')) {
+      return _treatmentTemplates['Hypertension']!;
+    }
+    if (lowerDiag.contains('diabetes') || lowerDiag.contains('dm') || lowerDiag.contains('sugar')) {
+      return _treatmentTemplates['Type 2 Diabetes']!;
+    }
+    if (lowerDiag.contains('asthma') || lowerDiag.contains('wheez')) {
+      return _treatmentTemplates['Asthma']!;
+    }
+    if (lowerDiag.contains('depress')) {
+      return _treatmentTemplates['Depression']!;
+    }
+    if (lowerDiag.contains('anxiety') || lowerDiag.contains('gad')) {
+      return _treatmentTemplates['Anxiety Disorder']!;
+    }
+    if (lowerDiag.contains('gerd') || lowerDiag.contains('reflux') || lowerDiag.contains('heartburn')) {
+      return _treatmentTemplates['Gastroesophageal Reflux Disease']!;
+    }
+    if (lowerDiag.contains('migraine') || lowerDiag.contains('headache')) {
+      return _treatmentTemplates['Migraine']!;
+    }
+    if (lowerDiag.contains('back pain') || lowerDiag.contains('lbp')) {
+      return _treatmentTemplates['Low Back Pain']!;
+    }
+    if (lowerDiag.contains('uti') || lowerDiag.contains('urinary')) {
+      return _treatmentTemplates['Urinary Tract Infection']!;
+    }
+    if (lowerDiag.contains('urti') || lowerDiag.contains('cold') || lowerDiag.contains('flu')) {
+      return _treatmentTemplates['Upper Respiratory Tract Infection']!;
+    }
+    if (lowerDiag.contains('allerg') || lowerDiag.contains('rhinitis')) {
+      return _treatmentTemplates['Allergic Rhinitis']!;
+    }
+    if (lowerDiag.contains('arthritis') || lowerDiag.contains('oa')) {
+      return _treatmentTemplates['Osteoarthritis']!;
+    }
+    if (lowerDiag.contains('thyroid') || lowerDiag.contains('hypothyroid')) {
+      return _treatmentTemplates['Hypothyroidism']!;
+    }
+    if (lowerDiag.contains('cholesterol') || lowerDiag.contains('lipid')) {
+      return _treatmentTemplates['Hyperlipidemia']!;
+    }
+    
+    return [];
+  }
+  
+  void _applyTemplate(Map<String, String> template) {
+    setState(() {
+      _descriptionController.text = template['description'] ?? '';
+      _goalsController.text = template['goals'] ?? '';
+      _instructionsController.text = template['instructions'] ?? '';
+    });
+  }
+  
   @override
   void initState() {
     super.initState();
@@ -2529,9 +3637,12 @@ class _TreatmentPlanModalState extends State<_TreatmentPlanModal> {
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final bottomPadding = MediaQuery.of(context).viewInsets.bottom;
+    final templates = _selectedDiagnosis.isNotEmpty 
+        ? _getTemplatesForDiagnosis(_selectedDiagnosis)
+        : <Map<String, String>>[];
     
     return Container(
-      height: MediaQuery.of(context).size.height * 0.85,
+      height: MediaQuery.of(context).size.height * 0.9,
       padding: EdgeInsets.only(bottom: bottomPadding),
       decoration: BoxDecoration(
         color: isDark ? const Color(0xFF1E1E1E) : Colors.white,
@@ -2601,6 +3712,7 @@ class _TreatmentPlanModalState extends State<_TreatmentPlanModal> {
                       const SizedBox(height: 8),
                       DropdownButtonFormField<String>(
                         value: _selectedDiagnosis.isEmpty ? null : _selectedDiagnosis,
+                        isExpanded: true,
                         decoration: InputDecoration(
                           border: OutlineInputBorder(
                             borderRadius: BorderRadius.circular(12),
@@ -2612,25 +3724,117 @@ class _TreatmentPlanModalState extends State<_TreatmentPlanModal> {
                         ),
                         items: widget.diagnoses.map((d) => DropdownMenuItem(
                           value: d,
-                          child: Text(d),
+                          child: Text(
+                            d,
+                            overflow: TextOverflow.ellipsis,
+                            maxLines: 1,
+                          ),
                         )).toList(),
                         onChanged: (value) {
                           setState(() => _selectedDiagnosis = value ?? '');
                         },
                       ),
+                      const SizedBox(height: 16),
+                    ],
+                    
+                    // Quick Templates Section
+                    if (templates.isNotEmpty) ...[
+                      Row(
+                        children: [
+                          Icon(
+                            Icons.flash_on_rounded,
+                            size: 18,
+                            color: const Color(0xFFF59E0B),
+                          ),
+                          const SizedBox(width: 8),
+                          Text(
+                            'Quick Templates',
+                            style: TextStyle(
+                              fontSize: 14,
+                              fontWeight: FontWeight.w600,
+                              color: isDark ? Colors.grey.shade300 : Colors.grey.shade700,
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 10),
+                      SizedBox(
+                        height: 44,
+                        child: ListView.separated(
+                          scrollDirection: Axis.horizontal,
+                          itemCount: templates.length,
+                          separatorBuilder: (_, __) => const SizedBox(width: 8),
+                          itemBuilder: (context, index) {
+                            final template = templates[index];
+                            return ActionChip(
+                              avatar: Icon(
+                                Icons.content_paste_rounded,
+                                size: 16,
+                                color: AppColors.primary,
+                              ),
+                              label: Text(
+                                template['name'] ?? 'Template ${index + 1}',
+                                style: TextStyle(
+                                  fontSize: 12,
+                                  fontWeight: FontWeight.w500,
+                                  color: isDark ? Colors.white : Colors.grey.shade800,
+                                ),
+                              ),
+                              backgroundColor: isDark 
+                                  ? AppColors.primary.withValues(alpha: 0.2)
+                                  : AppColors.primary.withValues(alpha: 0.1),
+                              side: BorderSide(
+                                color: AppColors.primary.withValues(alpha: 0.3),
+                              ),
+                              onPressed: () => _applyTemplate(template),
+                            );
+                          },
+                        ),
+                      ),
                       const SizedBox(height: 20),
+                    ] else if (_selectedDiagnosis.isNotEmpty) ...[
+                      Container(
+                        padding: const EdgeInsets.all(12),
+                        decoration: BoxDecoration(
+                          color: isDark 
+                              ? Colors.grey.shade800.withValues(alpha: 0.5)
+                              : Colors.grey.shade100,
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        child: Row(
+                          children: [
+                            Icon(
+                              Icons.info_outline,
+                              size: 18,
+                              color: Colors.grey.shade600,
+                            ),
+                            const SizedBox(width: 8),
+                            Expanded(
+                              child: Text(
+                                'No templates available for "$_selectedDiagnosis". Enter custom plan below.',
+                                style: TextStyle(
+                                  fontSize: 12,
+                                  color: Colors.grey.shade600,
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                      const SizedBox(height: 16),
                     ],
                     
                     // Treatment Description (main content)
                     TextFormField(
                       controller: _descriptionController,
-                      maxLines: 3,
+                      maxLines: 4,
                       decoration: InputDecoration(
                         labelText: 'Treatment Plan*',
                         hintText: 'e.g., Start Amlodipine 5mg daily, lifestyle modifications...',
                         border: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(12),
                         ),
+                        alignLabelWithHint: true,
                       ),
                       validator: (value) {
                         if (value == null || value.trim().isEmpty) {
@@ -2651,6 +3855,7 @@ class _TreatmentPlanModalState extends State<_TreatmentPlanModal> {
                         border: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(12),
                         ),
+                        alignLabelWithHint: true,
                       ),
                     ),
                     const SizedBox(height: 16),
@@ -2665,6 +3870,7 @@ class _TreatmentPlanModalState extends State<_TreatmentPlanModal> {
                         border: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(12),
                         ),
+                        alignLabelWithHint: true,
                       ),
                     ),
                   ],
@@ -3022,6 +4228,921 @@ class _FollowUpSchedulerModalState extends ConsumerState<_FollowUpSchedulerModal
                         ),
                       ),
               ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+/// Modal for entering chief complaint
+class _ChiefComplaintModal extends StatefulWidget {
+  final String chiefComplaint;
+  final String historyOfPresentIllness;
+  
+  const _ChiefComplaintModal({
+    required this.chiefComplaint,
+    required this.historyOfPresentIllness,
+  });
+  
+  @override
+  State<_ChiefComplaintModal> createState() => _ChiefComplaintModalState();
+}
+
+class _ChiefComplaintModalState extends State<_ChiefComplaintModal> {
+  late TextEditingController _complaintController;
+  late TextEditingController _hpiController;
+  
+  @override
+  void initState() {
+    super.initState();
+    _complaintController = TextEditingController(text: widget.chiefComplaint);
+    _hpiController = TextEditingController(text: widget.historyOfPresentIllness);
+  }
+  
+  @override
+  void dispose() {
+    _complaintController.dispose();
+    _hpiController.dispose();
+    super.dispose();
+  }
+  
+  @override
+  Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    
+    return Container(
+      constraints: BoxConstraints(
+        maxHeight: MediaQuery.of(context).size.height * 0.85,
+      ),
+      decoration: BoxDecoration(
+        color: isDark ? const Color(0xFF1E1E1E) : Colors.white,
+        borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          // Handle
+          Container(
+            margin: const EdgeInsets.only(top: 12),
+            width: 40,
+            height: 4,
+            decoration: BoxDecoration(
+              color: isDark ? Colors.white24 : Colors.black12,
+              borderRadius: BorderRadius.circular(2),
+            ),
+          ),
+          
+          // Header
+          Padding(
+            padding: const EdgeInsets.all(20),
+            child: Row(
+              children: [
+                Container(
+                  padding: const EdgeInsets.all(12),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFF59E0B).withValues(alpha: 0.1),
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: Icon(
+                    Icons.speaker_notes_rounded,
+                    color: const Color(0xFFF59E0B),
+                    size: 24,
+                  ),
+                ),
+                const SizedBox(width: 16),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'Chief Complaint',
+                        style: TextStyle(
+                          fontSize: 20,
+                          fontWeight: FontWeight.bold,
+                          color: isDark ? Colors.white : Colors.black87,
+                        ),
+                      ),
+                      Text(
+                        'Patient\'s main concern',
+                        style: TextStyle(
+                          fontSize: 14,
+                          color: isDark ? Colors.white60 : Colors.black54,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          ),
+          
+          // Content
+          Expanded(
+            child: SingleChildScrollView(
+              padding: const EdgeInsets.symmetric(horizontal: 20),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'Chief Complaint *',
+                    style: TextStyle(
+                      fontWeight: FontWeight.w600,
+                      color: isDark ? Colors.white70 : Colors.black87,
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  TextField(
+                    controller: _complaintController,
+                    decoration: InputDecoration(
+                      hintText: 'e.g., Fever and cough for 3 days',
+                      filled: true,
+                      fillColor: isDark ? Colors.white.withValues(alpha: 0.05) : Colors.grey[100],
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(12),
+                        borderSide: BorderSide.none,
+                      ),
+                    ),
+                    maxLines: 2,
+                  ),
+                  
+                  const SizedBox(height: 20),
+                  
+                  Text(
+                    'History of Present Illness (HPI)',
+                    style: TextStyle(
+                      fontWeight: FontWeight.w600,
+                      color: isDark ? Colors.white70 : Colors.black87,
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  TextField(
+                    controller: _hpiController,
+                    decoration: InputDecoration(
+                      hintText: 'Detailed history of the current illness...',
+                      filled: true,
+                      fillColor: isDark ? Colors.white.withValues(alpha: 0.05) : Colors.grey[100],
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(12),
+                        borderSide: BorderSide.none,
+                      ),
+                    ),
+                    maxLines: 5,
+                  ),
+                  
+                  const SizedBox(height: 20),
+                ],
+              ),
+            ),
+          ),
+          
+          // Save Button
+          Padding(
+            padding: const EdgeInsets.all(20),
+            child: SizedBox(
+              width: double.infinity,
+              child: ElevatedButton(
+                onPressed: () {
+                  Navigator.pop(context, {
+                    'chiefComplaint': _complaintController.text,
+                    'hpi': _hpiController.text,
+                  });
+                },
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: const Color(0xFFF59E0B),
+                  padding: const EdgeInsets.symmetric(vertical: 16),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                ),
+                child: const Text(
+                  'Save Chief Complaint',
+                  style: TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.w600,
+                    color: Colors.white,
+                  ),
+                ),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+/// Modal for ordering lab tests
+class _LabOrderModal extends StatefulWidget {
+  final int patientId;
+  final List<Map<String, dynamic>> existingOrders;
+  final String? diagnosis;
+  
+  const _LabOrderModal({
+    required this.patientId,
+    required this.existingOrders,
+    this.diagnosis,
+  });
+  
+  @override
+  State<_LabOrderModal> createState() => _LabOrderModalState();
+}
+
+class _LabOrderModalState extends State<_LabOrderModal> {
+  late List<Map<String, dynamic>> _orders;
+  final _testController = TextEditingController();
+  
+  final List<Map<String, dynamic>> _commonTests = [
+    {'name': 'CBC (Complete Blood Count)', 'code': 'CBC', 'category': 'Hematology'},
+    {'name': 'LFT (Liver Function Test)', 'code': 'LFT', 'category': 'Biochemistry'},
+    {'name': 'RFT (Renal Function Test)', 'code': 'RFT', 'category': 'Biochemistry'},
+    {'name': 'Lipid Profile', 'code': 'LIPID', 'category': 'Biochemistry'},
+    {'name': 'Thyroid Profile (T3, T4, TSH)', 'code': 'THYROID', 'category': 'Hormones'},
+    {'name': 'HbA1c', 'code': 'HBA1C', 'category': 'Diabetes'},
+    {'name': 'Fasting Blood Sugar', 'code': 'FBS', 'category': 'Diabetes'},
+    {'name': 'Random Blood Sugar', 'code': 'RBS', 'category': 'Diabetes'},
+    {'name': 'Urine Routine', 'code': 'URINE', 'category': 'Urinalysis'},
+    {'name': 'Chest X-Ray', 'code': 'CXR', 'category': 'Radiology'},
+    {'name': 'ECG', 'code': 'ECG', 'category': 'Cardiology'},
+    {'name': 'Ultrasound Abdomen', 'code': 'USG', 'category': 'Radiology'},
+    {'name': 'Serum Electrolytes', 'code': 'LYTES', 'category': 'Biochemistry'},
+    {'name': 'PT/INR', 'code': 'PT', 'category': 'Coagulation'},
+    {'name': 'ESR', 'code': 'ESR', 'category': 'Hematology'},
+    {'name': 'CRP', 'code': 'CRP', 'category': 'Inflammation'},
+  ];
+  
+  @override
+  void initState() {
+    super.initState();
+    _orders = List.from(widget.existingOrders);
+  }
+  
+  @override
+  void dispose() {
+    _testController.dispose();
+    super.dispose();
+  }
+  
+  @override
+  Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    
+    return Container(
+      constraints: BoxConstraints(
+        maxHeight: MediaQuery.of(context).size.height * 0.85,
+      ),
+      decoration: BoxDecoration(
+        color: isDark ? const Color(0xFF1E1E1E) : Colors.white,
+        borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          // Handle
+          Container(
+            margin: const EdgeInsets.only(top: 12),
+            width: 40,
+            height: 4,
+            decoration: BoxDecoration(
+              color: isDark ? Colors.white24 : Colors.black12,
+              borderRadius: BorderRadius.circular(2),
+            ),
+          ),
+          
+          // Header
+          Padding(
+            padding: const EdgeInsets.all(20),
+            child: Row(
+              children: [
+                Container(
+                  padding: const EdgeInsets.all(12),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFF8B5CF6).withValues(alpha: 0.1),
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: Icon(
+                    Icons.science_rounded,
+                    color: const Color(0xFF8B5CF6),
+                    size: 24,
+                  ),
+                ),
+                const SizedBox(width: 16),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'Lab Orders',
+                        style: TextStyle(
+                          fontSize: 20,
+                          fontWeight: FontWeight.bold,
+                          color: isDark ? Colors.white : Colors.black87,
+                        ),
+                      ),
+                      Text(
+                        '${_orders.length} test(s) selected',
+                        style: TextStyle(
+                          fontSize: 14,
+                          color: isDark ? Colors.white60 : Colors.black54,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          ),
+          
+          // Selected Orders
+          if (_orders.isNotEmpty)
+            Container(
+              margin: const EdgeInsets.symmetric(horizontal: 20),
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: const Color(0xFF8B5CF6).withValues(alpha: 0.1),
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: Wrap(
+                spacing: 8,
+                runSpacing: 8,
+                children: _orders.map((order) => Chip(
+                  label: Text((order['name'] as String?) ?? 'Test'),
+                  deleteIcon: const Icon(Icons.close, size: 16),
+                  onDeleted: () {
+                    setState(() {
+                      _orders.removeWhere((o) => o['code'] == order['code']);
+                    });
+                  },
+                  backgroundColor: isDark ? Colors.grey[800] : Colors.white,
+                )).toList(),
+              ),
+            ),
+          
+          const SizedBox(height: 16),
+          
+          // Common Tests
+          Expanded(
+            child: ListView(
+              padding: const EdgeInsets.symmetric(horizontal: 20),
+              children: [
+                Text(
+                  'Common Tests',
+                  style: TextStyle(
+                    fontWeight: FontWeight.w600,
+                    color: isDark ? Colors.white70 : Colors.black87,
+                  ),
+                ),
+                const SizedBox(height: 12),
+                ..._commonTests.map((test) => CheckboxListTile(
+                  title: Text(
+                    test['name'] as String,
+                    style: TextStyle(
+                      color: isDark ? Colors.white : Colors.black87,
+                    ),
+                  ),
+                  subtitle: Text(
+                    test['category'] as String,
+                    style: TextStyle(
+                      fontSize: 12,
+                      color: isDark ? Colors.white54 : Colors.black45,
+                    ),
+                  ),
+                  value: _orders.any((o) => o['code'] == test['code']),
+                  onChanged: (selected) {
+                    setState(() {
+                      if (selected == true) {
+                        if (!_orders.any((o) => o['code'] == test['code'])) {
+                          _orders.add(test);
+                        }
+                      } else {
+                        _orders.removeWhere((o) => o['code'] == test['code']);
+                      }
+                    });
+                  },
+                  activeColor: const Color(0xFF8B5CF6),
+                  contentPadding: EdgeInsets.zero,
+                )),
+              ],
+            ),
+          ),
+          
+          // Save Button
+          Padding(
+            padding: const EdgeInsets.all(20),
+            child: SizedBox(
+              width: double.infinity,
+              child: ElevatedButton(
+                onPressed: () => Navigator.pop(context, _orders),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: const Color(0xFF8B5CF6),
+                  padding: const EdgeInsets.symmetric(vertical: 16),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                ),
+                child: Text(
+                  'Order ${_orders.length} Test${_orders.length != 1 ? 's' : ''}',
+                  style: const TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.w600,
+                    color: Colors.white,
+                  ),
+                ),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+/// Modal for clinical notes (SOAP)
+class _ClinicalNotesModal extends StatefulWidget {
+  final String subjective;
+  final String objective;
+  final String assessment;
+  final String plan;
+  final String chiefComplaint;
+  final List<String> diagnoses;
+  
+  const _ClinicalNotesModal({
+    required this.subjective,
+    required this.objective,
+    required this.assessment,
+    required this.plan,
+    required this.chiefComplaint,
+    required this.diagnoses,
+  });
+  
+  @override
+  State<_ClinicalNotesModal> createState() => _ClinicalNotesModalState();
+}
+
+class _ClinicalNotesModalState extends State<_ClinicalNotesModal> {
+  late TextEditingController _subjectiveController;
+  late TextEditingController _objectiveController;
+  late TextEditingController _assessmentController;
+  late TextEditingController _planController;
+  
+  @override
+  void initState() {
+    super.initState();
+    _subjectiveController = TextEditingController(text: widget.subjective);
+    _objectiveController = TextEditingController(text: widget.objective);
+    _assessmentController = TextEditingController(text: widget.assessment);
+    _planController = TextEditingController(text: widget.plan);
+  }
+  
+  @override
+  void dispose() {
+    _subjectiveController.dispose();
+    _objectiveController.dispose();
+    _assessmentController.dispose();
+    _planController.dispose();
+    super.dispose();
+  }
+  
+  @override
+  Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    
+    return Container(
+      constraints: BoxConstraints(
+        maxHeight: MediaQuery.of(context).size.height * 0.9,
+      ),
+      decoration: BoxDecoration(
+        color: isDark ? const Color(0xFF1E1E1E) : Colors.white,
+        borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          // Handle
+          Container(
+            margin: const EdgeInsets.only(top: 12),
+            width: 40,
+            height: 4,
+            decoration: BoxDecoration(
+              color: isDark ? Colors.white24 : Colors.black12,
+              borderRadius: BorderRadius.circular(2),
+            ),
+          ),
+          
+          // Header
+          Padding(
+            padding: const EdgeInsets.all(20),
+            child: Row(
+              children: [
+                Container(
+                  padding: const EdgeInsets.all(12),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFF06B6D4).withValues(alpha: 0.1),
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: Icon(
+                    Icons.note_alt_rounded,
+                    color: const Color(0xFF06B6D4),
+                    size: 24,
+                  ),
+                ),
+                const SizedBox(width: 16),
+                Text(
+                  'SOAP Notes',
+                  style: TextStyle(
+                    fontSize: 20,
+                    fontWeight: FontWeight.bold,
+                    color: isDark ? Colors.white : Colors.black87,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          
+          // Content
+          Expanded(
+            child: SingleChildScrollView(
+              padding: const EdgeInsets.symmetric(horizontal: 20),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  _buildSOAPSection(
+                    'S - Subjective',
+                    'Patient\'s symptoms, complaints, and history',
+                    _subjectiveController,
+                    isDark,
+                    Colors.orange,
+                  ),
+                  _buildSOAPSection(
+                    'O - Objective',
+                    'Physical examination findings, vitals, test results',
+                    _objectiveController,
+                    isDark,
+                    Colors.blue,
+                  ),
+                  _buildSOAPSection(
+                    'A - Assessment',
+                    'Diagnosis and clinical impression',
+                    _assessmentController,
+                    isDark,
+                    Colors.green,
+                  ),
+                  _buildSOAPSection(
+                    'P - Plan',
+                    'Treatment plan, medications, follow-up',
+                    _planController,
+                    isDark,
+                    Colors.purple,
+                  ),
+                  const SizedBox(height: 20),
+                ],
+              ),
+            ),
+          ),
+          
+          // Save Button
+          Padding(
+            padding: const EdgeInsets.all(20),
+            child: SizedBox(
+              width: double.infinity,
+              child: ElevatedButton(
+                onPressed: () {
+                  Navigator.pop(context, {
+                    'subjective': _subjectiveController.text,
+                    'objective': _objectiveController.text,
+                    'assessment': _assessmentController.text,
+                    'plan': _planController.text,
+                  });
+                },
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: const Color(0xFF06B6D4),
+                  padding: const EdgeInsets.symmetric(vertical: 16),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                ),
+                child: const Text(
+                  'Save Clinical Notes',
+                  style: TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.w600,
+                    color: Colors.white,
+                  ),
+                ),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+  
+  Widget _buildSOAPSection(
+    String title,
+    String hint,
+    TextEditingController controller,
+    bool isDark,
+    Color color,
+  ) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 16),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Container(
+                width: 4,
+                height: 20,
+                decoration: BoxDecoration(
+                  color: color,
+                  borderRadius: BorderRadius.circular(2),
+                ),
+              ),
+              const SizedBox(width: 8),
+              Text(
+                title,
+                style: TextStyle(
+                  fontWeight: FontWeight.w600,
+                  color: isDark ? Colors.white : Colors.black87,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 8),
+          TextField(
+            controller: controller,
+            decoration: InputDecoration(
+              hintText: hint,
+              hintStyle: TextStyle(
+                fontSize: 13,
+                color: isDark ? Colors.white38 : Colors.black38,
+              ),
+              filled: true,
+              fillColor: isDark ? Colors.white.withValues(alpha: 0.05) : Colors.grey[100],
+              border: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(12),
+                borderSide: BorderSide.none,
+              ),
+              enabledBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(12),
+                borderSide: BorderSide(
+                  color: color.withValues(alpha: 0.3),
+                ),
+              ),
+              focusedBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(12),
+                borderSide: BorderSide(color: color),
+              ),
+            ),
+            maxLines: 3,
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+// Walk-In Reason Picker Modal
+class _WalkInReasonPicker extends StatefulWidget {
+  final String patientName;
+  
+  const _WalkInReasonPicker({required this.patientName});
+  
+  @override
+  State<_WalkInReasonPicker> createState() => _WalkInReasonPickerState();
+}
+
+class _WalkInReasonPickerState extends State<_WalkInReasonPicker> {
+  final _reasonController = TextEditingController();
+  String? _selectedReason;
+  
+  final _commonReasons = [
+    'General Consultation',
+    'Fever / Cold / Cough',
+    'Follow-up Visit',
+    'Prescription Refill',
+    'Pain / Body Ache',
+    'Stomach Issues',
+    'Skin Problem',
+    'Injury / Wound',
+    'Blood Pressure Check',
+    'Sugar Level Check',
+    'Lab Report Review',
+    'Vaccination',
+    'Health Certificate',
+    'Emergency',
+  ];
+  
+  @override
+  void dispose() {
+    _reasonController.dispose();
+    super.dispose();
+  }
+  
+  @override
+  Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    
+    return Container(
+      decoration: BoxDecoration(
+        color: isDark ? const Color(0xFF1E1E2E) : Colors.white,
+        borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
+      ),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          // Handle bar
+          Container(
+            margin: const EdgeInsets.only(top: 12),
+            width: 40,
+            height: 4,
+            decoration: BoxDecoration(
+              color: isDark ? Colors.white24 : Colors.grey[300],
+              borderRadius: BorderRadius.circular(2),
+            ),
+          ),
+          
+          // Header
+          Padding(
+            padding: const EdgeInsets.all(20),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.all(10),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFF10B981).withValues(alpha: 0.1),
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: const Icon(
+                        Icons.directions_walk_rounded,
+                        color: Color(0xFF10B981),
+                        size: 24,
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            'Walk-In Appointment',
+                            style: TextStyle(
+                              fontSize: 18,
+                              fontWeight: FontWeight.bold,
+                              color: isDark ? Colors.white : Colors.black87,
+                            ),
+                          ),
+                          Text(
+                            'For ${widget.patientName}',
+                            style: TextStyle(
+                              fontSize: 13,
+                              color: isDark ? Colors.white60 : Colors.black54,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 16),
+                Text(
+                  'What brings you here today?',
+                  style: TextStyle(
+                    fontSize: 14,
+                    fontWeight: FontWeight.w500,
+                    color: isDark ? Colors.white70 : Colors.black87,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          
+          // Common reasons
+          Container(
+            height: 200,
+            padding: const EdgeInsets.symmetric(horizontal: 16),
+            child: GridView.builder(
+              gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                crossAxisCount: 2,
+                mainAxisSpacing: 8,
+                crossAxisSpacing: 8,
+                childAspectRatio: 3.2,
+              ),
+              itemCount: _commonReasons.length,
+              itemBuilder: (context, index) {
+                final reason = _commonReasons[index];
+                final isSelected = _selectedReason == reason;
+                
+                return GestureDetector(
+                  onTap: () {
+                    setState(() {
+                      _selectedReason = reason;
+                      _reasonController.text = reason;
+                    });
+                  },
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                    decoration: BoxDecoration(
+                      color: isSelected 
+                          ? const Color(0xFF10B981).withValues(alpha: 0.15)
+                          : isDark ? Colors.white.withValues(alpha: 0.05) : Colors.grey[100],
+                      borderRadius: BorderRadius.circular(10),
+                      border: Border.all(
+                        color: isSelected 
+                            ? const Color(0xFF10B981)
+                            : isDark ? Colors.white12 : Colors.grey[300]!,
+                      ),
+                    ),
+                    child: Center(
+                      child: Text(
+                        reason,
+                        textAlign: TextAlign.center,
+                        style: TextStyle(
+                          fontSize: 12,
+                          fontWeight: isSelected ? FontWeight.w600 : FontWeight.w500,
+                          color: isSelected 
+                              ? const Color(0xFF10B981)
+                              : isDark ? Colors.white70 : Colors.black87,
+                        ),
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ),
+                  ),
+                );
+              },
+            ),
+          ),
+          
+          // Custom reason input
+          Padding(
+            padding: const EdgeInsets.all(16),
+            child: TextField(
+              controller: _reasonController,
+              decoration: InputDecoration(
+                hintText: 'Or type custom reason...',
+                prefixIcon: const Icon(Icons.edit_note, size: 20),
+                filled: true,
+                fillColor: isDark ? Colors.white.withValues(alpha: 0.05) : Colors.grey[100],
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(12),
+                  borderSide: BorderSide.none,
+                ),
+                contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+              ),
+              onChanged: (value) {
+                if (value.isNotEmpty) {
+                  setState(() => _selectedReason = null);
+                }
+              },
+            ),
+          ),
+          
+          // Action buttons
+          Padding(
+            padding: const EdgeInsets.fromLTRB(16, 0, 16, 32),
+            child: Row(
+              children: [
+                Expanded(
+                  child: OutlinedButton(
+                    onPressed: () => Navigator.pop(context),
+                    style: OutlinedButton.styleFrom(
+                      padding: const EdgeInsets.symmetric(vertical: 14),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                    ),
+                    child: const Text('Cancel'),
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  flex: 2,
+                  child: ElevatedButton.icon(
+                    onPressed: () {
+                      final reason = _reasonController.text.trim().isNotEmpty 
+                          ? _reasonController.text.trim()
+                          : _selectedReason ?? 'General Consultation';
+                      Navigator.pop(context, reason);
+                    },
+                    icon: const Icon(Icons.check_circle, size: 20),
+                    label: const Text('Start Consultation'),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: const Color(0xFF10B981),
+                      foregroundColor: Colors.white,
+                      padding: const EdgeInsets.symmetric(vertical: 14),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                    ),
+                  ),
+                ),
+              ],
             ),
           ),
         ],

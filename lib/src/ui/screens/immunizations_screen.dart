@@ -1,10 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import '../../db/doctor_db.dart';
 import '../../extensions/drift_extensions.dart';
-import '../../models/immunization.dart';
-import '../../providers/db_provider.dart';
 import '../../services/immunization_service.dart';
 import '../../theme/app_theme.dart';
 import '../../core/theme/design_tokens.dart';
@@ -163,12 +160,14 @@ class _ImmunizationsScreenState extends ConsumerState<ImmunizationsScreen>
           ],
         ),
       ),
-      floatingActionButton: FloatingActionButton.extended(
-        onPressed: () => _showAddImmunizationDialog(context),
-        icon: const Icon(Icons.add),
-        label: const Text('Record Vaccine'),
-        backgroundColor: const Color(0xFF10B981),
-      ),
+      floatingActionButton: widget.patientId != null
+          ? FloatingActionButton.extended(
+              onPressed: () => _showAddImmunizationDialog(context),
+              icon: const Icon(Icons.add),
+              label: const Text('Record Vaccine'),
+              backgroundColor: const Color(0xFF10B981),
+            )
+          : null,
     );
   }
 

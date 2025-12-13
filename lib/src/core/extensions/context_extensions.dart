@@ -57,14 +57,29 @@ extension MediaQueryExtension on BuildContext {
   /// Check if keyboard is visible
   bool get isKeyboardVisible => viewInsets.bottom > 0;
   
-  /// Check if screen is compact
+  /// Check if screen is compact (< 600px width)
   bool get isCompact => AppBreakpoint.isCompact(screenWidth);
   
-  /// Check if screen is medium
+  /// Check if screen is medium (600-839px width)
   bool get isMedium => AppBreakpoint.isMedium(screenWidth);
   
-  /// Check if screen is expanded
+  /// Check if screen is expanded (840-1199px width)
   bool get isExpanded => AppBreakpoint.isExpanded(screenWidth);
+
+  /// Check if screen is large (>= 1200px width)
+  bool get isLarge => AppBreakpoint.isLarge(screenWidth);
+
+  /// Check if screen is short height (<= 600px)
+  bool get isShortScreen => AppBreakpoint.isShortScreen(screenHeight);
+
+  /// Check if screen is tall height (>= 900px)
+  bool get isTallScreen => AppBreakpoint.isTallScreen(screenHeight);
+
+  /// Get screen width category
+  ScreenWidth get widthCategory => AppBreakpoint.getWidthCategory(screenWidth);
+
+  /// Get screen height category
+  ScreenHeight get heightCategory => AppBreakpoint.getHeightCategory(screenHeight);
   
   /// Get responsive padding based on screen size
   double get responsivePadding => isCompact 
@@ -75,6 +90,125 @@ extension MediaQueryExtension on BuildContext {
   double get responsiveCardPadding => isCompact 
       ? AppSpacing.cardPaddingCompact 
       : AppSpacing.cardPadding;
+
+  /// Responsive font scale (smaller on compact, normal on medium, larger on desktop)
+  double get fontScale {
+    if (isCompact) return isShortScreen ? 0.9 : 1.0;
+    if (isMedium) return 1.05;
+    return 1.1;
+  }
+
+  /// Responsive icon size
+  double get responsiveIconSize {
+    if (isCompact) return isShortScreen ? 18.0 : 20.0;
+    if (isMedium) return 22.0;
+    return 24.0;
+  }
+
+  /// Responsive avatar size
+  double get responsiveAvatarSize {
+    if (isCompact) return isShortScreen ? 36.0 : 40.0;
+    if (isMedium) return 48.0;
+    return 56.0;
+  }
+
+  /// Responsive item spacing
+  double get responsiveItemSpacing {
+    if (isCompact) return isShortScreen ? 6.0 : 8.0;
+    if (isMedium) return 10.0;
+    return 12.0;
+  }
+
+  /// Responsive section spacing
+  double get responsiveSectionSpacing {
+    if (isCompact) return isShortScreen ? 12.0 : 16.0;
+    if (isMedium) return 20.0;
+    return 24.0;
+  }
+
+  /// Grid columns based on width
+  int get responsiveGridColumns {
+    switch (widthCategory) {
+      case ScreenWidth.compact: return 2;
+      case ScreenWidth.medium: return 3;
+      case ScreenWidth.expanded: return 4;
+      case ScreenWidth.large: return 5;
+    }
+  }
+
+  /// List columns for side-by-side layouts
+  int get responsiveListColumns {
+    switch (widthCategory) {
+      case ScreenWidth.compact: return 1;
+      case ScreenWidth.medium: return 2;
+      case ScreenWidth.expanded: return 2;
+      case ScreenWidth.large: return 3;
+    }
+  }
+
+  /// Content max width for centering on large screens
+  double get contentMaxWidth {
+    if (isLarge) return 1200.0;
+    if (isExpanded) return 900.0;
+    return double.infinity;
+  }
+
+  /// Responsive helper - return different values based on screen size
+  T responsive<T>({
+    required T compact,
+    T? medium,
+    T? expanded,
+    T? large,
+  }) {
+    switch (widthCategory) {
+      case ScreenWidth.large:
+        return large ?? expanded ?? medium ?? compact;
+      case ScreenWidth.expanded:
+        return expanded ?? medium ?? compact;
+      case ScreenWidth.medium:
+        return medium ?? compact;
+      case ScreenWidth.compact:
+        return compact;
+    }
+  }
+
+  /// Responsive value for short screens - returns shortValue on short screens
+  T heightResponsive<T>({
+    required T normal,
+    T? short,
+    T? tall,
+  }) {
+    switch (heightCategory) {
+      case ScreenHeight.short:
+        return short ?? normal;
+      case ScreenHeight.tall:
+        return tall ?? normal;
+      case ScreenHeight.medium:
+        return normal;
+    }
+  }
+
+  /// Combined responsive for both width and height
+  T fullResponsive<T>({
+    required T base,
+    T? compactShort,
+    T? compact,
+    T? medium,
+    T? expanded,
+    T? large,
+  }) {
+    // First check for compact + short screen special case
+    if (isCompact && isShortScreen && compactShort != null) {
+      return compactShort;
+    }
+    // Then fall back to width-based
+    return responsive(
+      compact: compact ?? base,
+      medium: medium,
+      expanded: expanded,
+      large: large,
+    );
+  }
 }
 
 /// Navigation extensions

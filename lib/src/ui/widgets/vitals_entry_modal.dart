@@ -73,56 +73,62 @@ class _VitalsEntryModalState extends ConsumerState<VitalsEntryModal> {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final backgroundColor = isDark ? AppColors.darkSurface : Colors.white;
+
     return Container(
-      decoration: const BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      decoration: BoxDecoration(
+        color: backgroundColor,
+        borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
       ),
       child: Column(
         children: [
-          _buildHandle(),
-          _buildHeader(),
+          _buildHandle(isDark),
+          _buildHeader(isDark),
           Expanded(
             child: Form(
               key: _formKey,
               child: ListView(
                 padding: const EdgeInsets.symmetric(horizontal: 20),
                 children: [
-                  _buildBloodPressureCard(),
+                  _buildBloodPressureCard(isDark),
                   const SizedBox(height: 16),
-                  _buildHeartAndTempCard(),
+                  _buildHeartAndTempCard(isDark),
                   const SizedBox(height: 16),
-                  _buildRespiratoryCard(),
+                  _buildRespiratoryCard(isDark),
                   const SizedBox(height: 16),
-                  _buildBodyMeasurementsCard(),
+                  _buildBodyMeasurementsCard(isDark),
                   const SizedBox(height: 16),
-                  _buildPainScaleCard(),
+                  _buildPainScaleCard(isDark),
                   const SizedBox(height: 16),
-                  _buildNotesCard(),
+                  _buildNotesCard(isDark),
                   const SizedBox(height: 100),
                 ],
               ),
             ),
           ),
-          _buildBottomBar(),
+          _buildBottomBar(isDark),
         ],
       ),
     );
   }
 
-  Widget _buildHandle() {
+  Widget _buildHandle(bool isDark) {
     return Container(
       margin: const EdgeInsets.only(top: 12),
       width: 40,
       height: 4,
       decoration: BoxDecoration(
-        color: AppColors.divider,
+        color: isDark ? Colors.grey[600] : AppColors.divider,
         borderRadius: BorderRadius.circular(2),
       ),
     );
   }
 
-  Widget _buildHeader() {
+  Widget _buildHeader(bool isDark) {
+    final textColor = isDark ? AppColors.darkTextPrimary : AppColors.textPrimary;
+    final secondaryTextColor = isDark ? AppColors.darkTextSecondary : AppColors.textSecondary;
+
     return Container(
       padding: const EdgeInsets.all(20),
       child: Row(
@@ -130,17 +136,17 @@ class _VitalsEntryModalState extends ConsumerState<VitalsEntryModal> {
           Container(
             padding: const EdgeInsets.all(10),
             decoration: BoxDecoration(
-              color: const Color(0xFFEC4899).withValues(alpha: 0.1),
+              color: AppColors.quickActionPink.withValues(alpha: 0.1),
               borderRadius: BorderRadius.circular(12),
             ),
             child: const Icon(
               Icons.monitor_heart_rounded,
-              color: Color(0xFFEC4899),
+              color: AppColors.quickActionPink,
               size: 24,
             ),
           ),
           const SizedBox(width: 16),
-          const Expanded(
+          Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
@@ -149,21 +155,21 @@ class _VitalsEntryModalState extends ConsumerState<VitalsEntryModal> {
                   style: TextStyle(
                     fontSize: 20,
                     fontWeight: FontWeight.bold,
-                    color: AppColors.textPrimary,
+                    color: textColor,
                   ),
                 ),
                 Text(
                   'Enter patient vital measurements',
                   style: TextStyle(
                     fontSize: 14,
-                    color: AppColors.textSecondary,
+                    color: secondaryTextColor,
                   ),
                 ),
               ],
             ),
           ),
           IconButton(
-            icon: const Icon(Icons.close),
+            icon: Icon(Icons.close, color: textColor),
             onPressed: () => Navigator.of(context).pop(),
           ),
         ],
@@ -171,11 +177,12 @@ class _VitalsEntryModalState extends ConsumerState<VitalsEntryModal> {
     );
   }
 
-  Widget _buildBloodPressureCard() {
+  Widget _buildBloodPressureCard(bool isDark) {
     return _buildCard(
+      isDark: isDark,
       title: 'Blood Pressure',
       icon: Icons.favorite,
-      iconColor: const Color(0xFFEF4444),
+      iconColor: AppColors.error,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -183,6 +190,7 @@ class _VitalsEntryModalState extends ConsumerState<VitalsEntryModal> {
             children: [
               Expanded(
                 child: _buildVitalField(
+                  isDark: isDark,
                   controller: _systolicController,
                   label: 'Systolic',
                   hint: '120',
@@ -201,17 +209,18 @@ class _VitalsEntryModalState extends ConsumerState<VitalsEntryModal> {
               ),
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 12),
-                child: const Text(
+                child: Text(
                   '/',
                   style: TextStyle(
                     fontSize: 24,
                     fontWeight: FontWeight.bold,
-                    color: AppColors.textSecondary,
+                    color: isDark ? AppColors.darkTextSecondary : AppColors.textSecondary,
                   ),
                 ),
               ),
               Expanded(
                 child: _buildVitalField(
+                  isDark: isDark,
                   controller: _diastolicController,
                   label: 'Diastolic',
                   hint: '80',
@@ -232,6 +241,7 @@ class _VitalsEntryModalState extends ConsumerState<VitalsEntryModal> {
           ),
           const SizedBox(height: 12),
           _buildQuickSelectChips(
+            isDark: isDark,
             suggestions: MedicalSuggestions.bloodPressure,
             onSelected: (bp) {
               final parts = bp.split('/');
@@ -246,18 +256,20 @@ class _VitalsEntryModalState extends ConsumerState<VitalsEntryModal> {
     );
   }
 
-  Widget _buildHeartAndTempCard() {
+  Widget _buildHeartAndTempCard(bool isDark) {
     return Row(
       children: [
         Expanded(
           child: _buildCard(
+            isDark: isDark,
             title: 'Heart Rate',
             icon: Icons.timeline,
-            iconColor: const Color(0xFFEC4899),
+            iconColor: AppColors.quickActionPink,
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 _buildVitalField(
+                  isDark: isDark,
                   controller: _heartRateController,
                   label: '',
                   hint: '72',
@@ -275,6 +287,7 @@ class _VitalsEntryModalState extends ConsumerState<VitalsEntryModal> {
                 ),
                 const SizedBox(height: 8),
                 _buildQuickSelectChips(
+                  isDark: isDark,
                   suggestions: MedicalSuggestions.pulseRate.take(5).toList(),
                   onSelected: (v) => _heartRateController.text = v,
                   compact: true,
@@ -286,13 +299,15 @@ class _VitalsEntryModalState extends ConsumerState<VitalsEntryModal> {
         const SizedBox(width: 12),
         Expanded(
           child: _buildCard(
+            isDark: isDark,
             title: 'Temperature',
             icon: Icons.thermostat,
-            iconColor: const Color(0xFFF59E0B),
+            iconColor: AppColors.warning,
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 _buildVitalField(
+                  isDark: isDark,
                   controller: _temperatureController,
                   label: '',
                   hint: '37.0',
@@ -310,6 +325,7 @@ class _VitalsEntryModalState extends ConsumerState<VitalsEntryModal> {
                 ),
                 const SizedBox(height: 8),
                 _buildQuickSelectChips(
+                  isDark: isDark,
                   suggestions: MedicalSuggestions.temperatureCelsius.take(5).toList(),
                   onSelected: (v) => _temperatureController.text = v,
                   compact: true,
@@ -322,18 +338,20 @@ class _VitalsEntryModalState extends ConsumerState<VitalsEntryModal> {
     );
   }
 
-  Widget _buildRespiratoryCard() {
+  Widget _buildRespiratoryCard(bool isDark) {
     return Row(
       children: [
         Expanded(
           child: _buildCard(
+            isDark: isDark,
             title: 'Respiratory Rate',
             icon: Icons.air,
-            iconColor: const Color(0xFF14B8A6),
+            iconColor: AppColors.accent,
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 _buildVitalField(
+                  isDark: isDark,
                   controller: _respiratoryRateController,
                   label: '',
                   hint: '16',
@@ -342,6 +360,7 @@ class _VitalsEntryModalState extends ConsumerState<VitalsEntryModal> {
                 ),
                 const SizedBox(height: 8),
                 _buildQuickSelectChips(
+                  isDark: isDark,
                   suggestions: MedicalSuggestions.respiratoryRate.take(5).toList(),
                   onSelected: (v) => _respiratoryRateController.text = v,
                   compact: true,
@@ -353,13 +372,15 @@ class _VitalsEntryModalState extends ConsumerState<VitalsEntryModal> {
         const SizedBox(width: 12),
         Expanded(
           child: _buildCard(
+            isDark: isDark,
             title: 'SpO2',
             icon: Icons.water_drop,
-            iconColor: const Color(0xFF0EA5E9),
+            iconColor: AppColors.skyBlue,
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 _buildVitalField(
+                  isDark: isDark,
                   controller: _oxygenSatController,
                   label: '',
                   hint: '98',
@@ -377,6 +398,7 @@ class _VitalsEntryModalState extends ConsumerState<VitalsEntryModal> {
                 ),
                 const SizedBox(height: 8),
                 _buildQuickSelectChips(
+                  isDark: isDark,
                   suggestions: MedicalSuggestions.oxygenSaturation.take(5).toList(),
                   onSelected: (v) => _oxygenSatController.text = v,
                   compact: true,
@@ -389,11 +411,12 @@ class _VitalsEntryModalState extends ConsumerState<VitalsEntryModal> {
     );
   }
 
-  Widget _buildBodyMeasurementsCard() {
+  Widget _buildBodyMeasurementsCard(bool isDark) {
     return _buildCard(
+      isDark: isDark,
       title: 'Body Measurements',
       icon: Icons.straighten,
-      iconColor: const Color(0xFF8B5CF6),
+      iconColor: AppColors.purple,
       child: Column(
         children: [
           Row(
@@ -403,6 +426,7 @@ class _VitalsEntryModalState extends ConsumerState<VitalsEntryModal> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     _buildVitalField(
+                      isDark: isDark,
                       controller: _weightController,
                       label: 'Weight',
                       hint: '70',
@@ -412,6 +436,7 @@ class _VitalsEntryModalState extends ConsumerState<VitalsEntryModal> {
                     ),
                     const SizedBox(height: 6),
                     _buildQuickSelectChips(
+                      isDark: isDark,
                       suggestions: MedicalSuggestions.weightKg.take(6).toList(),
                       onSelected: (v) { _weightController.text = v; _calculateBMI(); },
                       compact: true,
@@ -425,6 +450,7 @@ class _VitalsEntryModalState extends ConsumerState<VitalsEntryModal> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     _buildVitalField(
+                      isDark: isDark,
                       controller: _heightController,
                       label: 'Height',
                       hint: '170',
@@ -434,6 +460,7 @@ class _VitalsEntryModalState extends ConsumerState<VitalsEntryModal> {
                     ),
                     const SizedBox(height: 6),
                     _buildQuickSelectChips(
+                      isDark: isDark,
                       suggestions: MedicalSuggestions.heightCm.take(6).toList(),
                       onSelected: (v) { _heightController.text = v; _calculateBMI(); },
                       compact: true,
@@ -454,11 +481,11 @@ class _VitalsEntryModalState extends ConsumerState<VitalsEntryModal> {
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  const Text(
+                  Text(
                     'BMI: ',
                     style: TextStyle(
                       fontSize: 14,
-                      color: AppColors.textSecondary,
+                      color: isDark ? AppColors.darkTextSecondary : AppColors.textSecondary,
                     ),
                   ),
                   Text(
@@ -483,6 +510,7 @@ class _VitalsEntryModalState extends ConsumerState<VitalsEntryModal> {
           ],
           const SizedBox(height: 12),
           _buildVitalField(
+            isDark: isDark,
             controller: _bloodGlucoseController,
             label: 'Blood Glucose',
             hint: '100',
@@ -491,6 +519,7 @@ class _VitalsEntryModalState extends ConsumerState<VitalsEntryModal> {
           ),
           const SizedBox(height: 6),
           _buildQuickSelectChips(
+            isDark: isDark,
             suggestions: MedicalSuggestions.bloodGlucose.take(6).toList(),
             onSelected: (v) => _bloodGlucoseController.text = v,
             compact: true,
@@ -500,17 +529,19 @@ class _VitalsEntryModalState extends ConsumerState<VitalsEntryModal> {
     );
   }
 
-  Widget _buildPainScaleCard() {
+  Widget _buildPainScaleCard(bool isDark) {
+    final secondaryTextColor = isDark ? AppColors.darkTextSecondary : AppColors.textSecondary;
     return _buildCard(
+      isDark: isDark,
       title: 'Pain Level',
       icon: Icons.sentiment_dissatisfied,
-      iconColor: const Color(0xFFEF4444),
+      iconColor: AppColors.error,
       child: Column(
         children: [
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              const Text('0 - No Pain', style: TextStyle(fontSize: 12, color: AppColors.textSecondary)),
+              Text('0 - No Pain', style: TextStyle(fontSize: 12, color: secondaryTextColor)),
               Text(
                 _painLevel.toString(),
                 style: TextStyle(
@@ -519,14 +550,14 @@ class _VitalsEntryModalState extends ConsumerState<VitalsEntryModal> {
                   color: _getPainColor(_painLevel),
                 ),
               ),
-              const Text('10 - Worst', style: TextStyle(fontSize: 12, color: AppColors.textSecondary)),
+              Text('10 - Worst', style: TextStyle(fontSize: 12, color: secondaryTextColor)),
             ],
           ),
           const SizedBox(height: 8),
           SliderTheme(
             data: SliderThemeData(
               activeTrackColor: _getPainColor(_painLevel),
-              inactiveTrackColor: AppColors.divider,
+              inactiveTrackColor: isDark ? Colors.grey.shade700 : AppColors.divider,
               thumbColor: _getPainColor(_painLevel),
               overlayColor: _getPainColor(_painLevel).withValues(alpha: 0.2),
               trackHeight: 8,
@@ -552,7 +583,7 @@ class _VitalsEntryModalState extends ConsumerState<VitalsEntryModal> {
                   decoration: BoxDecoration(
                     color: _painLevel == index
                         ? _getPainColor(index)
-                        : AppColors.background,
+                        : (isDark ? Colors.grey.shade800 : AppColors.background),
                     shape: BoxShape.circle,
                     border: Border.all(
                       color: _getPainColor(index).withValues(alpha: 0.5),
@@ -577,11 +608,12 @@ class _VitalsEntryModalState extends ConsumerState<VitalsEntryModal> {
     );
   }
 
-  Widget _buildNotesCard() {
+  Widget _buildNotesCard(bool isDark) {
     return _buildCard(
+      isDark: isDark,
       title: 'Notes',
       icon: Icons.notes,
-      iconColor: AppColors.textSecondary,
+      iconColor: isDark ? AppColors.darkTextSecondary : AppColors.textSecondary,
       child: SuggestionTextField(
         controller: _notesController,
         label: '',
@@ -596,6 +628,7 @@ class _VitalsEntryModalState extends ConsumerState<VitalsEntryModal> {
   Widget _buildQuickSelectChips({
     required List<String> suggestions,
     required void Function(String) onSelected,
+    required bool isDark,
     bool compact = false,
   }) {
     return Wrap(
@@ -607,14 +640,14 @@ class _VitalsEntryModalState extends ConsumerState<VitalsEntryModal> {
             s,
             style: TextStyle(
               fontSize: compact ? 11 : 12,
-              color: AppColors.textSecondary,
+              color: isDark ? AppColors.darkTextSecondary : AppColors.textSecondary,
             ),
           ),
           padding: compact 
               ? const EdgeInsets.symmetric(horizontal: 4, vertical: 0)
               : const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-          backgroundColor: AppColors.background,
-          side: BorderSide(color: AppColors.divider.withValues(alpha: 0.5)),
+          backgroundColor: isDark ? Colors.grey.shade800 : AppColors.background,
+          side: BorderSide(color: isDark ? Colors.grey.shade600 : AppColors.divider.withValues(alpha: 0.5)),
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
           onPressed: () => onSelected(s),
         );
@@ -627,13 +660,14 @@ class _VitalsEntryModalState extends ConsumerState<VitalsEntryModal> {
     required IconData icon,
     required Color iconColor,
     required Widget child,
+    required bool isDark,
   }) {
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: isDark ? AppColors.darkSurface : Colors.white,
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: AppColors.divider),
+        border: Border.all(color: isDark ? Colors.grey.shade700 : AppColors.divider),
         boxShadow: [
           BoxShadow(
             color: Colors.black.withValues(alpha: 0.03),
@@ -651,10 +685,10 @@ class _VitalsEntryModalState extends ConsumerState<VitalsEntryModal> {
               const SizedBox(width: 8),
               Text(
                 title,
-                style: const TextStyle(
+                style: TextStyle(
                   fontSize: 14,
                   fontWeight: FontWeight.w600,
-                  color: AppColors.textPrimary,
+                  color: isDark ? AppColors.darkTextPrimary : AppColors.textPrimary,
                 ),
               ),
             ],
@@ -671,6 +705,7 @@ class _VitalsEntryModalState extends ConsumerState<VitalsEntryModal> {
     required String label,
     required String hint,
     required String suffix,
+    required bool isDark,
     TextInputType keyboardType = TextInputType.text,
     String? Function(String?)? validator,
     void Function(String)? onChanged,
@@ -681,9 +716,9 @@ class _VitalsEntryModalState extends ConsumerState<VitalsEntryModal> {
         if (label.isNotEmpty) ...[
           Text(
             label,
-            style: const TextStyle(
+            style: TextStyle(
               fontSize: 12,
-              color: AppColors.textSecondary,
+              color: isDark ? AppColors.darkTextSecondary : AppColors.textSecondary,
             ),
           ),
           const SizedBox(height: 4),
@@ -701,33 +736,37 @@ class _VitalsEntryModalState extends ConsumerState<VitalsEntryModal> {
           onChanged: onChanged,
           decoration: InputDecoration(
             hintText: hint,
+            hintStyle: TextStyle(
+              color: isDark ? AppColors.darkTextSecondary : AppColors.textSecondary,
+            ),
             suffixText: suffix,
-            suffixStyle: const TextStyle(
-              color: AppColors.textSecondary,
+            suffixStyle: TextStyle(
+              color: isDark ? AppColors.darkTextSecondary : AppColors.textSecondary,
               fontSize: 14,
             ),
             filled: true,
-            fillColor: AppColors.background,
+            fillColor: isDark ? Colors.grey.shade800 : AppColors.background,
             border: OutlineInputBorder(
               borderRadius: BorderRadius.circular(12),
               borderSide: BorderSide.none,
             ),
             contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
           ),
-          style: const TextStyle(
+          style: TextStyle(
             fontSize: 18,
             fontWeight: FontWeight.bold,
+            color: isDark ? AppColors.darkTextPrimary : AppColors.textPrimary,
           ),
         ),
       ],
     );
   }
 
-  Widget _buildBottomBar() {
+  Widget _buildBottomBar(bool isDark) {
     return Container(
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: isDark ? AppColors.darkSurface : Colors.white,
         boxShadow: [
           BoxShadow(
             color: Colors.black.withValues(alpha: 0.05),
@@ -757,7 +796,7 @@ class _VitalsEntryModalState extends ConsumerState<VitalsEntryModal> {
               child: ElevatedButton(
                 onPressed: _isLoading ? null : _saveVitals,
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: const Color(0xFFEC4899),
+                  backgroundColor: AppColors.quickActionPink,
                   padding: const EdgeInsets.symmetric(vertical: 16),
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(12),

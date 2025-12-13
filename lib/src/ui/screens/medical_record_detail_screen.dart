@@ -1,7 +1,7 @@
-import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
+import '../../core/routing/app_router.dart';
 import '../../db/doctor_db.dart';
 import '../../providers/db_provider.dart';
 import '../../services/pdf_service.dart';
@@ -10,6 +10,7 @@ import '../../theme/app_theme.dart';
 import '../../core/theme/design_tokens.dart';
 import '../widgets/medical_record_widgets.dart';
 import 'records/records.dart';
+import 'psychiatric_assessment_screen_modern.dart';
 
 /// A modern, accessible medical record detail screen
 /// 
@@ -18,7 +19,7 @@ import 'records/records.dart';
 /// - Modern gradient header design
 /// - Accessible semantic labels
 /// - Dark mode support
-class MedicalRecordDetailScreen extends ConsumerWidget {
+class MedicalRecordDetailScreen extends ConsumerStatefulWidget {
 
   const MedicalRecordDetailScreen({
     required this.record, required this.patient, super.key,
@@ -26,21 +27,43 @@ class MedicalRecordDetailScreen extends ConsumerWidget {
   final MedicalRecord record;
   final Patient patient;
 
-  /// Cached parsed JSON data with error handling
-  Map<String, dynamic> get _data {
-    if (record.dataJson.isEmpty || record.dataJson == '{}') return {};
-    try {
-      return jsonDecode(record.dataJson) as Map<String, dynamic>;
-    } catch (e) {
-      debugPrint('Error parsing medical record data: $e');
-      return {};
+  @override
+  ConsumerState<MedicalRecordDetailScreen> createState() => _MedicalRecordDetailScreenState();
+}
+
+class _MedicalRecordDetailScreenState extends ConsumerState<MedicalRecordDetailScreen> {
+  Map<String, dynamic> _data = {};
+  bool _isLoading = true;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadData();
+  }
+
+  Future<void> _loadData() async {
+    final db = await ref.read(doctorDbProvider.future);
+    // V6: Use compat method to load from normalized table or fallback to dataJson
+    final data = await db.getMedicalRecordFieldsCompat(widget.record.id);
+    if (mounted) {
+      setState(() {
+        _data = data;
+        _isLoading = false;
+      });
     }
   }
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    final recordInfo = RecordTypeInfo.fromType(record.recordType);
+    final recordInfo = RecordTypeInfo.fromType(widget.record.recordType);
+    
+    if (_isLoading) {
+      return Scaffold(
+        backgroundColor: isDark ? AppColors.darkBackground : AppColors.background,
+        body: const Center(child: CircularProgressIndicator()),
+      );
+    }
     
     return Scaffold(
       backgroundColor: isDark ? AppColors.darkBackground : AppColors.background,
@@ -48,8 +71,8 @@ class MedicalRecordDetailScreen extends ConsumerWidget {
         slivers: [
           SliverToBoxAdapter(
             child: _Header(
-              record: record,
-              patient: patient,
+              record: widget.record,
+              patient: widget.patient,
               recordInfo: recordInfo,
               ref: ref,
             ),
@@ -58,9 +81,9 @@ class MedicalRecordDetailScreen extends ConsumerWidget {
             padding: const EdgeInsets.all(MedicalRecordConstants.paddingLarge),
             sliver: SliverList(
               delegate: SliverChildListDelegate([
-                _PatientCard(patient: patient, isDark: isDark),
+                _PatientCard(patient: widget.patient, isDark: isDark),
                 const SizedBox(height: MedicalRecordConstants.paddingLarge),
-                _RecordContent(record: record, data: _data, isDark: isDark),
+                _RecordContent(record: widget.record, data: _data, isDark: isDark),
                 ..._buildCommonSections(isDark),
                 const SizedBox(height: 32),
                 // Show all stored data section - displays any remaining fields
@@ -68,8 +91,8 @@ class MedicalRecordDetailScreen extends ConsumerWidget {
                   _AllDataSection(data: _data, isDark: isDark),
                 const SizedBox(height: 32),
                 _ActionButtons(
-                  record: record,
-                  patient: patient,
+                  record: widget.record,
+                  patient: widget.patient,
                   isDark: isDark,
                   ref: ref,
                 ),
@@ -84,31 +107,31 @@ class MedicalRecordDetailScreen extends ConsumerWidget {
 
   List<Widget> _buildCommonSections(bool isDark) {
     return [
-      if (record.diagnosis.isNotEmpty) ...[
+      if (widget.record.diagnosis.isNotEmpty) ...[
         const SizedBox(height: MedicalRecordConstants.paddingLarge),
         InfoCard(
           title: 'Diagnosis',
-          content: record.diagnosis,
+          content: widget.record.diagnosis,
           icon: Icons.medical_information_outlined,
           color: AppColors.error,
           isDark: isDark,
         ),
       ],
-      if (record.treatment.isNotEmpty) ...[
+      if (widget.record.treatment.isNotEmpty) ...[
         const SizedBox(height: MedicalRecordConstants.paddingLarge),
         InfoCard(
           title: 'Treatment Plan',
-          content: record.treatment,
+          content: widget.record.treatment,
           icon: Icons.healing_outlined,
           color: AppColors.success,
           isDark: isDark,
         ),
       ],
-      if (record.doctorNotes.isNotEmpty) ...[
+      if (widget.record.doctorNotes.isNotEmpty) ...[
         const SizedBox(height: MedicalRecordConstants.paddingLarge),
         InfoCard(
           title: "Doctor's Notes",
-          content: record.doctorNotes,
+          content: widget.record.doctorNotes,
           icon: Icons.note_alt_outlined,
           color: AppColors.info,
           isDark: isDark,
@@ -1100,50 +1123,6 @@ class _PsychiatricContent extends StatelessWidget {
             content: data.getString('safety_plan'),
             icon: Icons.shield_outlined,
             color: AppColors.success,
-            isDark: isDark,
-          ),
-        ],
-        // Diagnosis
-        if (data.hasValue('diagnosis')) ...[
-          const SizedBox(height: MedicalRecordConstants.paddingLarge),
-          InfoCard(
-            title: 'Diagnosis',
-            content: data.getString('diagnosis'),
-            icon: Icons.medical_information_outlined,
-            color: AppColors.error,
-            isDark: isDark,
-          ),
-        ],
-        // Treatment plan
-        if (data.hasValue('treatment_plan')) ...[
-          const SizedBox(height: MedicalRecordConstants.paddingLarge),
-          InfoCard(
-            title: 'Treatment Plan',
-            content: data.getString('treatment_plan'),
-            icon: Icons.healing_outlined,
-            color: AppColors.success,
-            isDark: isDark,
-          ),
-        ],
-        // Medications
-        if (data.hasValue('medications')) ...[
-          const SizedBox(height: MedicalRecordConstants.paddingLarge),
-          InfoCard(
-            title: 'Medications',
-            content: data.getString('medications'),
-            icon: Icons.medication_outlined,
-            color: AppColors.primary,
-            isDark: isDark,
-          ),
-        ],
-        // Follow-up
-        if (data.hasValue('follow_up')) ...[
-          const SizedBox(height: MedicalRecordConstants.paddingLarge),
-          InfoCard(
-            title: 'Follow-up Plan',
-            content: data.getString('follow_up'),
-            icon: Icons.event_repeat,
-            color: AppColors.info,
             isDark: isDark,
           ),
         ],
@@ -3469,14 +3448,19 @@ class _ActionButtons extends StatelessWidget {
           preselectedPatient: patient,
           existingRecord: record,
         );
+      case 'psychiatric_assessment':
+        targetScreen = PsychiatricAssessmentScreenModern(
+          preselectedPatient: patient,
+          existingRecord: record,
+        );
       default:
-        // For psychiatric and other types, navigate to selection screen
+        // For other types, navigate to selection screen
         targetScreen = SelectRecordTypeScreen(preselectedPatient: patient);
     }
     
     Navigator.push<void>(
       context,
-      MaterialPageRoute(builder: (_) => targetScreen),
+      AppRouter.route(targetScreen),
     );
   }
 

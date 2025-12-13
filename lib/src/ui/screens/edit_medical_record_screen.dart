@@ -65,7 +65,7 @@ class _EditMedicalRecordScreenState extends ConsumerState<EditMedicalRecordScree
     _loadRecordData();
   }
 
-  void _loadRecordData() {
+  Future<void> _loadRecordData() async {
     _recordDate = widget.record.recordDate;
     _recordType = widget.record.recordType;
     _descriptionController.text = widget.record.description;
@@ -73,11 +73,13 @@ class _EditMedicalRecordScreenState extends ConsumerState<EditMedicalRecordScree
     _treatmentController.text = widget.record.treatment;
     _doctorNotesController.text = widget.record.doctorNotes;
 
-    // Parse additional data from JSON
-    try {
-      _additionalData = jsonDecode(widget.record.dataJson) as Map<String, dynamic>;
-    } catch (e) {
-      _additionalData = {};
+    // V6: Load additional data from normalized table with fallback
+    final db = await ref.read(doctorDbProvider.future);
+    final data = await db.getMedicalRecordFieldsCompat(widget.record.id);
+    if (mounted) {
+      setState(() {
+        _additionalData = data;
+      });
     }
   }
 

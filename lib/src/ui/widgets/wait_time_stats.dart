@@ -246,7 +246,7 @@ class WaitTimeCard extends StatelessWidget {
                   label: 'In Queue',
                   value: '${stats.currentQueueLength}',
                   icon: Icons.people_outline_rounded,
-                  color: const Color(0xFF6366F1),
+                  color: AppColors.primary,
                 ),
               ),
               Container(
@@ -260,7 +260,7 @@ class WaitTimeCard extends StatelessWidget {
                   label: 'Est. Wait',
                   value: stats.formattedEstimatedWait,
                   icon: Icons.schedule_rounded,
-                  color: const Color(0xFFF59E0B),
+                  color: AppColors.warning,
                 ),
               ),
             ],
@@ -334,13 +334,13 @@ class WaitTimeCard extends StatelessWidget {
   Color _getRatingColor(WaitTimeRating rating) {
     switch (rating) {
       case WaitTimeRating.excellent:
-        return const Color(0xFF10B981);
+        return AppColors.quickActionGreen;
       case WaitTimeRating.good:
-        return const Color(0xFF3B82F6);
+        return AppColors.blue;
       case WaitTimeRating.okay:
-        return const Color(0xFFF59E0B);
+        return AppColors.warning;
       case WaitTimeRating.long:
-        return const Color(0xFFEF4444);
+        return AppColors.error;
     }
   }
 

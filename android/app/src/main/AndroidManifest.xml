@@ -2,6 +2,18 @@
     <!-- Internet permission for Google APIs -->
     <uses-permission android:name="android.permission.INTERNET"/>
     
+    <!-- Speech recognition permissions -->
+    <uses-permission android:name="android.permission.RECORD_AUDIO"/>
+    <uses-permission android:name="android.permission.BLUETOOTH"/>
+    <uses-permission android:name="android.permission.BLUETOOTH_CONNECT"/>
+    
+    <!-- Declare speech recognition feature -->
+    <queries>
+        <intent>
+            <action android:name="android.speech.RecognitionService" />
+        </intent>
+    </queries>
+    
     <application
         android:label="doctor_app"
         android:name="${applicationName}"

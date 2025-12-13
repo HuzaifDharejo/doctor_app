@@ -25,7 +25,8 @@ import '../../ui/screens/immunizations_screen.dart';
 import '../../ui/screens/insurance_screen.dart';
 import '../../ui/screens/invoice_detail_screen.dart';
 import '../../ui/screens/lab_orders_screen.dart';
-import '../../ui/screens/lab_results_screen.dart';
+import '../../ui/screens/lab_orders/lab_orders.dart';
+import '../../ui/screens/add_prescription/add_prescription.dart';
 import '../../ui/screens/medical_record_detail_screen.dart';
 import '../../ui/screens/medical_records_list_screen.dart';
 import '../../ui/screens/medical_reference_screen.dart';
@@ -44,7 +45,6 @@ import '../../ui/screens/recurring_appointments_screen.dart';
 import '../../ui/screens/referrals_screen.dart';
 import '../../ui/screens/settings_screen.dart';
 import '../../ui/screens/treatment_dashboard.dart';
-import '../../ui/screens/treatment_outcomes_screen.dart';
 import '../../ui/screens/treatment_progress_screen.dart';
 import '../../ui/screens/user_manual_screen.dart';
 import '../../ui/screens/vital_signs_screen.dart';
@@ -388,7 +388,7 @@ class AppRouter {
       case AppRoutes.labResults:
         final args = settings.arguments as LabResultsArgs;
         return _buildRoute(
-          LabResultsScreen(patientId: args.patientId, patientName: args.patientName),
+          LabOrdersScreen(patientId: args.patientId),
           settings,
         );
         
@@ -402,7 +402,7 @@ class AppRouter {
       case AppRoutes.treatmentOutcomes:
         final args = settings.arguments as TreatmentOutcomesArgs;
         return _buildRoute(
-          TreatmentOutcomesScreen(patientId: args.patientId, patientName: args.patientName),
+          TreatmentProgressScreen(patientId: args.patientId, patientName: args.patientName),
           settings,
         );
         
@@ -527,6 +527,44 @@ class AppRouter {
       builder: (_) => page,
       settings: settings,
     );
+  }
+
+  /// Create a MaterialPageRoute with auto-generated route name from widget type.
+  /// Use this instead of MaterialPageRoute directly to enable proper navigation logging.
+  /// 
+  /// Example:
+  /// ```dart
+  /// Navigator.push(context, AppRouter.route(const FollowUpsScreen()));
+  /// ```
+  static MaterialPageRoute<T> route<T>(
+    Widget page, {
+    String? name,
+    bool fullscreenDialog = false,
+    bool maintainState = true,
+  }) {
+    // Auto-generate route name from widget type if not provided
+    final routeName = name ?? _widgetToRouteName(page.runtimeType.toString());
+    return MaterialPageRoute<T>(
+      builder: (_) => page,
+      settings: RouteSettings(name: routeName),
+      fullscreenDialog: fullscreenDialog,
+      maintainState: maintainState,
+    );
+  }
+
+  /// Convert widget class name to route name
+  /// e.g., "FollowUpsScreen" -> "/follow-ups-screen"
+  static String _widgetToRouteName(String widgetName) {
+    // Remove generic type parameters if any
+    final baseName = widgetName.split('<').first;
+    // Convert PascalCase to kebab-case
+    final kebab = baseName
+        .replaceAllMapped(
+          RegExp(r'([a-z])([A-Z])'),
+          (m) => '${m.group(1)}-${m.group(2)}',
+        )
+        .toLowerCase();
+    return '/$kebab';
   }
 }
 

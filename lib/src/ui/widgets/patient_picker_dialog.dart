@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../../db/doctor_db.dart';
 import '../../services/encounter_service.dart';
+import '../../theme/app_theme.dart';
 import '../screens/encounter_screen.dart';
 
 /// Shared patient picker dialog used across the app
@@ -20,7 +21,7 @@ class PatientPickerDialog extends StatefulWidget {
     this.title = 'Select Patient',
     this.subtitle = 'Choose a patient to continue',
     this.icon = Icons.person_search_rounded,
-    this.iconColor = const Color(0xFFEC4899),
+    this.iconColor = AppColors.quickActionPink,
   });
 
   final List<Patient> patients;
@@ -203,14 +204,14 @@ class _PatientPickerDialogState extends State<PatientPickerDialog> {
 /// Used for consistent patient avatar colors across the app
 class PatientColors {
   static const List<Color> _colors = [
-    Color(0xFF6366F1), // Indigo
-    Color(0xFF8B5CF6), // Purple
-    Color(0xFFEC4899), // Pink
-    Color(0xFF14B8A6), // Teal
-    Color(0xFFF59E0B), // Amber
-    Color(0xFF10B981), // Emerald
-    Color(0xFF3B82F6), // Blue
-    Color(0xFFEF4444), // Red
+    AppColors.primary,       // Indigo
+    AppColors.purple,        // Purple
+    AppColors.quickActionPink, // Pink
+    AppColors.accent,        // Teal
+    AppColors.warning,       // Amber
+    AppColors.quickActionGreen, // Emerald
+    AppColors.blue,          // Blue
+    AppColors.error,         // Red
   ];
 
   /// Get a consistent color for a patient based on index

@@ -36,12 +36,15 @@ class _TreatmentProgressScreenState extends ConsumerState<TreatmentProgressScree
   List<TreatmentSession> _sessions = [];
   List<MedicationResponse> _medications = [];
   List<TreatmentGoal> _goals = [];
+  List<MedicalRecord> _treatmentPlanRecords = []; // From medical records
+  List<TreatmentOutcome> _outcomes = []; // Treatment outcomes
+  String _outcomeFilterStatus = 'all'; // Filter for outcomes tab
   Map<String, dynamic> _summary = {};
 
   @override
   void initState() {
     super.initState();
-    _tabController = TabController(length: 4, vsync: this);
+    _tabController = TabController(length: 6, vsync: this);
     _loadData();
   }
 
@@ -57,15 +60,30 @@ class _TreatmentProgressScreenState extends ConsumerState<TreatmentProgressScree
       final sessions = await db.getTreatmentSessionsForPatient(widget.patientId);
       final medications = await db.getMedicationResponsesForPatient(widget.patientId);
       final goals = await db.getTreatmentGoalsForPatient(widget.patientId);
-      // outcomes loaded but used for summary calculations
-      await db.getTreatmentOutcomesForPatient(widget.patientId);
+      // Load treatment outcomes for the Outcomes tab
+      final outcomes = await db.getTreatmentOutcomesForPatient(widget.patientId);
       final summary = await db.getTreatmentProgressSummary(widget.patientId);
+      
+      // Load treatment plans from medical records
+      final allRecords = await db.getMedicalRecordsForPatient(widget.patientId);
+      final treatmentPlanRecords = allRecords.where((r) {
+        if (r.dataJson == null) return false;
+        try {
+          final data = jsonDecode(r.dataJson!) as Map<String, dynamic>;
+          return data.containsKey('treatment_plan') && 
+                 (data['treatment_plan'] as String?)?.isNotEmpty == true;
+        } catch (_) {
+          return false;
+        }
+      }).toList();
       
       if (mounted) {
         setState(() {
           _sessions = sessions;
           _medications = medications;
           _goals = goals;
+          _outcomes = outcomes;
+          _treatmentPlanRecords = treatmentPlanRecords;
           _summary = summary;
           _isLoading = false;
         });
@@ -189,6 +207,8 @@ class _TreatmentProgressScreenState extends ConsumerState<TreatmentProgressScree
                 Tab(text: 'Medications'),
                 Tab(text: 'Goals'),
                 Tab(text: 'Side Effects'),
+                Tab(text: 'Plans'),
+                Tab(text: 'Outcomes'),
               ],
             ),
           ),
@@ -206,6 +226,8 @@ class _TreatmentProgressScreenState extends ConsumerState<TreatmentProgressScree
                         _buildMedicationsTab(context),
                         _buildGoalsTab(context),
                         _buildSideEffectsTab(context),
+                        _buildTreatmentPlansTab(context),
+                        _buildOutcomesTab(context),
                       ],
                     ),
                   ),
@@ -1184,6 +1206,883 @@ class _TreatmentProgressScreenState extends ConsumerState<TreatmentProgressScree
     );
   }
 
+  // ==================== TREATMENT PLANS TAB ====================
+  Widget _buildTreatmentPlansTab(BuildContext context) {
+    if (_treatmentPlanRecords.isEmpty) {
+      return _buildEmptyState(
+        icon: Icons.description_outlined,
+        title: 'No Treatment Plans',
+        subtitle: 'Treatment plans from medical records will appear here',
+      );
+    }
+
+    // Sort by date (most recent first)
+    final sortedRecords = List<MedicalRecord>.from(_treatmentPlanRecords)
+      ..sort((a, b) => b.recordDate.compareTo(a.recordDate));
+
+    return ListView.builder(
+      primary: false,
+      padding: const EdgeInsets.all(AppSpacing.lg),
+      itemCount: sortedRecords.length,
+      itemBuilder: (context, index) => _buildTreatmentPlanCard(context, sortedRecords[index]),
+    );
+  }
+
+  Widget _buildTreatmentPlanCard(BuildContext context, MedicalRecord record) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final dateFormat = DateFormat('MMM d, yyyy');
+    
+    // Parse data from dataJson
+    Map<String, dynamic> data = {};
+    if (record.dataJson != null) {
+      try {
+        data = jsonDecode(record.dataJson!) as Map<String, dynamic>;
+      } catch (_) {}
+    }
+    
+    final treatmentPlan = data['treatment_plan'] as String? ?? '';
+    final diagnosis = record.diagnosis ?? data['diagnosis'] as String? ?? 'No diagnosis';
+    final recordTypeLabel = _getRecordTypeLabel(record.recordType);
+    
+    return Container(
+      margin: const EdgeInsets.only(bottom: 12),
+      decoration: BoxDecoration(
+        color: isDark ? AppColors.darkSurface : Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: isDark ? 0.2 : 0.05),
+            blurRadius: 10,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
+      child: Padding(
+        padding: const EdgeInsets.all(AppSpacing.lg),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                Container(
+                  padding: const EdgeInsets.all(AppSpacing.md),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFF8B5CF6).withValues(alpha: 0.1),
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                  child: const Icon(Icons.description, color: Color(0xFF8B5CF6), size: 24),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        diagnosis,
+                        style: TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.w600,
+                          color: isDark ? AppColors.darkTextPrimary : AppColors.textPrimary,
+                        ),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                      Text(
+                        '$recordTypeLabel • ${dateFormat.format(record.recordDate)}',
+                        style: TextStyle(
+                          fontSize: 12,
+                          color: isDark ? AppColors.darkTextSecondary : AppColors.textSecondary,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 12),
+            Container(
+              width: double.infinity,
+              padding: const EdgeInsets.all(AppSpacing.md),
+              decoration: BoxDecoration(
+                color: isDark ? AppColors.darkBackground : const Color(0xFFF8F9FA),
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'Treatment Plan',
+                    style: TextStyle(
+                      fontSize: 12,
+                      fontWeight: FontWeight.w600,
+                      color: const Color(0xFF8B5CF6),
+                    ),
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    treatmentPlan,
+                    style: TextStyle(
+                      fontSize: 14,
+                      color: isDark ? AppColors.darkTextPrimary : AppColors.textPrimary,
+                    ),
+                    maxLines: 5,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  String _getRecordTypeLabel(String recordType) {
+    switch (recordType) {
+      case 'psychiatric_assessment':
+        return 'Psychiatric Assessment';
+      case 'pulmonary_evaluation':
+        return 'Pulmonary Evaluation';
+      case 'therapy_session':
+        return 'Therapy Session';
+      case 'general':
+        return 'General Consultation';
+      case 'follow_up':
+        return 'Follow-up';
+      default:
+        return recordType.replaceAll('_', ' ').split(' ').map((w) => 
+          w.isNotEmpty ? '${w[0].toUpperCase()}${w.substring(1)}' : ''
+        ).join(' ');
+    }
+  }
+
+  // ==================== TREATMENT OUTCOMES TAB ====================
+  
+  List<TreatmentOutcome> get _filteredOutcomes {
+    if (_outcomeFilterStatus == 'all') return _outcomes;
+    if (_outcomeFilterStatus == 'ongoing') {
+      return _outcomes.where((o) => o.outcome == 'ongoing').toList();
+    }
+    return _outcomes.where((o) => o.outcome != 'ongoing').toList();
+  }
+
+  Widget _buildOutcomesTab(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final colorScheme = Theme.of(context).colorScheme;
+    
+    // Group by status
+    final ongoing = _filteredOutcomes.where((o) => o.outcome == 'ongoing').toList();
+    final completed = _filteredOutcomes.where((o) => o.outcome != 'ongoing').toList();
+    
+    if (_filteredOutcomes.isEmpty) {
+      return _buildEmptyState(
+        icon: Icons.medical_services_outlined,
+        title: _outcomeFilterStatus == 'all' 
+            ? 'No treatments recorded yet'
+            : 'No $_outcomeFilterStatus treatments',
+        subtitle: 'Use the + button to add a treatment outcome',
+      );
+    }
+
+    return Column(
+      children: [
+        // Filter bar
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: AppSpacing.lg, vertical: AppSpacing.sm),
+          child: Row(
+            children: [
+              Text(
+                'Filter:',
+                style: TextStyle(
+                  fontWeight: FontWeight.w500,
+                  color: isDark ? Colors.white70 : colorScheme.outline,
+                ),
+              ),
+              const SizedBox(width: 8),
+              _buildFilterChip('All', 'all', isDark),
+              const SizedBox(width: 8),
+              _buildFilterChip('Ongoing', 'ongoing', isDark),
+              const SizedBox(width: 8),
+              _buildFilterChip('Completed', 'completed', isDark),
+            ],
+          ),
+        ),
+        // Outcomes list
+        Expanded(
+          child: ListView(
+            primary: false,
+            padding: const EdgeInsets.all(AppSpacing.lg),
+            children: [
+              if (ongoing.isNotEmpty && _outcomeFilterStatus != 'completed') ...[
+                _buildOutcomeSectionHeader('Ongoing Treatments', Icons.hourglass_top, Colors.orange, ongoing.length),
+                const SizedBox(height: 8),
+                ...ongoing.map((o) => _buildOutcomeCard(o, colorScheme)),
+                const SizedBox(height: 24),
+              ],
+              if (completed.isNotEmpty && _outcomeFilterStatus != 'ongoing') ...[
+                _buildOutcomeSectionHeader('Completed Treatments', Icons.check_circle_outline, Colors.green, completed.length),
+                const SizedBox(height: 8),
+                ...completed.map((o) => _buildOutcomeCard(o, colorScheme)),
+              ],
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildFilterChip(String label, String value, bool isDark) {
+    final isSelected = _outcomeFilterStatus == value;
+    return GestureDetector(
+      onTap: () => setState(() => _outcomeFilterStatus = value),
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+        decoration: BoxDecoration(
+          color: isSelected 
+              ? const Color(0xFF10B981) 
+              : (isDark ? Colors.white12 : Colors.grey.shade200),
+          borderRadius: BorderRadius.circular(16),
+        ),
+        child: Text(
+          label,
+          style: TextStyle(
+            fontSize: 12,
+            fontWeight: FontWeight.w500,
+            color: isSelected ? Colors.white : (isDark ? Colors.white70 : Colors.grey.shade700),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildOutcomeSectionHeader(String title, IconData icon, Color color, int count) {
+    return Row(
+      children: [
+        Icon(icon, color: color, size: 20),
+        const SizedBox(width: 8),
+        Text(title, style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+        const SizedBox(width: 8),
+        Container(
+          padding: const EdgeInsets.symmetric(horizontal: AppSpacing.sm, vertical: AppSpacing.xxs),
+          decoration: BoxDecoration(
+            color: color.withValues(alpha: 0.1),
+            borderRadius: BorderRadius.circular(12),
+          ),
+          child: Text('$count', style: TextStyle(color: color, fontWeight: FontWeight.bold)),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildOutcomeCard(TreatmentOutcome outcome, ColorScheme colorScheme) {
+    final dateFormat = DateFormat('MMM dd, yyyy');
+    final outcomeInfo = _getOutcomeInfo(outcome.outcome);
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
+    return Container(
+      margin: const EdgeInsets.only(bottom: 12),
+      decoration: BoxDecoration(
+        color: isDark ? AppColors.darkSurface : Colors.white,
+        borderRadius: BorderRadius.circular(12),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: isDark ? 0.2 : 0.05),
+            blurRadius: 10,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
+      child: InkWell(
+        onTap: () => _showOutcomeDetails(outcome),
+        borderRadius: BorderRadius.circular(12),
+        child: Padding(
+          padding: const EdgeInsets.all(AppSpacing.lg),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                children: [
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: AppSpacing.sm, vertical: AppSpacing.xs),
+                    decoration: BoxDecoration(
+                      color: _getOutcomeTypeColor(outcome.treatmentType).withValues(alpha: 0.1),
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: Text(
+                      outcome.treatmentType.toUpperCase(),
+                      style: TextStyle(
+                        fontSize: 12,
+                        fontWeight: FontWeight.bold,
+                        color: _getOutcomeTypeColor(outcome.treatmentType),
+                      ),
+                    ),
+                  ),
+                  const Spacer(),
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: AppSpacing.sm, vertical: AppSpacing.xs),
+                    decoration: BoxDecoration(
+                      color: outcomeInfo.color.withValues(alpha: 0.1),
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Icon(outcomeInfo.icon, size: 14, color: outcomeInfo.color),
+                        const SizedBox(width: 4),
+                        Text(
+                          outcomeInfo.label,
+                          style: TextStyle(fontSize: 12, color: outcomeInfo.color, fontWeight: FontWeight.w500),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 12),
+              Text(
+                outcome.treatmentDescription,
+                style: TextStyle(
+                  fontSize: 16, 
+                  fontWeight: FontWeight.w500,
+                  color: isDark ? AppColors.darkTextPrimary : AppColors.textPrimary,
+                ),
+                maxLines: 2,
+                overflow: TextOverflow.ellipsis,
+              ),
+              const SizedBox(height: 8),
+              Row(
+                children: [
+                  Icon(Icons.calendar_today, size: 14, color: colorScheme.outline),
+                  const SizedBox(width: 4),
+                  Text(
+                    'Started: ${dateFormat.format(outcome.startDate)}',
+                    style: TextStyle(fontSize: 12, color: colorScheme.outline),
+                  ),
+                  if (outcome.endDate != null) ...[
+                    const SizedBox(width: 16),
+                    Icon(Icons.event_available, size: 14, color: colorScheme.outline),
+                    const SizedBox(width: 4),
+                    Text(
+                      'Ended: ${dateFormat.format(outcome.endDate!)}',
+                      style: TextStyle(fontSize: 12, color: colorScheme.outline),
+                    ),
+                  ],
+                ],
+              ),
+              if (outcome.effectivenessScore != null) ...[
+                const SizedBox(height: 8),
+                Row(
+                  children: [
+                    Text('Effectiveness: ', style: TextStyle(fontSize: 12, color: colorScheme.outline)),
+                    _buildEffectivenessBar(outcome.effectivenessScore!, colorScheme),
+                    const SizedBox(width: 8),
+                    Text('${outcome.effectivenessScore}/10', style: const TextStyle(fontWeight: FontWeight.bold)),
+                  ],
+                ),
+              ],
+              if (outcome.sideEffects.isNotEmpty) ...[
+                const SizedBox(height: 8),
+                Row(
+                  children: [
+                    const Icon(Icons.warning_amber, size: 14, color: Colors.orange),
+                    const SizedBox(width: 4),
+                    Expanded(
+                      child: Text(
+                        'Side effects: ${outcome.sideEffects}',
+                        style: const TextStyle(fontSize: 12, color: Colors.orange),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildEffectivenessBar(int score, ColorScheme colorScheme) {
+    return SizedBox(
+      width: 100,
+      child: LinearProgressIndicator(
+        value: score / 10,
+        backgroundColor: colorScheme.surfaceContainerHighest,
+        valueColor: AlwaysStoppedAnimation<Color>(
+          score >= 7 ? Colors.green : (score >= 4 ? Colors.orange : Colors.red),
+        ),
+        borderRadius: BorderRadius.circular(4),
+      ),
+    );
+  }
+
+  Color _getOutcomeTypeColor(String type) {
+    switch (type.toLowerCase()) {
+      case 'medication':
+        return Colors.blue;
+      case 'therapy':
+        return Colors.purple;
+      case 'procedure':
+        return Colors.teal;
+      case 'lifestyle':
+        return Colors.green;
+      case 'combination':
+        return Colors.orange;
+      default:
+        return Colors.grey;
+    }
+  }
+
+  ({String label, IconData icon, Color color}) _getOutcomeInfo(String outcome) {
+    switch (outcome.toLowerCase()) {
+      case 'improved':
+        return (label: 'Improved', icon: Icons.trending_up, color: Colors.green);
+      case 'stable':
+        return (label: 'Stable', icon: Icons.horizontal_rule, color: Colors.blue);
+      case 'worsened':
+        return (label: 'Worsened', icon: Icons.trending_down, color: Colors.red);
+      case 'resolved':
+        return (label: 'Resolved', icon: Icons.check_circle, color: Colors.green);
+      case 'ongoing':
+        return (label: 'Ongoing', icon: Icons.hourglass_top, color: Colors.orange);
+      default:
+        return (label: outcome, icon: Icons.help_outline, color: Colors.grey);
+    }
+  }
+
+  void _showOutcomeDetails(TreatmentOutcome outcome) {
+    final dateFormat = DateFormat('MMM dd, yyyy');
+    final outcomeInfo = _getOutcomeInfo(outcome.outcome);
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: isDark ? AppColors.darkSurface : Colors.white,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (context) => DraggableScrollableSheet(
+        initialChildSize: 0.7,
+        maxChildSize: 0.9,
+        minChildSize: 0.5,
+        expand: false,
+        builder: (context, scrollController) => Padding(
+          padding: const EdgeInsets.all(AppSpacing.xxl),
+          child: ListView(
+            controller: scrollController,
+            children: [
+              Row(
+                children: [
+                  Icon(Icons.medical_services, size: 32, color: Theme.of(context).colorScheme.primary),
+                  const SizedBox(width: 16),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          outcome.treatmentDescription,
+                          style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+                        ),
+                        const SizedBox(height: 4),
+                        Container(
+                          padding: const EdgeInsets.symmetric(horizontal: AppSpacing.sm, vertical: AppSpacing.xs),
+                          decoration: BoxDecoration(
+                            color: _getOutcomeTypeColor(outcome.treatmentType).withValues(alpha: 0.1),
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                          child: Text(
+                            outcome.treatmentType.toUpperCase(),
+                            style: TextStyle(
+                              fontSize: 12,
+                              fontWeight: FontWeight.bold,
+                              color: _getOutcomeTypeColor(outcome.treatmentType),
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+              const Divider(height: 32),
+              _buildOutcomeDetailRow('Status', outcomeInfo.label, icon: outcomeInfo.icon, color: outcomeInfo.color),
+              _buildOutcomeDetailRow('Start Date', dateFormat.format(outcome.startDate)),
+              if (outcome.endDate != null)
+                _buildOutcomeDetailRow('End Date', dateFormat.format(outcome.endDate!)),
+              if (outcome.effectivenessScore != null)
+                _buildOutcomeDetailRow('Effectiveness', '${outcome.effectivenessScore}/10'),
+              if (outcome.sideEffects.isNotEmpty)
+                _buildOutcomeDetailRow('Side Effects', outcome.sideEffects, color: Colors.orange),
+              if (outcome.patientFeedback.isNotEmpty)
+                _buildOutcomeDetailRow('Patient Feedback', outcome.patientFeedback),
+              if (outcome.notes.isNotEmpty)
+                _buildOutcomeDetailRow('Notes', outcome.notes),
+              const SizedBox(height: 24),
+              Row(
+                children: [
+                  Expanded(
+                    child: OutlinedButton.icon(
+                      onPressed: () {
+                        Navigator.pop(context);
+                        _showUpdateOutcomeDialog(outcome);
+                      },
+                      icon: const Icon(Icons.edit),
+                      label: const Text('Update'),
+                    ),
+                  ),
+                  const SizedBox(width: 16),
+                  Expanded(
+                    child: OutlinedButton.icon(
+                      onPressed: () async {
+                        Navigator.pop(context);
+                        await _deleteOutcome(outcome.id);
+                      },
+                      icon: const Icon(Icons.delete, color: Colors.red),
+                      label: const Text('Delete', style: TextStyle(color: Colors.red)),
+                    ),
+                  ),
+                ],
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildOutcomeDetailRow(String label, String value, {IconData? icon, Color? color}) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: AppSpacing.sm),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          SizedBox(
+            width: 120,
+            child: Text(label, style: TextStyle(color: Theme.of(context).colorScheme.outline)),
+          ),
+          if (icon != null) ...[
+            Icon(icon, size: 16, color: color),
+            const SizedBox(width: 4),
+          ],
+          Expanded(
+            child: Text(value, style: TextStyle(fontWeight: FontWeight.w500, color: color)),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Future<void> _deleteOutcome(int id) async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Delete Treatment'),
+        content: const Text('Are you sure you want to delete this treatment record?'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text('Cancel'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(context, true),
+            style: TextButton.styleFrom(foregroundColor: Colors.red),
+            child: const Text('Delete'),
+          ),
+        ],
+      ),
+    );
+
+    if (confirmed == true) {
+      ref.read(doctorDbProvider).whenData((db) async {
+        await db.deleteTreatmentOutcome(id);
+        await _loadData();
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Treatment deleted')),
+          );
+        }
+      });
+    }
+  }
+
+  void _showAddOutcomeDialog() {
+    _showOutcomeFormDialog();
+  }
+
+  void _showUpdateOutcomeDialog(TreatmentOutcome outcome) {
+    _showOutcomeFormDialog(existing: outcome);
+  }
+
+  void _showOutcomeFormDialog({TreatmentOutcome? existing}) {
+    final isEditing = existing != null;
+    final descController = TextEditingController(text: existing?.treatmentDescription ?? '');
+    final sideEffectsController = TextEditingController(text: existing?.sideEffects ?? '');
+    final feedbackController = TextEditingController(text: existing?.patientFeedback ?? '');
+    final notesController = TextEditingController(text: existing?.notes ?? '');
+    final diagnosisController = TextEditingController(text: existing?.diagnosis ?? '');
+    final providerNameController = TextEditingController(text: existing?.providerName ?? '');
+    
+    String selectedType = existing?.treatmentType ?? 'medication';
+    String selectedOutcome = existing?.outcome ?? 'ongoing';
+    String selectedProviderType = existing?.providerType ?? 'psychiatrist';
+    String selectedPhase = existing?.treatmentPhase ?? 'initial';
+    int? effectivenessScore = existing?.effectivenessScore;
+    DateTime startDate = existing?.startDate ?? DateTime.now();
+    DateTime? endDate = existing?.endDate;
+
+    showDialog(
+      context: context,
+      builder: (context) => StatefulBuilder(
+        builder: (context, setDialogState) => AlertDialog(
+          title: Text(isEditing ? 'Update Treatment' : 'Add Treatment'),
+          content: SingleChildScrollView(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                DropdownButtonFormField<String>(
+                  value: selectedType,
+                  decoration: const InputDecoration(labelText: 'Treatment Type'),
+                  items: const [
+                    DropdownMenuItem(value: 'medication', child: Text('Medication')),
+                    DropdownMenuItem(value: 'therapy', child: Text('Therapy')),
+                    DropdownMenuItem(value: 'procedure', child: Text('Procedure')),
+                    DropdownMenuItem(value: 'lifestyle', child: Text('Lifestyle')),
+                    DropdownMenuItem(value: 'combination', child: Text('Combination')),
+                  ],
+                  onChanged: (value) => setDialogState(() => selectedType = value!),
+                ),
+                const SizedBox(height: 16),
+                DropdownButtonFormField<String>(
+                  value: selectedProviderType,
+                  decoration: const InputDecoration(labelText: 'Provider Type'),
+                  items: const [
+                    DropdownMenuItem(value: 'psychiatrist', child: Text('Psychiatrist')),
+                    DropdownMenuItem(value: 'therapist', child: Text('Therapist')),
+                    DropdownMenuItem(value: 'counselor', child: Text('Counselor')),
+                    DropdownMenuItem(value: 'nurse', child: Text('Nurse')),
+                    DropdownMenuItem(value: 'primary_care', child: Text('Primary Care')),
+                  ],
+                  onChanged: (value) => setDialogState(() => selectedProviderType = value!),
+                ),
+                const SizedBox(height: 16),
+                TextFormField(
+                  controller: providerNameController,
+                  decoration: const InputDecoration(
+                    labelText: 'Provider Name',
+                    hintText: 'Dr. Smith',
+                  ),
+                ),
+                const SizedBox(height: 16),
+                TextFormField(
+                  controller: diagnosisController,
+                  decoration: const InputDecoration(
+                    labelText: 'Diagnosis',
+                    hintText: 'e.g., Major Depressive Disorder',
+                  ),
+                ),
+                const SizedBox(height: 16),
+                TextFormField(
+                  controller: descController,
+                  decoration: const InputDecoration(
+                    labelText: 'Treatment Description',
+                    hintText: 'e.g., Metformin 500mg twice daily',
+                  ),
+                  maxLines: 2,
+                ),
+                const SizedBox(height: 16),
+                DropdownButtonFormField<String>(
+                  value: selectedPhase,
+                  decoration: const InputDecoration(labelText: 'Treatment Phase'),
+                  items: const [
+                    DropdownMenuItem(value: 'initial', child: Text('Initial')),
+                    DropdownMenuItem(value: 'acute', child: Text('Acute')),
+                    DropdownMenuItem(value: 'continuation', child: Text('Continuation')),
+                    DropdownMenuItem(value: 'maintenance', child: Text('Maintenance')),
+                    DropdownMenuItem(value: 'tapering', child: Text('Tapering')),
+                  ],
+                  onChanged: (value) => setDialogState(() => selectedPhase = value!),
+                ),
+                const SizedBox(height: 16),
+                Row(
+                  children: [
+                    Expanded(
+                      child: InkWell(
+                        onTap: () async {
+                          final date = await showDatePicker(
+                            context: context,
+                            initialDate: startDate,
+                            firstDate: DateTime(2000),
+                            lastDate: DateTime.now(),
+                          );
+                          if (date != null) {
+                            setDialogState(() => startDate = date);
+                          }
+                        },
+                        child: InputDecorator(
+                          decoration: const InputDecoration(labelText: 'Start Date'),
+                          child: Text(DateFormat('MMM dd, yyyy').format(startDate)),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 16),
+                    Expanded(
+                      child: InkWell(
+                        onTap: () async {
+                          final date = await showDatePicker(
+                            context: context,
+                            initialDate: endDate ?? DateTime.now(),
+                            firstDate: startDate,
+                            lastDate: DateTime.now().add(const Duration(days: 365)),
+                          );
+                          if (date != null) {
+                            setDialogState(() => endDate = date);
+                          }
+                        },
+                        child: InputDecorator(
+                          decoration: InputDecoration(
+                            labelText: 'End Date',
+                            suffixIcon: endDate != null 
+                              ? IconButton(
+                                  icon: const Icon(Icons.clear),
+                                  onPressed: () => setDialogState(() => endDate = null),
+                                )
+                              : null,
+                          ),
+                          child: Text(endDate != null 
+                            ? DateFormat('MMM dd, yyyy').format(endDate!) 
+                            : 'Not set'),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 16),
+                DropdownButtonFormField<String>(
+                  value: selectedOutcome,
+                  decoration: const InputDecoration(labelText: 'Outcome'),
+                  items: const [
+                    DropdownMenuItem(value: 'ongoing', child: Text('Ongoing')),
+                    DropdownMenuItem(value: 'improved', child: Text('Improved')),
+                    DropdownMenuItem(value: 'stable', child: Text('Stable')),
+                    DropdownMenuItem(value: 'worsened', child: Text('Worsened')),
+                    DropdownMenuItem(value: 'resolved', child: Text('Resolved')),
+                  ],
+                  onChanged: (value) => setDialogState(() => selectedOutcome = value!),
+                ),
+                const SizedBox(height: 16),
+                const Text('Effectiveness (1-10):'),
+                Slider(
+                  value: (effectivenessScore ?? 5).toDouble(),
+                  min: 1,
+                  max: 10,
+                  divisions: 9,
+                  label: '${effectivenessScore ?? 5}',
+                  onChanged: (value) => setDialogState(() => effectivenessScore = value.toInt()),
+                ),
+                const SizedBox(height: 8),
+                TextFormField(
+                  controller: sideEffectsController,
+                  decoration: const InputDecoration(
+                    labelText: 'Side Effects',
+                    hintText: 'Any observed side effects...',
+                  ),
+                ),
+                const SizedBox(height: 16),
+                TextFormField(
+                  controller: feedbackController,
+                  decoration: const InputDecoration(
+                    labelText: 'Patient Feedback',
+                    hintText: 'What does the patient say...',
+                  ),
+                ),
+                const SizedBox(height: 16),
+                TextFormField(
+                  controller: notesController,
+                  decoration: const InputDecoration(
+                    labelText: 'Notes',
+                    hintText: 'Additional notes...',
+                  ),
+                  maxLines: 2,
+                ),
+              ],
+            ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: const Text('Cancel'),
+            ),
+            FilledButton(
+              onPressed: () async {
+                if (descController.text.isEmpty) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(content: Text('Please enter a treatment description')),
+                  );
+                  return;
+                }
+
+                ref.read(doctorDbProvider).whenData((db) async {
+                  if (isEditing) {
+                    await db.updateTreatmentOutcome(TreatmentOutcome(
+                      id: existing.id,
+                      patientId: widget.patientId,
+                      prescriptionId: existing.prescriptionId,
+                      medicalRecordId: existing.medicalRecordId,
+                      treatmentType: selectedType,
+                      treatmentDescription: descController.text,
+                      providerType: selectedProviderType,
+                      providerName: providerNameController.text,
+                      diagnosis: diagnosisController.text,
+                      startDate: startDate,
+                      endDate: endDate,
+                      outcome: selectedOutcome,
+                      effectivenessScore: effectivenessScore,
+                      sideEffects: sideEffectsController.text,
+                      patientFeedback: feedbackController.text,
+                      treatmentPhase: selectedPhase,
+                      notes: notesController.text,
+                      createdAt: existing.createdAt,
+                    ));
+                  } else {
+                    await db.insertTreatmentOutcome(TreatmentOutcomesCompanion.insert(
+                      patientId: widget.patientId,
+                      treatmentType: selectedType,
+                      treatmentDescription: descController.text,
+                      providerType: Value(selectedProviderType),
+                      providerName: Value(providerNameController.text),
+                      diagnosis: Value(diagnosisController.text),
+                      startDate: startDate,
+                      endDate: Value(endDate),
+                      outcome: Value(selectedOutcome),
+                      effectivenessScore: Value(effectivenessScore),
+                      sideEffects: Value(sideEffectsController.text),
+                      patientFeedback: Value(feedbackController.text),
+                      treatmentPhase: Value(selectedPhase),
+                      notes: Value(notesController.text),
+                    ));
+                  }
+
+                  Navigator.pop(context);
+                  await _loadData();
+                  if (mounted) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(content: Text(isEditing ? 'Treatment updated' : 'Treatment added')),
+                    );
+                  }
+                });
+              },
+              child: const Text('Save'),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
   // ==================== HELPER WIDGETS ====================
   Widget _buildEmptyState({
     required IconData icon,
@@ -1326,6 +2225,22 @@ class _TreatmentProgressScreenState extends ConsumerState<TreatmentProgressScree
               onTap: () {
                 Navigator.pop(context);
                 _showAddGoalDialog(context);
+              },
+            ),
+            ListTile(
+              leading: Container(
+                padding: const EdgeInsets.all(AppSpacing.sm),
+                decoration: BoxDecoration(
+                  color: const Color(0xFF10B981).withValues(alpha: 0.1),
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: const Icon(Icons.medical_services, color: Color(0xFF10B981)),
+              ),
+              title: const Text('Add Treatment Outcome'),
+              subtitle: const Text('Record treatment results and effectiveness'),
+              onTap: () {
+                Navigator.pop(context);
+                _showAddOutcomeDialog();
               },
             ),
           ],
@@ -1979,7 +2894,7 @@ class _TreatmentProgressScreenState extends ConsumerState<TreatmentProgressScree
               onPressed: () async {
                 if (formKey.currentState?.validate() ?? false) {
                   final db = await ref.read(doctorDbProvider.future);
-                  await db.insertTreatmentSession(
+                  final sessionId = await db.insertTreatmentSession(
                     TreatmentSessionsCompanion.insert(
                       patientId: widget.patientId,
                       sessionDate: sessionDate,
@@ -1989,15 +2904,42 @@ class _TreatmentProgressScreenState extends ConsumerState<TreatmentProgressScree
                       durationMinutes: Value(duration),
                       presentingConcerns: Value(presentingConcernsController.text),
                       sessionNotes: Value(sessionNotesController.text),
-                      interventionsUsed: Value(interventionsController.text),
+                      interventionsUsed: Value(''), // V5: Use TreatmentInterventions table
                       patientMood: Value(patientMood),
                       moodRating: Value(moodRating),
-                      progressNotes: Value(progressNotesController.text),
+                      progressNotes: Value(''), // V5: Use ProgressNoteEntries table
                       homeworkAssigned: Value(homeworkController.text),
                       riskAssessment: Value(riskAssessment),
                       planForNextSession: Value(planController.text),
                     ),
                   );
+                  
+                  // V5: Save interventions to normalized table
+                  if (interventionsController.text.isNotEmpty) {
+                    final interventions = interventionsController.text.split(',').map((s) => s.trim()).where((s) => s.isNotEmpty);
+                    for (final intervention in interventions) {
+                      await db.insertTreatmentIntervention(
+                        TreatmentInterventionsCompanion.insert(
+                          patientId: widget.patientId,
+                          treatmentSessionId: Value(sessionId),
+                          interventionName: intervention,
+                          usedAt: sessionDate,
+                        ),
+                      );
+                    }
+                  }
+                  
+                  // V5: Save progress notes to normalized table
+                  if (progressNotesController.text.isNotEmpty) {
+                    await db.insertProgressNoteEntry(
+                      ProgressNoteEntriesCompanion.insert(
+                        patientId: widget.patientId,
+                        entryDate: sessionDate,
+                        note: progressNotesController.text,
+                      ),
+                    );
+                  }
+                  
                   if (dialogContext.mounted) Navigator.pop(dialogContext);
                   _loadData();
                   if (context.mounted) {
@@ -2217,7 +3159,7 @@ class _TreatmentProgressScreenState extends ConsumerState<TreatmentProgressScree
               onPressed: () async {
                 if (formKey.currentState?.validate() ?? false) {
                   final db = await ref.read(doctorDbProvider.future);
-                  await db.insertMedicationResponse(
+                  final medicationResponseId = await db.insertMedicationResponse(
                     MedicationResponsesCompanion.insert(
                       patientId: widget.patientId,
                       medicationName: medicationNameController.text,
@@ -2226,12 +3168,43 @@ class _TreatmentProgressScreenState extends ConsumerState<TreatmentProgressScree
                       startDate: startDate,
                       responseStatus: Value(responseStatus),
                       effectivenessScore: Value(effectivenessScore),
-                      targetSymptoms: Value(targetSymptomsController.text),
-                      sideEffects: Value(sideEffectsController.text),
+                      targetSymptoms: Value(''), // V5: Use TreatmentSymptoms table
+                      sideEffects: Value(''), // V5: Use SideEffects table
                       sideEffectSeverity: Value(sideEffectSeverity),
                       providerNotes: Value(notesController.text),
                     ),
                   );
+                  
+                  // V5: Save target symptoms to normalized table
+                  if (targetSymptomsController.text.isNotEmpty) {
+                    final symptoms = targetSymptomsController.text.split(',').map((s) => s.trim()).where((s) => s.isNotEmpty);
+                    for (final symptom in symptoms) {
+                      await db.insertTreatmentSymptom(
+                        TreatmentSymptomsCompanion.insert(
+                          patientId: widget.patientId,
+                          medicationResponseId: Value(medicationResponseId),
+                          symptomName: symptom,
+                          recordedAt: startDate,
+                        ),
+                      );
+                    }
+                  }
+                  
+                  // V5: Save side effects to normalized table
+                  if (sideEffectsController.text.isNotEmpty) {
+                    final effects = sideEffectsController.text.split(',').map((s) => s.trim()).where((s) => s.isNotEmpty);
+                    for (final effect in effects) {
+                      await db.insertSideEffect(
+                        SideEffectsCompanion.insert(
+                          patientId: widget.patientId,
+                          medicationResponseId: Value(medicationResponseId),
+                          effectName: effect,
+                          severity: Value(sideEffectSeverity),
+                        ),
+                      );
+                    }
+                  }
+                  
                   if (dialogContext.mounted) Navigator.pop(dialogContext);
                   _loadData();
                   if (context.mounted) {
@@ -2420,7 +3393,7 @@ class _TreatmentProgressScreenState extends ConsumerState<TreatmentProgressScree
               onPressed: () async {
                 if (formKey.currentState?.validate() ?? false) {
                   final db = await ref.read(doctorDbProvider.future);
-                  await db.insertTreatmentGoal(
+                  final goalId = await db.insertTreatmentGoal(
                     TreatmentGoalsCompanion.insert(
                       patientId: widget.patientId,
                       goalCategory: Value(goalCategory),
@@ -2430,9 +3403,25 @@ class _TreatmentProgressScreenState extends ConsumerState<TreatmentProgressScree
                       targetMeasure: Value(targetMeasureController.text),
                       targetDate: Value(targetDate),
                       priority: Value(priority),
-                      interventions: Value(interventionsController.text),
+                      interventions: Value(''), // V5: Use TreatmentInterventions table
                     ),
                   );
+                  
+                  // V5: Save planned interventions to normalized table
+                  if (interventionsController.text.isNotEmpty) {
+                    final interventions = interventionsController.text.split(',').map((s) => s.trim()).where((s) => s.isNotEmpty);
+                    for (final intervention in interventions) {
+                      await db.insertTreatmentIntervention(
+                        TreatmentInterventionsCompanion.insert(
+                          patientId: widget.patientId,
+                          treatmentGoalId: Value(goalId),
+                          interventionName: intervention,
+                          usedAt: DateTime.now(),
+                        ),
+                      );
+                    }
+                  }
+                  
                   if (dialogContext.mounted) Navigator.pop(dialogContext);
                   _loadData();
                   if (context.mounted) {

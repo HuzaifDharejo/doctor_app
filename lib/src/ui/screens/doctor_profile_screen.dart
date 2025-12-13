@@ -9,8 +9,10 @@ import '../../core/extensions/context_extensions.dart';
 import '../../core/theme/design_tokens.dart';
 import '../../providers/db_provider.dart';
 import '../../services/doctor_settings_service.dart';
+import '../../services/specialty_service.dart';
 import '../../theme/app_theme.dart';
 import '../widgets/signature_pad.dart';
+import '../../core/widgets/keyboard_aware_scaffold.dart';
 
 class DoctorProfileScreen extends ConsumerStatefulWidget {
   const DoctorProfileScreen({super.key});
@@ -331,6 +333,8 @@ class _DoctorProfileScreenState extends ConsumerState<DoctorProfileScreen>
                 ],
               ),
             ),
+            // Keyboard-aware bottom padding
+            const SliverKeyboardPadding(),
           ],
         ),
       ),
@@ -607,7 +611,7 @@ class _DoctorProfileScreenState extends ConsumerState<DoctorProfileScreen>
               children: [
                 Row(
                   children: [
-                    Expanded(child: _buildEditableField(label: 'Specialization', controller: _specializationController, isDark: isDark, icon: Icons.medical_services_outlined)),
+                    Expanded(child: _buildSpecialtySelector(isDark)),
                     const SizedBox(width: 12),
                     Expanded(child: _buildEditableField(label: 'Experience (Years)', controller: _experienceController, isDark: isDark, icon: Icons.work_history_outlined, keyboardType: TextInputType.number)),
                   ],
@@ -831,6 +835,85 @@ class _DoctorProfileScreenState extends ConsumerState<DoctorProfileScreen>
             child,
           ],
         ),
+    );
+  }
+
+  Widget _buildSpecialtySelector(bool isDark) {
+    // Get valid specialty values
+    final validSpecialtyNames = DoctorSpecialty.values.map((s) => s.displayName).toSet();
+    
+    // Check if current value is valid, if not set to null
+    final currentValue = _specializationController.text.isEmpty 
+        ? null 
+        : (validSpecialtyNames.contains(_specializationController.text) 
+            ? _specializationController.text 
+            : null);
+    
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          'Specialization',
+          style: TextStyle(
+            fontSize: 12,
+            fontWeight: FontWeight.w500,
+            color: isDark ? AppColors.darkTextSecondary : AppColors.textSecondary,
+          ),
+        ),
+        const SizedBox(height: 8),
+        Container(
+          decoration: BoxDecoration(
+            color: isDark ? AppColors.darkSurface : Colors.grey[50],
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(
+              color: isDark ? AppColors.darkDivider : Colors.grey[300]!,
+            ),
+          ),
+          child: DropdownButtonFormField<String>(
+            value: currentValue,
+            decoration: InputDecoration(
+              prefixIcon: Icon(
+                Icons.medical_services_outlined,
+                size: 20,
+                color: isDark ? AppColors.darkTextSecondary : AppColors.textSecondary,
+              ),
+              border: InputBorder.none,
+              contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+            ),
+            hint: Text(
+              'Select specialty',
+              style: TextStyle(
+                color: isDark ? AppColors.darkTextHint : AppColors.textHint,
+                fontSize: 14,
+              ),
+            ),
+            isExpanded: true,
+            icon: Icon(
+              Icons.keyboard_arrow_down,
+              color: isDark ? AppColors.darkTextSecondary : AppColors.textSecondary,
+            ),
+            dropdownColor: isDark ? AppColors.darkSurface : Colors.white,
+            items: DoctorSpecialty.values.map((specialty) {
+              return DropdownMenuItem<String>(
+                value: specialty.displayName,
+                child: Text(
+                  specialty.shortName,
+                  style: TextStyle(
+                    fontSize: 14,
+                    color: isDark ? Colors.white : Colors.black87,
+                  ),
+                ),
+              );
+            }).toList(),
+            onChanged: (value) {
+              setState(() {
+                _specializationController.text = value ?? '';
+              });
+              _checkForChanges();
+            },
+          ),
+        ),
+      ],
     );
   }
 

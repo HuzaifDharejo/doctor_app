@@ -255,16 +255,30 @@ class FamilyHistoryService {
     int? ageAtDeath,
     String? causeOfDeath,
   }) async {
-    return createFamilyHistory(
+    final familyHistoryId = await createFamilyHistory(
       patientId: patientId,
       relationship: relationship,
-      conditions: condition,
+      conditions: '', // V5: Use FamilyConditions table instead
       relativeAge: ageAtOnset ?? relativeAge,
       notes: notes,
       isDeceased: isDeceased,
       ageAtDeath: ageAtDeath,
       causeOfDeath: causeOfDeath,
     );
+    
+    // V5: Save condition to normalized FamilyConditions table
+    if (condition != null && condition.isNotEmpty) {
+      await _db.insertFamilyCondition(
+        FamilyConditionsCompanion.insert(
+          familyHistoryId: familyHistoryId,
+          patientId: patientId,
+          conditionName: condition,
+          ageAtOnset: Value(ageAtOnset),
+        ),
+      );
+    }
+    
+    return familyHistoryId;
   }
 
   /// Convert to model (screen compatibility)

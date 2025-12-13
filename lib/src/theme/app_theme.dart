@@ -78,6 +78,23 @@ class AppColors {
   static const darkTextPrimary = Color(0xFFF1F5F9);
   static const darkTextSecondary = Color(0xFF94A3B8);
   static const darkTextHint = Color(0xFF64748B);
+  
+  // Additional Dark Mode Colors (commonly used)
+  static const darkSurfaceDeep = Color(0xFF0A0A0F);    // Deepest dark
+  static const darkSurfaceMid = Color(0xFF1A1A2E);     // Mid dark surface
+  static const darkSurfaceAccent = Color(0xFF16213E); // Accent dark surface
+  
+  // Quick Action Colors
+  static const quickActionGreen = Color(0xFF10B981);
+  static const quickActionGreenDark = Color(0xFF059669);
+  static const quickActionPink = Color(0xFFEC4899);
+  static const quickActionOrange = Color(0xFFF97316);
+  static const quickActionOrangeDark = Color(0xFFEA580C);
+  
+  // Additional UI Colors
+  static const blue = Color(0xFF3B82F6);          // Blue for notes
+  static const purple = Color(0xFF8B5CF6);        // Purple for follow-ups
+  static const skyBlue = Color(0xFF0EA5E9);       // Sky blue for calculators
 }
 
 class AppTheme {
@@ -135,6 +152,13 @@ class AppTheme {
             fontSize: 16,
             fontWeight: FontWeight.w600,
           ),
+        ).copyWith(
+          overlayColor: WidgetStateProperty.resolveWith((states) {
+            if (states.contains(WidgetState.pressed)) return Colors.white.withValues(alpha: 0.1);
+            if (states.contains(WidgetState.hovered)) return Colors.white.withValues(alpha: 0.08);
+            if (states.contains(WidgetState.focused)) return Colors.white.withValues(alpha: 0.1);
+            return null;
+          }),
         ),
       ),
       
@@ -147,6 +171,27 @@ class AppTheme {
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(12),
           ),
+        ).copyWith(
+          overlayColor: WidgetStateProperty.resolveWith((states) {
+            if (states.contains(WidgetState.pressed)) return AppColors.primary.withValues(alpha: 0.1);
+            if (states.contains(WidgetState.hovered)) return AppColors.primary.withValues(alpha: 0.05);
+            if (states.contains(WidgetState.focused)) return AppColors.primary.withValues(alpha: 0.08);
+            return null;
+          }),
+        ),
+      ),
+      
+      // Text Button Theme
+      textButtonTheme: TextButtonThemeData(
+        style: TextButton.styleFrom(
+          foregroundColor: AppColors.primary,
+        ).copyWith(
+          overlayColor: WidgetStateProperty.resolveWith((states) {
+            if (states.contains(WidgetState.pressed)) return AppColors.primary.withValues(alpha: 0.1);
+            if (states.contains(WidgetState.hovered)) return AppColors.primary.withValues(alpha: 0.05);
+            if (states.contains(WidgetState.focused)) return AppColors.primary.withValues(alpha: 0.08);
+            return null;
+          }),
         ),
       ),
       
@@ -337,6 +382,13 @@ class AppTheme {
             fontSize: 16,
             fontWeight: FontWeight.w600,
           ),
+        ).copyWith(
+          overlayColor: WidgetStateProperty.resolveWith((states) {
+            if (states.contains(WidgetState.pressed)) return Colors.white.withValues(alpha: 0.15);
+            if (states.contains(WidgetState.hovered)) return Colors.white.withValues(alpha: 0.1);
+            if (states.contains(WidgetState.focused)) return Colors.white.withValues(alpha: 0.15);
+            return null;
+          }),
         ),
       ),
       
@@ -349,6 +401,27 @@ class AppTheme {
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(12),
           ),
+        ).copyWith(
+          overlayColor: WidgetStateProperty.resolveWith((states) {
+            if (states.contains(WidgetState.pressed)) return AppColors.primaryLight.withValues(alpha: 0.15);
+            if (states.contains(WidgetState.hovered)) return AppColors.primaryLight.withValues(alpha: 0.08);
+            if (states.contains(WidgetState.focused)) return AppColors.primaryLight.withValues(alpha: 0.12);
+            return null;
+          }),
+        ),
+      ),
+      
+      // Text Button Theme
+      textButtonTheme: TextButtonThemeData(
+        style: TextButton.styleFrom(
+          foregroundColor: AppColors.primaryLight,
+        ).copyWith(
+          overlayColor: WidgetStateProperty.resolveWith((states) {
+            if (states.contains(WidgetState.pressed)) return AppColors.primaryLight.withValues(alpha: 0.15);
+            if (states.contains(WidgetState.hovered)) return AppColors.primaryLight.withValues(alpha: 0.08);
+            if (states.contains(WidgetState.focused)) return AppColors.primaryLight.withValues(alpha: 0.12);
+            return null;
+          }),
         ),
       ),
       

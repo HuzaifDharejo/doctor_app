@@ -1,4 +1,5 @@
 // Minimal Drift DB. Run `flutter pub run build_runner build` to generate code.
+import 'dart:convert';
 import 'package:drift/drift.dart';
 
 // Conditional imports for platform-specific code
@@ -969,6 +970,431 @@ class CptCodes extends Table {
   DateTimeColumn get createdAt => dateTime().withDefault(currentDateAndTime)();
 }
 
+// ═══════════════════════════════════════════════════════════════════════════════
+// DOCTOR PRODUCTIVITY FEATURES
+// ═══════════════════════════════════════════════════════════════════════════════
+
+/// FavoritePrescriptions - Save commonly used prescription templates
+class FavoritePrescriptions extends Table {
+  IntColumn get id => integer().autoIncrement()();
+  TextColumn get name => text()(); // Template name, e.g., "Diabetes Standard", "Hypertension Basic"
+  TextColumn get category => text().withDefault(const Constant('general'))(); // 'general', 'diabetes', 'hypertension', 'infection', etc.
+  TextColumn get diagnosis => text().withDefault(const Constant(''))(); // Associated diagnosis
+  TextColumn get medicationsJson => text()(); // JSON array of medications with dosage, frequency, duration
+  TextColumn get instructions => text().withDefault(const Constant(''))(); // General instructions
+  TextColumn get advice => text().withDefault(const Constant(''))(); // Patient advice
+  TextColumn get labTests => text().withDefault(const Constant(''))(); // JSON array of lab tests
+  IntColumn get usageCount => integer().withDefault(const Constant(0))(); // Track usage for sorting
+  BoolColumn get isActive => boolean().withDefault(const Constant(true))();
+  DateTimeColumn get lastUsedAt => dateTime().nullable()();
+  DateTimeColumn get createdAt => dateTime().withDefault(currentDateAndTime)();
+}
+
+/// QuickPhrases - Text expansion shortcuts for clinical notes
+class QuickPhrases extends Table {
+  IntColumn get id => integer().autoIncrement()();
+  TextColumn get shortcut => text()(); // e.g., ".dm", ".htn", ".nad"
+  TextColumn get expansion => text()(); // Full text expansion
+  TextColumn get category => text().withDefault(const Constant('general'))(); // 'diagnosis', 'exam', 'plan', 'history', 'general'
+  IntColumn get usageCount => integer().withDefault(const Constant(0))();
+  BoolColumn get isActive => boolean().withDefault(const Constant(true))();
+  DateTimeColumn get createdAt => dateTime().withDefault(currentDateAndTime)();
+}
+
+/// RecentPatients - Track recently viewed patients for quick access
+class RecentPatients extends Table {
+  IntColumn get id => integer().autoIncrement()();
+  IntColumn get patientId => integer().references(Patients, #id)();
+  DateTimeColumn get accessedAt => dateTime()();
+  TextColumn get accessType => text().withDefault(const Constant('view'))(); // 'view', 'edit', 'prescription', 'appointment'
+}
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// SCHEMA V5: FULLY NORMALIZED DATA - NO MORE JSON STORAGE
+// ═══════════════════════════════════════════════════════════════════════════════
+
+/// PrescriptionMedications - Individual medications in a prescription (replaces itemsJson)
+class PrescriptionMedications extends Table {
+  IntColumn get id => integer().autoIncrement()();
+  IntColumn get prescriptionId => integer().references(Prescriptions, #id)();
+  IntColumn get patientId => integer().references(Patients, #id)();
+  
+  // Medication details
+  TextColumn get medicationName => text()();
+  TextColumn get genericName => text().withDefault(const Constant(''))();
+  TextColumn get brandName => text().withDefault(const Constant(''))();
+  TextColumn get drugCode => text().withDefault(const Constant(''))(); // RxNorm, NDC
+  TextColumn get drugClass => text().withDefault(const Constant(''))();
+  
+  // Dosage
+  TextColumn get strength => text().withDefault(const Constant(''))();
+  TextColumn get dosageForm => text().withDefault(const Constant('tablet'))();
+  TextColumn get route => text().withDefault(const Constant('oral'))();
+  
+  // Frequency & Duration
+  TextColumn get frequency => text().withDefault(const Constant(''))();
+  TextColumn get timing => text().withDefault(const Constant(''))();
+  IntColumn get durationDays => integer().nullable()();
+  TextColumn get durationText => text().withDefault(const Constant(''))();
+  
+  // Quantity
+  RealColumn get quantity => real().nullable()();
+  TextColumn get quantityUnit => text().withDefault(const Constant('tablets'))();
+  IntColumn get refills => integer().withDefault(const Constant(0))();
+  
+  // Instructions
+  BoolColumn get beforeFood => boolean().withDefault(const Constant(false))();
+  BoolColumn get afterFood => boolean().withDefault(const Constant(false))();
+  BoolColumn get withFood => boolean().withDefault(const Constant(false))();
+  TextColumn get specialInstructions => text().withDefault(const Constant(''))();
+  
+  // Status
+  TextColumn get status => text().withDefault(const Constant('active'))();
+  TextColumn get discontinueReason => text().withDefault(const Constant(''))();
+  DateTimeColumn get discontinuedAt => dateTime().nullable()();
+  
+  IntColumn get displayOrder => integer().withDefault(const Constant(0))();
+  DateTimeColumn get createdAt => dateTime().withDefault(currentDateAndTime)();
+}
+
+/// InvoiceLineItems - Individual items in an invoice (replaces itemsJson)
+class InvoiceLineItems extends Table {
+  IntColumn get id => integer().autoIncrement()();
+  IntColumn get invoiceId => integer().references(Invoices, #id)();
+  IntColumn get patientId => integer().references(Patients, #id)();
+  
+  TextColumn get itemType => text().withDefault(const Constant('service'))();
+  TextColumn get description => text()();
+  TextColumn get cptCode => text().withDefault(const Constant(''))();
+  TextColumn get hcpcsCode => text().withDefault(const Constant(''))();
+  TextColumn get modifier => text().withDefault(const Constant(''))();
+  
+  // Linked entities
+  IntColumn get appointmentId => integer().nullable().references(Appointments, #id)();
+  IntColumn get prescriptionId => integer().nullable().references(Prescriptions, #id)();
+  IntColumn get labOrderId => integer().nullable().references(LabOrders, #id)();
+  IntColumn get treatmentSessionId => integer().nullable().references(TreatmentSessions, #id)();
+  
+  // Pricing
+  RealColumn get unitPrice => real().withDefault(const Constant(0))();
+  RealColumn get quantity => real().withDefault(const Constant(1))();
+  RealColumn get discountPercent => real().withDefault(const Constant(0))();
+  RealColumn get discountAmount => real().withDefault(const Constant(0))();
+  RealColumn get taxPercent => real().withDefault(const Constant(0))();
+  RealColumn get taxAmount => real().withDefault(const Constant(0))();
+  RealColumn get totalAmount => real().withDefault(const Constant(0))();
+  
+  IntColumn get displayOrder => integer().withDefault(const Constant(0))();
+  TextColumn get notes => text().withDefault(const Constant(''))();
+  DateTimeColumn get createdAt => dateTime().withDefault(currentDateAndTime)();
+}
+
+/// FamilyConditions - Normalized family conditions (replaces FamilyMedicalHistory.conditions JSON)
+class FamilyConditions extends Table {
+  IntColumn get id => integer().autoIncrement()();
+  IntColumn get familyHistoryId => integer().references(FamilyMedicalHistory, #id)();
+  IntColumn get patientId => integer().references(Patients, #id)();
+  
+  TextColumn get conditionName => text()();
+  TextColumn get icdCode => text().withDefault(const Constant(''))();
+  TextColumn get category => text().withDefault(const Constant('medical'))();
+  IntColumn get ageAtOnset => integer().nullable()();
+  TextColumn get severity => text().withDefault(const Constant(''))();
+  TextColumn get outcome => text().withDefault(const Constant(''))();
+  BoolColumn get confirmedDiagnosis => boolean().withDefault(const Constant(true))();
+  
+  TextColumn get notes => text().withDefault(const Constant(''))();
+  DateTimeColumn get createdAt => dateTime().withDefault(currentDateAndTime)();
+}
+
+/// TreatmentSymptoms - Track symptoms being treated (replaces JSON arrays)
+class TreatmentSymptoms extends Table {
+  IntColumn get id => integer().autoIncrement()();
+  IntColumn get medicationResponseId => integer().nullable().references(MedicationResponses, #id)();
+  IntColumn get treatmentOutcomeId => integer().nullable().references(TreatmentOutcomes, #id)();
+  IntColumn get patientId => integer().references(Patients, #id)();
+  
+  TextColumn get symptomName => text()();
+  TextColumn get symptomCategory => text().withDefault(const Constant(''))();
+  IntColumn get baselineSeverity => integer().nullable()();
+  IntColumn get currentSeverity => integer().nullable()();
+  IntColumn get targetSeverity => integer().nullable()();
+  TextColumn get improvementLevel => text().withDefault(const Constant('unchanged'))();
+  IntColumn get improvementPercent => integer().nullable()();
+  
+  DateTimeColumn get recordedAt => dateTime()();
+  DateTimeColumn get createdAt => dateTime().withDefault(currentDateAndTime)();
+}
+
+/// SideEffects - Track medication/treatment side effects (replaces JSON)
+class SideEffects extends Table {
+  IntColumn get id => integer().autoIncrement()();
+  IntColumn get medicationResponseId => integer().nullable().references(MedicationResponses, #id)();
+  IntColumn get prescriptionMedicationId => integer().nullable().references(PrescriptionMedications, #id)();
+  IntColumn get treatmentOutcomeId => integer().nullable().references(TreatmentOutcomes, #id)();
+  IntColumn get patientId => integer().references(Patients, #id)();
+  
+  TextColumn get effectName => text()();
+  TextColumn get effectCategory => text().withDefault(const Constant('other'))();
+  TextColumn get severity => text().withDefault(const Constant('mild'))();
+  IntColumn get severityScore => integer().nullable()();
+  DateTimeColumn get onsetDate => dateTime().nullable()();
+  DateTimeColumn get resolvedDate => dateTime().nullable()();
+  TextColumn get frequency => text().withDefault(const Constant(''))();
+  TextColumn get managementAction => text().withDefault(const Constant(''))();
+  BoolColumn get causedDiscontinuation => boolean().withDefault(const Constant(false))();
+  BoolColumn get reportedToProvider => boolean().withDefault(const Constant(true))();
+  
+  TextColumn get notes => text().withDefault(const Constant(''))();
+  DateTimeColumn get createdAt => dateTime().withDefault(currentDateAndTime)();
+}
+
+/// Attachments - Centralized file attachments (replaces JSON arrays)
+class Attachments extends Table {
+  IntColumn get id => integer().autoIncrement()();
+  IntColumn get patientId => integer().references(Patients, #id)();
+  TextColumn get entityType => text()();
+  IntColumn get entityId => integer()();
+  
+  TextColumn get fileName => text()();
+  TextColumn get originalFileName => text().withDefault(const Constant(''))();
+  TextColumn get filePath => text()();
+  TextColumn get fileType => text().withDefault(const Constant(''))();
+  TextColumn get fileExtension => text().withDefault(const Constant(''))();
+  IntColumn get fileSizeBytes => integer().nullable()();
+  TextColumn get title => text().withDefault(const Constant(''))();
+  TextColumn get description => text().withDefault(const Constant(''))();
+  TextColumn get category => text().withDefault(const Constant('other'))();
+  BoolColumn get isConfidential => boolean().withDefault(const Constant(false))();
+  TextColumn get uploadedBy => text().withDefault(const Constant(''))();
+  
+  IntColumn get displayOrder => integer().withDefault(const Constant(0))();
+  DateTimeColumn get createdAt => dateTime().withDefault(currentDateAndTime)();
+}
+
+/// MentalStatusExams - Structured MSE (replaces mentalStatusExam JSON)
+class MentalStatusExams extends Table {
+  IntColumn get id => integer().autoIncrement()();
+  IntColumn get encounterId => integer().nullable().references(Encounters, #id)();
+  IntColumn get clinicalNoteId => integer().nullable().references(ClinicalNotes, #id)();
+  IntColumn get patientId => integer().references(Patients, #id)();
+  
+  // Appearance & Behavior
+  TextColumn get appearance => text().withDefault(const Constant(''))();
+  TextColumn get grooming => text().withDefault(const Constant('appropriate'))();
+  TextColumn get attire => text().withDefault(const Constant('appropriate'))();
+  TextColumn get eyeContact => text().withDefault(const Constant('appropriate'))();
+  TextColumn get behavior => text().withDefault(const Constant(''))();
+  TextColumn get psychomotorActivity => text().withDefault(const Constant('normal'))();
+  TextColumn get attitude => text().withDefault(const Constant('cooperative'))();
+  
+  // Speech
+  TextColumn get speechRate => text().withDefault(const Constant('normal'))();
+  TextColumn get speechVolume => text().withDefault(const Constant('normal'))();
+  TextColumn get speechTone => text().withDefault(const Constant('normal'))();
+  TextColumn get speechQuality => text().withDefault(const Constant(''))();
+  
+  // Mood & Affect
+  TextColumn get mood => text().withDefault(const Constant(''))();
+  TextColumn get affect => text().withDefault(const Constant(''))();
+  TextColumn get affectRange => text().withDefault(const Constant('full'))();
+  TextColumn get affectCongruence => text().withDefault(const Constant('congruent'))();
+  
+  // Thought
+  TextColumn get thoughtProcess => text().withDefault(const Constant('linear'))();
+  TextColumn get thoughtContent => text().withDefault(const Constant(''))();
+  
+  // Perceptions
+  BoolColumn get hallucinationsAuditory => boolean().withDefault(const Constant(false))();
+  BoolColumn get hallucinationsVisual => boolean().withDefault(const Constant(false))();
+  BoolColumn get hallucinationsOther => boolean().withDefault(const Constant(false))();
+  TextColumn get hallucinationsDetails => text().withDefault(const Constant(''))();
+  BoolColumn get delusions => boolean().withDefault(const Constant(false))();
+  TextColumn get delusionsType => text().withDefault(const Constant(''))();
+  
+  // Safety
+  BoolColumn get suicidalIdeation => boolean().withDefault(const Constant(false))();
+  TextColumn get suicidalDetails => text().withDefault(const Constant(''))();
+  BoolColumn get homicidalIdeation => boolean().withDefault(const Constant(false))();
+  TextColumn get homicidalDetails => text().withDefault(const Constant(''))();
+  BoolColumn get selfHarmIdeation => boolean().withDefault(const Constant(false))();
+  
+  // Cognition
+  TextColumn get orientation => text().withDefault(const Constant('oriented_x4'))();
+  TextColumn get attention => text().withDefault(const Constant('intact'))();
+  TextColumn get concentration => text().withDefault(const Constant('intact'))();
+  TextColumn get memory => text().withDefault(const Constant('intact'))();
+  TextColumn get insight => text().withDefault(const Constant('good'))();
+  TextColumn get judgment => text().withDefault(const Constant('good'))();
+  
+  TextColumn get additionalNotes => text().withDefault(const Constant(''))();
+  DateTimeColumn get examinedAt => dateTime()();
+  DateTimeColumn get createdAt => dateTime().withDefault(currentDateAndTime)();
+}
+
+/// LabTestResults - Individual test results (replaces testCodes/testNames JSON)
+class LabTestResults extends Table {
+  IntColumn get id => integer().autoIncrement()();
+  IntColumn get labOrderId => integer().references(LabOrders, #id)();
+  IntColumn get patientId => integer().references(Patients, #id)();
+  
+  TextColumn get testName => text()();
+  TextColumn get testCode => text().withDefault(const Constant(''))();
+  TextColumn get category => text().withDefault(const Constant(''))();
+  TextColumn get resultValue => text().withDefault(const Constant(''))();
+  TextColumn get resultUnit => text().withDefault(const Constant(''))();
+  TextColumn get resultType => text().withDefault(const Constant('numeric'))();
+  TextColumn get referenceRange => text().withDefault(const Constant(''))();
+  RealColumn get referenceLow => real().nullable()();
+  RealColumn get referenceHigh => real().nullable()();
+  TextColumn get flag => text().withDefault(const Constant('normal'))();
+  BoolColumn get isAbnormal => boolean().withDefault(const Constant(false))();
+  BoolColumn get isCritical => boolean().withDefault(const Constant(false))();
+  TextColumn get previousValue => text().withDefault(const Constant(''))();
+  DateTimeColumn get previousDate => dateTime().nullable()();
+  TextColumn get trend => text().withDefault(const Constant(''))();
+  TextColumn get interpretation => text().withDefault(const Constant(''))();
+  TextColumn get notes => text().withDefault(const Constant(''))();
+  
+  IntColumn get displayOrder => integer().withDefault(const Constant(0))();
+  DateTimeColumn get resultedAt => dateTime().nullable()();
+  DateTimeColumn get createdAt => dateTime().withDefault(currentDateAndTime)();
+}
+
+/// ProgressNoteEntries - Individual progress entries (replaces progressNotes JSON)
+class ProgressNoteEntries extends Table {
+  IntColumn get id => integer().autoIncrement()();
+  IntColumn get treatmentGoalId => integer().nullable().references(TreatmentGoals, #id)();
+  IntColumn get treatmentOutcomeId => integer().nullable().references(TreatmentOutcomes, #id)();
+  IntColumn get patientId => integer().references(Patients, #id)();
+  IntColumn get encounterId => integer().nullable().references(Encounters, #id)();
+  
+  DateTimeColumn get entryDate => dateTime()();
+  TextColumn get note => text()();
+  IntColumn get progressRating => integer().nullable()();
+  TextColumn get progressStatus => text().withDefault(const Constant(''))();
+  TextColumn get barriers => text().withDefault(const Constant(''))();
+  TextColumn get interventionsUsed => text().withDefault(const Constant(''))();
+  TextColumn get nextSteps => text().withDefault(const Constant(''))();
+  TextColumn get recordedBy => text().withDefault(const Constant(''))();
+  
+  DateTimeColumn get createdAt => dateTime().withDefault(currentDateAndTime)();
+}
+
+/// TreatmentInterventions - Interventions used (replaces interventionsUsed JSON)
+class TreatmentInterventions extends Table {
+  IntColumn get id => integer().autoIncrement()();
+  IntColumn get treatmentSessionId => integer().nullable().references(TreatmentSessions, #id)();
+  IntColumn get treatmentGoalId => integer().nullable().references(TreatmentGoals, #id)();
+  IntColumn get patientId => integer().references(Patients, #id)();
+  
+  TextColumn get interventionName => text()();
+  TextColumn get interventionType => text().withDefault(const Constant('therapeutic'))();
+  TextColumn get modality => text().withDefault(const Constant(''))();
+  TextColumn get effectiveness => text().withDefault(const Constant(''))();
+  IntColumn get effectivenessRating => integer().nullable()();
+  TextColumn get patientResponse => text().withDefault(const Constant(''))();
+  TextColumn get notes => text().withDefault(const Constant(''))();
+  
+  DateTimeColumn get usedAt => dateTime()();
+  DateTimeColumn get createdAt => dateTime().withDefault(currentDateAndTime)();
+}
+
+/// ClaimBillingCodes - Billing codes for insurance claims (replaces JSON)
+class ClaimBillingCodes extends Table {
+  IntColumn get id => integer().autoIncrement()();
+  IntColumn get claimId => integer().references(InsuranceClaims, #id)();
+  
+  TextColumn get codeType => text()();
+  TextColumn get code => text()();
+  TextColumn get description => text().withDefault(const Constant(''))();
+  RealColumn get chargedAmount => real().nullable()();
+  IntColumn get units => integer().withDefault(const Constant(1))();
+  TextColumn get placeOfService => text().withDefault(const Constant(''))();
+  IntColumn get linkedProcedureId => integer().nullable()();
+  IntColumn get displayOrder => integer().withDefault(const Constant(0))();
+  BoolColumn get isPrimary => boolean().withDefault(const Constant(false))();
+  
+  DateTimeColumn get createdAt => dateTime().withDefault(currentDateAndTime)();
+}
+
+/// PatientAllergies - Normalized allergies (replaces comma-separated text)
+class PatientAllergies extends Table {
+  IntColumn get id => integer().autoIncrement()();
+  IntColumn get patientId => integer().references(Patients, #id)();
+  
+  TextColumn get allergen => text()();
+  TextColumn get allergenType => text().withDefault(const Constant('medication'))();
+  TextColumn get allergenCode => text().withDefault(const Constant(''))();
+  TextColumn get reactionType => text().withDefault(const Constant(''))();
+  TextColumn get reactionSeverity => text().withDefault(const Constant('moderate'))();
+  TextColumn get reactionDescription => text().withDefault(const Constant(''))();
+  TextColumn get status => text().withDefault(const Constant('active'))();
+  BoolColumn get verified => boolean().withDefault(const Constant(false))();
+  DateTimeColumn get verifiedAt => dateTime().nullable()();
+  DateTimeColumn get onsetDate => dateTime().nullable()();
+  DateTimeColumn get recordedDate => dateTime()();
+  TextColumn get source => text().withDefault(const Constant('patient'))();
+  TextColumn get notes => text().withDefault(const Constant(''))();
+  
+  DateTimeColumn get createdAt => dateTime().withDefault(currentDateAndTime)();
+}
+
+/// PatientChronicConditions - Normalized chronic conditions (replaces comma-separated text)
+class PatientChronicConditions extends Table {
+  IntColumn get id => integer().autoIncrement()();
+  IntColumn get patientId => integer().references(Patients, #id)();
+  IntColumn get diagnosisId => integer().nullable().references(Diagnoses, #id)();
+  
+  TextColumn get conditionName => text()();
+  TextColumn get icdCode => text().withDefault(const Constant(''))();
+  TextColumn get category => text().withDefault(const Constant('medical'))();
+  TextColumn get status => text().withDefault(const Constant('active'))();
+  TextColumn get severity => text().withDefault(const Constant('moderate'))();
+  DateTimeColumn get onsetDate => dateTime().nullable()();
+  DateTimeColumn get diagnosedDate => dateTime().nullable()();
+  TextColumn get currentTreatment => text().withDefault(const Constant(''))();
+  TextColumn get managingProvider => text().withDefault(const Constant(''))();
+  DateTimeColumn get lastReviewDate => dateTime().nullable()();
+  DateTimeColumn get nextReviewDate => dateTime().nullable()();
+  TextColumn get notes => text().withDefault(const Constant(''))();
+  
+  DateTimeColumn get createdAt => dateTime().withDefault(currentDateAndTime)();
+}
+
+/// MedicalRecordFields - Key-value pairs for dynamic form data (replaces dataJson)
+/// This table stores structured data from various medical record types:
+/// - pulmonary_evaluation: chief complaint, symptoms, chest auscultation, investigations
+/// - imaging: imaging type, findings
+/// - procedure: procedure name, notes
+/// - follow_up: notes
+/// For psychiatric_assessment, use MentalStatusExams table instead
+/// For lab_result, use LabTestResults table instead
+class MedicalRecordFields extends Table {
+  IntColumn get id => integer().autoIncrement()();
+  IntColumn get medicalRecordId => integer().references(MedicalRecords, #id)();
+  IntColumn get patientId => integer().references(Patients, #id)();
+  
+  TextColumn get fieldGroup => text().withDefault(const Constant(''))(); // 'vitals', 'chest_auscultation', 'symptoms', etc.
+  TextColumn get fieldName => text()(); // 'chief_complaint', 'bp', 'breath_sounds', etc.
+  TextColumn get fieldValue => text()(); // The actual value
+  TextColumn get fieldType => text().withDefault(const Constant('text'))(); // 'text', 'number', 'list', 'boolean'
+  IntColumn get displayOrder => integer().withDefault(const Constant(0))();
+  
+  DateTimeColumn get createdAt => dateTime().withDefault(currentDateAndTime)();
+}
+
+/// ClinicalCalculatorHistory - Save calculator results for reference
+class ClinicalCalculatorHistory extends Table {
+  IntColumn get id => integer().autoIncrement()();
+  IntColumn get patientId => integer().nullable().references(Patients, #id)();
+  TextColumn get calculatorType => text()(); // 'bmi', 'gfr', 'chadsvasc', 'wells', 'pediatric_dose', etc.
+  TextColumn get inputsJson => text()(); // JSON of input values
+  TextColumn get resultJson => text()(); // JSON of calculated results
+  TextColumn get interpretation => text().withDefault(const Constant(''))();
+  DateTimeColumn get calculatedAt => dateTime().withDefault(currentDateAndTime)();
+}
+
 /// Model class for patient with insurance
 class PatientWithInsurance {
   PatientWithInsurance({required this.patient, required this.insurances});
@@ -999,7 +1425,15 @@ class LabOrderWithPatient {
   Referrals, Immunizations, FamilyMedicalHistory, PatientConsents,
   InsuranceInfo, InsuranceClaims, PreAuthorizations, LabOrders,
   ProblemList, GrowthMeasurements, ClinicalReminders, 
-  AppointmentWaitlist, RecurringAppointments, ClinicalLetters, CptCodes
+  AppointmentWaitlist, RecurringAppointments, ClinicalLetters, CptCodes,
+  // V4: Doctor productivity features
+  FavoritePrescriptions, QuickPhrases, RecentPatients, ClinicalCalculatorHistory,
+  // V5: Normalized tables - NO MORE JSON STORAGE
+  PrescriptionMedications, InvoiceLineItems, FamilyConditions,
+  TreatmentSymptoms, SideEffects, Attachments, MentalStatusExams,
+  LabTestResults, ProgressNoteEntries, TreatmentInterventions,
+  ClaimBillingCodes, PatientAllergies, PatientChronicConditions,
+  MedicalRecordFields
 ])
 class DoctorDatabase extends _$DoctorDatabase {
   /// Singleton instance
@@ -1022,7 +1456,7 @@ class DoctorDatabase extends _$DoctorDatabase {
   DoctorDatabase.forTesting(super.e);
 
   @override
-  int get schemaVersion => 8;
+  int get schemaVersion => 11;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -1112,6 +1546,33 @@ class DoctorDatabase extends _$DoctorDatabase {
         await m.createTable(recurringAppointments);
         await m.createTable(clinicalLetters);
         await m.createTable(cptCodes);
+      }
+      if (from < 9) {
+        // Schema V4: Doctor productivity features
+        await m.createTable(favoritePrescriptions);
+        await m.createTable(quickPhrases);
+        await m.createTable(recentPatients);
+        await m.createTable(clinicalCalculatorHistory);
+      }
+      if (from < 10) {
+        // Schema V5: Fully normalized tables - NO MORE JSON STORAGE
+        await m.createTable(prescriptionMedications);
+        await m.createTable(invoiceLineItems);
+        await m.createTable(familyConditions);
+        await m.createTable(treatmentSymptoms);
+        await m.createTable(sideEffects);
+        await m.createTable(attachments);
+        await m.createTable(mentalStatusExams);
+        await m.createTable(labTestResults);
+        await m.createTable(progressNoteEntries);
+        await m.createTable(treatmentInterventions);
+        await m.createTable(claimBillingCodes);
+        await m.createTable(patientAllergies);
+        await m.createTable(patientChronicConditions);
+      }
+      if (from < 11) {
+        // Schema V6: MedicalRecordFields - normalize MedicalRecords.dataJson
+        await m.createTable(medicalRecordFields);
       }
     },
   );
@@ -2313,5 +2774,689 @@ class DoctorDatabase extends _$DoctorDatabase {
       bloodGlucose: companion.bloodGlucose,
       notes: companion.notes,
     ));
+  }
+
+  // ═══════════════════════════════════════════════════════════════════════════════
+  // FAVORITE PRESCRIPTIONS - Quick prescription templates
+  // ═══════════════════════════════════════════════════════════════════════════════
+
+  Future<int> insertFavoritePrescription(Insertable<FavoritePrescription> fp) =>
+      into(favoritePrescriptions).insert(fp);
+
+  Future<List<FavoritePrescription>> getAllFavoritePrescriptions() =>
+      (select(favoritePrescriptions)
+        ..where((f) => f.isActive.equals(true))
+        ..orderBy([
+          (f) => OrderingTerm.desc(f.usageCount),
+          (f) => OrderingTerm.desc(f.lastUsedAt),
+        ]))
+      .get();
+
+  Future<List<FavoritePrescription>> getFavoritePrescriptionsByCategory(String category) =>
+      (select(favoritePrescriptions)
+        ..where((f) => f.isActive.equals(true) & f.category.equals(category))
+        ..orderBy([(f) => OrderingTerm.desc(f.usageCount)]))
+      .get();
+
+  Future<FavoritePrescription?> getFavoritePrescriptionById(int id) =>
+      (select(favoritePrescriptions)..where((f) => f.id.equals(id))).getSingleOrNull();
+
+  Future<bool> updateFavoritePrescription(Insertable<FavoritePrescription> fp) =>
+      update(favoritePrescriptions).replace(fp);
+
+  Future<void> incrementFavoritePrescriptionUsage(int id) async {
+    final fp = await getFavoritePrescriptionById(id);
+    if (fp != null) {
+      await (update(favoritePrescriptions)..where((f) => f.id.equals(id)))
+          .write(FavoritePrescriptionsCompanion(
+            usageCount: Value(fp.usageCount + 1),
+            lastUsedAt: Value(DateTime.now()),
+          ));
+    }
+  }
+
+  Future<int> deleteFavoritePrescription(int id) =>
+      (update(favoritePrescriptions)..where((f) => f.id.equals(id)))
+          .write(const FavoritePrescriptionsCompanion(isActive: Value(false)));
+
+  // ═══════════════════════════════════════════════════════════════════════════════
+  // QUICK PHRASES - Text expansion for clinical notes
+  // ═══════════════════════════════════════════════════════════════════════════════
+
+  Future<int> insertQuickPhrase(Insertable<QuickPhrase> qp) =>
+      into(quickPhrases).insert(qp);
+
+  Future<List<QuickPhrase>> getAllQuickPhrases() =>
+      (select(quickPhrases)
+        ..where((q) => q.isActive.equals(true))
+        ..orderBy([(q) => OrderingTerm.desc(q.usageCount)]))
+      .get();
+
+  Future<List<QuickPhrase>> getQuickPhrasesByCategory(String category) =>
+      (select(quickPhrases)
+        ..where((q) => q.isActive.equals(true) & q.category.equals(category))
+        ..orderBy([(q) => OrderingTerm.desc(q.usageCount)]))
+      .get();
+
+  Future<QuickPhrase?> getQuickPhraseByShortcut(String shortcut) =>
+      (select(quickPhrases)
+        ..where((q) => q.isActive.equals(true) & q.shortcut.equals(shortcut)))
+      .getSingleOrNull();
+
+  Future<QuickPhrase?> getQuickPhraseById(int id) =>
+      (select(quickPhrases)..where((q) => q.id.equals(id))).getSingleOrNull();
+
+  Future<bool> updateQuickPhrase(Insertable<QuickPhrase> qp) =>
+      update(quickPhrases).replace(qp);
+
+  Future<void> incrementQuickPhraseUsage(int id) async {
+    final qp = await getQuickPhraseById(id);
+    if (qp != null) {
+      await (update(quickPhrases)..where((q) => q.id.equals(id)))
+          .write(QuickPhrasesCompanion(
+            usageCount: Value(qp.usageCount + 1),
+          ));
+    }
+  }
+
+  Future<int> deleteQuickPhrase(int id) =>
+      (update(quickPhrases)..where((q) => q.id.equals(id)))
+          .write(const QuickPhrasesCompanion(isActive: Value(false)));
+
+  // ═══════════════════════════════════════════════════════════════════════════════
+  // RECENT PATIENTS - Track recently accessed patients
+  // ═══════════════════════════════════════════════════════════════════════════════
+
+  Future<void> trackRecentPatient(int patientId, {String accessType = 'view'}) async {
+    // Remove old entry for this patient if exists
+    await (delete(recentPatients)..where((r) => r.patientId.equals(patientId))).go();
+    
+    // Add new entry
+    await into(recentPatients).insert(RecentPatientsCompanion.insert(
+      patientId: patientId,
+      accessedAt: DateTime.now(),
+      accessType: Value(accessType),
+    ));
+    
+    // Keep only last 20 recent patients
+    final all = await (select(recentPatients)
+      ..orderBy([(r) => OrderingTerm.desc(r.accessedAt)]))
+      .get();
+    
+    if (all.length > 20) {
+      final toDelete = all.skip(20).map((r) => r.id).toList();
+      await (delete(recentPatients)..where((r) => r.id.isIn(toDelete))).go();
+    }
+  }
+
+  Future<List<Patient>> getRecentPatients({int limit = 10}) async {
+    final recent = await (select(recentPatients)
+      ..orderBy([(r) => OrderingTerm.desc(r.accessedAt)])
+      ..limit(limit))
+      .get();
+    
+    if (recent.isEmpty) return [];
+    
+    final patientIds = recent.map((r) => r.patientId).toList();
+    return (select(patients)..where((p) => p.id.isIn(patientIds))).get();
+  }
+
+  // ═══════════════════════════════════════════════════════════════════════════════
+  // CLINICAL CALCULATOR HISTORY - Save calculator results
+  // ═══════════════════════════════════════════════════════════════════════════════
+
+  Future<int> saveCalculatorResult(Insertable<ClinicalCalculatorHistoryData> calc) =>
+      into(clinicalCalculatorHistory).insert(calc);
+
+  Future<List<ClinicalCalculatorHistoryData>> getCalculatorHistoryForPatient(int patientId) =>
+      (select(clinicalCalculatorHistory)
+        ..where((c) => c.patientId.equals(patientId))
+        ..orderBy([(c) => OrderingTerm.desc(c.calculatedAt)])
+        ..limit(50))
+      .get();
+
+  Future<List<ClinicalCalculatorHistoryData>> getRecentCalculations({int limit = 20}) =>
+      (select(clinicalCalculatorHistory)
+        ..orderBy([(c) => OrderingTerm.desc(c.calculatedAt)])
+        ..limit(limit))
+      .get();
+
+  // ═══════════════════════════════════════════════════════════════════════════════
+  // TODAY'S PATIENTS - Quick access to today's schedule
+  // ═══════════════════════════════════════════════════════════════════════════════
+
+  Future<List<Patient>> getTodaysPatients() async {
+    final today = DateTime.now();
+    final startOfDay = DateTime(today.year, today.month, today.day);
+    final endOfDay = startOfDay.add(const Duration(days: 1));
+    
+    final todayAppointments = await (select(appointments)
+      ..where((a) => 
+        a.appointmentDateTime.isBiggerOrEqualValue(startOfDay) &
+        a.appointmentDateTime.isSmallerThanValue(endOfDay) &
+        a.status.isNotIn(['cancelled', 'no_show'])
+      )
+      ..orderBy([(a) => OrderingTerm.asc(a.appointmentDateTime)]))
+      .get();
+    
+    if (todayAppointments.isEmpty) return [];
+    
+    final patientIds = todayAppointments.map((a) => a.patientId).toSet().toList();
+    return (select(patients)..where((p) => p.id.isIn(patientIds))).get();
+  }
+
+  Future<List<Map<String, dynamic>>> getTodaysScheduleWithPatients() async {
+    final today = DateTime.now();
+    final startOfDay = DateTime(today.year, today.month, today.day);
+    final endOfDay = startOfDay.add(const Duration(days: 1));
+    
+    final todayAppointments = await (select(appointments)
+      ..where((a) => 
+        a.appointmentDateTime.isBiggerOrEqualValue(startOfDay) &
+        a.appointmentDateTime.isSmallerThanValue(endOfDay) &
+        a.status.isNotIn(['cancelled', 'no_show'])
+      )
+      ..orderBy([(a) => OrderingTerm.asc(a.appointmentDateTime)]))
+      .get();
+    
+    final result = <Map<String, dynamic>>[];
+    for (final appt in todayAppointments) {
+      final patient = await getPatientById(appt.patientId);
+      if (patient != null) {
+        result.add({
+          'appointment': appt,
+          'patient': patient,
+        });
+      }
+    }
+    return result;
+  }
+
+  // ═══════════════════════════════════════════════════════════════════════════════
+  // V5: PRESCRIPTION MEDICATIONS - Normalized medication storage
+  // ═══════════════════════════════════════════════════════════════════════════════
+
+  /// Insert a medication for a prescription
+  Future<int> insertPrescriptionMedication(Insertable<PrescriptionMedication> med) =>
+      into(prescriptionMedications).insert(med);
+
+  /// Get all medications for a prescription
+  Future<List<PrescriptionMedication>> getMedicationsForPrescription(int prescriptionId) =>
+      (select(prescriptionMedications)
+        ..where((m) => m.prescriptionId.equals(prescriptionId))
+        ..orderBy([(m) => OrderingTerm.asc(m.displayOrder)]))
+      .get();
+
+  /// Get all active medications for a patient
+  Future<List<PrescriptionMedication>> getActiveMedicationsForPatient(int patientId) =>
+      (select(prescriptionMedications)
+        ..where((m) => m.patientId.equals(patientId) & m.status.equals('active'))
+        ..orderBy([(m) => OrderingTerm.desc(m.createdAt)]))
+      .get();
+
+  /// Get medication by ID
+  Future<PrescriptionMedication?> getPrescriptionMedicationById(int id) =>
+      (select(prescriptionMedications)..where((m) => m.id.equals(id))).getSingleOrNull();
+
+  /// Update a medication
+  Future<bool> updatePrescriptionMedication(Insertable<PrescriptionMedication> med) =>
+      update(prescriptionMedications).replace(med);
+
+  /// Delete medications for a prescription
+  Future<int> deleteMedicationsForPrescription(int prescriptionId) =>
+      (delete(prescriptionMedications)..where((m) => m.prescriptionId.equals(prescriptionId))).go();
+
+  /// Find patients on a specific medication
+  Future<List<int>> findPatientsOnMedication(String medicationName) async {
+    final meds = await (select(prescriptionMedications)
+      ..where((m) => m.medicationName.like('%$medicationName%') & m.status.equals('active')))
+      .get();
+    return meds.map((m) => m.patientId).toSet().toList();
+  }
+
+  /// V5: Get medications for a prescription with backwards compatibility
+  /// First tries to get from normalized PrescriptionMedications table,
+  /// falls back to parsing itemsJson for old records
+  Future<List<Map<String, dynamic>>> getMedicationsForPrescriptionCompat(int prescriptionId) async {
+    // First try normalized table (V5)
+    final normalizedMeds = await getMedicationsForPrescription(prescriptionId);
+    if (normalizedMeds.isNotEmpty) {
+      return normalizedMeds.map((m) => {
+        'name': m.medicationName,
+        'dosage': m.strength,
+        'frequency': m.frequency,
+        'duration': m.durationText,
+        'timing': m.timing,
+        'instructions': m.specialInstructions,
+      }).toList();
+    }
+    
+    // Fallback to itemsJson for old records
+    final prescription = await getPrescriptionById(prescriptionId);
+    if (prescription == null) return [];
+    
+    try {
+      final parsed = jsonDecode(prescription.itemsJson);
+      if (parsed is List) {
+        return parsed.cast<Map<String, dynamic>>();
+      } else if (parsed is Map<String, dynamic>) {
+        return ((parsed['medications'] as List<dynamic>?) ?? [])
+            .cast<Map<String, dynamic>>();
+      }
+    } catch (_) {}
+    return [];
+  }
+
+  // ═══════════════════════════════════════════════════════════════════════════════
+  // V5: INVOICE LINE ITEMS - Normalized invoice items
+  // ═══════════════════════════════════════════════════════════════════════════════
+
+  /// Insert an invoice line item
+  Future<int> insertInvoiceLineItem(Insertable<InvoiceLineItem> item) =>
+      into(invoiceLineItems).insert(item);
+
+  /// Get all line items for an invoice
+  Future<List<InvoiceLineItem>> getLineItemsForInvoice(int invoiceId) =>
+      (select(invoiceLineItems)
+        ..where((i) => i.invoiceId.equals(invoiceId))
+        ..orderBy([(i) => OrderingTerm.asc(i.displayOrder)]))
+      .get();
+
+  /// Delete line items for an invoice
+  Future<int> deleteLineItemsForInvoice(int invoiceId) =>
+      (delete(invoiceLineItems)..where((i) => i.invoiceId.equals(invoiceId))).go();
+
+  /// V5: Get line items for an invoice with backwards compatibility
+  /// First tries normalized InvoiceLineItems table, falls back to itemsJson
+  Future<List<Map<String, dynamic>>> getLineItemsForInvoiceCompat(int invoiceId) async {
+    // First try normalized table (V5)
+    final normalizedItems = await getLineItemsForInvoice(invoiceId);
+    if (normalizedItems.isNotEmpty) {
+      return normalizedItems.map((item) => {
+        'description': item.description,
+        'type': item.itemType,
+        'unitPrice': item.unitPrice,
+        'quantity': item.quantity,
+        'total': item.totalAmount,
+        'cptCode': item.cptCode,
+        'notes': item.notes,
+      }).toList();
+    }
+    
+    // Fallback to itemsJson for old records
+    final invoice = await getInvoiceById(invoiceId);
+    if (invoice == null) return [];
+    
+    try {
+      final items = jsonDecode(invoice.itemsJson) as List<dynamic>;
+      return items.cast<Map<String, dynamic>>();
+    } catch (_) {}
+    return [];
+  }
+
+  // ═══════════════════════════════════════════════════════════════════════════════
+  // V5: PATIENT ALLERGIES - Normalized allergy storage
+  // ═══════════════════════════════════════════════════════════════════════════════
+
+  /// Insert a patient allergy
+  Future<int> insertPatientAllergy(Insertable<PatientAllergy> allergy) =>
+      into(patientAllergies).insert(allergy);
+
+  /// Get all allergies for a patient
+  Future<List<PatientAllergy>> getAllergiesForPatient(int patientId) =>
+      (select(patientAllergies)
+        ..where((a) => a.patientId.equals(patientId) & a.status.equals('active'))
+        ..orderBy([(a) => OrderingTerm.asc(a.allergen)]))
+      .get();
+
+  /// Check if patient has a specific allergy
+  Future<bool> patientHasAllergy(int patientId, String allergen) async {
+    final allergy = await (select(patientAllergies)
+      ..where((a) => a.patientId.equals(patientId) & 
+          a.allergen.lower().like('%${allergen.toLowerCase()}%') &
+          a.status.equals('active')))
+      .getSingleOrNull();
+    return allergy != null;
+  }
+
+  /// Update a patient allergy
+  Future<bool> updatePatientAllergy(Insertable<PatientAllergy> allergy) =>
+      update(patientAllergies).replace(allergy);
+
+  /// Delete a patient allergy
+  Future<int> deletePatientAllergy(int id) =>
+      (delete(patientAllergies)..where((a) => a.id.equals(id))).go();
+
+  // ═══════════════════════════════════════════════════════════════════════════════
+  // V5: PATIENT CHRONIC CONDITIONS - Normalized condition storage
+  // ═══════════════════════════════════════════════════════════════════════════════
+
+  /// Insert a patient chronic condition
+  Future<int> insertPatientChronicCondition(Insertable<PatientChronicCondition> condition) =>
+      into(patientChronicConditions).insert(condition);
+
+  /// Get all chronic conditions for a patient
+  Future<List<PatientChronicCondition>> getChronicConditionsForPatient(int patientId) =>
+      (select(patientChronicConditions)
+        ..where((c) => c.patientId.equals(patientId) & c.status.isIn(['active', 'chronic']))
+        ..orderBy([(c) => OrderingTerm.asc(c.conditionName)]))
+      .get();
+
+  /// Update a chronic condition
+  Future<bool> updatePatientChronicCondition(Insertable<PatientChronicCondition> condition) =>
+      update(patientChronicConditions).replace(condition);
+
+  /// Delete a chronic condition
+  Future<int> deletePatientChronicCondition(int id) =>
+      (delete(patientChronicConditions)..where((c) => c.id.equals(id))).go();
+
+  // ═══════════════════════════════════════════════════════════════════════════════
+  // V5: SIDE EFFECTS - Normalized side effect tracking
+  // ═══════════════════════════════════════════════════════════════════════════════
+
+  /// Insert a side effect
+  Future<int> insertSideEffect(Insertable<SideEffect> effect) =>
+      into(sideEffects).insert(effect);
+
+  /// Get side effects for a patient
+  Future<List<SideEffect>> getSideEffectsForPatient(int patientId) =>
+      (select(sideEffects)
+        ..where((s) => s.patientId.equals(patientId))
+        ..orderBy([(s) => OrderingTerm.desc(s.createdAt)]))
+      .get();
+
+  /// Get side effects for a medication
+  Future<List<SideEffect>> getSideEffectsForMedication(int medicationId) =>
+      (select(sideEffects)
+        ..where((s) => s.prescriptionMedicationId.equals(medicationId)))
+      .get();
+
+  // ═══════════════════════════════════════════════════════════════════════════════
+  // V5: LAB TEST RESULTS - Normalized lab results
+  // ═══════════════════════════════════════════════════════════════════════════════
+
+  /// Insert a lab test result
+  Future<int> insertLabTestResult(Insertable<LabTestResult> result) =>
+      into(labTestResults).insert(result);
+
+  /// Get test results for a lab order
+  Future<List<LabTestResult>> getResultsForLabOrder(int labOrderId) =>
+      (select(labTestResults)
+        ..where((r) => r.labOrderId.equals(labOrderId))
+        ..orderBy([(r) => OrderingTerm.asc(r.displayOrder)]))
+      .get();
+
+  /// Get all lab results for a patient
+  Future<List<LabTestResult>> getLabResultsForPatient(int patientId) =>
+      (select(labTestResults)
+        ..where((r) => r.patientId.equals(patientId))
+        ..orderBy([(r) => OrderingTerm.desc(r.createdAt)]))
+      .get();
+
+  /// Get abnormal lab results for a patient
+  Future<List<LabTestResult>> getAbnormalLabResultsForPatient(int patientId) =>
+      (select(labTestResults)
+        ..where((r) => r.patientId.equals(patientId) & r.isAbnormal.equals(true))
+        ..orderBy([(r) => OrderingTerm.desc(r.createdAt)]))
+      .get();
+
+  // ═══════════════════════════════════════════════════════════════════════════════
+  // V5: MENTAL STATUS EXAMS - Normalized MSE storage
+  // ═══════════════════════════════════════════════════════════════════════════════
+
+  /// Insert a mental status exam
+  Future<int> insertMentalStatusExam(Insertable<MentalStatusExam> mse) =>
+      into(mentalStatusExams).insert(mse);
+
+  /// Get MSEs for a patient
+  Future<List<MentalStatusExam>> getMentalStatusExamsForPatient(int patientId) =>
+      (select(mentalStatusExams)
+        ..where((m) => m.patientId.equals(patientId))
+        ..orderBy([(m) => OrderingTerm.desc(m.examinedAt)]))
+      .get();
+
+  /// Get MSE for an encounter
+  Future<MentalStatusExam?> getMentalStatusExamForEncounter(int encounterId) =>
+      (select(mentalStatusExams)..where((m) => m.encounterId.equals(encounterId)))
+      .getSingleOrNull();
+
+  // ═══════════════════════════════════════════════════════════════════════════════
+  // V5: ATTACHMENTS - Centralized file management
+  // ═══════════════════════════════════════════════════════════════════════════════
+
+  /// Insert an attachment
+  Future<int> insertAttachment(Insertable<Attachment> attachment) =>
+      into(attachments).insert(attachment);
+
+  /// Get attachments for an entity
+  Future<List<Attachment>> getAttachmentsForEntity(String entityType, int entityId) =>
+      (select(attachments)
+        ..where((a) => a.entityType.equals(entityType) & a.entityId.equals(entityId))
+        ..orderBy([(a) => OrderingTerm.asc(a.displayOrder)]))
+      .get();
+
+  /// Get all attachments for a patient
+  Future<List<Attachment>> getAttachmentsForPatient(int patientId) =>
+      (select(attachments)
+        ..where((a) => a.patientId.equals(patientId))
+        ..orderBy([(a) => OrderingTerm.desc(a.createdAt)]))
+      .get();
+
+  /// Delete an attachment
+  Future<int> deleteAttachment(int id) =>
+      (delete(attachments)..where((a) => a.id.equals(id))).go();
+
+  // ═══════════════════════════════════════════════════════════════════════════════
+  // V5: FAMILY CONDITIONS - Normalized family history
+  // ═══════════════════════════════════════════════════════════════════════════════
+
+  /// Insert a family condition
+  Future<int> insertFamilyCondition(Insertable<FamilyCondition> condition) =>
+      into(familyConditions).insert(condition);
+
+  /// Get conditions for a family history record
+  Future<List<FamilyCondition>> getConditionsForFamilyHistory(int familyHistoryId) =>
+      (select(familyConditions)
+        ..where((c) => c.familyHistoryId.equals(familyHistoryId)))
+      .get();
+
+  /// Get all family conditions for a patient
+  Future<List<FamilyCondition>> getFamilyConditionsForPatient(int patientId) =>
+      (select(familyConditions)
+        ..where((c) => c.patientId.equals(patientId)))
+      .get();
+
+  // ═══════════════════════════════════════════════════════════════════════════════
+  // V5: TREATMENT INTERVENTIONS - Normalized intervention tracking
+  // ═══════════════════════════════════════════════════════════════════════════════
+
+  /// Insert a treatment intervention
+  Future<int> insertTreatmentIntervention(Insertable<TreatmentIntervention> intervention) =>
+      into(treatmentInterventions).insert(intervention);
+
+  /// Get interventions for a treatment session
+  Future<List<TreatmentIntervention>> getInterventionsForSession(int sessionId) =>
+      (select(treatmentInterventions)
+        ..where((i) => i.treatmentSessionId.equals(sessionId)))
+      .get();
+
+  /// Get interventions for a patient
+  Future<List<TreatmentIntervention>> getInterventionsForPatient(int patientId) =>
+      (select(treatmentInterventions)
+        ..where((i) => i.patientId.equals(patientId))
+        ..orderBy([(i) => OrderingTerm.desc(i.usedAt)]))
+      .get();
+
+  // ═══════════════════════════════════════════════════════════════════════════════
+  // V5: PROGRESS NOTE ENTRIES - Normalized progress tracking
+  // ═══════════════════════════════════════════════════════════════════════════════
+
+  /// Insert a progress note entry
+  Future<int> insertProgressNoteEntry(Insertable<ProgressNoteEntry> entry) =>
+      into(progressNoteEntries).insert(entry);
+
+  /// Get progress entries for a treatment goal
+  Future<List<ProgressNoteEntry>> getProgressEntriesForGoal(int goalId) =>
+      (select(progressNoteEntries)
+        ..where((p) => p.treatmentGoalId.equals(goalId))
+        ..orderBy([(p) => OrderingTerm.desc(p.entryDate)]))
+      .get();
+
+  /// Get recent progress entries for a patient
+  Future<List<ProgressNoteEntry>> getRecentProgressEntriesForPatient(int patientId, {int limit = 20}) =>
+      (select(progressNoteEntries)
+        ..where((p) => p.patientId.equals(patientId))
+        ..orderBy([(p) => OrderingTerm.desc(p.entryDate)])
+        ..limit(limit))
+      .get();
+
+  // ═══════════════════════════════════════════════════════════════════════════════
+  // V5: TREATMENT SYMPTOMS - Normalized symptom tracking
+  // ═══════════════════════════════════════════════════════════════════════════════
+
+  /// Insert a treatment symptom
+  Future<int> insertTreatmentSymptom(Insertable<TreatmentSymptom> symptom) =>
+      into(treatmentSymptoms).insert(symptom);
+
+  /// Get symptoms for a patient
+  Future<List<TreatmentSymptom>> getSymptomsForPatient(int patientId) =>
+      (select(treatmentSymptoms)
+        ..where((s) => s.patientId.equals(patientId))
+        ..orderBy([(s) => OrderingTerm.desc(s.recordedAt)]))
+      .get();
+
+  // ═══════════════════════════════════════════════════════════════════════════════
+  // V5: CLAIM BILLING CODES - Normalized billing
+  // ═══════════════════════════════════════════════════════════════════════════════
+
+  /// Insert a claim billing code
+  Future<int> insertClaimBillingCode(Insertable<ClaimBillingCode> code) =>
+      into(claimBillingCodes).insert(code);
+
+  /// Get billing codes for a claim
+  Future<List<ClaimBillingCode>> getBillingCodesForClaim(int claimId) =>
+      (select(claimBillingCodes)
+        ..where((c) => c.claimId.equals(claimId))
+        ..orderBy([(c) => OrderingTerm.asc(c.displayOrder)]))
+      .get();
+
+  /// Delete billing codes for a claim
+  Future<int> deleteBillingCodesForClaim(int claimId) =>
+      (delete(claimBillingCodes)..where((c) => c.claimId.equals(claimId))).go();
+
+  // ═══════════════════════════════════════════════════════════════════════════════
+  // V6: MEDICAL RECORD FIELDS - Normalized form data (replaces dataJson)
+  // ═══════════════════════════════════════════════════════════════════════════════
+
+  /// Insert a medical record field
+  Future<int> insertMedicalRecordField(Insertable<MedicalRecordField> field) =>
+      into(medicalRecordFields).insert(field);
+
+  /// Insert multiple fields for a medical record
+  Future<void> insertMedicalRecordFieldsBatch(int recordId, int patientId, Map<String, dynamic> data) async {
+    int order = 0;
+    
+    void insertField(String group, String name, dynamic value, String type) async {
+      if (value == null) return;
+      String stringValue;
+      if (value is List) {
+        stringValue = jsonEncode(value);
+        type = 'list';
+      } else if (value is Map) {
+        stringValue = jsonEncode(value);
+        type = 'object';
+      } else if (value is bool) {
+        stringValue = value.toString();
+        type = 'boolean';
+      } else if (value is num) {
+        stringValue = value.toString();
+        type = 'number';
+      } else {
+        stringValue = value.toString();
+      }
+      
+      await into(medicalRecordFields).insert(MedicalRecordFieldsCompanion.insert(
+        medicalRecordId: recordId,
+        patientId: patientId,
+        fieldGroup: Value(group),
+        fieldName: name,
+        fieldValue: stringValue,
+        fieldType: Value(type),
+        displayOrder: Value(order++),
+      ));
+    }
+    
+    // Flatten nested data structure
+    for (final entry in data.entries) {
+      if (entry.value is Map<String, dynamic>) {
+        // Nested group (e.g., 'vitals', 'chest_auscultation', 'mse')
+        for (final nested in (entry.value as Map<String, dynamic>).entries) {
+          insertField(entry.key, nested.key, nested.value, 'text');
+        }
+      } else {
+        insertField('', entry.key, entry.value, 'text');
+      }
+    }
+  }
+
+  /// Get all fields for a medical record
+  Future<List<MedicalRecordField>> getFieldsForMedicalRecord(int recordId) =>
+      (select(medicalRecordFields)
+        ..where((f) => f.medicalRecordId.equals(recordId))
+        ..orderBy([(f) => OrderingTerm.asc(f.displayOrder)]))
+      .get();
+
+  /// Get fields by group for a medical record
+  Future<List<MedicalRecordField>> getFieldsByGroupForMedicalRecord(int recordId, String group) =>
+      (select(medicalRecordFields)
+        ..where((f) => f.medicalRecordId.equals(recordId) & f.fieldGroup.equals(group))
+        ..orderBy([(f) => OrderingTerm.asc(f.displayOrder)]))
+      .get();
+
+  /// Delete all fields for a medical record
+  Future<int> deleteFieldsForMedicalRecord(int recordId) =>
+      (delete(medicalRecordFields)..where((f) => f.medicalRecordId.equals(recordId))).go();
+
+  /// V6: Get medical record fields with backwards compatibility
+  /// First tries normalized MedicalRecordFields table, falls back to dataJson
+  Future<Map<String, dynamic>> getMedicalRecordFieldsCompat(int recordId) async {
+    // First try normalized table (V6)
+    final normalizedFields = await getFieldsForMedicalRecord(recordId);
+    if (normalizedFields.isNotEmpty) {
+      final result = <String, dynamic>{};
+      final groups = <String, Map<String, dynamic>>{};
+      
+      for (final field in normalizedFields) {
+        dynamic value = field.fieldValue;
+        // Parse value based on type
+        if (field.fieldType == 'list' || field.fieldType == 'object') {
+          try { value = jsonDecode(field.fieldValue); } catch (_) {}
+        } else if (field.fieldType == 'boolean') {
+          value = field.fieldValue.toLowerCase() == 'true';
+        } else if (field.fieldType == 'number') {
+          value = num.tryParse(field.fieldValue) ?? field.fieldValue;
+        }
+        
+        if (field.fieldGroup.isNotEmpty) {
+          groups.putIfAbsent(field.fieldGroup, () => {});
+          groups[field.fieldGroup]![field.fieldName] = value;
+        } else {
+          result[field.fieldName] = value;
+        }
+      }
+      
+      // Merge groups back into result
+      result.addAll(groups);
+      return result;
+    }
+    
+    // Fallback to dataJson for old records
+    final record = await getMedicalRecordById(recordId);
+    if (record == null) return {};
+    
+    try {
+      return jsonDecode(record.dataJson) as Map<String, dynamic>;
+    } catch (_) {}
+    return {};
   }
 }

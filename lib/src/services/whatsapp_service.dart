@@ -4,17 +4,21 @@ import '../db/doctor_db.dart';
 
 class WhatsAppService {
   /// Share prescription via WhatsApp
+  /// V5: Use medicationsList if provided (from normalized table), else falls back to itemsJson
   static Future<void> sharePrescription({
     required Patient patient,
     required Prescription prescription,
     required String doctorName,
     required String clinicName,
     String? clinicPhone,
+    List<Map<String, dynamic>>? medicationsList, // V5: Pre-loaded from normalized table
   }) async {
-    List<dynamic> medications = [];
-    try {
-      medications = jsonDecode(prescription.itemsJson) as List<dynamic>;
-    } catch (_) {}
+    List<dynamic> medications = medicationsList ?? [];
+    if (medications.isEmpty) {
+      try {
+        medications = jsonDecode(prescription.itemsJson) as List<dynamic>;
+      } catch (_) {}
+    }
 
     final buffer = StringBuffer()
       // Header
@@ -86,16 +90,20 @@ class WhatsAppService {
   }
 
   /// Share invoice via WhatsApp
+  /// V5: Use lineItemsList if provided (from normalized table), else falls back to itemsJson
   static Future<void> shareInvoice({
     required Patient patient,
     required Invoice invoice,
     required String clinicName,
     String? clinicPhone,
+    List<Map<String, dynamic>>? lineItemsList, // V5: Pre-loaded from normalized table
   }) async {
-    List<dynamic> items = [];
-    try {
-      items = jsonDecode(invoice.itemsJson) as List<dynamic>;
-    } catch (_) {}
+    List<dynamic> items = lineItemsList ?? [];
+    if (items.isEmpty) {
+      try {
+        items = jsonDecode(invoice.itemsJson) as List<dynamic>;
+      } catch (_) {}
+    }
 
     final buffer = StringBuffer()
       // Header

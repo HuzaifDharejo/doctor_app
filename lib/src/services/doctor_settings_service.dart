@@ -261,32 +261,44 @@ class AppSettings {
     this.language = 'English',
     this.lastBackupDate,
     this.onboardingComplete = false,
+    this.hasSeenDashboardTutorial = false,
     this.autoSyncAppointments = true,
     this.calendarReminders = true,
     this.examModeEnabled = false,
     List<String>? enabledMedicalRecordTypes,
   }) : enabledMedicalRecordTypes = enabledMedicalRecordTypes ?? List.from(allMedicalRecordTypes);
 
-  factory AppSettings.fromJson(Map<String, dynamic> json) => AppSettings(
-    notificationsEnabled: (json['notificationsEnabled'] as bool?) ?? true,
-    darkModeEnabled: (json['darkModeEnabled'] as bool?) ?? false,
-    language: (json['language'] as String?) ?? 'English',
-    lastBackupDate: json['lastBackupDate'] != null 
-        ? DateTime.parse(json['lastBackupDate'] as String) 
-        : null,
-    onboardingComplete: (json['onboardingComplete'] as bool?) ?? false,
-    autoSyncAppointments: (json['autoSyncAppointments'] as bool?) ?? true,
-    calendarReminders: (json['calendarReminders'] as bool?) ?? true,
-    examModeEnabled: (json['examModeEnabled'] as bool?) ?? false,
-    enabledMedicalRecordTypes: json['enabledMedicalRecordTypes'] != null
-        ? List<String>.from(json['enabledMedicalRecordTypes'] as Iterable)
-        : null,
-  );
+  factory AppSettings.fromJson(Map<String, dynamic> json) {
+    // Merge saved enabled types with any new types added to allMedicalRecordTypes
+    List<String>? enabledTypes;
+    if (json['enabledMedicalRecordTypes'] != null) {
+      final savedTypes = List<String>.from(json['enabledMedicalRecordTypes'] as Iterable);
+      // Find any new types that weren't in saved settings and add them
+      final newTypes = allMedicalRecordTypes.where((t) => !savedTypes.contains(t)).toList();
+      enabledTypes = [...savedTypes, ...newTypes];
+    }
+    
+    return AppSettings(
+      notificationsEnabled: (json['notificationsEnabled'] as bool?) ?? true,
+      darkModeEnabled: (json['darkModeEnabled'] as bool?) ?? false,
+      language: (json['language'] as String?) ?? 'English',
+      lastBackupDate: json['lastBackupDate'] != null 
+          ? DateTime.parse(json['lastBackupDate'] as String) 
+          : null,
+      onboardingComplete: (json['onboardingComplete'] as bool?) ?? false,
+      hasSeenDashboardTutorial: (json['hasSeenDashboardTutorial'] as bool?) ?? false,
+      autoSyncAppointments: (json['autoSyncAppointments'] as bool?) ?? true,
+      calendarReminders: (json['calendarReminders'] as bool?) ?? true,
+      examModeEnabled: (json['examModeEnabled'] as bool?) ?? false,
+      enabledMedicalRecordTypes: enabledTypes,
+    );
+  }
   final bool notificationsEnabled;
   final bool darkModeEnabled;
   final String language;
   final DateTime? lastBackupDate;
   final bool onboardingComplete;
+  final bool hasSeenDashboardTutorial;
   final bool autoSyncAppointments;
   final bool calendarReminders;
   final bool examModeEnabled;
@@ -294,39 +306,78 @@ class AppSettings {
 
   // Default medical record types
   static const List<String> allMedicalRecordTypes = [
+    // Core record types
     'general',
+    'follow_up',
+    'vitals',
+    'lab_result',
+    'imaging',
+    'procedure',
+    'referral',
+    'certificate',
+    // Mental health types
     'pulmonary_evaluation',
     'psychiatric_assessment',
     'therapy_session',
     'psychiatrist_note',
-    'lab_result',
-    'imaging',
-    'procedure',
-    'follow_up',
+    // Specialty examination types
+    'cardiac_examination',
+    'pediatric_checkup',
+    'eye_examination',
+    'skin_examination',
+    'ent_examination',
+    'orthopedic_examination',
+    'gyn_examination',
+    'neuro_examination',
+    'gi_examination',
   ];
 
   static const Map<String, String> medicalRecordTypeLabels = {
     'general': 'General Consultation',
-    'pulmonary_evaluation': 'Pulmonary Evaluation',
-    'psychiatric_assessment': 'Quick Psychiatric Assessment',
-    'therapy_session': 'Therapy Session Note',
-    'psychiatrist_note': 'Psychiatrist Note',
+    'follow_up': 'Follow-up Visit',
+    'vitals': 'Vital Signs',
     'lab_result': 'Lab Result',
     'imaging': 'Imaging/Radiology',
     'procedure': 'Procedure',
-    'follow_up': 'Follow-up Visit',
+    'referral': 'Referral',
+    'certificate': 'Medical Certificate',
+    'pulmonary_evaluation': 'Pulmonary Evaluation',
+    'psychiatric_assessment': 'Psychiatric Assessment',
+    'therapy_session': 'Therapy Session Note',
+    'psychiatrist_note': 'Psychiatrist Note',
+    'cardiac_examination': 'Cardiac Examination',
+    'pediatric_checkup': 'Pediatric Checkup',
+    'eye_examination': 'Eye Examination',
+    'skin_examination': 'Skin Examination',
+    'ent_examination': 'ENT Examination',
+    'orthopedic_examination': 'Orthopedic Examination',
+    'gyn_examination': 'GYN/OB Examination',
+    'neuro_examination': 'Neuro Examination',
+    'gi_examination': 'GI Examination',
   };
 
   static const Map<String, String> medicalRecordTypeDescriptions = {
     'general': 'Standard consultation notes and diagnosis',
+    'follow_up': 'Follow-up visit notes and progress tracking',
+    'vitals': 'Blood pressure, heart rate, temperature, weight',
+    'lab_result': 'Laboratory test results and interpretations',
+    'imaging': 'X-ray, CT, MRI and other imaging reports',
+    'procedure': 'Surgical or clinical procedures performed',
+    'referral': 'Referrals to specialists or other providers',
+    'certificate': 'Medical certificates and official documents',
     'pulmonary_evaluation': 'Respiratory assessment with chest examination',
     'psychiatric_assessment': 'Mental status examination and risk assessment',
     'therapy_session': 'Therapist session notes with interventions',
     'psychiatrist_note': 'Psychiatric evaluation and medication management',
-    'lab_result': 'Laboratory test results and interpretations',
-    'imaging': 'X-ray, CT, MRI and other imaging reports',
-    'procedure': 'Surgical or clinical procedures performed',
-    'follow_up': 'Follow-up visit notes and progress tracking',
+    'cardiac_examination': 'Heart sounds, ECG, Echo examination',
+    'pediatric_checkup': 'Growth, development assessment',
+    'eye_examination': 'Visual acuity, IOP examination',
+    'skin_examination': 'Dermatology examination',
+    'ent_examination': 'Ear, Nose, Throat examination',
+    'orthopedic_examination': 'Joints, ROM, strength examination',
+    'gyn_examination': 'Gynecologic examination',
+    'neuro_examination': 'Neurological examination',
+    'gi_examination': 'Abdominal examination',
   };
 
   AppSettings copyWith({
@@ -335,6 +386,7 @@ class AppSettings {
     String? language,
     DateTime? lastBackupDate,
     bool? onboardingComplete,
+    bool? hasSeenDashboardTutorial,
     bool? autoSyncAppointments,
     bool? calendarReminders,
     bool? examModeEnabled,
@@ -346,6 +398,7 @@ class AppSettings {
       language: language ?? this.language,
       lastBackupDate: lastBackupDate ?? this.lastBackupDate,
       onboardingComplete: onboardingComplete ?? this.onboardingComplete,
+      hasSeenDashboardTutorial: hasSeenDashboardTutorial ?? this.hasSeenDashboardTutorial,
       autoSyncAppointments: autoSyncAppointments ?? this.autoSyncAppointments,
       calendarReminders: calendarReminders ?? this.calendarReminders,
       examModeEnabled: examModeEnabled ?? this.examModeEnabled,
@@ -359,6 +412,7 @@ class AppSettings {
     'language': language,
     'lastBackupDate': lastBackupDate?.toIso8601String(),
     'onboardingComplete': onboardingComplete,
+    'hasSeenDashboardTutorial': hasSeenDashboardTutorial,
     'autoSyncAppointments': autoSyncAppointments,
     'calendarReminders': calendarReminders,
     'examModeEnabled': examModeEnabled,
@@ -441,6 +495,13 @@ class AppSettingsService extends ChangeNotifier {
   // ignore: avoid_positional_boolean_parameters
   Future<void> setOnboardingComplete(bool complete) async {
     _settings = _settings.copyWith(onboardingComplete: complete);
+    await _saveSettings();
+    notifyListeners();
+  }
+
+  // ignore: avoid_positional_boolean_parameters
+  Future<void> setHasSeenDashboardTutorial(bool seen) async {
+    _settings = _settings.copyWith(hasSeenDashboardTutorial: seen);
     await _saveSettings();
     notifyListeners();
   }

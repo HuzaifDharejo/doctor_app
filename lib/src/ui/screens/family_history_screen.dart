@@ -1,10 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import '../../db/doctor_db.dart';
 import '../../extensions/drift_extensions.dart';
-import '../../models/family_history.dart';
-import '../../providers/db_provider.dart';
 import '../../services/family_history_service.dart';
 import '../../theme/app_theme.dart';
 import '../../core/theme/design_tokens.dart';
@@ -752,7 +749,7 @@ class _FamilyHistoryScreenState extends ConsumerState<FamilyHistoryScreen> {
     final relativeAgeController = TextEditingController(
       text: editEntry?.relativeAge?.toString(),
     );
-    String selectedRelationship = editEntry?.relationship ?? 'parent';
+    String selectedRelationship = editEntry?.relationship ?? 'mother';
     bool isDeceased = editEntry?.isDeceased ?? false;
 
     final relationships = [

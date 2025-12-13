@@ -1,4 +1,3 @@
-import 'dart:convert';
 import 'package:drift/drift.dart' hide Column;
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -6,12 +5,14 @@ import 'package:intl/intl.dart';
 import '../../db/doctor_db.dart';
 import '../../providers/db_provider.dart';
 import '../../services/suggestions_service.dart';
+import '../../services/medical_record_templates.dart';
 import '../../core/components/app_button.dart';
 import '../../core/components/app_input.dart';
 import '../../theme/app_theme.dart';
 import '../../core/theme/design_tokens.dart';
 import '../widgets/document_data_extractor.dart';
 import '../widgets/suggestion_text_field.dart';
+import '../../core/widgets/keyboard_aware_scaffold.dart';
 
 class AddMedicalRecordScreen extends ConsumerStatefulWidget {
 
@@ -407,6 +408,9 @@ class _AddMedicalRecordScreenState extends ConsumerState<AddMedicalRecordScreen>
     setState(() => _isSaving = true);
 
     try {
+      // Build the data for this record type
+      final dataMap = _buildDataJson();
+      
       final recordId = await db.insertMedicalRecord(MedicalRecordsCompanion.insert(
         patientId: _selectedPatientId!,
         recordType: _recordType,
@@ -414,12 +418,15 @@ class _AddMedicalRecordScreenState extends ConsumerState<AddMedicalRecordScreen>
             ? '${_recordTypeLabels[_recordType] ?? 'Record'}: ${_diagnosisController.text}'
             : '${_recordTypeLabels[_recordType] ?? 'Medical Record'} - ${DateFormat('MMM d, yyyy').format(_recordDate)}',
         description: Value(_descriptionController.text),
-        dataJson: Value(jsonEncode(_buildDataJson())),
+        dataJson: Value('{}'), // V6: Store in normalized MedicalRecordFields table
         diagnosis: Value(_diagnosisController.text),
         treatment: Value(_treatmentController.text),
         doctorNotes: Value(_doctorNotesController.text),
         recordDate: _recordDate,
       ),);
+
+      // V6: Insert fields into normalized table
+      await db.insertMedicalRecordFieldsBatch(recordId, _selectedPatientId!, dataMap);
 
       // Fetch the created medical record to return it
       final createdRecord = await db.getMedicalRecordById(recordId);
@@ -555,6 +562,8 @@ class _AddMedicalRecordScreenState extends ConsumerState<AddMedicalRecordScreen>
                 ]),
               ),
             ),
+            // Keyboard-aware bottom padding
+            const SliverKeyboardPadding(),
           ],
         ),
         loading: () => const Center(
@@ -575,6 +584,10 @@ class _AddMedicalRecordScreenState extends ConsumerState<AddMedicalRecordScreen>
           children: [
             // Record Type Selection
             _buildRecordTypeSelector(),
+            const SizedBox(height: 16),
+
+            // Quick Fill Templates Button
+            _buildTemplatesButton(),
             const SizedBox(height: 20),
 
             // Patient Selection
@@ -903,6 +916,237 @@ class _AddMedicalRecordScreenState extends ConsumerState<AddMedicalRecordScreen>
         );
       },
     );
+  }
+
+  Widget _buildTemplatesButton() {
+    return Builder(
+      builder: (context) {
+        final isDark = Theme.of(context).brightness == Brightness.dark;
+        final themeColor = _getRecordTypeThemeColor(_recordType);
+        
+        return GestureDetector(
+          onTap: _showTemplatesSheet,
+          child: Container(
+            padding: const EdgeInsets.all(AppSpacing.lg),
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                colors: [
+                  themeColor.withValues(alpha: 0.15),
+                  themeColor.withValues(alpha: 0.05),
+                ],
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+              ),
+              borderRadius: BorderRadius.circular(16),
+              border: Border.all(
+                color: themeColor.withValues(alpha: 0.3),
+                width: 1.5,
+              ),
+            ),
+            child: Row(
+              children: [
+                Container(
+                  padding: const EdgeInsets.all(AppSpacing.md),
+                  decoration: BoxDecoration(
+                    color: themeColor.withValues(alpha: 0.15),
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: Icon(
+                    Icons.flash_on,
+                    color: themeColor,
+                    size: 24,
+                  ),
+                ),
+                const SizedBox(width: 16),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'Quick Fill Templates',
+                        style: TextStyle(
+                          fontWeight: FontWeight.bold,
+                          fontSize: 15,
+                          color: isDark ? AppColors.darkTextPrimary : AppColors.textPrimary,
+                        ),
+                      ),
+                      const SizedBox(height: 4),
+                      Text(
+                        'Use common ${_recordTypeLabels[_recordType] ?? 'record'} templates',
+                        style: TextStyle(
+                          fontSize: 12,
+                          color: isDark ? AppColors.darkTextSecondary : AppColors.textSecondary,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                  decoration: BoxDecoration(
+                    color: themeColor,
+                    borderRadius: BorderRadius.circular(20),
+                  ),
+                  child: Text(
+                    '${MedicalRecordTemplates.getTemplatesForType(_recordType).length} templates',
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontSize: 11,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        );
+      },
+    );
+  }
+
+  void _showTemplatesSheet() {
+    showModalBottomSheet<void>(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (context) => DraggableScrollableSheet(
+        initialChildSize: 0.75,
+        minChildSize: 0.4,
+        maxChildSize: 0.9,
+        expand: false,
+        builder: (context, scrollController) => MedicalRecordTemplateBottomSheet(
+          recordType: _recordType,
+          onSelect: (template) {
+            _applyTemplate(template);
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content: Row(
+                  children: [
+                    const Icon(Icons.check_circle, color: Colors.white),
+                    const SizedBox(width: 12),
+                    Expanded(child: Text('Template "${template.name}" applied')),
+                  ],
+                ),
+                backgroundColor: Colors.green,
+                behavior: SnackBarBehavior.floating,
+                duration: const Duration(seconds: 2),
+              ),
+            );
+          },
+        ),
+      ),
+    );
+  }
+
+  void _applyTemplate(MedicalRecordTemplate template) {
+    setState(() {
+      // Apply common fields
+      if (template.description.isNotEmpty) {
+        _descriptionController.text = template.description;
+      }
+      if (template.diagnosis.isNotEmpty) {
+        _diagnosisController.text = template.diagnosis;
+      }
+      if (template.treatment.isNotEmpty) {
+        _treatmentController.text = template.treatment;
+      }
+      if (template.notes.isNotEmpty) {
+        _doctorNotesController.text = template.notes;
+      }
+
+      // Apply type-specific data
+      final data = template.data;
+      
+      switch (_recordType) {
+        case 'psychiatric_assessment':
+          if (data['symptoms'] != null) _symptomsController.text = data['symptoms'] as String;
+          if (data['hopi'] != null) _hopiController.text = data['hopi'] as String;
+          if (data['mse'] != null && data['mse'] is Map) {
+            final mse = Map<String, dynamic>.from(data['mse'] as Map);
+            if (mse['appearance'] != null) _appearanceController.text = mse['appearance'] as String;
+            if (mse['behavior'] != null) _behaviorController.text = mse['behavior'] as String;
+            if (mse['speech'] != null) _speechController.text = mse['speech'] as String;
+            if (mse['mood'] != null) _moodController.text = mse['mood'] as String;
+            if (mse['affect'] != null) _affectController.text = mse['affect'] as String;
+            if (mse['thought_content'] != null) _thoughtContentController.text = mse['thought_content'] as String;
+            if (mse['thought_process'] != null) _thoughtProcessController.text = mse['thought_process'] as String;
+            if (mse['perception'] != null) _perceptionController.text = mse['perception'] as String;
+            if (mse['cognition'] != null) _cognitionController.text = mse['cognition'] as String;
+            if (mse['insight'] != null) _insightController.text = mse['insight'] as String;
+            if (mse['judgment'] != null) _judgmentController.text = mse['judgment'] as String;
+          }
+          if (data['risk_assessment'] != null && data['risk_assessment'] is Map) {
+            final risk = Map<String, dynamic>.from(data['risk_assessment'] as Map);
+            final validRisks = ['None', 'Low', 'Moderate', 'High'];
+            if (risk['suicidal_risk'] != null) {
+              final value = risk['suicidal_risk'] as String;
+              _suicidalRisk = validRisks.contains(value) ? value : 'None';
+            }
+            if (risk['homicidal_risk'] != null) {
+              final value = risk['homicidal_risk'] as String;
+              _homicidalRisk = validRisks.contains(value) ? value : 'None';
+            }
+            if (risk['notes'] != null) _riskNotesController.text = risk['notes'] as String;
+          }
+          break;
+
+        case 'pulmonary_evaluation':
+          if (data['chief_complaint'] != null) _pulmonaryChiefComplaintController.text = data['chief_complaint'] as String;
+          if (data['duration'] != null) _pulmonaryDurationController.text = data['duration'] as String;
+          if (data['symptom_character'] != null) _pulmonarySymptomCharacterController.text = data['symptom_character'] as String;
+          if (data['systemic_symptoms'] != null && data['systemic_symptoms'] is List) {
+            _selectedSystemicSymptoms = List<String>.from(data['systemic_symptoms'] as List);
+          }
+          if (data['red_flags'] != null && data['red_flags'] is List) {
+            _selectedRedFlags = List<String>.from(data['red_flags'] as List);
+          }
+          if (data['past_pulmonary_history'] != null) _pastPulmonaryHistoryController.text = data['past_pulmonary_history'] as String;
+          if (data['chest_auscultation'] != null && data['chest_auscultation'] is Map) {
+            final chest = Map<String, dynamic>.from(data['chest_auscultation'] as Map);
+            if (chest['breath_sounds'] != null) _breathSoundsController.text = chest['breath_sounds'] as String;
+            if (chest['added_sounds'] != null && chest['added_sounds'] is List) {
+              _selectedAddedSounds = List<String>.from(chest['added_sounds'] as List);
+            }
+            if (chest['right_lower_zone'] != null) _rightLowerZoneController.text = chest['right_lower_zone'] as String;
+          }
+          if (data['investigations_required'] != null && data['investigations_required'] is List) {
+            _selectedInvestigations = List<String>.from(data['investigations_required'] as List);
+          }
+          break;
+
+        case 'lab_result':
+          if (data['test_name'] != null) _labTestNameController.text = data['test_name'] as String;
+          if (data['result'] != null) _labResultController.text = data['result'] as String;
+          if (data['reference_range'] != null) _referenceRangeController.text = data['reference_range'] as String;
+          break;
+
+        case 'imaging':
+          if (data['imaging_type'] != null) _imagingTypeController.text = data['imaging_type'] as String;
+          if (data['findings'] != null) _imagingFindingsController.text = data['findings'] as String;
+          break;
+
+        case 'procedure':
+          if (data['procedure_name'] != null) _procedureNameController.text = data['procedure_name'] as String;
+          if (data['procedure_notes'] != null) _procedureNotesController.text = data['procedure_notes'] as String;
+          break;
+
+        case 'follow_up':
+          if (data['follow_up_notes'] != null) _followUpNotesController.text = data['follow_up_notes'] as String;
+          break;
+      }
+    });
+  }
+
+  Color _getRecordTypeThemeColor(String type) {
+    return {
+      'general': AppColors.primary,
+      'psychiatric_assessment': Colors.purple,
+      'pulmonary_evaluation': Colors.teal,
+      'lab_result': Colors.orange,
+      'imaging': Colors.indigo,
+      'procedure': Colors.red,
+      'follow_up': Colors.green,
+    }[type] ?? AppColors.primary;
   }
 
   Widget _buildTypeSpecificFields() {

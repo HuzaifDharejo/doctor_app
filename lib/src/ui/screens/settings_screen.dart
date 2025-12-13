@@ -8,6 +8,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../core/components/app_button.dart';
 import '../../core/constants/app_strings.dart';
 import '../../core/extensions/context_extensions.dart';
+import '../../core/routing/app_router.dart';
 import '../../core/theme/design_tokens.dart';
 import '../../providers/app_lock_provider.dart';
 import '../../providers/db_provider.dart';
@@ -23,10 +24,11 @@ import '../../core/utils/date_time_formatter.dart';
 import '../../theme/app_theme.dart';
 import '../widgets/debug_console.dart';
 import 'audit_log_viewer_screen.dart';
+import 'debug_log_viewer_screen.dart';
 import 'backup_settings_screen.dart';
 import 'doctor_profile_screen.dart';
 import 'user_manual_screen.dart';
-import 'settings/data_migration_screen.dart';
+import 'settings/medical_record_types_settings_screen.dart';
 
 class SettingsScreen extends ConsumerStatefulWidget {
   const SettingsScreen({super.key});
@@ -435,7 +437,18 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> with SingleTick
           const SizedBox(height: AppSpacing.xl),
           
           _buildSectionTitle(context, 'Medical Records'),
-          _buildMedicalRecordTypesSection(context, ref, settings),
+          _buildSettingsGroup(context, [
+            _SettingItem(
+              icon: Icons.folder_special_rounded,
+              iconColor: AppColors.primary,
+              title: 'Record Types',
+              subtitle: '${settings.enabledMedicalRecordTypes.length} of ${AppSettings.allMedicalRecordTypes.length} enabled',
+              onTap: () => Navigator.push(
+                context,
+                AppRouter.route(const MedicalRecordTypesSettingsScreen()),
+              ),
+            ),
+          ]),
           const SizedBox(height: AppSpacing.xl),
           
           _buildSectionTitle(context, 'Security'),
@@ -450,18 +463,6 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> with SingleTick
               title: 'Backup & Restore',
               subtitle: 'Last backup: $backupText',
               onTap: () => _showBackupDialog(context, ref),
-            ),
-            _SettingItem(
-              icon: Icons.sync_rounded,
-              iconColor: AppColors.primary,
-              title: 'Data Migration',
-              subtitle: 'Migrate to encounter-based system',
-              onTap: () {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute<void>(builder: (_) => const DataMigrationScreen()),
-                );
-              },
             ),
             _SettingItem(
               icon: Icons.delete_forever_rounded,
@@ -480,7 +481,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> with SingleTick
           ]),
           const SizedBox(height: AppSpacing.xl),
           
-          _buildSectionTitle(context, 'Support'),
+          _buildSectionTitle(context, 'About'),
           _buildSettingsGroup(context, [
             _SettingItem(
               icon: Icons.menu_book_rounded,
@@ -493,20 +494,6 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> with SingleTick
                   MaterialPageRoute<void>(builder: (_) => const UserManualScreen()),
                 );
               },
-            ),
-            _SettingItem(
-              icon: Icons.help_outline_rounded,
-              iconColor: AppColors.primary,
-              title: 'Help Center',
-              subtitle: 'FAQs & tutorials',
-              onTap: () => _showHelpCenter(context),
-            ),
-            _SettingItem(
-              icon: Icons.chat_bubble_outline_rounded,
-              iconColor: AppColors.accent,
-              title: 'Contact Support',
-              subtitle: 'Get help from our team',
-              onTap: () => _showContactSupport(context),
             ),
             _SettingItem(
               icon: Icons.info_outline_rounded,
@@ -1269,95 +1256,6 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> with SingleTick
     );
   }
 
-  void _showHelpCenter(BuildContext context) {
-    showDialog<void>(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: const Row(
-          children: [
-            Icon(Icons.help_outline, color: AppColors.primary),
-            SizedBox(width: 12),
-            Text('Help Center'),
-          ],
-        ),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            _buildHelpItem('How to add a patient?', 'Go to Patients tab > Tap the + button > Fill in details'),
-            _buildHelpItem('How to create prescription?', 'Open patient > Tap Add Prescription > Fill medications'),
-            _buildHelpItem('How to generate invoice?', 'Go to Billing tab > Tap Create Invoice > Add items'),
-            _buildHelpItem('How to backup data?', 'Settings > Backup & Restore > Create Backup'),
-          ],
-        ),
-        actions: [
-          AppButton.tertiary(
-            label: 'Close',
-            onPressed: () => Navigator.pop(context),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildHelpItem(String question, String answer) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: AppSpacing.sm),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(question, style: const TextStyle(fontWeight: FontWeight.bold)),
-          const SizedBox(height: 4),
-          Text(answer, style: TextStyle(color: Colors.grey[600], fontSize: 13)),
-        ],
-      ),
-    );
-  }
-
-  void _showContactSupport(BuildContext context) {
-    showDialog<void>(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: const Row(
-          children: [
-            Icon(Icons.support_agent, color: AppColors.accent),
-            SizedBox(width: 12),
-            Text('Contact Support'),
-          ],
-        ),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            ListTile(
-              leading: const Icon(Icons.email),
-              title: const Text('Email'),
-              subtitle: const Text('support@doctorapp.com'),
-              onTap: () => Navigator.pop(context),
-            ),
-            ListTile(
-              leading: const Icon(Icons.phone),
-              title: const Text('Phone'),
-              subtitle: const Text('+92 300 1234567'),
-              onTap: () => Navigator.pop(context),
-            ),
-            ListTile(
-              leading: const Icon(Icons.chat),
-              title: const Text('WhatsApp'),
-              subtitle: const Text('+92 300 1234567'),
-              onTap: () => Navigator.pop(context),
-            ),
-          ],
-        ),
-        actions: [
-          AppButton.tertiary(
-            label: 'Close',
-            onPressed: () => Navigator.pop(context),
-          ),
-        ],
-      ),
-    );
-  }
-
   void _showAboutDialog(BuildContext context) {
     showDialog<void>(
       context: context,
@@ -1655,11 +1553,21 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> with SingleTick
         title: 'Audit Trail',
         subtitle: 'View activity logs for HIPAA compliance',
         onTap: () {
-          Navigator.push(
+          Navigator.push<void>(
             context,
-            MaterialPageRoute(
-              builder: (_) => const AuditLogViewerScreen(),
-            ),
+            AppRouter.route<void>(const AuditLogViewerScreen()),
+          );
+        },
+      ),
+      _SettingItem(
+        icon: Icons.bug_report_rounded,
+        iconColor: Colors.purple,
+        title: 'Debug Logs',
+        subtitle: 'View app logs, errors, and performance metrics',
+        onTap: () {
+          Navigator.push<void>(
+            context,
+            AppRouter.route<void>(const DebugLogViewerScreen()),
           );
         },
       ),
@@ -2041,174 +1949,6 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> with SingleTick
             ),
           ),
         ),
-      ),
-    );
-  }
-
-  Widget _buildMedicalRecordTypesSection(BuildContext context, WidgetRef ref, AppSettings settings) {
-    final isDark = context.isDarkMode;
-    final enabledTypes = settings.enabledMedicalRecordTypes;
-    
-    final Map<String, IconData> typeIcons = {
-      'general': Icons.medical_services_outlined,
-      'pulmonary_evaluation': Icons.air,
-      'psychiatric_assessment': Icons.psychology,
-      'lab_result': Icons.science_outlined,
-      'imaging': Icons.image_outlined,
-      'procedure': Icons.healing_outlined,
-      'follow_up': Icons.event_repeat,
-    };
-
-    return DecoratedBox(
-      decoration: BoxDecoration(
-        color: context.colorScheme.surface,
-        borderRadius: BorderRadius.circular(AppRadius.md),
-        border: Border.all(color: (isDark ? AppColors.darkDivider : AppColors.divider).withValues(alpha: 0.5)),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.04),
-            blurRadius: AppSpacing.xs,
-            offset: const Offset(0, 4),
-          ),
-        ],
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Padding(
-            padding: const EdgeInsets.all(AppSpacing.md),
-            child: Row(
-              children: [
-                Container(
-                  padding: const EdgeInsets.all(AppSpacing.xs),
-                  decoration: BoxDecoration(
-                    color: AppColors.primary.withValues(alpha: 0.1),
-                    borderRadius: BorderRadius.circular(AppRadius.sm),
-                  ),
-                  child: const Icon(
-                    Icons.folder_special_rounded,
-                    color: AppColors.primary,
-                    size: 22,
-                  ),
-                ),
-                const SizedBox(width: AppSpacing.sm),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        'Enabled Record Types',
-                        style: context.textTheme.titleMedium?.copyWith(
-                          fontWeight: FontWeight.w600,
-                          fontSize: AppFontSize.sm,
-                        ),
-                      ),
-                      Text(
-                        '${enabledTypes.length} of ${AppSettings.allMedicalRecordTypes.length} types enabled',
-                        style: context.textTheme.bodySmall?.copyWith(
-                          color: isDark ? AppColors.darkTextSecondary : AppColors.textSecondary,
-                          fontSize: 11,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-                AppButton.tertiary(
-                  label: enabledTypes.length == AppSettings.allMedicalRecordTypes.length 
-                      ? 'Disable All' 
-                      : 'Enable All',
-                  onPressed: () {
-                    // Toggle all on/off
-                    final allEnabled = enabledTypes.length == AppSettings.allMedicalRecordTypes.length;
-                    if (allEnabled) {
-                      // Keep at least general enabled
-                      ref.read(appSettingsProvider).setEnabledMedicalRecordTypes(['general']);
-                    } else {
-                      ref.read(appSettingsProvider).setEnabledMedicalRecordTypes(
-                        List.from(AppSettings.allMedicalRecordTypes),
-                      );
-                    }
-                  },
-                ),
-              ],
-            ),
-          ),
-          const Divider(height: 1),
-          ...AppSettings.allMedicalRecordTypes.map((type) {
-            final isEnabled = enabledTypes.contains(type);
-            final label = AppSettings.medicalRecordTypeLabels[type] ?? type;
-            final description = AppSettings.medicalRecordTypeDescriptions[type] ?? '';
-            final icon = typeIcons[type] ?? Icons.description;
-            
-            return Column(
-              children: [
-                Material(
-                  color: Colors.transparent,
-                  child: CheckboxListTile(
-                    value: isEnabled,
-                    onChanged: (value) {
-                      // Ensure at least one type is always enabled
-                      if (!value! && enabledTypes.length <= 1) {
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          SnackBar(
-                            content: const Text('At least one record type must be enabled'),
-                            behavior: SnackBarBehavior.floating,
-                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-                          ),
-                        );
-                        return;
-                      }
-                      ref.read(appSettingsProvider).toggleMedicalRecordType(type, value);
-                    },
-                    secondary: Container(
-                      padding: const EdgeInsets.all(AppSpacing.sm),
-                      decoration: BoxDecoration(
-                        color: (isEnabled ? AppColors.primary : AppColors.textHint).withValues(alpha: 0.1),
-                        borderRadius: BorderRadius.circular(8),
-                      ),
-                      child: Icon(
-                        icon,
-                        color: isEnabled ? AppColors.primary : AppColors.textHint,
-                        size: 20,
-                      ),
-                    ),
-                    title: Text(
-                      label,
-                      style: TextStyle(
-                        fontWeight: FontWeight.w500,
-                        fontSize: 14,
-                        color: isEnabled 
-                            ? (isDark ? Colors.white : Colors.black87) 
-                            : AppColors.textHint,
-                      ),
-                    ),
-                    subtitle: Text(
-                      description,
-                      style: TextStyle(
-                        fontSize: 11,
-                        color: isDark ? AppColors.darkTextSecondary : AppColors.textSecondary,
-                      ),
-                    ),
-                    activeColor: AppColors.primary,
-                    checkboxShape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(4),
-                    ),
-                    contentPadding: const EdgeInsets.symmetric(
-                      horizontal: AppSpacing.md,
-                      vertical: AppSpacing.xxs,
-                    ),
-                  ),
-                ),
-                if (type != AppSettings.allMedicalRecordTypes.last)
-                  Divider(
-                    height: 1,
-                    indent: 60,
-                    color: (isDark ? AppColors.darkDivider : AppColors.divider).withValues(alpha: 0.5),
-                  ),
-              ],
-            );
-          }),
-        ],
       ),
     );
   }

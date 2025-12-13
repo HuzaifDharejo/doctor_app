@@ -566,7 +566,14 @@ class SignaturePreview extends StatelessWidget {
         // Handle strokes format
         if (jsonData['strokes'] != null) {
           final strokes = (jsonData['strokes'] as List).map((stroke) => (stroke as List).map((point) => Offset((point['x'] as num).toDouble(), (point['y'] as num).toDouble())).toList()).toList();
-          return CustomPaint(size: Size.infinite, painter: _SignaturePainter(strokes: strokes, currentStroke: [], strokeColor: const Color(0xFF1E3A8A), strokeWidth: 2.5));
+          return LayoutBuilder(
+            builder: (context, constraints) {
+              return CustomPaint(
+                size: Size(constraints.maxWidth, constraints.maxHeight),
+                painter: _SignaturePainter(strokes: strokes, currentStroke: [], strokeColor: const Color(0xFF1E3A8A), strokeWidth: 2.5),
+              );
+            },
+          );
         }
         // Handle image format
         if (jsonData['image'] != null) {

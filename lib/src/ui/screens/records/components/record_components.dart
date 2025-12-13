@@ -25,16 +25,40 @@ export 'record_text_fields.dart';
 export 'record_buttons.dart';
 
 // Chip selectors (categories, risk levels, etc.)
-export 'chip_selectors.dart';
+// Hide ChipSelectorSection and RiskLevel since we have newer versions
+export 'chip_selectors.dart' hide ChipSelectorSection, RiskLevel;
 
 // Vital signs input
 export 'vitals_input_section.dart';
 
 // Quick fill templates
-export 'quick_fill_templates.dart';
+// Hide showTemplateAppliedSnackbar since we have a newer version in quick_fill_template_bar.dart
+export 'quick_fill_templates.dart' hide showTemplateAppliedSnackbar;
 
 // Form progress indicator
 export 'form_progress_indicator.dart';
 
 // Auto-save / draft service
 export '../../../../services/form_draft_service.dart';
+
+// ============================================================================
+// NEW REUSABLE COMPONENTS - Phase 2 Refactoring
+// ============================================================================
+
+// Chip selector section - replaces _buildChipSection() pattern
+export 'chip_selector_section.dart';
+
+// Styled dropdowns - replaces _buildDropdown() pattern
+export 'styled_dropdown.dart';
+
+// Quick fill template bar - unified template UI
+export 'quick_fill_template_bar.dart';
+
+// Switch/toggle rows - for boolean fields
+export 'switch_row.dart';
+
+// Styled text fields - numeric, notes, multiline
+export 'styled_text_fields.dart';
+
+// Finding/observation rows - Normal/Abnormal status
+export 'finding_row.dart';

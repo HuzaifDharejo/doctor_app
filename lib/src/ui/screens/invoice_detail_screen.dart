@@ -1,4 +1,3 @@
-import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
@@ -29,6 +28,7 @@ class _InvoiceDetailScreenState extends ConsumerState<InvoiceDetailScreen> {
   late Invoice _invoice;
   Patient? _patient;
   bool _isLoading = false;
+  List<Map<String, dynamic>> _items = []; // V5: Store loaded items
 
   @override
   void initState() {
@@ -37,6 +37,23 @@ class _InvoiceDetailScreenState extends ConsumerState<InvoiceDetailScreen> {
     _patient = widget.patient;
     if (_patient == null) {
       _loadPatient();
+    }
+    _loadItems(); // V5: Load items on init
+  }
+
+  // V5: Load items from normalized table
+  Future<void> _loadItems() async {
+    final dbAsync = ref.read(doctorDbProvider);
+    final db = dbAsync.when(
+      data: (db) => db,
+      loading: () => null,
+      error: (_, __) => null,
+    );
+    if (db != null) {
+      final items = await db.getLineItemsForInvoiceCompat(_invoice.id);
+      if (mounted) {
+        setState(() => _items = items);
+      }
     }
   }
 
@@ -90,15 +107,8 @@ class _InvoiceDetailScreenState extends ConsumerState<InvoiceDetailScreen> {
         statusIcon = Icons.receipt_rounded;
     }
 
-    // Parse items
-    List<Map<String, dynamic>> items = [];
-    try {
-      items = (jsonDecode(_invoice.itemsJson) as List)
-          .map((e) => e as Map<String, dynamic>)
-          .toList();
-    } catch (e) {
-      // Handle parsing error
-    }
+    // V5: Use pre-loaded items from normalized table
+    final items = _items;
 
     return Scaffold(
       backgroundColor: isDark ? AppColors.darkBackground : AppColors.background,

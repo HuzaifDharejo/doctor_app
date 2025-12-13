@@ -1,14 +1,19 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
+import 'package:share_plus/share_plus.dart';
 
 import '../../db/doctor_db.dart';
+import '../../providers/db_provider.dart';
 import '../../providers/encounter_provider.dart';
 import '../../services/encounter_service.dart';
 import '../../theme/app_theme.dart';
 import '../widgets/diagnosis_picker.dart';
 import '../widgets/soap_note_editor.dart';
 import '../widgets/vitals_entry_modal.dart';
+import 'add_invoice_screen.dart';
+import 'add_prescription_screen.dart';
+import 'records/add_follow_up_screen.dart';
 
 /// Central hub for managing a patient encounter
 /// 
@@ -1166,23 +1171,99 @@ class _EncounterScreenState extends ConsumerState<EncounterScreen> {
   }
 
   void _createPrescription(EncounterSummary summary) {
-    // TODO: Navigate to prescription screen with encounter context
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Prescription - Coming soon')),
+    final patient = summary.patient ?? widget.patient;
+    if (patient == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Patient information not available'),
+          backgroundColor: Colors.red,
+        ),
+      );
+      return;
+    }
+    
+    // Get diagnosis from encounter if available
+    final diagnosis = summary.diagnoses.isNotEmpty 
+        ? summary.diagnoses.map((d) => d.description).join(', ')
+        : null;
+    
+    // Get symptoms from chief complaint
+    final symptoms = summary.encounter.chiefComplaint;
+    
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (_) => AddPrescriptionScreen(
+          preselectedPatient: patient,
+          encounterId: summary.encounter.id,
+          appointmentId: summary.encounter.appointmentId,
+          diagnosis: diagnosis,
+          symptoms: symptoms,
+        ),
+      ),
     );
   }
 
   void _scheduleFollowUp(EncounterSummary summary) {
-    // TODO: Navigate to follow-up scheduling
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Follow-up scheduling - Coming soon')),
+    final patient = summary.patient ?? widget.patient;
+    if (patient == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Patient information not available'),
+          backgroundColor: Colors.red,
+        ),
+      );
+      return;
+    }
+    
+    // Get diagnosis and treatment plan from encounter
+    final diagnosis = summary.diagnoses.isNotEmpty 
+        ? summary.diagnoses.map((d) => d.description).join(', ')
+        : null;
+    
+    final treatmentPlan = summary.primaryNote?.plan;
+    
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (_) => AddFollowUpScreen(
+          preselectedPatient: patient,
+          encounterId: summary.encounter.id,
+          diagnosis: diagnosis,
+          treatmentPlan: treatmentPlan,
+          reason: summary.encounter.chiefComplaint,
+        ),
+      ),
     );
   }
 
   void _generateInvoice(EncounterSummary summary) {
-    // TODO: Navigate to invoice generation
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Invoice generation - Coming soon')),
+    final patient = summary.patient ?? widget.patient;
+    if (patient == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Patient information not available'),
+          backgroundColor: Colors.red,
+        ),
+      );
+      return;
+    }
+    
+    // Get diagnosis for invoice notes
+    final diagnosis = summary.diagnoses.isNotEmpty 
+        ? summary.diagnoses.map((d) => d.description).join(', ')
+        : null;
+    
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (_) => AddInvoiceScreen(
+          preselectedPatient: patient,
+          encounterId: summary.encounter.id,
+          appointmentId: summary.encounter.appointmentId,
+          diagnosis: diagnosis,
+        ),
+      ),
     );
   }
 
@@ -1239,6 +1320,249 @@ class _EncounterScreenState extends ConsumerState<EncounterScreen> {
     }
   }
 
+  /// Print encounter summary as PDF
+  Future<void> _printEncounterSummary(EncounterSummary summary) async {
+    final patient = summary.patient ?? widget.patient;
+    if (patient == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Patient information not available'),
+          backgroundColor: Colors.red,
+        ),
+      );
+      return;
+    }
+    
+    try {
+      final settings = ref.read(doctorSettingsProvider);
+      final dateStr = DateFormat('MMM d, yyyy').format(summary.encounter.encounterDate);
+      
+      // Build encounter summary text
+      final summaryText = _buildEncounterSummaryText(summary);
+      
+      // For now, share as text since we don't have a dedicated encounter PDF
+      // This can be enhanced later to generate a proper PDF
+      final printText = '''
+═══════════════════════════════════════════
+ENCOUNTER SUMMARY
+═══════════════════════════════════════════
+Patient: ${patient.firstName} ${patient.lastName ?? ''}
+Date: $dateStr
+Type: ${summary.encounter.encounterType}
+Chief Complaint: ${summary.encounter.chiefComplaint}
+Status: ${summary.encounter.status}
+
+$summaryText
+═══════════════════════════════════════════
+${settings.profile.clinicName}
+Dr. ${settings.profile.name}
+${settings.profile.phone ?? ''}
+═══════════════════════════════════════════
+''';
+      
+      // Use Share for now - can be enhanced to PDF later
+      await Share.share(
+        printText,
+        subject: 'Encounter Summary - ${patient.firstName} - $dateStr',
+      );
+      
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Summary ready to share/print'),
+            backgroundColor: AppColors.success,
+          ),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Error printing: $e'),
+            backgroundColor: AppColors.error,
+          ),
+        );
+      }
+    }
+  }
+
+  /// Share encounter summary
+  Future<void> _shareEncounterSummary(EncounterSummary summary) async {
+    final patient = summary.patient ?? widget.patient;
+    if (patient == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Patient information not available'),
+          backgroundColor: Colors.red,
+        ),
+      );
+      return;
+    }
+    
+    try {
+      final settings = ref.read(doctorSettingsProvider);
+      final summaryText = _buildEncounterSummaryText(summary);
+      final dateStr = DateFormat('MMM d, yyyy').format(summary.encounter.encounterDate);
+      
+      // Share as text
+      final shareText = '''
+ENCOUNTER SUMMARY
+=================
+Patient: ${patient.firstName} ${patient.lastName ?? ''}
+Date: $dateStr
+Chief Complaint: ${summary.encounter.chiefComplaint}
+
+$summaryText
+
+---
+${settings.profile.clinicName}
+Dr. ${settings.profile.name}
+''';
+      
+      await Share.share(
+        shareText,
+        subject: 'Encounter Summary - ${patient.firstName} ${patient.lastName ?? ''} - $dateStr',
+      );
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Error sharing: $e'),
+            backgroundColor: AppColors.error,
+          ),
+        );
+      }
+    }
+  }
+
+  /// Build summary text from encounter data
+  String _buildEncounterSummaryText(EncounterSummary summary) {
+    final buffer = StringBuffer();
+    
+    // Vitals
+    if (summary.hasVitals) {
+      final v = summary.latestVitals!;
+      buffer.writeln('VITALS:');
+      if (v.systolicBp != null && v.diastolicBp != null) {
+        buffer.writeln('  BP: ${v.systolicBp!.toInt()}/${v.diastolicBp!.toInt()} mmHg');
+      }
+      if (v.heartRate != null) buffer.writeln('  HR: ${v.heartRate} bpm');
+      if (v.temperature != null) buffer.writeln('  Temp: ${v.temperature}°C');
+      if (v.respiratoryRate != null) buffer.writeln('  RR: ${v.respiratoryRate}/min');
+      if (v.oxygenSaturation != null) buffer.writeln('  SpO2: ${v.oxygenSaturation}%');
+      if (v.weight != null) buffer.writeln('  Weight: ${v.weight} kg');
+      buffer.writeln();
+    }
+    
+    // Diagnoses
+    if (summary.hasDiagnoses) {
+      buffer.writeln('DIAGNOSES:');
+      for (final d in summary.diagnoses) {
+        final isNew = summary.newDiagnoses.contains(d);
+        buffer.writeln('  ${isNew ? "[NEW] " : ""}${d.description}');
+        if (d.icdCode != null) buffer.writeln('    ICD: ${d.icdCode}');
+      }
+      buffer.writeln();
+    }
+    
+    // Clinical Notes
+    if (summary.hasNotes) {
+      final note = summary.primaryNote!;
+      buffer.writeln('CLINICAL NOTES:');
+      if (note.subjective != null && note.subjective!.isNotEmpty) {
+        buffer.writeln('  Subjective: ${note.subjective}');
+      }
+      if (note.objective != null && note.objective!.isNotEmpty) {
+        buffer.writeln('  Objective: ${note.objective}');
+      }
+      if (note.assessment != null && note.assessment!.isNotEmpty) {
+        buffer.writeln('  Assessment: ${note.assessment}');
+      }
+      if (note.plan != null && note.plan!.isNotEmpty) {
+        buffer.writeln('  Plan: ${note.plan}');
+      }
+    }
+    
+    return buffer.toString();
+  }
+
+  /// Delete encounter with confirmation
+  Future<void> _deleteEncounter(EncounterSummary summary) async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Delete Encounter?'),
+        content: const Text(
+          'This will permanently delete this encounter and all associated '
+          'clinical notes. This action cannot be undone.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(false),
+            child: const Text('Cancel'),
+          ),
+          ElevatedButton(
+            style: ElevatedButton.styleFrom(
+              backgroundColor: AppColors.error,
+            ),
+            onPressed: () => Navigator.of(context).pop(true),
+            child: const Text('Delete'),
+          ),
+        ],
+      ),
+    );
+
+    if (confirmed == true && mounted) {
+      setState(() => _isLoading = true);
+      try {
+        final db = await ref.read(doctorDbProvider.future);
+        
+        // Delete associated clinical notes first
+        await (db.delete(db.clinicalNotes)
+          ..where((t) => t.encounterId.equals(summary.encounter.id)))
+          .go();
+        
+        // Delete encounter diagnosis links
+        await (db.delete(db.encounterDiagnoses)
+          ..where((t) => t.encounterId.equals(summary.encounter.id)))
+          .go();
+        
+        // Delete vital signs linked to encounter
+        await (db.delete(db.vitalSigns)
+          ..where((t) => t.encounterId.equals(summary.encounter.id)))
+          .go();
+        
+        // Delete the encounter itself
+        await (db.delete(db.encounters)
+          ..where((t) => t.id.equals(summary.encounter.id)))
+          .go();
+        
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Encounter deleted'),
+              backgroundColor: AppColors.success,
+            ),
+          );
+          Navigator.of(context).pop(); // Go back after deletion
+        }
+      } catch (e) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('Error deleting: $e'),
+              backgroundColor: AppColors.error,
+            ),
+          );
+        }
+      } finally {
+        if (mounted) {
+          setState(() => _isLoading = false);
+        }
+      }
+    }
+  }
+
   void _showMoreOptions(EncounterSummary summary) {
     showModalBottomSheet(
       context: context,
@@ -1261,17 +1585,17 @@ class _EncounterScreenState extends ConsumerState<EncounterScreen> {
             ListTile(
               leading: const Icon(Icons.print_rounded),
               title: const Text('Print Summary'),
-              onTap: () {
+              onTap: () async {
                 Navigator.pop(context);
-                // TODO: Print encounter summary
+                await _printEncounterSummary(summary);
               },
             ),
             ListTile(
               leading: const Icon(Icons.share_rounded),
               title: const Text('Share'),
-              onTap: () {
+              onTap: () async {
                 Navigator.pop(context);
-                // TODO: Share encounter
+                await _shareEncounterSummary(summary);
               },
             ),
             ListTile(
@@ -1279,7 +1603,7 @@ class _EncounterScreenState extends ConsumerState<EncounterScreen> {
               title: Text('Delete Encounter', style: TextStyle(color: AppColors.error)),
               onTap: () {
                 Navigator.pop(context);
-                // TODO: Delete encounter
+                _deleteEncounter(summary);
               },
             ),
             const SizedBox(height: 16),

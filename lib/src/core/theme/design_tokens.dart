@@ -247,21 +247,63 @@ class AppLetterSpacing {
   static const double wide = 0.5;
 }
 
+/// Screen size category for width-based responsiveness
+enum ScreenWidth { compact, medium, expanded, large }
+
+/// Screen height category for handling short/tall screens
+enum ScreenHeight { short, medium, tall }
+
 class AppBreakpoint {
   AppBreakpoint._();
 
-  // Responsive breakpoints
+  // Width breakpoints (Material Design 3 guidelines)
+  static const double compactMax = 599;     // Phones portrait
+  static const double mediumMin = 600;      // Phones landscape, small tablets
+  static const double mediumMax = 839;
+  static const double expandedMin = 840;    // Tablets, small desktops
+  static const double expandedMax = 1199;
+  static const double largeMin = 1200;      // Desktops
+
+  // Height breakpoints for short/tall screens
+  static const double shortMax = 600;       // Very short screens
+  static const double tallMin = 900;        // Tall screens
+
+  // Legacy static values for backwards compatibility
   static const double compact = 400;
   static const double medium = 600;
   static const double expanded = 840;
   static const double large = 1200;
 
+  // Get screen width category
+  static ScreenWidth getWidthCategory(double width) {
+    if (width < mediumMin) return ScreenWidth.compact;
+    if (width < expandedMin) return ScreenWidth.medium;
+    if (width < largeMin) return ScreenWidth.expanded;
+    return ScreenWidth.large;
+  }
+
+  // Get screen height category
+  static ScreenHeight getHeightCategory(double height) {
+    if (height <= shortMax) return ScreenHeight.short;
+    if (height >= tallMin) return ScreenHeight.tall;
+    return ScreenHeight.medium;
+  }
+
   // Helper method to check if width is compact
-  static bool isCompact(double width) => width < medium;
+  static bool isCompact(double width) => width < mediumMin;
 
   // Helper method to check if width is medium
-  static bool isMedium(double width) => width >= medium && width < expanded;
+  static bool isMedium(double width) => width >= mediumMin && width < expandedMin;
 
   // Helper method to check if width is expanded
-  static bool isExpanded(double width) => width >= expanded;
+  static bool isExpanded(double width) => width >= expandedMin;
+
+  // Helper for large screens
+  static bool isLarge(double width) => width >= largeMin;
+
+  // Helper for short screens
+  static bool isShortScreen(double height) => height <= shortMax;
+
+  // Helper for tall screens
+  static bool isTallScreen(double height) => height >= tallMin;
 }

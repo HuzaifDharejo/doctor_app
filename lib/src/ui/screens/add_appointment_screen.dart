@@ -13,6 +13,7 @@ import '../../core/components/app_button.dart';
 import '../../core/widgets/app_card.dart';
 import '../../core/theme/design_tokens.dart';
 import '../../theme/app_theme.dart';
+import '../../core/widgets/keyboard_aware_scaffold.dart';
 
 class AddAppointmentScreen extends ConsumerStatefulWidget {
 
@@ -187,6 +188,8 @@ class _AddAppointmentScreenState extends ConsumerState<AddAppointmentScreen> {
                 ]),
               ),
             ),
+            // Keyboard-aware bottom padding
+            const SliverKeyboardPadding(),
           ],
         ),
         loading: () => const Center(

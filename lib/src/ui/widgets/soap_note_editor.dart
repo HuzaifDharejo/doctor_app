@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:intl/intl.dart';
 
 import '../../db/doctor_db.dart';
+import '../../providers/db_provider.dart';
 import '../../providers/encounter_provider.dart';
 import '../../theme/app_theme.dart';
 
@@ -147,8 +149,18 @@ class _SOAPNoteEditorState extends ConsumerState<SOAPNoteEditor> {
               onSelected: (value) {
                 if (value == 'sign') _signNote();
                 if (value == 'clear') _clearForm();
+                if (value == 'copy_previous') _copyFromPreviousVisit();
               },
               itemBuilder: (context) => [
+                const PopupMenuItem(
+                  value: 'copy_previous',
+                  child: ListTile(
+                    leading: Icon(Icons.content_copy),
+                    title: Text('Copy from Previous'),
+                    subtitle: Text('Use last visit as template'),
+                    contentPadding: EdgeInsets.zero,
+                  ),
+                ),
                 const PopupMenuItem(
                   value: 'sign',
                   child: ListTile(
@@ -721,6 +733,234 @@ class _SOAPNoteEditorState extends ConsumerState<SOAPNoteEditor> {
           );
         }
       }
+    }
+  }
+
+  /// Copy from previous visit - shows dialog to select from recent notes
+  Future<void> _copyFromPreviousVisit() async {
+    final db = await ref.read(doctorDbProvider.future);
+    final notes = await db.getClinicalNotesForPatient(widget.patientId);
+    
+    // Filter out current note if editing
+    final previousNotes = notes.where((n) => 
+        n.id != widget.existingNote?.id && 
+        n.encounterId != widget.encounterId
+    ).take(10).toList();
+    
+    if (previousNotes.isEmpty) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: const Text('No previous clinical notes found for this patient'),
+            backgroundColor: AppColors.warning,
+          ),
+        );
+      }
+      return;
+    }
+    
+    if (!mounted) return;
+    
+    // Show dialog to select which note to copy from
+    final selectedNote = await showDialog<ClinicalNote>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Row(
+          children: [
+            Container(
+              padding: const EdgeInsets.all(8),
+              decoration: BoxDecoration(
+                color: AppColors.primary.withValues(alpha: 0.1),
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: Icon(Icons.content_copy, color: AppColors.primary, size: 20),
+            ),
+            const SizedBox(width: 12),
+            const Expanded(child: Text('Copy from Previous Visit')),
+          ],
+        ),
+        content: SizedBox(
+          width: double.maxFinite,
+          height: 300,
+          child: ListView.separated(
+            itemCount: previousNotes.length,
+            separatorBuilder: (_, __) => const Divider(height: 1),
+            itemBuilder: (context, index) {
+              final note = previousNotes[index];
+              final dateStr = DateFormat('MMM d, yyyy h:mm a').format(note.createdAt);
+              
+              // Preview of content
+              final preview = (note.subjective ?? '').isNotEmpty 
+                  ? (note.subjective ?? '').substring(0, (note.subjective ?? '').length.clamp(0, 80))
+                  : 'No subjective data';
+              
+              return ListTile(
+                dense: true,
+                contentPadding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                leading: CircleAvatar(
+                  radius: 16,
+                  backgroundColor: _getNoteTypeColor(note.noteType).withValues(alpha: 0.2),
+                  child: Icon(
+                    _getNoteTypeIcon(note.noteType),
+                    size: 16,
+                    color: _getNoteTypeColor(note.noteType),
+                  ),
+                ),
+                title: Text(
+                  _getNoteTypeLabel(note.noteType),
+                  style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 14),
+                ),
+                subtitle: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      dateStr,
+                      style: TextStyle(color: Colors.grey[600], fontSize: 11),
+                    ),
+                    const SizedBox(height: 2),
+                    Text(
+                      preview,
+                      style: TextStyle(color: Colors.grey[500], fontSize: 12),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ],
+                ),
+                trailing: const Icon(Icons.chevron_right, size: 20),
+                onTap: () => Navigator.of(context).pop(note),
+              );
+            },
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(),
+            child: const Text('Cancel'),
+          ),
+        ],
+      ),
+    );
+    
+    if (selectedNote != null && mounted) {
+      // Ask user what to copy
+      final copyOption = await showDialog<String>(
+        context: context,
+        builder: (context) => AlertDialog(
+          title: const Text('What to Copy?'),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              ListTile(
+                leading: const Icon(Icons.select_all, color: AppColors.quickActionGreen),
+                title: const Text('Copy All (SOAP)'),
+                subtitle: const Text('Replace all fields'),
+                onTap: () => Navigator.of(context).pop('all'),
+              ),
+              ListTile(
+                leading: const Icon(Icons.merge_type, color: AppColors.primary),
+                title: const Text('Merge with Existing'),
+                subtitle: const Text('Add to current content'),
+                onTap: () => Navigator.of(context).pop('merge'),
+              ),
+              ListTile(
+                leading: const Icon(Icons.article_outlined, color: AppColors.warning),
+                title: const Text('Objective Only'),
+                subtitle: const Text('Copy exam findings only'),
+                onTap: () => Navigator.of(context).pop('objective'),
+              ),
+            ],
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(),
+              child: const Text('Cancel'),
+            ),
+          ],
+        ),
+      );
+      
+      if (copyOption != null && mounted) {
+        setState(() {
+          switch (copyOption) {
+            case 'all':
+              _subjectiveController.text = selectedNote.subjective ?? '';
+              _objectiveController.text = selectedNote.objective ?? '';
+              _assessmentController.text = selectedNote.assessment ?? '';
+              _planController.text = selectedNote.plan ?? '';
+              _noteType = selectedNote.noteType;
+              break;
+            case 'merge':
+              if ((selectedNote.subjective ?? '').isNotEmpty) {
+                _subjectiveController.text = _subjectiveController.text.isEmpty 
+                    ? selectedNote.subjective ?? ''
+                    : '${_subjectiveController.text}\n\n[Previous visit:]\n${selectedNote.subjective}';
+              }
+              if ((selectedNote.objective ?? '').isNotEmpty) {
+                _objectiveController.text = _objectiveController.text.isEmpty 
+                    ? selectedNote.objective ?? ''
+                    : '${_objectiveController.text}\n\n[Previous visit:]\n${selectedNote.objective}';
+              }
+              if ((selectedNote.assessment ?? '').isNotEmpty) {
+                _assessmentController.text = _assessmentController.text.isEmpty 
+                    ? selectedNote.assessment ?? ''
+                    : '${_assessmentController.text}\n\n[Previous:] ${selectedNote.assessment}';
+              }
+              if ((selectedNote.plan ?? '').isNotEmpty) {
+                _planController.text = _planController.text.isEmpty 
+                    ? selectedNote.plan ?? ''
+                    : '${_planController.text}\n\n[Previous plan:]\n${selectedNote.plan}';
+              }
+              break;
+            case 'objective':
+              _objectiveController.text = selectedNote.objective ?? '';
+              break;
+          }
+          _isDirty = true;
+        });
+        
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Copied ${copyOption == 'all' ? 'all sections' : copyOption == 'objective' ? 'objective findings' : 'and merged'} from previous visit'),
+            backgroundColor: AppColors.quickActionGreen,
+          ),
+        );
+      }
+    }
+  }
+
+  Color _getNoteTypeColor(String noteType) {
+    switch (noteType) {
+      case 'progress': return AppColors.quickActionGreen;
+      case 'initial_assessment': return AppColors.primary;
+      case 'psychiatric_eval': return AppColors.warning;
+      case 'therapy_note': return AppColors.purple;
+      case 'medication_review': return AppColors.quickActionPink;
+      case 'discharge_summary': return AppColors.skyBlue;
+      default: return AppColors.textSecondary;
+    }
+  }
+
+  IconData _getNoteTypeIcon(String noteType) {
+    switch (noteType) {
+      case 'progress': return Icons.trending_up;
+      case 'initial_assessment': return Icons.assignment;
+      case 'psychiatric_eval': return Icons.psychology;
+      case 'therapy_note': return Icons.healing;
+      case 'medication_review': return Icons.medication;
+      case 'discharge_summary': return Icons.exit_to_app;
+      default: return Icons.note;
+    }
+  }
+
+  String _getNoteTypeLabel(String noteType) {
+    switch (noteType) {
+      case 'progress': return 'Progress Note';
+      case 'initial_assessment': return 'Initial Assessment';
+      case 'psychiatric_eval': return 'Psychiatric Evaluation';
+      case 'therapy_note': return 'Therapy Note';
+      case 'medication_review': return 'Medication Review';
+      case 'discharge_summary': return 'Discharge Summary';
+      default: return 'Clinical Note';
     }
   }
 

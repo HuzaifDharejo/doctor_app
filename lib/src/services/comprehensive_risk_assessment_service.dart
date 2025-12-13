@@ -53,10 +53,12 @@ class ComprehensiveRiskAssessment {
 
 class ComprehensiveRiskAssessmentService {
   /// Perform complete risk assessment for a patient
+  /// V5: Added medicationsList parameter to accept pre-loaded medications from normalized table
   static ComprehensiveRiskAssessment assessPatient({
     required Patient patient,
     required List<VitalSign> recentVitals,
     required List<Prescription> activePrescriptions,
+    List<List<Map<String, dynamic>>>? medicationsList, // V5: Pre-loaded medications for each prescription
     required List<Appointment> recentAppointments,
     required List<MedicalRecord> recentAssessments,
   }) {
@@ -66,8 +68,8 @@ class ComprehensiveRiskAssessmentService {
     // 1. Allergy Risk Assessment
     riskFactors.addAll(_assessAllergyRisks(patient));
 
-    // 2. Drug Interaction Risks
-    riskFactors.addAll(_assessDrugInteractionRisks(activePrescriptions));
+    // 2. Drug Interaction Risks - V5: Pass pre-loaded medications
+    riskFactors.addAll(_assessDrugInteractionRisks(activePrescriptions, medicationsList));
 
     // 3. Vital Signs Abnormalities
     riskFactors.addAll(_assessVitalSignsRisks(recentVitals));
@@ -135,25 +137,39 @@ class ComprehensiveRiskAssessmentService {
   }
 
   /// Assess drug interaction risks
-  static List<RiskFactor> _assessDrugInteractionRisks(List<Prescription> prescriptions) {
+  /// V5: Added medicationsList parameter to accept pre-loaded medications from normalized table
+  static List<RiskFactor> _assessDrugInteractionRisks(
+    List<Prescription> prescriptions,
+    List<List<Map<String, dynamic>>>? medicationsList,
+  ) {
     final risks = <RiskFactor>[];
 
     if (prescriptions.length < 2) {
       return risks;
     }
 
-    // Parse medication items from prescriptions
+    // V5: Parse medication items from pre-loaded list or fallback to JSON
     final medications = <String>[];
-    for (final rx in prescriptions) {
-      try {
-        final items = jsonDecode(rx.itemsJson) as List<dynamic>;
-        for (final item in items) {
-          if (item is Map) {
-            medications.add((item['name'] ?? '').toString().toLowerCase());
-          }
+    if (medicationsList != null) {
+      // Use pre-loaded medications from normalized table
+      for (final medsList in medicationsList) {
+        for (final item in medsList) {
+          medications.add((item['name'] ?? '').toString().toLowerCase());
         }
-      } catch (_) {
-        // ignore parsing errors
+      }
+    } else {
+      // Fallback to parsing JSON (backwards compatibility)
+      for (final rx in prescriptions) {
+        try {
+          final items = jsonDecode(rx.itemsJson) as List<dynamic>;
+          for (final item in items) {
+            if (item is Map) {
+              medications.add((item['name'] ?? '').toString().toLowerCase());
+            }
+          }
+        } catch (_) {
+          // ignore parsing errors
+        }
       }
     }
 

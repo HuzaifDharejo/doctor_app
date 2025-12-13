@@ -1,5 +1,3 @@
-import 'dart:convert';
-
 import 'package:drift/drift.dart' hide Column;
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -13,6 +11,7 @@ import '../../core/widgets/app_card.dart';
 import '../../core/components/app_button.dart';
 import '../../core/theme/design_tokens.dart';
 import '../widgets/suggestion_text_field.dart';
+import '../../core/widgets/keyboard_aware_scaffold.dart';
 
 class AddInvoiceScreen extends ConsumerStatefulWidget {
 
@@ -224,8 +223,8 @@ class _AddInvoiceScreenState extends ConsumerState<AddInvoiceScreen> {
       try {
         final db = await ref.read(doctorDbProvider.future);
         
-        // Prepare items JSON
-        final itemsJson = jsonEncode(_items.map((item) => item.toJson()).toList());
+        // V5: itemsJson is deprecated - use InvoiceLineItems table instead
+        final itemsJson = '[]'; // Empty JSON - data is in normalized table
         
         // Create invoice companion with linked data
         final invoiceCompanion = InvoicesCompanion.insert(
@@ -233,7 +232,7 @@ class _AddInvoiceScreenState extends ConsumerState<AddInvoiceScreen> {
           invoiceNumber: _invoiceNumber,
           invoiceDate: _invoiceDate,
           dueDate: Value(_dueDate),
-          itemsJson: itemsJson,
+          itemsJson: itemsJson, // V5: Empty - using normalized table
           subtotal: Value(_subtotal),
           discountPercent: Value(_discountPercent),
           discountAmount: Value(_discountAmount),
@@ -248,6 +247,23 @@ class _AddInvoiceScreenState extends ConsumerState<AddInvoiceScreen> {
         );
         
         final invoiceId = await db.insertInvoice(invoiceCompanion);
+        
+        // V5: Save line items to normalized InvoiceLineItems table
+        for (int i = 0; i < _items.length; i++) {
+          final item = _items[i];
+          await db.insertInvoiceLineItem(
+            InvoiceLineItemsCompanion.insert(
+              invoiceId: invoiceId,
+              patientId: _selectedPatientId!,
+              description: item.descriptionController.text,
+              itemType: Value(item.type.toLowerCase()),
+              unitPrice: Value(item.rate),
+              quantity: Value(item.quantity),
+              totalAmount: Value(item.total),
+              displayOrder: Value(i),
+            ),
+          );
+        }
         
         // Fetch the created invoice to return it
         final createdInvoice = await db.getInvoiceById(invoiceId);
@@ -600,6 +616,8 @@ class _AddInvoiceScreenState extends ConsumerState<AddInvoiceScreen> {
                 ]),
               ),
             ),
+            // Keyboard-aware bottom padding
+            const SliverKeyboardPadding(),
           ],
         ),
       ),

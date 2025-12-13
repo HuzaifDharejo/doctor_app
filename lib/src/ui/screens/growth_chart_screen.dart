@@ -1,10 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import '../../db/doctor_db.dart';
 import '../../extensions/drift_extensions.dart';
-import '../../models/growth_chart.dart';
-import '../../providers/db_provider.dart';
 import '../../services/growth_chart_service.dart';
 import '../../theme/app_theme.dart';
 import '../../core/theme/design_tokens.dart';
@@ -1013,8 +1010,257 @@ class _GrowthChartScreenState extends ConsumerState<GrowthChartScreen>
   }
 
   void _showGrowthChart() {
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Full growth chart - Coming soon')),
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (context) => DraggableScrollableSheet(
+        initialChildSize: 0.85,
+        minChildSize: 0.5,
+        maxChildSize: 0.95,
+        builder: (context, scrollController) {
+          final isDark = Theme.of(context).brightness == Brightness.dark;
+          return Container(
+            decoration: BoxDecoration(
+              color: isDark ? AppColors.darkSurface : Colors.white,
+              borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
+            ),
+            child: Column(
+              children: [
+                // Handle bar
+                Container(
+                  margin: const EdgeInsets.only(top: 12),
+                  width: 40,
+                  height: 4,
+                  decoration: BoxDecoration(
+                    color: Colors.grey[400],
+                    borderRadius: BorderRadius.circular(2),
+                  ),
+                ),
+                // Header
+                Padding(
+                  padding: const EdgeInsets.all(16),
+                  child: Row(
+                    children: [
+                      Icon(Icons.show_chart, color: AppColors.primary),
+                      const SizedBox(width: 12),
+                      Text(
+                        'Full Growth Chart',
+                        style: TextStyle(
+                          fontSize: 20,
+                          fontWeight: FontWeight.bold,
+                          color: isDark ? AppColors.darkTextPrimary : AppColors.textPrimary,
+                        ),
+                      ),
+                      const Spacer(),
+                      IconButton(
+                        icon: const Icon(Icons.close),
+                        onPressed: () => Navigator.pop(context),
+                      ),
+                    ],
+                  ),
+                ),
+                const Divider(height: 1),
+                // Chart content
+                Expanded(
+                  child: FutureBuilder<List<GrowthMeasurementData>>(
+                    future: _growthService.getAllMeasurements(widget.patientId),
+                    builder: (context, snapshot) {
+                      if (snapshot.connectionState == ConnectionState.waiting) {
+                        return const Center(child: CircularProgressIndicator());
+                      }
+                      if (!snapshot.hasData || snapshot.data!.isEmpty) {
+                        return Center(
+                          child: Column(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Icon(Icons.show_chart, size: 64, color: Colors.grey[400]),
+                              const SizedBox(height: 16),
+                              Text(
+                                'No growth data available',
+                                style: TextStyle(color: Colors.grey[600]),
+                              ),
+                            ],
+                          ),
+                        );
+                      }
+                      
+                      final measurements = snapshot.data!.reversed.toList();
+                      return _buildFullChart(measurements, scrollController, isDark);
+                    },
+                  ),
+                ),
+              ],
+            ),
+          );
+        },
+      ),
+    );
+  }
+  
+  Widget _buildFullChart(List<GrowthMeasurementData> measurements, ScrollController scrollController, bool isDark) {
+    return ListView(
+      controller: scrollController,
+      padding: const EdgeInsets.all(16),
+      children: [
+        // Weight Chart
+        _buildFullChartCard('Weight (kg)', measurements, 'weight', Colors.blue, isDark),
+        const SizedBox(height: 16),
+        // Height Chart
+        _buildFullChartCard('Height (cm)', measurements, 'height', Colors.green, isDark),
+        const SizedBox(height: 16),
+        // Head Circumference Chart
+        _buildFullChartCard('Head Circumference (cm)', measurements, 'head', Colors.orange, isDark),
+        const SizedBox(height: 16),
+        // BMI Chart
+        _buildFullChartCard('BMI', measurements, 'bmi', Colors.purple, isDark),
+        const SizedBox(height: 24),
+        // Data Table
+        _buildDataTable(measurements, isDark),
+      ],
+    );
+  }
+  
+  Widget _buildFullChartCard(String title, List<GrowthMeasurementData> measurements, String type, Color color, bool isDark) {
+    final values = measurements.map((m) {
+      switch (type) {
+        case 'weight':
+          return m.weightKg ?? 0.0;
+        case 'height':
+          return m.heightCm ?? 0.0;
+        case 'head':
+          return m.headCircumferenceCm ?? 0.0;
+        case 'bmi':
+          return m.bmi ?? 0.0;
+        default:
+          return 0.0;
+      }
+    }).toList();
+    
+    // Filter out zero values
+    final nonZeroValues = values.where((v) => v > 0).toList();
+    if (nonZeroValues.isEmpty) {
+      return const SizedBox.shrink();
+    }
+    
+    final maxVal = nonZeroValues.reduce((a, b) => a > b ? a : b);
+    final minVal = nonZeroValues.reduce((a, b) => a < b ? a : b);
+    final range = maxVal - minVal;
+    
+    return Card(
+      color: isDark ? AppColors.darkBackground : Colors.grey[50],
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                Container(
+                  width: 12,
+                  height: 12,
+                  decoration: BoxDecoration(color: color, shape: BoxShape.circle),
+                ),
+                const SizedBox(width: 8),
+                Text(
+                  title,
+                  style: TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.bold,
+                    color: isDark ? AppColors.darkTextPrimary : AppColors.textPrimary,
+                  ),
+                ),
+                const Spacer(),
+                Text(
+                  'Latest: ${nonZeroValues.isNotEmpty ? nonZeroValues.last.toStringAsFixed(1) : "N/A"}',
+                  style: TextStyle(
+                    fontSize: 14,
+                    fontWeight: FontWeight.w600,
+                    color: color,
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 16),
+            SizedBox(
+              height: 120,
+              child: CustomPaint(
+                size: const Size(double.infinity, 120),
+                painter: _GrowthChartPainter(
+                  values: values,
+                  color: color,
+                  minVal: range > 0 ? minVal : minVal - 1,
+                  maxVal: range > 0 ? maxVal : maxVal + 1,
+                  isDark: isDark,
+                ),
+              ),
+            ),
+            const SizedBox(height: 8),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Text(
+                  measurements.isNotEmpty ? _formatDate(measurements.first.measurementDate) : '',
+                  style: TextStyle(fontSize: 10, color: Colors.grey[500]),
+                ),
+                Text(
+                  measurements.isNotEmpty ? _formatDate(measurements.last.measurementDate) : '',
+                  style: TextStyle(fontSize: 10, color: Colors.grey[500]),
+                ),
+              ],
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+  
+  Widget _buildDataTable(List<GrowthMeasurementData> measurements, bool isDark) {
+    return Card(
+      color: isDark ? AppColors.darkBackground : Colors.grey[50],
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              'Measurement History',
+              style: TextStyle(
+                fontSize: 16,
+                fontWeight: FontWeight.bold,
+                color: isDark ? AppColors.darkTextPrimary : AppColors.textPrimary,
+              ),
+            ),
+            const SizedBox(height: 12),
+            SingleChildScrollView(
+              scrollDirection: Axis.horizontal,
+              child: DataTable(
+                headingRowColor: WidgetStateProperty.all(
+                  isDark ? Colors.grey[800] : Colors.grey[200],
+                ),
+                columns: const [
+                  DataColumn(label: Text('Date')),
+                  DataColumn(label: Text('Weight')),
+                  DataColumn(label: Text('Height')),
+                  DataColumn(label: Text('Head')),
+                  DataColumn(label: Text('BMI')),
+                ],
+                rows: measurements.take(10).map((m) => DataRow(
+                  cells: [
+                    DataCell(Text(_formatDate(m.measurementDate))),
+                    DataCell(Text(m.weightKg != null ? '${m.weightKg!.toStringAsFixed(1)} kg' : '-')),
+                    DataCell(Text(m.heightCm != null ? '${m.heightCm!.toStringAsFixed(1)} cm' : '-')),
+                    DataCell(Text(m.headCircumferenceCm != null ? '${m.headCircumferenceCm!.toStringAsFixed(1)} cm' : '-')),
+                    DataCell(Text(m.bmi != null ? m.bmi!.toStringAsFixed(1) : '-')),
+                  ],
+                )).toList(),
+              ),
+            ),
+          ],
+        ),
+      ),
     );
   }
 
@@ -1174,4 +1420,106 @@ class _GrowthChartScreenState extends ConsumerState<GrowthChartScreen>
       },
     );
   }
+}
+
+/// Custom painter for growth chart lines
+class _GrowthChartPainter extends CustomPainter {
+  final List<double> values;
+  final Color color;
+  final double minVal;
+  final double maxVal;
+  final bool isDark;
+
+  _GrowthChartPainter({
+    required this.values,
+    required this.color,
+    required this.minVal,
+    required this.maxVal,
+    required this.isDark,
+  });
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    if (values.isEmpty) return;
+
+    final paint = Paint()
+      ..color = color
+      ..strokeWidth = 2.5
+      ..style = PaintingStyle.stroke
+      ..strokeCap = StrokeCap.round;
+
+    final fillPaint = Paint()
+      ..shader = LinearGradient(
+        begin: Alignment.topCenter,
+        end: Alignment.bottomCenter,
+        colors: [color.withValues(alpha: 0.3), color.withValues(alpha: 0.0)],
+      ).createShader(Rect.fromLTWH(0, 0, size.width, size.height));
+
+    final dotPaint = Paint()
+      ..color = color
+      ..style = PaintingStyle.fill;
+
+    final gridPaint = Paint()
+      ..color = (isDark ? Colors.white : Colors.black).withValues(alpha: 0.1)
+      ..strokeWidth = 1;
+
+    // Draw grid lines
+    for (int i = 0; i <= 4; i++) {
+      final y = size.height * i / 4;
+      canvas.drawLine(Offset(0, y), Offset(size.width, y), gridPaint);
+    }
+
+    final path = Path();
+    final fillPath = Path();
+    final range = maxVal - minVal;
+
+    List<Offset> points = [];
+    
+    for (int i = 0; i < values.length; i++) {
+      final x = size.width * i / (values.length - 1).clamp(1, values.length);
+      final normalizedY = range > 0 
+          ? (values[i] - minVal) / range 
+          : 0.5;
+      final y = size.height - (normalizedY * size.height * 0.9 + size.height * 0.05);
+      
+      if (values[i] > 0) {
+        points.add(Offset(x, y));
+      }
+    }
+
+    if (points.isEmpty) return;
+
+    // Draw path
+    path.moveTo(points.first.dx, points.first.dy);
+    fillPath.moveTo(points.first.dx, size.height);
+    fillPath.lineTo(points.first.dx, points.first.dy);
+
+    for (int i = 1; i < points.length; i++) {
+      path.lineTo(points[i].dx, points[i].dy);
+      fillPath.lineTo(points[i].dx, points[i].dy);
+    }
+
+    fillPath.lineTo(points.last.dx, size.height);
+    fillPath.close();
+
+    // Draw fill
+    canvas.drawPath(fillPath, fillPaint);
+    
+    // Draw line
+    canvas.drawPath(path, paint);
+
+    // Draw dots
+    for (final point in points) {
+      canvas.drawCircle(point, 4, dotPaint);
+      canvas.drawCircle(
+        point,
+        3,
+        Paint()..color = isDark ? AppColors.darkSurface : Colors.white,
+      );
+      canvas.drawCircle(point, 2, dotPaint);
+    }
+  }
+
+  @override
+  bool shouldRepaint(covariant CustomPainter oldDelegate) => true;
 }

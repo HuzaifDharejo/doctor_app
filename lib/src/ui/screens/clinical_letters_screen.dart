@@ -634,7 +634,7 @@ class _ClinicalLettersScreenState extends ConsumerState<ClinicalLettersScreen>
                         width: 40,
                         height: 4,
                         decoration: BoxDecoration(
-                          color: Colors.grey[300],
+                          color: isDark ? Colors.grey[600] : Colors.grey[300],
                           borderRadius: BorderRadius.circular(2),
                         ),
                       ),
@@ -892,6 +892,7 @@ class _ClinicalLettersScreenState extends ConsumerState<ClinicalLettersScreen>
   }
 
   void _showTemplates() {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     final templates = [
       {'name': 'Referral Letter', 'type': 'referral'},
       {'name': 'Medical Certificate', 'type': 'medical_certificate'},
@@ -918,7 +919,7 @@ class _ClinicalLettersScreenState extends ConsumerState<ClinicalLettersScreen>
                   width: 40,
                   height: 4,
                   decoration: BoxDecoration(
-                    color: Colors.grey[300],
+                    color: isDark ? Colors.grey[600] : Colors.grey[300],
                     borderRadius: BorderRadius.circular(2),
                   ),
                 ),
@@ -956,6 +957,8 @@ class _ClinicalLettersScreenState extends ConsumerState<ClinicalLettersScreen>
     final recipientController = TextEditingController(text: existing?.recipientName);
     final addressController = TextEditingController(text: existing?.recipientAddress);
     final contentController = TextEditingController(text: existing?.content);
+    int? selectedPatientId = existing?.patientId;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
 
     final letterTypes = ['referral', 'medical_certificate', 'sick_leave', 'prescription', 'lab_request', 'discharge_summary', 'consultation_report'];
     String selectedType = type;
@@ -992,7 +995,7 @@ class _ClinicalLettersScreenState extends ConsumerState<ClinicalLettersScreen>
                               width: 40,
                               height: 4,
                               decoration: BoxDecoration(
-                                color: Colors.grey[300],
+                                color: isDark ? Colors.grey[600] : Colors.grey[300],
                                 borderRadius: BorderRadius.circular(2),
                               ),
                             ),
@@ -1006,12 +1009,34 @@ class _ClinicalLettersScreenState extends ConsumerState<ClinicalLettersScreen>
                             ),
                           ),
                           const SizedBox(height: 20),
-                          // Patient selector placeholder
-                          const Text(
-                            'Select patient for this letter',
-                            style: TextStyle(color: Colors.grey),
-                          ),
-                          const SizedBox(height: 16),
+                          // Patient selector
+                          if (existing == null) ...[
+                            FutureBuilder<List<Patient>>(
+                              future: ref.read(doctorDbProvider).value?.getAllPatients() ?? Future.value([]),
+                              builder: (context, snapshot) {
+                                if (snapshot.connectionState == ConnectionState.waiting) {
+                                  return const Center(child: CircularProgressIndicator());
+                                }
+                                final patientList = snapshot.data ?? [];
+                                return DropdownButtonFormField<int>(
+                                  decoration: const InputDecoration(
+                                    labelText: 'Select Patient *',
+                                    border: OutlineInputBorder(),
+                                    prefixIcon: Icon(Icons.person),
+                                  ),
+                                  value: selectedPatientId,
+                                  items: patientList.map((p) => DropdownMenuItem(
+                                    value: p.id,
+                                    child: Text('${p.firstName} ${p.lastName}'),
+                                  )).toList(),
+                                  onChanged: (value) {
+                                    setModalState(() => selectedPatientId = value);
+                                  },
+                                );
+                              },
+                            ),
+                            const SizedBox(height: 16),
+                          ],
                           const Text('Letter Type'),
                           const SizedBox(height: 8),
                           Wrap(
@@ -1068,11 +1093,11 @@ class _ClinicalLettersScreenState extends ConsumerState<ClinicalLettersScreen>
                             children: [
                               Expanded(
                                 child: OutlinedButton(
-                                  onPressed: () async {
+                                  onPressed: (existing == null && selectedPatientId == null) ? null : () async {
                                     // Save as draft
                                     if (existing == null) {
                                       await _letterService.createLetter(
-                                        patientId: 1, // placeholder
+                                        patientId: selectedPatientId!,
                                         letterType: selectedType,
                                         title: subjectController.text.isNotEmpty ? subjectController.text : 'Untitled',
                                         letterDate: DateTime.now(),
@@ -1104,12 +1129,12 @@ class _ClinicalLettersScreenState extends ConsumerState<ClinicalLettersScreen>
                               const SizedBox(width: 12),
                               Expanded(
                                 child: ElevatedButton(
-                                  onPressed: () async {
+                                  onPressed: (existing == null && selectedPatientId == null) ? null : () async {
                                     // Create and submit for signature
                                     int letterId;
                                     if (existing == null) {
                                       letterId = await _letterService.createLetter(
-                                        patientId: 1, // placeholder
+                                        patientId: selectedPatientId!,
                                         letterType: selectedType,
                                         title: subjectController.text.isNotEmpty ? subjectController.text : 'Untitled',
                                         letterDate: DateTime.now(),

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../db/doctor_db.dart';
+import '../../providers/db_provider.dart';
 import '../../services/recurring_appointment_service.dart';
 import '../../theme/app_theme.dart';
 import '../../core/theme/design_tokens.dart';
@@ -528,7 +529,7 @@ class _RecurringAppointmentsScreenState extends ConsumerState<RecurringAppointme
                   width: 40,
                   height: 4,
                   decoration: BoxDecoration(
-                    color: Colors.grey[300],
+                    color: isDark ? Colors.grey[600] : Colors.grey[300],
                     borderRadius: BorderRadius.circular(2),
                   ),
                 ),
@@ -854,6 +855,8 @@ class _RecurringAppointmentsScreenState extends ConsumerState<RecurringAppointme
     String? selectedDay = existing?.daysOfWeek;
     String? selectedTime = existing?.preferredTime;
     int duration = existing?.durationMinutes ?? 30;
+    int? selectedPatientId = existing?.patientId;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
 
     final frequencies = ['daily', 'weekly', 'biweekly', 'monthly', 'quarterly', 'annually'];
     final weekdays = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
@@ -884,7 +887,7 @@ class _RecurringAppointmentsScreenState extends ConsumerState<RecurringAppointme
                           width: 40,
                           height: 4,
                           decoration: BoxDecoration(
-                            color: Colors.grey[300],
+                            color: isDark ? Colors.grey[600] : Colors.grey[300],
                             borderRadius: BorderRadius.circular(2),
                           ),
                         ),
@@ -898,12 +901,34 @@ class _RecurringAppointmentsScreenState extends ConsumerState<RecurringAppointme
                         ),
                       ),
                       const SizedBox(height: 20),
-                      // Patient selector placeholder
-                      const Text(
-                        'Select patient for recurring appointments',
-                        style: TextStyle(color: Colors.grey),
-                      ),
-                      const SizedBox(height: 16),
+                      // Patient selector
+                      if (existing == null) ...[
+                        FutureBuilder<List<Patient>>(
+                          future: ref.read(doctorDbProvider).value?.getAllPatients() ?? Future.value([]),
+                          builder: (context, snapshot) {
+                            if (snapshot.connectionState == ConnectionState.waiting) {
+                              return const Center(child: CircularProgressIndicator());
+                            }
+                            final patientList = snapshot.data ?? [];
+                            return DropdownButtonFormField<int>(
+                              decoration: const InputDecoration(
+                                labelText: 'Select Patient *',
+                                border: OutlineInputBorder(),
+                                prefixIcon: Icon(Icons.person),
+                              ),
+                              value: selectedPatientId,
+                              items: patientList.map((p) => DropdownMenuItem(
+                                value: p.id,
+                                child: Text('${p.firstName} ${p.lastName}'),
+                              )).toList(),
+                              onChanged: (value) {
+                                setModalState(() => selectedPatientId = value);
+                              },
+                            );
+                          },
+                        ),
+                        const SizedBox(height: 16),
+                      ],
                       const Text('Frequency'),
                       const SizedBox(height: 8),
                       Wrap(
@@ -1046,10 +1071,10 @@ class _RecurringAppointmentsScreenState extends ConsumerState<RecurringAppointme
                       SizedBox(
                         width: double.infinity,
                         child: ElevatedButton(
-                          onPressed: () async {
+                          onPressed: (existing == null && selectedPatientId == null) ? null : () async {
                             if (existing == null) {
                               await _recurringService.createPattern(
-                                patientId: 1, // placeholder
+                                patientId: selectedPatientId!,
                                 frequency: selectedFrequency,
                                 startDate: startDate,
                                 endDate: endDate,

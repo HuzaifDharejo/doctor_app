@@ -10,7 +10,9 @@ import '../widgets/allergy_filter_widget.dart';
 
 /// Screen for managing and analyzing patient allergies
 class AllergyManagementScreen extends ConsumerStatefulWidget {
-  const AllergyManagementScreen({super.key});
+  final int? patientId;
+  
+  const AllergyManagementScreen({super.key, this.patientId});
 
   @override
   ConsumerState<AllergyManagementScreen> createState() =>

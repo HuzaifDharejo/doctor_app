@@ -4,6 +4,7 @@ import 'package:flutter/services.dart';
 
 import '../../db/doctor_db.dart';
 import '../../theme/app_theme.dart';
+import 'quick_phrase_picker.dart';
 
 /// Quick note entry dialog for fast clinical note recording
 /// 
@@ -250,6 +251,55 @@ class _QuickNoteDialogState extends State<_QuickNoteDialog> {
                     ),
                     
                     const SizedBox(height: 12),
+                    
+                    // Quick Phrases button
+                    GestureDetector(
+                      onTap: () async {
+                        final phrase = await QuickPhrasePicker.showAsBottomSheet(context);
+                        if (phrase != null) {
+                          final currentText = _noteController.text;
+                          final cursorPos = _noteController.selection.baseOffset;
+                          if (cursorPos >= 0) {
+                            final newText = currentText.substring(0, cursorPos) + 
+                                phrase + 
+                                currentText.substring(cursorPos);
+                            _noteController.text = newText;
+                            _noteController.selection = TextSelection.collapsed(
+                              offset: cursorPos + phrase.length,
+                            );
+                          } else {
+                            _noteController.text = currentText + phrase;
+                          }
+                        }
+                      },
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                        decoration: BoxDecoration(
+                          color: selectedType.$4.withValues(alpha: 0.1),
+                          borderRadius: BorderRadius.circular(10),
+                          border: Border.all(color: selectedType.$4.withValues(alpha: 0.3)),
+                        ),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Icon(Icons.flash_on_rounded, size: 18, color: selectedType.$4),
+                            const SizedBox(width: 8),
+                            Text(
+                              'Quick Phrases',
+                              style: TextStyle(
+                                fontSize: 13,
+                                fontWeight: FontWeight.w600,
+                                color: selectedType.$4,
+                              ),
+                            ),
+                            const SizedBox(width: 4),
+                            Icon(Icons.keyboard_arrow_down_rounded, size: 16, color: selectedType.$4),
+                          ],
+                        ),
+                      ),
+                    ),
+                    
+                    const SizedBox(height: 16),
                     
                     // Quick templates
                     Text(

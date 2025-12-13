@@ -8,6 +8,7 @@ import '../../providers/db_provider.dart';
 import '../../services/suggestions_service.dart';
 import '../../theme/app_theme.dart';
 import '../widgets/suggestion_text_field.dart';
+import '../../core/widgets/keyboard_aware_scaffold.dart';
 
 class EditInvoiceScreen extends ConsumerStatefulWidget {
   const EditInvoiceScreen({
@@ -51,7 +52,7 @@ class _EditInvoiceScreenState extends ConsumerState<EditInvoiceScreen> {
     _loadInvoiceData();
   }
 
-  void _loadInvoiceData() {
+  Future<void> _loadInvoiceData() async {
     _paymentMethod = widget.invoice.paymentMethod;
     _paymentStatus = widget.invoice.paymentStatus;
     _discountController.text = widget.invoice.discountPercent.toString();
@@ -59,27 +60,47 @@ class _EditInvoiceScreenState extends ConsumerState<EditInvoiceScreen> {
     _notesController.text = widget.invoice.notes;
     _dueDate = widget.invoice.dueDate;
 
-    // Parse items from JSON
-    try {
-      final items = jsonDecode(widget.invoice.itemsJson);
-      if (items is List) {
-        for (final item in items) {
-          if (item is Map<String, dynamic>) {
-            _items.add(_InvoiceItem(
-              description: item['description']?.toString() ?? '',
-              quantity: (item['quantity'] as num?)?.toInt() ?? 1,
-              rate: (item['rate'] as num?)?.toDouble() ?? 0,
-              type: item['type']?.toString() ?? 'Service',
-            ));
+    // V5: Load items from normalized table first
+    final db = await ref.read(doctorDbProvider.future);
+    final normalizedItems = await db.getLineItemsForInvoiceCompat(widget.invoice.id);
+    
+    if (normalizedItems.isNotEmpty) {
+      // Use normalized data
+      for (final item in normalizedItems) {
+        _items.add(_InvoiceItem(
+          description: item['description']?.toString() ?? '',
+          quantity: (item['quantity'] as num?)?.toInt() ?? 1,
+          rate: (item['rate'] as num?)?.toDouble() ?? 0,
+          type: item['type']?.toString() ?? 'Service',
+        ));
+      }
+    } else {
+      // Fallback: Parse items from JSON
+      try {
+        final items = jsonDecode(widget.invoice.itemsJson);
+        if (items is List) {
+          for (final item in items) {
+            if (item is Map<String, dynamic>) {
+              _items.add(_InvoiceItem(
+                description: item['description']?.toString() ?? '',
+                quantity: (item['quantity'] as num?)?.toInt() ?? 1,
+                rate: (item['rate'] as num?)?.toDouble() ?? 0,
+                type: item['type']?.toString() ?? 'Service',
+              ));
+            }
           }
         }
+      } catch (e) {
+        // If parsing fails, add one empty item
       }
-    } catch (e) {
-      // If parsing fails, add one empty item
     }
 
     if (_items.isEmpty) {
       _items.add(_InvoiceItem());
+    }
+    
+    if (mounted) {
+      setState(() {});
     }
   }
 
@@ -188,6 +209,8 @@ class _EditInvoiceScreenState extends ConsumerState<EditInvoiceScreen> {
                 ]),
               ),
             ),
+            // Keyboard-aware bottom padding
+            const SliverKeyboardPadding(),
           ],
         ),
       ),

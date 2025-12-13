@@ -6,6 +6,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 
 import '../../core/extensions/context_extensions.dart';
+import '../../core/routing/app_router.dart';
 import '../../core/theme/design_tokens.dart';
 import '../../core/widgets/error_state.dart';
 import '../../core/widgets/loading_state.dart';
@@ -22,6 +23,7 @@ import 'add_patient_screen.dart';
 import 'add_prescription_screen.dart';
 import 'follow_ups_screen.dart';
 import 'patients_screen.dart';
+import 'notifications_screen.dart';
 import 'workflow_wizard_screen.dart';
 
 class DashboardScreen extends ConsumerStatefulWidget {
@@ -151,7 +153,13 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
     return LayoutBuilder(
       builder: (context, constraints) {
         final isCompact = AppBreakpoint.isCompact(constraints.maxWidth);
-        final padding = isCompact ? 16.0 : 24.0;
+        final isShort = context.isShortScreen;
+        final padding = isCompact 
+            ? (isShort ? 12.0 : 16.0) 
+            : 24.0;
+        final sectionSpacing = isCompact 
+            ? (isShort ? 12.0 : 16.0) 
+            : 20.0;
         
         return RefreshIndicator(
           key: _refreshKey,
@@ -166,7 +174,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
             slivers: [
               // Doctor Header with Greeting
               SliverToBoxAdapter(
-                child: _buildDoctorHeader(context, isCompact),
+                child: _buildDoctorHeader(context, isCompact, isShort: isShort),
               ),
               
               // Critical Alerts Banner (if any)
@@ -175,7 +183,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                   child: Padding(
                     padding: EdgeInsets.symmetric(horizontal: padding),
                     child: _buildCriticalAlerts(
-                      context, 
+                      context,
                       overdueFollowUps.length, 
                       inProgressAppt.isNotEmpty,
                       isCompact, 
@@ -184,7 +192,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                   ),
                 ),
               
-              SliverToBoxAdapter(child: SizedBox(height: isCompact ? 12 : 16)),
+              SliverToBoxAdapter(child: SizedBox(height: sectionSpacing)),
               
               // Today's Summary Cards
               SliverToBoxAdapter(
@@ -196,10 +204,11 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                   overdueFollowUps: overdueFollowUps.length,
                   isCompact: isCompact,
                   isDark: isDark,
+                  isShort: isShort,
                 ),
               ),
               
-              SliverToBoxAdapter(child: SizedBox(height: isCompact ? 16 : 20)),
+              SliverToBoxAdapter(child: SizedBox(height: sectionSpacing)),
               
               // Wait Time Statistics Card
               SliverToBoxAdapter(
@@ -319,7 +328,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
   // ============================================================
   // SECTION 1: DOCTOR HEADER
   // ============================================================
-  Widget _buildDoctorHeader(BuildContext context, bool isCompact) {
+  Widget _buildDoctorHeader(BuildContext context, bool isCompact, {bool isShort = false}) {
     final profile = ref.watch(doctorSettingsProvider).profile;
     final hour = DateTime.now().hour;
     final isDark = context.isDarkMode;
@@ -344,14 +353,22 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
       greetingIcon = Icons.nightlight_round;
       greetingColor = const Color(0xFF8B5CF6);
     }
+
+    // Responsive sizes based on screen
+    final headerPadding = isShort 
+        ? const EdgeInsets.fromLTRB(12, 8, 12, 12)
+        : EdgeInsets.fromLTRB(
+            isCompact ? 16 : 24, 
+            isCompact ? 12 : 16, 
+            isCompact ? 16 : 24, 
+            isCompact ? 16 : 20,
+          );
+    final greetingSpacing = isShort ? 14.0 : (isCompact ? 20.0 : 28.0);
+    final avatarRadius = isShort ? 20.0 : (isCompact ? 24.0 : 28.0);
+    final nameSize = isShort ? 18.0 : (isCompact ? 22.0 : 26.0);
     
     return Container(
-      padding: EdgeInsets.fromLTRB(
-        isCompact ? 16 : 24, 
-        isCompact ? 12 : 16, 
-        isCompact ? 16 : 24, 
-        isCompact ? 16 : 20,
-      ),
+      padding: headerPadding,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -362,7 +379,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
               GestureDetector(
                 onTap: widget.onMenuTap,
                 child: Container(
-                  padding: EdgeInsets.all(isCompact ? 10 : 12),
+                  padding: EdgeInsets.all(isShort ? 8 : (isCompact ? 10 : 12)),
                   decoration: BoxDecoration(
                     gradient: LinearGradient(
                       colors: [
@@ -373,94 +390,105 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                     borderRadius: BorderRadius.circular(14),
                     border: Border.all(color: AppColors.primary.withValues(alpha: 0.2)),
                   ),
-                  child: Icon(Icons.menu_rounded, color: AppColors.primary, size: isCompact ? 20 : 22),
+                  child: Icon(Icons.menu_rounded, color: AppColors.primary, size: isShort ? 18 : (isCompact ? 20 : 22)),
                 ),
               ),
               const Spacer(),
-              // Date Chip
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                decoration: BoxDecoration(
-                  color: isDark ? Colors.white.withValues(alpha: 0.08) : Colors.grey.withValues(alpha: 0.1),
-                  borderRadius: BorderRadius.circular(20),
+              // Date Chip - hide on very short screens
+              if (!isShort)
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                  decoration: BoxDecoration(
+                    color: isDark ? Colors.white.withValues(alpha: 0.08) : Colors.grey.withValues(alpha: 0.1),
+                    borderRadius: BorderRadius.circular(20),
+                  ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(Icons.calendar_today_rounded, size: 14, 
+                        color: isDark ? AppColors.darkTextSecondary : AppColors.textSecondary),
+                      const SizedBox(width: 6),
+                      Text(
+                        dateFormat.format(now),
+                        style: TextStyle(
+                          fontSize: 12,
+                          fontWeight: FontWeight.w600,
+                          color: isDark ? AppColors.darkTextSecondary : AppColors.textSecondary,
+                        ),
+                      ),
+                    ],
+                  ),
                 ),
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
+              SizedBox(width: isShort ? 6 : 10),
+              // Notification Bell
+              GestureDetector(
+                onTap: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => const NotificationsScreen(),
+                    ),
+                  );
+                },
+                child: Stack(
                   children: [
-                    Icon(Icons.calendar_today_rounded, size: 14, 
-                      color: isDark ? AppColors.darkTextSecondary : AppColors.textSecondary),
-                    const SizedBox(width: 6),
-                    Text(
-                      dateFormat.format(now),
-                      style: TextStyle(
-                        fontSize: 12,
-                        fontWeight: FontWeight.w600,
+                    Container(
+                      padding: EdgeInsets.all(isShort ? 8 : (isCompact ? 10 : 12)),
+                      decoration: BoxDecoration(
+                        color: isDark ? Colors.white.withValues(alpha: 0.08) : Colors.grey.withValues(alpha: 0.1),
+                        borderRadius: BorderRadius.circular(14),
+                      ),
+                      child: Icon(Icons.notifications_outlined, 
                         color: isDark ? AppColors.darkTextSecondary : AppColors.textSecondary,
+                        size: isShort ? 18 : (isCompact ? 20 : 22)),
+                    ),
+                    Positioned(
+                      right: 8, top: 8,
+                      child: Container(
+                        width: 10, height: 10,
+                        decoration: BoxDecoration(
+                          color: AppColors.error,
+                          shape: BoxShape.circle,
+                          border: Border.all(color: isDark ? AppColors.darkBackground : Colors.white, width: 2),
+                        ),
                       ),
                     ),
                   ],
                 ),
               ),
-              const SizedBox(width: 10),
-              // Notification Bell
-              Stack(
-                children: [
-                  Container(
-                    padding: EdgeInsets.all(isCompact ? 10 : 12),
-                    decoration: BoxDecoration(
-                      color: isDark ? Colors.white.withValues(alpha: 0.08) : Colors.grey.withValues(alpha: 0.1),
-                      borderRadius: BorderRadius.circular(14),
-                    ),
-                    child: Icon(Icons.notifications_outlined, 
-                      color: isDark ? AppColors.darkTextSecondary : AppColors.textSecondary,
-                      size: isCompact ? 20 : 22),
-                  ),
-                  Positioned(
-                    right: 8, top: 8,
-                    child: Container(
-                      width: 10, height: 10,
-                      decoration: BoxDecoration(
-                        color: AppColors.error,
-                        shape: BoxShape.circle,
-                        border: Border.all(color: isDark ? AppColors.darkBackground : Colors.white, width: 2),
-                      ),
-                    ),
-                  ),
-                ],
-              ),
             ],
           ),
-          SizedBox(height: isCompact ? 20 : 28),
+          SizedBox(height: greetingSpacing),
           // Greeting Row
           Row(
             children: [
               Container(
-                padding: const EdgeInsets.all(12),
+                padding: EdgeInsets.all(isShort ? 8 : 12),
                 decoration: BoxDecoration(
                   gradient: LinearGradient(
                     colors: [greetingColor.withValues(alpha: 0.2), greetingColor.withValues(alpha: 0.1)],
                   ),
-                  borderRadius: BorderRadius.circular(16),
+                  borderRadius: BorderRadius.circular(isShort ? 12 : 16),
                 ),
-                child: Icon(greetingIcon, color: greetingColor, size: isCompact ? 24 : 28),
+                child: Icon(greetingIcon, color: greetingColor, size: isShort ? 20 : (isCompact ? 24 : 28)),
               ),
-              const SizedBox(width: 14),
+              SizedBox(width: isShort ? 10 : 14),
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(greeting,
                       style: TextStyle(
-                        fontSize: isCompact ? 13 : 14,
+                        fontSize: isShort ? 11 : (isCompact ? 13 : 14),
                         fontWeight: FontWeight.w500,
                         color: isDark ? AppColors.darkTextSecondary : AppColors.textSecondary,
                       ),
                     ),
-                    const SizedBox(height: 2),
+                    SizedBox(height: isShort ? 1 : 2),
                     Text(
                       'Dr. ${profile.displayName}',
                       style: TextStyle(
-                        fontSize: isCompact ? 22 : 26,
+                        fontSize: nameSize,
                         fontWeight: FontWeight.w800,
                         color: isDark ? Colors.white : AppColors.textPrimary,
                         letterSpacing: -0.5,
@@ -473,23 +501,23 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
               ),
               // Profile Avatar
               Container(
-                padding: const EdgeInsets.all(3),
+                padding: EdgeInsets.all(isShort ? 2 : 3),
                 decoration: BoxDecoration(
                   shape: BoxShape.circle,
                   gradient: const LinearGradient(colors: [Color(0xFF6366F1), Color(0xFF8B5CF6)]),
                   boxShadow: [
-                    BoxShadow(color: AppColors.primary.withValues(alpha: 0.4), blurRadius: 12, offset: const Offset(0, 4)),
+                    BoxShadow(color: AppColors.primary.withValues(alpha: 0.4), blurRadius: isShort ? 8 : 12, offset: const Offset(0, 4)),
                   ],
                 ),
                 child: CircleAvatar(
-                  radius: isCompact ? 24 : 28,
+                  radius: avatarRadius,
                   backgroundColor: Colors.white,
                   child: CircleAvatar(
-                    radius: isCompact ? 22 : 26,
+                    radius: avatarRadius - 2,
                     backgroundColor: AppColors.primary,
                     child: Text(
                       profile.initials,
-                      style: TextStyle(color: Colors.white, fontWeight: FontWeight.w700, fontSize: isCompact ? 14 : 16),
+                      style: TextStyle(color: Colors.white, fontWeight: FontWeight.w700, fontSize: isShort ? 12 : (isCompact ? 14 : 16)),
                     ),
                   ),
                 ),
@@ -568,12 +596,16 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
     required int overdueFollowUps,
     required bool isCompact,
     required bool isDark,
+    bool isShort = false,
   }) {
+    final cardHeight = isShort ? 85.0 : (isCompact ? 100.0 : 110.0);
+    final cardPadding = isShort ? 12.0 : (isCompact ? 16.0 : 24.0);
+    
     return SizedBox(
-      height: isCompact ? 100 : 110,
+      height: cardHeight,
       child: ListView(
         scrollDirection: Axis.horizontal,
-        padding: EdgeInsets.symmetric(horizontal: isCompact ? 16 : 24),
+        padding: EdgeInsets.symmetric(horizontal: cardPadding),
         children: [
           _buildMiniStatCard(
             icon: Icons.calendar_today_rounded,
@@ -583,8 +615,9 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
             color: const Color(0xFF6366F1),
             isCompact: isCompact,
             isDark: isDark,
+            isShort: isShort,
           ),
-          SizedBox(width: isCompact ? 10 : 12),
+          SizedBox(width: isShort ? 8 : (isCompact ? 10 : 12)),
           _buildMiniStatCard(
             icon: Icons.check_circle_rounded,
             label: 'Completed',
@@ -593,8 +626,9 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
             color: const Color(0xFF10B981),
             isCompact: isCompact,
             isDark: isDark,
+            isShort: isShort,
           ),
-          SizedBox(width: isCompact ? 10 : 12),
+          SizedBox(width: isShort ? 8 : (isCompact ? 10 : 12)),
           _buildMiniStatCard(
             icon: Icons.pending_actions_rounded,
             label: 'Waiting',
@@ -603,8 +637,9 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
             color: const Color(0xFFF59E0B),
             isCompact: isCompact,
             isDark: isDark,
+            isShort: isShort,
           ),
-          SizedBox(width: isCompact ? 10 : 12),
+          SizedBox(width: isShort ? 8 : (isCompact ? 10 : 12)),
           _buildMiniStatCard(
             icon: Icons.event_busy_rounded,
             label: 'Overdue',
@@ -613,6 +648,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
             color: const Color(0xFFEF4444),
             isCompact: isCompact,
             isDark: isDark,
+            isShort: isShort,
           ),
         ],
       ),
@@ -627,13 +663,21 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
     required Color color,
     required bool isCompact,
     required bool isDark,
+    bool isShort = false,
   }) {
+    final cardWidth = isShort ? 95.0 : (isCompact ? 110.0 : 125.0);
+    final cardPadding = isShort ? 10.0 : (isCompact ? 12.0 : 14.0);
+    final iconSize = isShort ? 16.0 : (isCompact ? 18.0 : 20.0);
+    final valueSize = isShort ? 18.0 : (isCompact ? 20.0 : 24.0);
+    final labelSize = isShort ? 10.0 : (isCompact ? 11.0 : 12.0);
+    final subLabelSize = isShort ? 9.0 : (isCompact ? 10.0 : 11.0);
+    
     return Container(
-      width: isCompact ? 110 : 125,
-      padding: EdgeInsets.all(isCompact ? 12 : 14),
+      width: cardWidth,
+      padding: EdgeInsets.all(cardPadding),
       decoration: BoxDecoration(
         color: isDark ? Colors.white.withValues(alpha: 0.06) : Colors.white,
-        borderRadius: BorderRadius.circular(16),
+        borderRadius: BorderRadius.circular(isShort ? 12 : 16),
         border: Border.all(color: color.withValues(alpha: 0.2)),
         boxShadow: isDark ? null : [
           BoxShadow(color: color.withValues(alpha: 0.1), blurRadius: 8, offset: const Offset(0, 2)),
@@ -646,11 +690,11 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Icon(icon, color: color, size: isCompact ? 18 : 20),
+              Icon(icon, color: color, size: iconSize),
               Text(
                 value,
                 style: TextStyle(
-                  fontSize: isCompact ? 20 : 24,
+                  fontSize: valueSize,
                   fontWeight: FontWeight.w800,
                   color: color,
                 ),
@@ -663,7 +707,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
               Text(
                 label,
                 style: TextStyle(
-                  fontSize: isCompact ? 11 : 12,
+                  fontSize: labelSize,
                   fontWeight: FontWeight.w600,
                   color: isDark ? Colors.white : AppColors.textPrimary,
                 ),
@@ -671,7 +715,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
               Text(
                 subLabel,
                 style: TextStyle(
-                  fontSize: isCompact ? 10 : 11,
+                  fontSize: subLabelSize,
                   color: isDark ? AppColors.darkTextSecondary : AppColors.textSecondary,
                 ),
               ),
@@ -934,7 +978,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
               icon: Icons.play_circle_rounded,
               label: 'Start Visit',
               color: const Color(0xFF059669),
-              onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const WorkflowWizardScreen())),
+              onTap: () => Navigator.push(context, AppRouter.route(const WorkflowWizardScreen())),
               isCompact: isCompact,
               isDark: isDark,
             )),
@@ -952,7 +996,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
               icon: Icons.person_add_rounded,
               label: 'New Patient',
               color: const Color(0xFF6366F1),
-              onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const AddPatientScreen())),
+              onTap: () => Navigator.push(context, AppRouter.route(const AddPatientScreen())),
               isCompact: isCompact,
               isDark: isDark,
             )),
@@ -961,7 +1005,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
               icon: Icons.event_note_rounded,
               label: 'Appointment',
               color: const Color(0xFF14B8A6),
-              onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const AddAppointmentScreen())),
+              onTap: () => Navigator.push(context, AppRouter.route(const AddAppointmentScreen())),
               isCompact: isCompact,
               isDark: isDark,
             )),
@@ -970,7 +1014,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
               icon: Icons.medication_rounded,
               label: 'Prescribe',
               color: const Color(0xFFF59E0B),
-              onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const AddPrescriptionScreen())),
+              onTap: () => Navigator.push(context, AppRouter.route(const AddPrescriptionScreen())),
               isCompact: isCompact,
               isDark: isDark,
             )),
@@ -1020,7 +1064,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
               icon: Icons.schedule_rounded,
               label: 'Follow-ups',
               color: AppColors.warning,
-              onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const FollowUpsScreen())),
+              onTap: () => Navigator.push(context, AppRouter.route(const FollowUpsScreen())),
               isCompact: isCompact,
               isDark: isDark,
             )),
@@ -1034,7 +1078,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
               icon: Icons.people_rounded,
               label: 'Patients',
               color: AppColors.patients,
-              onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const PatientsScreen())),
+              onTap: () => Navigator.push(context, AppRouter.route(const PatientsScreen())),
               isCompact: isCompact,
               isDark: isDark,
             )),
@@ -1619,7 +1663,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
               ),
             ),
             TextButton(
-              onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const FollowUpsScreen())),
+              onPressed: () => Navigator.push(context, AppRouter.route(const FollowUpsScreen())),
               child: const Text('View All'),
             ),
           ],
@@ -1905,7 +1949,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
               ),
             ),
             TextButton(
-              onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const PatientsScreen())),
+              onPressed: () => Navigator.push(context, AppRouter.route(const PatientsScreen())),
               child: const Text('See All'),
             ),
           ],

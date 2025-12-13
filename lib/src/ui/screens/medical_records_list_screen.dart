@@ -106,6 +106,7 @@ class _MedicalRecordsListScreenState extends ConsumerState<MedicalRecordsListScr
               ),),
               SliverToBoxAdapter(child: _FilterChipsRow(
                 selectedRecordType: _selectedRecordType,
+                enabledRecordTypes: ref.watch(appSettingsProvider).settings.enabledMedicalRecordTypes,
                 onTypeSelected: (type) => setState(() => _selectedRecordType = type),
                 isDark: isDark,
               ),),
@@ -115,6 +116,7 @@ class _MedicalRecordsListScreenState extends ConsumerState<MedicalRecordsListScr
                   db: db,
                   searchQuery: _searchQuery,
                   selectedRecordType: _selectedRecordType,
+                  enabledRecordTypes: ref.watch(appSettingsProvider).settings.enabledMedicalRecordTypes,
                   isDark: isDark,
                   dateFormat: _dateFormat,
                 ),
@@ -325,16 +327,21 @@ class _FilterChipsRow extends StatelessWidget {
 
   const _FilterChipsRow({
     required this.selectedRecordType,
+    required this.enabledRecordTypes,
     required this.onTypeSelected,
     required this.isDark,
   });
   final String? selectedRecordType;
+  final List<String> enabledRecordTypes;
   final ValueChanged<String?> onTypeSelected;
   final bool isDark;
 
   @override
   Widget build(BuildContext context) {
-    final allTypes = RecordTypeInfo.allTypes;
+    // Filter to only show enabled types plus the "All" option
+    final allTypes = RecordTypeInfo.allTypes.where((type) => 
+      type.recordType.isEmpty || enabledRecordTypes.contains(type.recordType)
+    ).toList();
     
     return Padding(
       padding: const EdgeInsets.all(MedicalRecordConstants.paddingLarge),
@@ -371,18 +378,22 @@ class _RecordsList extends StatelessWidget {
     required this.db,
     required this.searchQuery,
     required this.selectedRecordType,
+    required this.enabledRecordTypes,
     required this.isDark,
     required this.dateFormat,
   });
   final DoctorDatabase db;
   final String searchQuery;
   final String? selectedRecordType;
+  final List<String> enabledRecordTypes;
   final bool isDark;
   final DateFormat dateFormat;
 
   @override
   Widget build(BuildContext context) {
     return FutureBuilder<List<MedicalRecordWithPatient>>(
+      // Key forces rebuild when filters change
+      key: ValueKey('records_${enabledRecordTypes.join('_')}_${selectedRecordType ?? 'all'}_$searchQuery'),
       future: _getFilteredRecords(),
       builder: (context, snapshot) {
         if (snapshot.connectionState == ConnectionState.waiting) {
@@ -434,7 +445,12 @@ class _RecordsList extends StatelessWidget {
     final records = await db.getAllMedicalRecordsWithPatients();
     
     return records.where((r) {
-      // Filter by record type
+      // Filter by enabled record types from settings
+      if (!enabledRecordTypes.contains(r.record.recordType)) {
+        return false;
+      }
+      
+      // Filter by selected record type (user filter)
       if (selectedRecordType != null && r.record.recordType != selectedRecordType) {
         return false;
       }

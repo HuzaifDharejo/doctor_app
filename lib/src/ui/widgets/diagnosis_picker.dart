@@ -568,13 +568,13 @@ class _DiagnosisPickerState extends ConsumerState<DiagnosisPicker>
   }
 
   Color _getCodeColor(String code) {
-    if (code.startsWith('F3')) return const Color(0xFF6366F1); // Mood
-    if (code.startsWith('F4')) return const Color(0xFF14B8A6); // Anxiety
-    if (code.startsWith('F2')) return const Color(0xFF8B5CF6); // Psychotic
-    if (code.startsWith('F9')) return const Color(0xFFF59E0B); // ADHD
-    if (code.startsWith('F1')) return const Color(0xFFEF4444); // Substance
-    if (code.startsWith('F6')) return const Color(0xFFEC4899); // Personality
-    if (code.startsWith('F5')) return const Color(0xFF10B981); // Eating/Sleep
+    if (code.startsWith('F3')) return AppColors.primary;         // Mood
+    if (code.startsWith('F4')) return AppColors.accent;          // Anxiety
+    if (code.startsWith('F2')) return AppColors.purple;          // Psychotic
+    if (code.startsWith('F9')) return AppColors.warning;         // ADHD
+    if (code.startsWith('F1')) return AppColors.error;           // Substance
+    if (code.startsWith('F6')) return AppColors.quickActionPink; // Personality
+    if (code.startsWith('F5')) return AppColors.quickActionGreen;// Eating/Sleep
     return AppColors.textSecondary;
   }
 
@@ -589,7 +589,7 @@ class _DiagnosisPickerState extends ConsumerState<DiagnosisPicker>
       case 'developmental':
         return AppColors.info;
       case 'neurological':
-        return const Color(0xFF8B5CF6);
+        return AppColors.purple;
       default:
         return AppColors.textSecondary;
     }
