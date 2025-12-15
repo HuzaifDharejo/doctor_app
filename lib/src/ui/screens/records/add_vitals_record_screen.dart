@@ -7,6 +7,7 @@ import 'package:intl/intl.dart';
 import '../../../db/doctor_db.dart';
 import '../../../providers/db_provider.dart';
 import 'components/patient_selector_card.dart';
+import 'components/record_components.dart';
 
 /// Screen for quickly recording patient vitals
 class AddVitalsRecordScreen extends ConsumerStatefulWidget {
@@ -57,14 +58,16 @@ class _AddVitalsRecordScreenState extends ConsumerState<AddVitalsRecordScreen> {
     }
   }
 
-  void _loadExistingRecord() {
+  void _loadExistingRecord() async {
     final record = widget.existingRecord!;
     _recordDate = record.recordDate;
     _notesController.text = record.doctorNotes ?? '';
     
-    if (record.dataJson != null) {
-      try {
-        final data = jsonDecode(record.dataJson!) as Map<String, dynamic>;
+    // V6: Use normalized fields with fallback to dataJson
+    final db = await ref.read(doctorDbProvider.future);
+    final data = await db.getMedicalRecordFieldsCompat(record.id);
+    if (data.isNotEmpty && mounted) {
+      setState(() {
         _bpSystolicController.text = data['bp_systolic']?.toString() ?? '';
         _bpDiastolicController.text = data['bp_diastolic']?.toString() ?? '';
         _heartRateController.text = data['heart_rate']?.toString() ?? '';
@@ -74,7 +77,7 @@ class _AddVitalsRecordScreenState extends ConsumerState<AddVitalsRecordScreen> {
         _spO2Controller.text = data['spo2']?.toString() ?? '';
         _respiratoryRateController.text = data['respiratory_rate']?.toString() ?? '';
         _bloodSugarController.text = data['blood_sugar']?.toString() ?? '';
-      } catch (_) {}
+      });
     }
   }
 
@@ -107,8 +110,8 @@ class _AddVitalsRecordScreenState extends ConsumerState<AddVitalsRecordScreen> {
     try {
       final db = await ref.read(doctorDbProvider.future);
       
-      // Prepare vitals data
-      final dataJson = jsonEncode({
+      // V6: Build data for normalized storage
+      final recordData = {
         'bp_systolic': _bpSystolicController.text.isNotEmpty 
             ? int.tryParse(_bpSystolicController.text) : null,
         'bp_diastolic': _bpDiastolicController.text.isNotEmpty 
@@ -127,7 +130,7 @@ class _AddVitalsRecordScreenState extends ConsumerState<AddVitalsRecordScreen> {
             ? int.tryParse(_respiratoryRateController.text) : null,
         'blood_sugar': _bloodSugarController.text.isNotEmpty 
             ? int.tryParse(_bloodSugarController.text) : null,
-      });
+      };
 
       // Build title summary
       final titleParts = <String>[];
@@ -153,7 +156,7 @@ class _AddVitalsRecordScreenState extends ConsumerState<AddVitalsRecordScreen> {
           recordType: 'vitals',
           title: title,
           description: '',
-          dataJson: dataJson,
+          dataJson: '{}', // V6: Empty - using MedicalRecordFields
           diagnosis: '',
           treatment: '',
           doctorNotes: _notesController.text,
@@ -161,18 +164,23 @@ class _AddVitalsRecordScreenState extends ConsumerState<AddVitalsRecordScreen> {
           createdAt: widget.existingRecord!.createdAt,
         );
         await db.updateMedicalRecord(updatedRecord);
+        // V6: Delete old fields and re-insert
+        await db.deleteFieldsForMedicalRecord(widget.existingRecord!.id);
+        await db.insertMedicalRecordFieldsBatch(widget.existingRecord!.id, _selectedPatientId!, recordData);
       } else {
         // Create new record
-        await db.insertMedicalRecord(
+        final recordId = await db.insertMedicalRecord(
           MedicalRecordsCompanion.insert(
             patientId: _selectedPatientId!,
             recordType: 'vitals',
             title: title,
-            dataJson: Value(dataJson),
+            dataJson: const Value('{}'), // V6: Empty - using MedicalRecordFields
             doctorNotes: Value(_notesController.text),
             recordDate: _recordDate,
           ),
         );
+        // V6: Save fields to normalized table
+        await db.insertMedicalRecordFieldsBatch(recordId, _selectedPatientId!, recordData);
       }
 
       if (mounted) {
@@ -438,27 +446,16 @@ class _AddVitalsRecordScreenState extends ConsumerState<AddVitalsRecordScreen> {
             // Notes
             _buildSectionCard(
               isDark: isDark,
-              title: 'Notes',
+              title: 'Clinical Notes',
               icon: Icons.note,
               iconColor: Colors.grey,
-              child: TextFormField(
+              child: RecordTextField(
                 controller: _notesController,
+                label: 'Clinical Notes',
+                hint: 'Additional notes...',
                 maxLines: 3,
-                style: TextStyle(
-                  color: isDark ? Colors.white : Colors.black87,
-                ),
-                decoration: InputDecoration(
-                  hintText: 'Additional notes...',
-                  hintStyle: TextStyle(
-                    color: isDark ? Colors.white38 : Colors.grey[400],
-                  ),
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(12),
-                    borderSide: BorderSide.none,
-                  ),
-                  filled: true,
-                  fillColor: isDark ? Colors.white.withValues(alpha: 0.05) : Colors.grey[100],
-                ),
+                enableVoice: true,
+                suggestions: clinicalNotesSuggestions,
               ),
             ),
             const SizedBox(height: 24),

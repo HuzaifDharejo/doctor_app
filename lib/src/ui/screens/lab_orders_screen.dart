@@ -5,6 +5,7 @@ import 'package:intl/intl.dart';
 
 import '../../db/doctor_db.dart';
 import '../../extensions/drift_extensions.dart';
+import '../../models/lab_order.dart';
 import '../../providers/db_provider.dart';
 import '../../services/lab_order_service.dart';
 import '../../services/lab_test_templates.dart';
@@ -28,6 +29,10 @@ class _LabOrdersScreenState extends ConsumerState<LabOrdersScreen>
   final _labOrderService = LabOrderService();
   final _searchController = TextEditingController();
 
+  // Cache for display names (V5: fetched from LabTestResults table)
+  final Map<int, String> _displayNameCache = {};
+  final Map<int, String?> _displayCodeCache = {};
+
   // Theme color for lab orders
   static const _themeColor = Color(0xFF8B5CF6); // Purple theme
 
@@ -42,6 +47,26 @@ class _LabOrdersScreenState extends ConsumerState<LabOrdersScreen>
     _tabController.dispose();
     _searchController.dispose();
     super.dispose();
+  }
+
+  /// Get display name for an order (V5: from LabTestResults)
+  Future<String> _getDisplayName(LabOrderData order) async {
+    if (_displayNameCache.containsKey(order.id)) {
+      return _displayNameCache[order.id]!;
+    }
+    final name = await _labOrderService.getDisplayTestName(order.id);
+    _displayNameCache[order.id] = name;
+    return name;
+  }
+
+  /// Get display code for an order (V5: from LabTestResults)
+  Future<String?> _getDisplayCode(LabOrderData order) async {
+    if (_displayCodeCache.containsKey(order.id)) {
+      return _displayCodeCache[order.id];
+    }
+    final code = await _labOrderService.getDisplayTestCode(order.id);
+    _displayCodeCache[order.id] = code;
+    return code;
   }
 
   @override
@@ -251,20 +276,40 @@ class _LabOrdersScreenState extends ConsumerState<LabOrdersScreen>
       ),
       child: TabBar(
         controller: _tabController,
+        isScrollable: true,
+        tabAlignment: TabAlignment.start,
+        padding: const EdgeInsets.symmetric(horizontal: 8),
         labelColor: _themeColor,
         unselectedLabelColor: isDark ? AppColors.darkTextSecondary : AppColors.textSecondary,
-        indicatorColor: _themeColor,
-        indicatorWeight: 3,
-        indicatorSize: TabBarIndicatorSize.label,
+        indicator: BoxDecoration(
+          color: _themeColor.withValues(alpha: 0.15),
+          borderRadius: BorderRadius.circular(12),
+        ),
+        indicatorPadding: const EdgeInsets.symmetric(vertical: 8, horizontal: -8),
         dividerColor: Colors.transparent,
-        labelStyle: const TextStyle(fontWeight: FontWeight.w600, fontSize: 13),
+        labelStyle: const TextStyle(fontWeight: FontWeight.w700, fontSize: 13),
         unselectedLabelStyle: const TextStyle(fontWeight: FontWeight.w500, fontSize: 13),
-        tabs: const [
-          Tab(text: 'All'),
-          Tab(text: 'Pending'),
-          Tab(text: 'In Progress'),
-          Tab(text: 'Completed'),
-          Tab(text: 'Results'),
+        splashBorderRadius: BorderRadius.circular(12),
+        tabs: [
+          _buildLabTab('All', Icons.list_alt_rounded),
+          _buildLabTab('Pending', Icons.pending_actions_rounded),
+          _buildLabTab('In Progress', Icons.hourglass_top_rounded),
+          _buildLabTab('Completed', Icons.check_circle_rounded),
+          _buildLabTab('Results', Icons.assignment_rounded),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildLabTab(String label, IconData icon) {
+    return Tab(
+      height: 48,
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(icon, size: 18),
+          const SizedBox(width: 6),
+          Text(label),
         ],
       ),
     );
@@ -348,7 +393,11 @@ class _LabOrdersScreenState extends ConsumerState<LabOrdersScreen>
         }
 
         return RefreshIndicator(
-          onRefresh: () async => setState(() {}),
+          onRefresh: () async {
+            _displayNameCache.clear();
+            _displayCodeCache.clear();
+            setState(() {});
+          },
           color: _themeColor,
           child: ListView.builder(
             padding: const EdgeInsets.fromLTRB(16, 8, 16, 100),
@@ -691,8 +740,12 @@ class _LabOrdersScreenState extends ConsumerState<LabOrdersScreen>
   bool _matchesSearch(LabOrderData order) {
     if (_searchController.text.isEmpty) return true;
     final query = _searchController.text.toLowerCase();
-    return order.testName.toLowerCase().contains(query) ||
-        (order.testCode?.toLowerCase().contains(query) ?? false) ||
+    // Check cached display name if available
+    final cachedName = _displayNameCache[order.id]?.toLowerCase() ?? '';
+    final cachedCode = _displayCodeCache[order.id]?.toLowerCase() ?? '';
+    return cachedName.contains(query) ||
+        cachedCode.contains(query) ||
+        order.orderNumber.toLowerCase().contains(query) ||
         (order.labName?.toLowerCase().contains(query) ?? false);
   }
 
@@ -703,206 +756,237 @@ class _LabOrdersScreenState extends ConsumerState<LabOrdersScreen>
     final urgencyColor = _getUrgencyColor(order.urgency);
     final hasAbnormalResults = order.isAbnormal ?? false;
 
-    return Container(
-      margin: const EdgeInsets.only(bottom: 12),
-      decoration: BoxDecoration(
-        color: isDark ? AppColors.darkSurface : Colors.white,
-        borderRadius: BorderRadius.circular(20),
-        border: hasAbnormalResults 
-            ? Border.all(color: AppColors.error.withValues(alpha: 0.5), width: 2)
-            : null,
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: isDark ? 0.2 : 0.05),
-            blurRadius: 10,
-            offset: const Offset(0, 4),
+    // Use FutureBuilder to get display names from LabTestResults table (V5)
+    return FutureBuilder<List<dynamic>>(
+      future: Future.wait([_getDisplayName(order), _getDisplayCode(order)]),
+      builder: (context, snapshot) {
+        final displayName = snapshot.data?[0] as String? ?? 'Loading...';
+        final displayCode = snapshot.data?[1] as String?;
+
+        return Container(
+          margin: const EdgeInsets.only(bottom: 12),
+          decoration: BoxDecoration(
+            color: isDark ? AppColors.darkSurface : Colors.white,
+            borderRadius: BorderRadius.circular(20),
+            border: hasAbnormalResults 
+                ? Border.all(color: AppColors.error.withValues(alpha: 0.5), width: 2)
+                : null,
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withValues(alpha: isDark ? 0.2 : 0.05),
+                blurRadius: 10,
+                offset: const Offset(0, 4),
+              ),
+            ],
           ),
-        ],
-      ),
-      child: Material(
-        color: Colors.transparent,
-        child: InkWell(
-          onTap: () => _showOrderDetails(order),
-          borderRadius: BorderRadius.circular(20),
-          child: Padding(
-            padding: const EdgeInsets.all(16),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(
-                  children: [
-                    Container(
-                      padding: const EdgeInsets.all(12),
-                      decoration: BoxDecoration(
-                        gradient: LinearGradient(
-                          colors: [
-                            statusColor.withValues(alpha: 0.2),
-                            statusColor.withValues(alpha: 0.1),
-                          ],
+          child: Material(
+            color: Colors.transparent,
+            child: InkWell(
+              onTap: () => _showOrderDetails(order),
+              borderRadius: BorderRadius.circular(20),
+              child: Padding(
+                padding: const EdgeInsets.all(16),
+                child: _buildLabOrderCardContent(
+                  order: order,
+                  model: model,
+                  displayName: displayName,
+                  displayCode: displayCode,
+                  statusColor: statusColor,
+                  urgencyColor: urgencyColor,
+                  hasAbnormalResults: hasAbnormalResults,
+                  isDark: isDark,
+                ),
+              ),
+            ),
+          ),
+        );
+      },
+    );
+  }
+
+  Widget _buildLabOrderCardContent({
+    required LabOrderData order,
+    required LabOrderModel model,
+    required String displayName,
+    required String? displayCode,
+    required Color statusColor,
+    required Color urgencyColor,
+    required bool hasAbnormalResults,
+    required bool isDark,
+  }) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          children: [
+            Container(
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  colors: [
+                    statusColor.withValues(alpha: 0.2),
+                    statusColor.withValues(alpha: 0.1),
+                  ],
+                ),
+                borderRadius: BorderRadius.circular(14),
+              ),
+              child: Icon(
+                _getTestIcon(displayName),
+                color: statusColor,
+                size: 24,
+              ),
+            ),
+            const SizedBox(width: 14),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    children: [
+                      Expanded(
+                        child: Text(
+                          displayName,
+                          style: TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.w700,
+                            color: isDark ? AppColors.darkTextPrimary : AppColors.textPrimary,
+                          ),
                         ),
-                        borderRadius: BorderRadius.circular(14),
                       ),
-                      child: Icon(
-                        _getTestIcon(order.testName),
-                        color: statusColor,
-                        size: 24,
-                      ),
-                    ),
-                    const SizedBox(width: 14),
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Row(
+                      if (hasAbnormalResults)
+                        Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                          decoration: BoxDecoration(
+                            color: AppColors.error.withValues(alpha: 0.1),
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
                             children: [
-                              Expanded(
-                                child: Text(
-                                  order.testName,
-                                  style: TextStyle(
-                                    fontSize: 16,
-                                    fontWeight: FontWeight.w700,
-                                    color: isDark ? AppColors.darkTextPrimary : AppColors.textPrimary,
-                                  ),
+                              Icon(Icons.warning_rounded, size: 12, color: AppColors.error),
+                              const SizedBox(width: 4),
+                              Text(
+                                'ABNORMAL',
+                                style: TextStyle(
+                                  fontSize: 9,
+                                  fontWeight: FontWeight.w700,
+                                  color: AppColors.error,
+                                  letterSpacing: 0.5,
                                 ),
                               ),
-                              if (hasAbnormalResults)
-                                Container(
-                                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                                  decoration: BoxDecoration(
-                                    color: AppColors.error.withValues(alpha: 0.1),
-                                    borderRadius: BorderRadius.circular(8),
-                                  ),
-                                  child: Row(
-                                    mainAxisSize: MainAxisSize.min,
-                                    children: [
-                                      Icon(Icons.warning_rounded, size: 12, color: AppColors.error),
-                                      const SizedBox(width: 4),
-                                      Text(
-                                        'ABNORMAL',
-                                        style: TextStyle(
-                                          fontSize: 9,
-                                          fontWeight: FontWeight.w700,
-                                          color: AppColors.error,
-                                          letterSpacing: 0.5,
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                ),
                             ],
                           ),
-                          if (order.testCode != null)
-                            Padding(
-                              padding: const EdgeInsets.only(top: 2),
-                              child: Text(
-                                'Code: ${order.testCode}',
-                                style: TextStyle(
-                                  fontSize: 12,
-                                  color: isDark ? AppColors.darkTextSecondary : AppColors.textSecondary,
-                                ),
-                              ),
-                            ),
-                        ],
-                      ),
-                    ),
-                    _buildStatusChip(order.status, statusColor),
-                  ],
-                ),
-                const SizedBox(height: 14),
-                Row(
-                  children: [
-                    Flexible(
-                      flex: 0,
-                      child: _buildInfoChip(
-                        Icons.priority_high_rounded,
-                        model.urgency.displayName,
-                        urgencyColor,
-                      ),
-                    ),
-                    const SizedBox(width: 8),
-                    if (order.labName != null)
-                      Flexible(
-                        child: _buildInfoChip(
-                          Icons.business_rounded,
-                          order.labName!,
-                          Colors.grey,
                         ),
-                      ),
-                    const SizedBox(width: 8),
-                    Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                      decoration: BoxDecoration(
-                        color: isDark 
-                            ? Colors.white.withValues(alpha: 0.05)
-                            : Colors.black.withValues(alpha: 0.03),
-                        borderRadius: BorderRadius.circular(8),
-                      ),
-                      child: Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Icon(
-                            Icons.calendar_today_rounded,
-                            size: 12,
-                            color: isDark ? AppColors.darkTextSecondary : AppColors.textSecondary,
-                          ),
-                          const SizedBox(width: 4),
-                          Text(
-                            _formatDate(order.orderDate),
-                            style: TextStyle(
-                              fontSize: 12,
-                              fontWeight: FontWeight.w500,
-                              color: isDark ? AppColors.darkTextSecondary : AppColors.textSecondary,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ],
-                ),
-                if (order.status == 'completed' && order.resultSummary != null) ...[
-                  const SizedBox(height: 14),
-                  Container(
-                    padding: const EdgeInsets.all(14),
-                    decoration: BoxDecoration(
-                      color: (hasAbnormalResults ? AppColors.error : AppColors.success).withValues(alpha: 0.08),
-                      borderRadius: BorderRadius.circular(14),
-                      border: Border.all(
-                        color: (hasAbnormalResults ? AppColors.error : AppColors.success).withValues(alpha: 0.2),
-                      ),
-                    ),
-                    child: Row(
-                      children: [
-                        Icon(
-                          hasAbnormalResults ? Icons.warning_rounded : Icons.check_circle_rounded,
-                          size: 18,
-                          color: hasAbnormalResults ? AppColors.error : AppColors.success,
-                        ),
-                        const SizedBox(width: 10),
-                        Expanded(
-                          child: Text(
-                            order.resultSummary!,
-                            style: TextStyle(
-                              fontSize: 13,
-                              color: isDark ? AppColors.darkTextPrimary : AppColors.textPrimary,
-                            ),
-                            maxLines: 2,
-                            overflow: TextOverflow.ellipsis,
-                          ),
-                        ),
-                        Icon(
-                          Icons.chevron_right_rounded,
-                          size: 20,
+                    ],
+                  ),
+                  if (displayCode != null && displayCode.isNotEmpty)
+                    Padding(
+                      padding: const EdgeInsets.only(top: 2),
+                      child: Text(
+                        'Code: $displayCode',
+                        style: TextStyle(
+                          fontSize: 12,
                           color: isDark ? AppColors.darkTextSecondary : AppColors.textSecondary,
                         ),
-                      ],
+                      ),
+                    ),
+                ],
+              ),
+            ),
+            _buildStatusChip(order.status, statusColor),
+          ],
+        ),
+        const SizedBox(height: 14),
+        Row(
+          children: [
+            Flexible(
+              flex: 0,
+              child: _buildInfoChip(
+                Icons.priority_high_rounded,
+                model.urgency.displayName,
+                urgencyColor,
+              ),
+            ),
+            const SizedBox(width: 8),
+            if (order.labName != null && order.labName!.isNotEmpty)
+              Flexible(
+                child: _buildInfoChip(
+                  Icons.business_rounded,
+                  order.labName!,
+                  Colors.grey,
+                ),
+              ),
+            const SizedBox(width: 8),
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+              decoration: BoxDecoration(
+                color: isDark 
+                    ? Colors.white.withValues(alpha: 0.05)
+                    : Colors.black.withValues(alpha: 0.03),
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Icon(
+                    Icons.calendar_today_rounded,
+                    size: 12,
+                    color: isDark ? AppColors.darkTextSecondary : AppColors.textSecondary,
+                  ),
+                  const SizedBox(width: 4),
+                  Text(
+                    _formatDate(order.orderDate),
+                    style: TextStyle(
+                      fontSize: 12,
+                      fontWeight: FontWeight.w500,
+                      color: isDark ? AppColors.darkTextSecondary : AppColors.textSecondary,
                     ),
                   ),
                 ],
+              ),
+            ),
+          ],
+        ),
+        if (order.status == 'completed' && order.resultSummary != null && order.resultSummary!.isNotEmpty) ...[
+          const SizedBox(height: 14),
+          Container(
+            padding: const EdgeInsets.all(14),
+            decoration: BoxDecoration(
+              color: (hasAbnormalResults ? AppColors.error : AppColors.success).withValues(alpha: 0.08),
+              borderRadius: BorderRadius.circular(14),
+              border: Border.all(
+                color: (hasAbnormalResults ? AppColors.error : AppColors.success).withValues(alpha: 0.2),
+              ),
+            ),
+            child: Row(
+              children: [
+                Icon(
+                  hasAbnormalResults ? Icons.warning_rounded : Icons.check_circle_rounded,
+                  size: 18,
+                  color: hasAbnormalResults ? AppColors.error : AppColors.success,
+                ),
+                const SizedBox(width: 10),
+                Expanded(
+                  child: Text(
+                    order.resultSummary!,
+                    style: TextStyle(
+                      fontSize: 13,
+                      color: isDark ? AppColors.darkTextPrimary : AppColors.textPrimary,
+                    ),
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ),
+                Icon(
+                  Icons.chevron_right_rounded,
+                  size: 20,
+                  color: isDark ? AppColors.darkTextSecondary : AppColors.textSecondary,
+                ),
               ],
             ),
           ),
-        ),
-      ),
+        ],
+      ],
     );
   }
 
@@ -1150,10 +1234,16 @@ class _LabOrdersScreenState extends ConsumerState<LabOrdersScreen>
     );
   }
 
-  void _showOrderDetails(LabOrderData order) {
+  void _showOrderDetails(LabOrderData order) async {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final model = _labOrderService.toModel(order);
     final statusColor = _getStatusColor(order.status);
+    
+    // V5: Get display name and code from LabTestResults table
+    final displayName = await _getDisplayName(order);
+    final displayCode = await _getDisplayCode(order);
+
+    if (!mounted) return;
 
     showModalBottomSheet(
       context: context,
@@ -1203,7 +1293,7 @@ class _LabOrdersScreenState extends ConsumerState<LabOrdersScreen>
                           borderRadius: BorderRadius.circular(16),
                         ),
                         child: Icon(
-                          _getTestIcon(order.testName),
+                          _getTestIcon(displayName),
                           color: statusColor,
                           size: 28,
                         ),
@@ -1214,16 +1304,16 @@ class _LabOrdersScreenState extends ConsumerState<LabOrdersScreen>
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             Text(
-                              order.testName,
+                              displayName,
                               style: TextStyle(
                                 fontSize: 20,
                                 fontWeight: FontWeight.w700,
                                 color: isDark ? AppColors.darkTextPrimary : AppColors.textPrimary,
                               ),
                             ),
-                            if (order.testCode != null)
+                            if (displayCode != null && displayCode.isNotEmpty)
                               Text(
-                                'Code: ${order.testCode}',
+                                'Code: $displayCode',
                                 style: TextStyle(
                                   fontSize: 14,
                                   color: isDark ? AppColors.darkTextSecondary : AppColors.textSecondary,
@@ -1250,22 +1340,22 @@ class _LabOrdersScreenState extends ConsumerState<LabOrdersScreen>
                       children: [
                         _buildDetailRow('Order Date', _formatDate(order.orderDate), Icons.calendar_today_rounded),
                         _buildDetailRow('Urgency', model.urgency.displayName, Icons.priority_high_rounded),
-                        if (order.labName != null)
+                        if (order.labName != null && order.labName!.isNotEmpty)
                           _buildDetailRow('Laboratory', order.labName!, Icons.business_rounded),
-                        if (order.specimenType != null)
+                        if (order.specimenType != null && order.specimenType!.isNotEmpty)
                           _buildDetailRow('Specimen Type', order.specimenType!, Icons.water_drop_rounded),
                         if (order.collectionDate != null)
                           _buildDetailRow('Collection Date', _formatDate(order.collectionDate!), Icons.access_time_rounded),
                         if (order.resultDate != null)
                           _buildDetailRow('Result Date', _formatDate(order.resultDate!), Icons.check_circle_rounded),
-                        if (order.clinicalIndication != null)
+                        if (order.clinicalIndication != null && order.clinicalIndication!.isNotEmpty)
                           _buildDetailRow('Clinical Indication', order.clinicalIndication!, Icons.medical_information_rounded, isLast: true),
                       ],
                     ),
                   ),
                   
                   // Results Section
-                  if (order.resultSummary != null) ...[
+                  if (order.resultSummary != null && order.resultSummary!.isNotEmpty) ...[
                     const SizedBox(height: 20),
                     Row(
                       children: [

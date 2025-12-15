@@ -168,14 +168,16 @@ class _AddImagingScreenState extends ConsumerState<AddImagingScreen> {
     }
   }
 
-  void _loadExistingRecord() {
+  void _loadExistingRecord() async {
     final record = widget.existingRecord!;
     _recordDate = record.recordDate;
     _clinicalNotesController.text = record.doctorNotes ?? '';
     
-    if (record.dataJson != null) {
-      try {
-        final data = jsonDecode(record.dataJson!) as Map<String, dynamic>;
+    // V6: Use normalized fields with fallback to dataJson
+    final db = await ref.read(doctorDbProvider.future);
+    final data = await db.getMedicalRecordFieldsCompat(record.id);
+    if (data.isNotEmpty && mounted) {
+      setState(() {
         _imagingTypeController.text = (data['imaging_type'] as String?) ?? '';
         _bodyPartController.text = (data['body_part'] as String?) ?? '';
         _indicationController.text = (data['indication'] as String?) ?? '';
@@ -187,7 +189,7 @@ class _AddImagingScreenState extends ConsumerState<AddImagingScreen> {
         _facilityController.text = (data['facility'] as String?) ?? '';
         _contrastUsed = (data['contrast_used'] as bool?) ?? false;
         _urgency = (data['urgency'] as String?) ?? 'Routine';
-      } catch (_) {}
+      });
     }
   }
 
@@ -325,6 +327,9 @@ class _AddImagingScreenState extends ConsumerState<AddImagingScreen> {
     setState(() => _isSaving = true);
 
     try {
+      // V6: Build data for normalized storage
+      final recordData = _buildDataJson();
+      
       final companion = MedicalRecordsCompanion.insert(
         patientId: _selectedPatientId!,
         recordType: 'imaging',
@@ -334,7 +339,7 @@ class _AddImagingScreenState extends ConsumerState<AddImagingScreen> {
                 ? _imagingTypeController.text
                 : 'Imaging Study - ${DateFormat('MMM d, yyyy').format(_recordDate)}',
         description: Value(_findingsController.text),
-        dataJson: Value(jsonEncode(_buildDataJson())),
+        dataJson: const Value('{}'), // V6: Empty - using MedicalRecordFields
         diagnosis: Value(_impressionController.text),
         treatment: Value(_recommendationsController.text),
         doctorNotes: Value(_clinicalNotesController.text),
@@ -354,7 +359,7 @@ class _AddImagingScreenState extends ConsumerState<AddImagingScreen> {
                   ? _imagingTypeController.text
                   : 'Imaging Study - ${DateFormat('MMM d, yyyy').format(_recordDate)}',
           description: _findingsController.text,
-          dataJson: jsonEncode(_buildDataJson()),
+          dataJson: '{}', // V6: Empty - using MedicalRecordFields
           diagnosis: _impressionController.text,
           treatment: _recommendationsController.text,
           doctorNotes: _clinicalNotesController.text,
@@ -362,9 +367,14 @@ class _AddImagingScreenState extends ConsumerState<AddImagingScreen> {
           createdAt: widget.existingRecord!.createdAt,
         );
         await db.updateMedicalRecord(updatedRecord);
+        // V6: Delete old fields and re-insert
+        await db.deleteFieldsForMedicalRecord(widget.existingRecord!.id);
+        await db.insertMedicalRecordFieldsBatch(widget.existingRecord!.id, _selectedPatientId!, recordData);
         resultRecord = updatedRecord;
       } else {
         final recordId = await db.insertMedicalRecord(companion);
+        // V6: Save fields to normalized table
+        await db.insertMedicalRecordFieldsBatch(recordId, _selectedPatientId!, recordData);
         resultRecord = await db.getMedicalRecordById(recordId);
       }
 
@@ -514,6 +524,8 @@ class _AddImagingScreenState extends ConsumerState<AddImagingScreen> {
                   hint: 'Clinical indication for study...',
                   maxLines: 2,
                   accentColor: const Color(0xFF7C3AED),
+                  enableVoice: true,
+                  suggestions: chiefComplaintSuggestions,
                 ),
                 const SizedBox(height: AppSpacing.md),
                 RecordFieldGrid(
@@ -574,8 +586,9 @@ class _AddImagingScreenState extends ConsumerState<AddImagingScreen> {
               hint: 'Describe imaging findings in detail...',
               prefixIcon: Icons.find_in_page_outlined,
               maxLines: 6,
-              suggestions: MedicalRecordSuggestions.imagingFindings,
+              suggestions: investigationResultsSuggestions,
               separator: '. ',
+              enableVoiceDictation: true,
             ),
           ),
           const SizedBox(height: AppSpacing.lg),
@@ -596,6 +609,8 @@ class _AddImagingScreenState extends ConsumerState<AddImagingScreen> {
                   hint: 'Radiological impression and diagnosis...',
                   maxLines: 4,
                   accentColor: Colors.purple,
+                  enableVoice: true,
+                  suggestions: diagnosisSuggestions,
                 ),
                 const SizedBox(height: AppSpacing.md),
                 RecordTextField(
@@ -603,6 +618,8 @@ class _AddImagingScreenState extends ConsumerState<AddImagingScreen> {
                   hint: 'Follow-up recommendations...',
                   maxLines: 3,
                   accentColor: Colors.purple,
+                  enableVoice: true,
+                  suggestions: treatmentSuggestions,
                 ),
               ],
             ),
@@ -651,6 +668,8 @@ class _AddImagingScreenState extends ConsumerState<AddImagingScreen> {
               label: '',
               hint: 'Additional clinical notes...',
               accentColor: Colors.indigo,
+              enableVoice: true,
+              suggestions: clinicalNotesSuggestions,
             ),
           ),
           const SizedBox(height: AppSpacing.xl),

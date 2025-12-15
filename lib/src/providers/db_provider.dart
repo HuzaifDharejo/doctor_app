@@ -9,6 +9,7 @@ import '../services/consent_service.dart';
 import '../services/data_export_service.dart';
 import '../services/doctor_settings_service.dart';
 import '../services/drug_reference_service.dart';
+import '../services/dynamic_suggestions_service.dart';
 import '../services/family_history_service.dart';
 import '../services/growth_chart_service.dart';
 import '../services/immunization_service.dart';
@@ -196,4 +197,15 @@ final recurringAppointmentProvider = Provider<RecurringAppointmentService>((ref)
 final clinicalLetterProvider = Provider<ClinicalLetterService>((ref) {
   log.d('CLINICAL_LETTER', 'Initializing clinical letter service...');
   return ClinicalLetterService();
+});
+
+// Dynamic suggestions service provider
+// Provides suggestions that learn from user input
+final dynamicSuggestionsProvider = FutureProvider<DynamicSuggestionsService>((ref) async {
+  log.d('SUGGESTIONS', 'Initializing dynamic suggestions service...');
+  final db = await ref.watch(doctorDbProvider.future);
+  final service = DynamicSuggestionsService(db);
+  await service.initialize();
+  log.i('SUGGESTIONS', 'Dynamic suggestions service initialized');
+  return service;
 });

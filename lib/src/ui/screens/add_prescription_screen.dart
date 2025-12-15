@@ -688,28 +688,31 @@ class _AddPrescriptionScreenState extends ConsumerState<AddPrescriptionScreen> {
           'medicationCount': _medications.length,
         });
 
-        // Create lab orders for any selected lab tests (also normalized)
+        // Create separate lab orders for each selected lab test
         if (_selectedLabTests.isNotEmpty) {
           final labOrderService = LabOrderService();
-          final orderNumber = 'LO-${DateTime.now().millisecondsSinceEpoch}';
+          final baseTimestamp = DateTime.now().millisecondsSinceEpoch;
           
-          // Create the lab order
-          final labOrderId = await labOrderService.createLabOrder(
-            patientId: _selectedPatientId!,
-            orderNumber: orderNumber,
-            testCodes: '[]', // V5: empty - use LabTestResults table
-            testNames: '[]', // V5: empty - use LabTestResults table
-            orderingProvider: 'Doctor',
-            orderedDate: DateTime.now(),
-            encounterId: widget.encounterId,
-            orderType: 'lab',
-            priority: 'routine',
-            notes: 'Auto-created from prescription #$prescriptionId',
-          );
-          
-          // V5: Insert each lab test into normalized LabTestResults table
+          // Create a separate lab order for each test
           for (int i = 0; i < _selectedLabTests.length; i++) {
             final test = _selectedLabTests[i];
+            final orderNumber = 'LO-${baseTimestamp + i}';
+            
+            // Create individual lab order for this test
+            final labOrderId = await labOrderService.createLabOrder(
+              patientId: _selectedPatientId!,
+              orderNumber: orderNumber,
+              testCodes: '[]', // V5: empty - use LabTestResults table
+              testNames: '[]', // V5: empty - use LabTestResults table
+              orderingProvider: 'Doctor',
+              orderedDate: DateTime.now(),
+              encounterId: widget.encounterId,
+              orderType: 'lab',
+              priority: 'routine',
+              notes: 'Auto-created from prescription #$prescriptionId',
+            );
+            
+            // V5: Insert test into normalized LabTestResults table
             await db.insertLabTestResult(
               LabTestResultsCompanion.insert(
                 labOrderId: labOrderId,
@@ -717,14 +720,13 @@ class _AddPrescriptionScreenState extends ConsumerState<AddPrescriptionScreen> {
                 testName: test.name,
                 testCode: Value(test.testCode ?? ''),
                 category: Value(test.category ?? ''),
-                displayOrder: Value(i),
+                displayOrder: Value(0),
               ),
             );
           }
           
-          log.i('LAB_ORDER', 'Lab orders created with normalized test results', extra: {
+          log.i('LAB_ORDER', 'Lab orders created - one per test', extra: {
             'prescriptionId': prescriptionId,
-            'labOrderId': labOrderId,
             'labTestCount': _selectedLabTests.length,
           });
         }

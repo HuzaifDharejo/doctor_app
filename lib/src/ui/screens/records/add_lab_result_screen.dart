@@ -172,14 +172,16 @@ class _AddLabResultScreenState extends ConsumerState<AddLabResultScreen> {
     _autoSaveTimer = Timer.periodic(_autoSaveInterval, (_) => _autoSave());
   }
 
-  void _loadExistingRecord() {
+  void _loadExistingRecord() async {
     final record = widget.existingRecord!;
     _recordDate = record.recordDate;
     _clinicalNotesController.text = record.doctorNotes ?? '';
     
-    if (record.dataJson != null) {
-      try {
-        final data = jsonDecode(record.dataJson!) as Map<String, dynamic>;
+    // V6: Use normalized fields with fallback to dataJson
+    final db = await ref.read(doctorDbProvider.future);
+    final data = await db.getMedicalRecordFieldsCompat(record.id);
+    if (data.isNotEmpty && mounted) {
+      setState(() {
         _testNameController.text = (data['test_name'] as String?) ?? '';
         _testCategoryController.text = (data['test_category'] as String?) ?? '';
         _resultController.text = (data['result'] as String?) ?? '';
@@ -190,7 +192,7 @@ class _AddLabResultScreenState extends ConsumerState<AddLabResultScreen> {
         _orderingPhysicianController.text = (data['ordering_physician'] as String?) ?? '';
         _interpretationController.text = (data['interpretation'] as String?) ?? '';
         _resultStatus = (data['result_status'] as String?) ?? 'Normal';
-      } catch (_) {}
+      });
     }
   }
 
@@ -377,6 +379,9 @@ class _AddLabResultScreenState extends ConsumerState<AddLabResultScreen> {
     setState(() => _isSaving = true);
 
     try {
+      // V6: Build data for normalized storage
+      final recordData = _buildDataJson();
+      
       final companion = MedicalRecordsCompanion.insert(
         patientId: _selectedPatientId!,
         encounterId: Value(widget.encounterId),
@@ -385,7 +390,7 @@ class _AddLabResultScreenState extends ConsumerState<AddLabResultScreen> {
             ? 'Lab: ${_testNameController.text} - ${DateFormat('MMM d').format(_recordDate)}'
             : 'Lab Result - ${DateFormat('MMM d, yyyy').format(_recordDate)}',
         description: Value(_resultController.text),
-        dataJson: Value(jsonEncode(_buildDataJson())),
+        dataJson: const Value('{}'), // V6: Empty - using MedicalRecordFields
         diagnosis: Value(_interpretationController.text),
         treatment: const Value(''),
         doctorNotes: Value(_clinicalNotesController.text),
@@ -404,7 +409,7 @@ class _AddLabResultScreenState extends ConsumerState<AddLabResultScreen> {
               ? 'Lab: ${_testNameController.text} - ${DateFormat('MMM d').format(_recordDate)}'
               : 'Lab Result - ${DateFormat('MMM d, yyyy').format(_recordDate)}',
           description: _resultController.text,
-          dataJson: jsonEncode(_buildDataJson()),
+          dataJson: '{}', // V6: Empty - using MedicalRecordFields
           diagnosis: _interpretationController.text,
           treatment: '',
           doctorNotes: _clinicalNotesController.text,
@@ -412,9 +417,14 @@ class _AddLabResultScreenState extends ConsumerState<AddLabResultScreen> {
           createdAt: widget.existingRecord!.createdAt,
         );
         await db.updateMedicalRecord(updatedRecord);
+        // V6: Delete old fields and re-insert
+        await db.deleteFieldsForMedicalRecord(widget.existingRecord!.id);
+        await db.insertMedicalRecordFieldsBatch(widget.existingRecord!.id, _selectedPatientId!, recordData);
         resultRecord = updatedRecord;
       } else {
         final recordId = await db.insertMedicalRecord(companion);
+        // V6: Save fields to normalized table
+        await db.insertMedicalRecordFieldsBatch(recordId, _selectedPatientId!, recordData);
         resultRecord = await db.getMedicalRecordById(recordId);
       }
 
@@ -669,6 +679,8 @@ class _AddLabResultScreenState extends ConsumerState<AddLabResultScreen> {
                   hint: 'Test result value(s)...',
                   maxLines: 4,
                   accentColor: _getStatusColor(_resultStatus),
+                  enableVoice: true,
+                  suggestions: investigationResultsSuggestions,
                 ),
                 const SizedBox(height: AppSpacing.md),
                 RecordFieldGrid(
@@ -715,6 +727,8 @@ class _AddLabResultScreenState extends ConsumerState<AddLabResultScreen> {
               hint: 'Clinical significance and interpretation...',
               maxLines: 4,
               accentColor: Colors.purple,
+              enableVoice: true,
+              suggestions: diagnosisSuggestions,
             ),
           ),
           const SizedBox(height: AppSpacing.lg),
@@ -733,6 +747,8 @@ class _AddLabResultScreenState extends ConsumerState<AddLabResultScreen> {
               label: '',
               hint: 'Additional notes, follow-up instructions...',
               accentColor: Colors.indigo,
+              enableVoice: true,
+              suggestions: clinicalNotesSuggestions,
             ),
           ),
           const SizedBox(height: AppSpacing.xl),

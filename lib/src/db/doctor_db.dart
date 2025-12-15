@@ -1395,6 +1395,33 @@ class ClinicalCalculatorHistory extends Table {
   DateTimeColumn get calculatedAt => dateTime().withDefault(currentDateAndTime)();
 }
 
+/// UserSuggestions - User-added suggestions that learn from usage
+/// These are combined with built-in suggestions to provide personalized autocomplete
+class UserSuggestions extends Table {
+  IntColumn get id => integer().autoIncrement()();
+  
+  /// Category of the suggestion (matches field type)
+  /// Values: 'chief_complaint', 'examination_findings', 'investigation_results',
+  ///         'diagnosis', 'treatment', 'clinical_notes', 'medication', 'instruction',
+  ///         'symptom', 'investigation', 'procedure', 'referral_reason', etc.
+  TextColumn get category => text()();
+  
+  /// The actual suggestion text
+  TextColumn get value => text()();
+  
+  /// How many times this suggestion has been used (for sorting)
+  IntColumn get usageCount => integer().withDefault(const Constant(1))();
+  
+  /// Last time this suggestion was used (for recency sorting)
+  DateTimeColumn get lastUsedAt => dateTime().withDefault(currentDateAndTime)();
+  
+  /// Whether this is a user-added suggestion (vs system-generated)
+  BoolColumn get isUserAdded => boolean().withDefault(const Constant(true))();
+  
+  /// Creation timestamp
+  DateTimeColumn get createdAt => dateTime().withDefault(currentDateAndTime)();
+}
+
 /// Model class for patient with insurance
 class PatientWithInsurance {
   PatientWithInsurance({required this.patient, required this.insurances});
@@ -1433,7 +1460,9 @@ class LabOrderWithPatient {
   TreatmentSymptoms, SideEffects, Attachments, MentalStatusExams,
   LabTestResults, ProgressNoteEntries, TreatmentInterventions,
   ClaimBillingCodes, PatientAllergies, PatientChronicConditions,
-  MedicalRecordFields
+  MedicalRecordFields,
+  // V7: User-added suggestions
+  UserSuggestions,
 ])
 class DoctorDatabase extends _$DoctorDatabase {
   /// Singleton instance
@@ -1456,7 +1485,7 @@ class DoctorDatabase extends _$DoctorDatabase {
   DoctorDatabase.forTesting(super.e);
 
   @override
-  int get schemaVersion => 11;
+  int get schemaVersion => 12;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -1573,6 +1602,10 @@ class DoctorDatabase extends _$DoctorDatabase {
       if (from < 11) {
         // Schema V6: MedicalRecordFields - normalize MedicalRecords.dataJson
         await m.createTable(medicalRecordFields);
+      }
+      if (from < 12) {
+        // Schema V7: User-added suggestions that learn from usage
+        await m.createTable(userSuggestions);
       }
     },
   );

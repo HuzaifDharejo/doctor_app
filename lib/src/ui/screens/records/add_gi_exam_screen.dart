@@ -221,20 +221,23 @@ class _AddGIExamScreenState extends ConsumerState<AddGIExamScreen> {
     ];
   }
 
-  void _loadExistingRecord() {
+  void _loadExistingRecord() async {
     final record = widget.existingRecord!;
     _recordDate = record.recordDate;
     _diagnosisController.text = record.diagnosis ?? '';
     _treatmentController.text = record.treatment ?? '';
     _clinicalNotesController.text = record.doctorNotes ?? '';
-    if (record.dataJson != null) {
-      try {
-        final data = jsonDecode(record.dataJson!) as Map<String, dynamic>;
+    
+    // V6: Use normalized fields with fallback to dataJson
+    final db = await ref.read(doctorDbProvider.future);
+    final data = await db.getMedicalRecordFieldsCompat(record.id);
+    if (data.isNotEmpty && mounted) {
+      setState(() {
         _chiefComplaintController.text = (data['chief_complaint'] as String?) ?? '';
         _selectedSymptoms = List<String>.from((data['symptoms'] as List?) ?? []);
         _selectedSigns = List<String>.from((data['signs'] as List?) ?? []);
         _selectedInvestigations = List<String>.from((data['investigations'] as List?) ?? []);
-      } catch (_) {}
+      });
     }
   }
 
@@ -415,10 +418,13 @@ class _AddGIExamScreenState extends ConsumerState<AddGIExamScreen> {
     if (_selectedPatientId == null) { RecordFormWidgets.showErrorSnackbar(context, 'Please select a patient'); return; }
     setState(() => _isSaving = true);
     try {
+      // V6: Build data for normalized storage
+      final recordData = _buildDataJson();
+      
       final companion = MedicalRecordsCompanion.insert(
         patientId: _selectedPatientId!, recordType: 'gi_examination',
         title: _diagnosisController.text.isNotEmpty ? 'GI: ${_diagnosisController.text}' : 'GI Examination - ${DateFormat('MMM d').format(_recordDate)}',
-        description: Value(_chiefComplaintController.text), dataJson: Value(jsonEncode(_buildDataJson())),
+        description: Value(_chiefComplaintController.text), dataJson: const Value('{}'), // V6: Empty - using MedicalRecordFields
         diagnosis: Value(_diagnosisController.text), treatment: Value(_treatmentController.text),
         doctorNotes: Value(_clinicalNotesController.text), recordDate: _recordDate,
       );
@@ -426,13 +432,18 @@ class _AddGIExamScreenState extends ConsumerState<AddGIExamScreen> {
       if (widget.existingRecord != null) {
         final updatedRecord = MedicalRecord(id: widget.existingRecord!.id, patientId: _selectedPatientId!, recordType: 'gi_examination',
           title: _diagnosisController.text.isNotEmpty ? 'GI: ${_diagnosisController.text}' : 'GI Examination - ${DateFormat('MMM d').format(_recordDate)}',
-          description: _chiefComplaintController.text, dataJson: jsonEncode(_buildDataJson()),
+          description: _chiefComplaintController.text, dataJson: '{}', // V6: Empty - using MedicalRecordFields
           diagnosis: _diagnosisController.text, treatment: _treatmentController.text, doctorNotes: _clinicalNotesController.text,
           recordDate: _recordDate, createdAt: widget.existingRecord!.createdAt);
         await db.updateMedicalRecord(updatedRecord);
+        // V6: Delete old fields and re-insert
+        await db.deleteFieldsForMedicalRecord(widget.existingRecord!.id);
+        await db.insertMedicalRecordFieldsBatch(widget.existingRecord!.id, _selectedPatientId!, recordData);
         resultRecord = updatedRecord;
       } else {
         final recordId = await db.insertMedicalRecord(companion);
+        // V6: Save fields to normalized table
+        await db.insertMedicalRecordFieldsBatch(recordId, _selectedPatientId!, recordData);
         resultRecord = await db.getMedicalRecordById(recordId);
       }
       if (mounted) { RecordFormWidgets.showSuccessSnackbar(context, 'GI examination saved!'); Navigator.pop(context, resultRecord); }
@@ -483,7 +494,7 @@ class _AddGIExamScreenState extends ConsumerState<AddGIExamScreen> {
         initiallyExpanded: _expandedSections['complaint'] ?? true,
         onToggle: (expanded) => setState(() => _expandedSections['complaint'] = expanded),
         child: Column(children: [
-          RecordTextField(controller: _chiefComplaintController, label: 'Chief Complaint', hint: 'Reason for evaluation', maxLines: 2),
+          RecordTextField(controller: _chiefComplaintController, label: 'Chief Complaint', hint: 'Reason for evaluation', maxLines: 2, enableVoice: true, suggestions: chiefComplaintSuggestions),
           const SizedBox(height: AppSpacing.md), 
           ChipSelectorSection(
             title: 'Symptoms',
@@ -631,7 +642,7 @@ class _AddGIExamScreenState extends ConsumerState<AddGIExamScreen> {
             accentColor: Colors.cyan,
             showClearButton: true,
           ),
-          const SizedBox(height: AppSpacing.md), RecordTextField(controller: _investigationResultsController, label: 'Results', hint: 'Test findings', maxLines: 3),
+          const SizedBox(height: AppSpacing.md), RecordTextField(controller: _investigationResultsController, label: 'Results', hint: 'Test findings', maxLines: 3, enableVoice: true, suggestions: investigationResultsSuggestions),
         ]),
       ), 
       const SizedBox(height: AppSpacing.lg),
@@ -645,9 +656,9 @@ class _AddGIExamScreenState extends ConsumerState<AddGIExamScreen> {
         initiallyExpanded: _expandedSections['assessment'] ?? true,
         onToggle: (expanded) => setState(() => _expandedSections['assessment'] = expanded),
         child: Column(children: [
-          RecordTextField(controller: _diagnosisController, label: 'Diagnosis', hint: 'e.g., GERD, PUD, IBD', maxLines: 2),
-          const SizedBox(height: AppSpacing.md), RecordTextField(controller: _treatmentController, label: 'Treatment', hint: 'Medications, diet', maxLines: 3),
-          const SizedBox(height: AppSpacing.md), RecordTextField(controller: _clinicalNotesController, label: 'Notes', hint: 'Additional notes', maxLines: 2),
+          RecordTextField(controller: _diagnosisController, label: 'Diagnosis', hint: 'e.g., GERD, PUD, IBD', maxLines: 2, enableVoice: true, suggestions: diagnosisSuggestions),
+          const SizedBox(height: AppSpacing.md), RecordTextField(controller: _treatmentController, label: 'Treatment', hint: 'Medications, diet', maxLines: 3, enableVoice: true, suggestions: treatmentSuggestions),
+          const SizedBox(height: AppSpacing.md), RecordTextField(controller: _clinicalNotesController, label: 'Notes', hint: 'Additional notes', maxLines: 2, enableVoice: true, suggestions: clinicalNotesSuggestions),
         ]),
       ), 
       const SizedBox(height: AppSpacing.xl),

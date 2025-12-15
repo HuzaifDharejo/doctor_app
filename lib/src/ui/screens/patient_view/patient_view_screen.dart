@@ -665,6 +665,40 @@ Address: ${patient.address}
     ).then((_) => _refreshAllData());
   }
 
+  // Build a modern tab with icon and optional badge
+  Widget _buildTab(String label, IconData icon, int? count) {
+    final hasCount = count != null && count > 0;
+    return Tab(
+      height: 48,
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(icon, size: 18),
+          const SizedBox(width: 6),
+          Text(label),
+          if (hasCount) ...[
+            const SizedBox(width: 6),
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+              decoration: BoxDecoration(
+                color: AppColors.error,
+                borderRadius: BorderRadius.circular(10),
+              ),
+              child: Text(
+                count > 99 ? '99+' : count.toString(),
+                style: const TextStyle(
+                  color: Colors.white,
+                  fontSize: 10,
+                  fontWeight: FontWeight.w700,
+                ),
+              ),
+            ),
+          ],
+        ],
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final patient = widget.patient;
@@ -775,38 +809,27 @@ Address: ${patient.address}
                   ),
                   child: TabBar(
                     controller: _tabController,
-                    isScrollable: false,
+                    isScrollable: true, // Make scrollable for better fit
+                    tabAlignment: TabAlignment.start,
                     padding: const EdgeInsets.symmetric(horizontal: 8),
                     tabs: [
-                      const Tab(text: 'Summary'),
-                      widgets.BadgedTab(
-                        text: 'Visits',
-                        count: _upcomingAppointmentCount,
-                        showBadge: _upcomingAppointmentCount > 0,
-                      ),
-                      widgets.BadgedTab(
-                        text: 'Clinical',
-                        count: _activePrescriptionCount,
-                      ),
-                      widgets.BadgedTab(
-                        text: 'Billing',
-                        count: _unpaidInvoiceCount,
-                        showBadge: _unpaidInvoiceCount > 0,
-                      ),
-                      widgets.BadgedTab(
-                        text: 'Timeline',
-                        count: _timelineEventsCount > 9 ? 0 : _timelineEventsCount,
-                        showBadge: _timelineEventsCount > 0,
-                      ),
+                      _buildTab('Summary', Icons.dashboard_rounded, null),
+                      _buildTab('Visits', Icons.calendar_today_rounded, _upcomingAppointmentCount),
+                      _buildTab('Clinical', Icons.medical_services_rounded, _activePrescriptionCount),
+                      _buildTab('Billing', Icons.receipt_long_rounded, _unpaidInvoiceCount),
+                      _buildTab('Timeline', Icons.timeline_rounded, null),
                     ],
                     labelColor: AppColors.primary,
                     unselectedLabelColor: isDark ? AppColors.darkTextSecondary : AppColors.textSecondary,
-                    indicatorColor: AppColors.primary,
-                    indicatorWeight: 3,
-                    indicatorSize: TabBarIndicatorSize.label,
-                    labelStyle: const TextStyle(fontWeight: FontWeight.w600, fontSize: 14),
-                    unselectedLabelStyle: const TextStyle(fontWeight: FontWeight.w500, fontSize: 14),
+                    indicator: BoxDecoration(
+                      color: AppColors.primary.withValues(alpha: 0.15),
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    indicatorPadding: const EdgeInsets.symmetric(vertical: 8, horizontal: -8),
+                    labelStyle: const TextStyle(fontWeight: FontWeight.w700, fontSize: 13),
+                    unselectedLabelStyle: const TextStyle(fontWeight: FontWeight.w500, fontSize: 13),
                     dividerColor: Colors.transparent,
+                    splashBorderRadius: BorderRadius.circular(12),
                   ),
                 ),
               ),

@@ -293,16 +293,18 @@ class _AddFollowUpScreenState extends ConsumerState<AddFollowUpScreen> {
     showTemplateAppliedSnackbar(context, template.label, color: template.color);
   }
 
-  void _loadExistingRecord() {
+  void _loadExistingRecord() async {
     final record = widget.existingRecord!;
     _recordDate = record.recordDate;
     _clinicalNotesController.text = record.doctorNotes ?? '';
     _assessmentController.text = record.diagnosis ?? '';
     _planController.text = record.treatment ?? '';
     
-    if (record.dataJson != null) {
-      try {
-        final data = jsonDecode(record.dataJson!) as Map<String, dynamic>;
+    // V6: Use normalized fields with fallback to dataJson
+    final db = await ref.read(doctorDbProvider.future);
+    final data = await db.getMedicalRecordFieldsCompat(record.id);
+    if (data.isNotEmpty && mounted) {
+      setState(() {
         _progressNotesController.text = (data['progress_notes'] as String?) ?? (data['follow_up_notes'] as String?) ?? '';
         _symptomsController.text = (data['symptoms'] as String?) ?? '';
         _complianceController.text = (data['compliance'] as String?) ?? '';
@@ -324,7 +326,7 @@ class _AddFollowUpScreenState extends ConsumerState<AddFollowUpScreen> {
           _weightController.text = (vitals['weight'] as String?) ?? '';
           _spo2Controller.text = (vitals['spo2'] as String?) ?? '';
         }
-      } catch (_) {}
+      });
     }
   }
 
@@ -395,12 +397,15 @@ class _AddFollowUpScreenState extends ConsumerState<AddFollowUpScreen> {
     setState(() => _isSaving = true);
 
     try {
+      // V6: Build data for normalized storage
+      final recordData = _buildDataJson();
+      
       final companion = MedicalRecordsCompanion.insert(
         patientId: _selectedPatientId!,
         recordType: 'follow_up',
         title: 'Follow-up Visit - ${DateFormat('MMM d, yyyy').format(_recordDate)}',
         description: Value(_progressNotesController.text),
-        dataJson: Value(jsonEncode(_buildDataJson())),
+        dataJson: const Value('{}'), // V6: Empty - using MedicalRecordFields
         diagnosis: Value(_assessmentController.text),
         treatment: Value(_planController.text),
         doctorNotes: Value(_clinicalNotesController.text),
@@ -417,7 +422,7 @@ class _AddFollowUpScreenState extends ConsumerState<AddFollowUpScreen> {
           recordType: 'follow_up',
           title: 'Follow-up Visit - ${DateFormat('MMM d, yyyy').format(_recordDate)}',
           description: _progressNotesController.text,
-          dataJson: jsonEncode(_buildDataJson()),
+          dataJson: '{}', // V6: Empty - using MedicalRecordFields
           diagnosis: _assessmentController.text,
           treatment: _planController.text,
           doctorNotes: _clinicalNotesController.text,
@@ -425,10 +430,15 @@ class _AddFollowUpScreenState extends ConsumerState<AddFollowUpScreen> {
           createdAt: widget.existingRecord!.createdAt,
         );
         await db.updateMedicalRecord(updatedRecord);
+        // V6: Delete old fields and re-insert
+        await db.deleteFieldsForMedicalRecord(widget.existingRecord!.id);
+        await db.insertMedicalRecordFieldsBatch(widget.existingRecord!.id, _selectedPatientId!, recordData);
         resultRecord = updatedRecord;
         recordId = widget.existingRecord!.id;
       } else {
         recordId = await db.insertMedicalRecord(companion);
+        // V6: Save fields to normalized table
+        await db.insertMedicalRecordFieldsBatch(recordId, _selectedPatientId!, recordData);
         resultRecord = await db.getMedicalRecordById(recordId);
       }
 
@@ -771,6 +781,8 @@ class _AddFollowUpScreenState extends ConsumerState<AddFollowUpScreen> {
               hint: 'Recent investigation results...',
               maxLines: 3,
               accentColor: Colors.blue,
+              enableVoice: true,
+              suggestions: investigationResultsSuggestions,
             ),
           ),
           const SizedBox(height: AppSpacing.lg),

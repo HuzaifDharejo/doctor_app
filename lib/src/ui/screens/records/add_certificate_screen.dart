@@ -5,7 +5,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 import '../../../db/doctor_db.dart';
 import '../../../providers/db_provider.dart';
-import 'components/patient_selector_card.dart';
+import 'components/record_components.dart';
 
 /// Types of medical certificates
 enum CertificateType {
@@ -218,14 +218,16 @@ class _AddCertificateScreenState extends ConsumerState<AddCertificateScreen> {
     }
   }
 
-  void _loadExistingRecord() {
+  void _loadExistingRecord() async {
     final record = widget.existingRecord!;
     _certificateDate = record.recordDate;
     _notesController.text = record.doctorNotes ?? '';
     
-    if (record.dataJson != null) {
-      try {
-        final data = jsonDecode(record.dataJson!) as Map<String, dynamic>;
+    // V6: Use normalized fields with fallback to dataJson
+    final db = await ref.read(doctorDbProvider.future);
+    final data = await db.getMedicalRecordFieldsCompat(record.id);
+    if (data.isNotEmpty && mounted) {
+      setState(() {
         final typeStr = data['certificate_type'] as String?;
         if (typeStr != null) {
           _selectedType = CertificateType.values.firstWhere(
@@ -241,7 +243,7 @@ class _AddCertificateScreenState extends ConsumerState<AddCertificateScreen> {
         if (data['to_date'] != null) {
           _toDate = DateTime.tryParse(data['to_date'] as String);
         }
-      } catch (_) {}
+      });
     }
   }
 
@@ -277,13 +279,14 @@ class _AddCertificateScreenState extends ConsumerState<AddCertificateScreen> {
     try {
       final db = await ref.read(doctorDbProvider.future);
       
-      final dataJson = jsonEncode({
+      // V6: Build data for normalized storage
+      final recordData = {
         'certificate_type': _selectedType.name,
         'content': _contentController.text,
         'diagnosis': _diagnosisController.text,
         'from_date': _fromDate?.toIso8601String(),
         'to_date': _toDate?.toIso8601String(),
-      });
+      };
 
       final title = '${_selectedType.displayName} - ${DateFormat('MMM d, yyyy').format(_certificateDate)}';
 
@@ -294,7 +297,7 @@ class _AddCertificateScreenState extends ConsumerState<AddCertificateScreen> {
           recordType: 'certificate',
           title: title,
           description: '',
-          dataJson: dataJson,
+          dataJson: '{}', // V6: Empty - using MedicalRecordFields
           diagnosis: '',
           treatment: '',
           doctorNotes: _notesController.text,
@@ -302,17 +305,22 @@ class _AddCertificateScreenState extends ConsumerState<AddCertificateScreen> {
           createdAt: widget.existingRecord!.createdAt,
         );
         await db.updateMedicalRecord(updatedRecord);
+        // V6: Delete old fields and re-insert
+        await db.deleteFieldsForMedicalRecord(widget.existingRecord!.id);
+        await db.insertMedicalRecordFieldsBatch(widget.existingRecord!.id, _selectedPatientId!, recordData);
       } else {
-        await db.insertMedicalRecord(
+        final recordId = await db.insertMedicalRecord(
           MedicalRecordsCompanion.insert(
             patientId: _selectedPatientId!,
             recordType: 'certificate',
             title: title,
-            dataJson: Value(dataJson),
+            dataJson: const Value('{}'), // V6: Empty - using MedicalRecordFields
             doctorNotes: Value(_notesController.text),
             recordDate: _certificateDate,
           ),
         );
+        // V6: Save fields to normalized table
+        await db.insertMedicalRecordFieldsBatch(recordId, _selectedPatientId!, recordData);
       }
 
       if (mounted) {
@@ -426,18 +434,12 @@ class _AddCertificateScreenState extends ConsumerState<AddCertificateScreen> {
               isDark: isDark,
               title: 'Diagnosis / Reason',
               icon: Icons.medical_information,
-              child: TextFormField(
+              child: RecordTextField(
                 controller: _diagnosisController,
                 maxLines: 2,
-                decoration: InputDecoration(
-                  hintText: 'Enter diagnosis or reason...',
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(12),
-                    borderSide: BorderSide.none,
-                  ),
-                  filled: true,
-                  fillColor: isDark ? Colors.white.withValues(alpha: 0.05) : Colors.grey[100],
-                ),
+                hint: 'Enter diagnosis or reason...',
+                enableVoice: true,
+                suggestions: diagnosisSuggestions,
               ),
             ),
             const SizedBox(height: 16),
@@ -470,18 +472,12 @@ class _AddCertificateScreenState extends ConsumerState<AddCertificateScreen> {
               title: 'Internal Notes',
               icon: Icons.note,
               subtitle: 'Not included in certificate',
-              child: TextFormField(
+              child: RecordTextField(
                 controller: _notesController,
                 maxLines: 3,
-                decoration: InputDecoration(
-                  hintText: 'Notes for your records...',
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(12),
-                    borderSide: BorderSide.none,
-                  ),
-                  filled: true,
-                  fillColor: isDark ? Colors.white.withValues(alpha: 0.05) : Colors.grey[100],
-                ),
+                hint: 'Notes for your records...',
+                enableVoice: true,
+                suggestions: clinicalNotesSuggestions,
               ),
             ),
             const SizedBox(height: 24),

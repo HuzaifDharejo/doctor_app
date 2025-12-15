@@ -9,6 +9,7 @@ import 'package:intl/intl.dart';
 import '../../../core/theme/design_tokens.dart';
 import '../../../db/doctor_db.dart';
 import '../../../providers/db_provider.dart';
+import '../../../services/dynamic_suggestions_service.dart';
 import '../../../services/suggestions_service.dart';
 import '../../widgets/suggestion_text_field.dart';
 import 'components/record_components.dart';
@@ -161,14 +162,16 @@ class _AddGeneralRecordScreenState extends ConsumerState<AddGeneralRecordScreen>
     _autoSaveTimer = Timer.periodic(_autoSaveInterval, (_) => _autoSave());
   }
 
-  void _loadExistingRecord() {
+  void _loadExistingRecord() async {
     final record = widget.existingRecord!;
     _recordDate = record.recordDate;
     _doctorNotesController.text = record.doctorNotes ?? '';
     
-    if (record.dataJson != null) {
-      try {
-        final data = jsonDecode(record.dataJson!) as Map<String, dynamic>;
+    // V6: Use normalized fields with fallback to dataJson
+    final db = await ref.read(doctorDbProvider.future);
+    final data = await db.getMedicalRecordFieldsCompat(record.id);
+    if (data.isNotEmpty && mounted) {
+      setState(() {
         _chiefComplaintsController.text = (data['chief_complaints'] as String?) ?? '';
         _historyController.text = (data['history'] as String?) ?? '';
         _examinationController.text = (data['examination'] as String?) ?? '';
@@ -191,7 +194,7 @@ class _AddGeneralRecordScreenState extends ConsumerState<AddGeneralRecordScreen>
             ));
           });
         }
-      } catch (_) {}
+      });
     }
   }
 
@@ -426,13 +429,16 @@ class _AddGeneralRecordScreenState extends ConsumerState<AddGeneralRecordScreen>
     setState(() => _isSaving = true);
 
     try {
+      // V6: Build data for normalized storage
+      final recordData = _buildDataJson();
+      
       final companion = MedicalRecordsCompanion.insert(
         patientId: _selectedPatientId!,
         encounterId: Value(widget.encounterId),
         recordType: 'general',
         title: 'General Consultation - ${DateFormat('MMM d, yyyy').format(_recordDate)}',
         description: Value(_chiefComplaintsController.text),
-        dataJson: Value(jsonEncode(_buildDataJson())),
+        dataJson: const Value('{}'), // V6: Empty - using MedicalRecordFields
         doctorNotes: Value(_doctorNotesController.text),
         recordDate: _recordDate,
       );
@@ -449,7 +455,7 @@ class _AddGeneralRecordScreenState extends ConsumerState<AddGeneralRecordScreen>
           recordType: 'general',
           title: 'General Consultation - ${DateFormat('MMM d, yyyy').format(_recordDate)}',
           description: _chiefComplaintsController.text,
-          dataJson: jsonEncode(_buildDataJson()),
+          dataJson: '{}', // V6: Empty - using MedicalRecordFields
           diagnosis: '',
           treatment: '',
           doctorNotes: _doctorNotesController.text,
@@ -457,10 +463,15 @@ class _AddGeneralRecordScreenState extends ConsumerState<AddGeneralRecordScreen>
           createdAt: widget.existingRecord!.createdAt,
         );
         await db.updateMedicalRecord(updatedRecord);
+        // V6: Delete old fields and re-insert
+        await db.deleteFieldsForMedicalRecord(widget.existingRecord!.id);
+        await db.insertMedicalRecordFieldsBatch(widget.existingRecord!.id, _selectedPatientId!, recordData);
         resultRecord = updatedRecord;
         recordId = widget.existingRecord!.id;
       } else {
         recordId = await db.insertMedicalRecord(companion);
+        // V6: Save fields to normalized table
+        await db.insertMedicalRecordFieldsBatch(recordId, _selectedPatientId!, recordData);
         resultRecord = await db.getMedicalRecordById(recordId);
       }
 
@@ -469,6 +480,9 @@ class _AddGeneralRecordScreenState extends ConsumerState<AddGeneralRecordScreen>
       if (vitals != null && _hasAnyVitals(vitals)) {
         await _saveVitalsToPatientRecord(db, vitals, recordId);
       }
+
+      // Save user inputs as suggestions for future autocomplete
+      await _saveSuggestionsFromForm();
 
       if (mounted) {
         // Clear draft on successful save
@@ -488,6 +502,40 @@ class _AddGeneralRecordScreenState extends ConsumerState<AddGeneralRecordScreen>
       }
     } finally {
       if (mounted) setState(() => _isSaving = false);
+    }
+  }
+
+  /// Save user inputs as suggestions for future autocomplete
+  Future<void> _saveSuggestionsFromForm() async {
+    try {
+      final service = await ref.read(dynamicSuggestionsProvider.future);
+      
+      // Save chief complaint
+      if (_chiefComplaintsController.text.trim().isNotEmpty) {
+        await service.addOrUpdateSuggestion(
+          SuggestionCategory.chiefComplaint, 
+          _chiefComplaintsController.text.trim(),
+        );
+      }
+      
+      // Save examination findings
+      if (_examinationController.text.trim().isNotEmpty) {
+        await service.addOrUpdateSuggestion(
+          SuggestionCategory.examinationFindings, 
+          _examinationController.text.trim(),
+        );
+      }
+      
+      // Save clinical notes
+      if (_doctorNotesController.text.trim().isNotEmpty) {
+        await service.addOrUpdateSuggestion(
+          SuggestionCategory.clinicalNotes, 
+          _doctorNotesController.text.trim(),
+        );
+      }
+    } catch (e) {
+      // Silently ignore - suggestions are enhancement, not critical
+      debugPrint('Error saving suggestions: $e');
     }
   }
 
@@ -793,6 +841,8 @@ class _AddGeneralRecordScreenState extends ConsumerState<AddGeneralRecordScreen>
               hint: 'Relevant medical history...',
               maxLines: 4,
               accentColor: Colors.blue,
+              enableVoice: true,
+              suggestions: clinicalNotesSuggestions,
             ),
           ),
           const SizedBox(height: AppSpacing.lg),
@@ -831,6 +881,8 @@ class _AddGeneralRecordScreenState extends ConsumerState<AddGeneralRecordScreen>
               hint: 'Physical examination findings...',
               maxLines: 4,
               accentColor: Colors.purple,
+              enableVoice: true,
+              suggestions: examinationFindingsSuggestions,
             ),
           ),
           const SizedBox(height: AppSpacing.lg),

@@ -243,14 +243,16 @@ class _AddProcedureScreenState extends ConsumerState<AddProcedureScreen> {
     ),
   ];
 
-  void _loadExistingRecord() {
+  void _loadExistingRecord() async {
     final record = widget.existingRecord!;
     _recordDate = record.recordDate;
     _clinicalNotesController.text = record.doctorNotes ?? '';
     
-    if (record.dataJson != null) {
-      try {
-        final data = jsonDecode(record.dataJson!) as Map<String, dynamic>;
+    // V6: Use normalized fields with fallback to dataJson
+    final db = await ref.read(doctorDbProvider.future);
+    final data = await db.getMedicalRecordFieldsCompat(record.id);
+    if (data.isNotEmpty && mounted) {
+      setState(() {
         _procedureNameController.text = (data['procedure_name'] as String?) ?? '';
         _procedureCodeController.text = (data['procedure_code'] as String?) ?? '';
         _indicationController.text = (data['indication'] as String?) ?? '';
@@ -273,7 +275,7 @@ class _AddProcedureScreenState extends ConsumerState<AddProcedureScreen> {
           _pulsePostController.text = (vitals['pulse_post'] as String?) ?? '';
           _spo2PostController.text = (vitals['spo2_post'] as String?) ?? '';
         }
-      } catch (_) {}
+      });
     }
   }
 
@@ -467,6 +469,9 @@ class _AddProcedureScreenState extends ConsumerState<AddProcedureScreen> {
     setState(() => _isSaving = true);
 
     try {
+      // V6: Build data for normalized storage
+      final recordData = _buildDataJson();
+      
       final companion = MedicalRecordsCompanion.insert(
         patientId: _selectedPatientId!,
         recordType: 'procedure',
@@ -474,7 +479,7 @@ class _AddProcedureScreenState extends ConsumerState<AddProcedureScreen> {
             ? 'Procedure: ${_procedureNameController.text}'
             : 'Medical Procedure - ${DateFormat('MMM d, yyyy').format(_recordDate)}',
         description: Value(_procedureNotesController.text),
-        dataJson: Value(jsonEncode(_buildDataJson())),
+        dataJson: const Value('{}'), // V6: Empty - using MedicalRecordFields
         diagnosis: Value(_findingsController.text),
         treatment: Value(_postOpInstructionsController.text),
         doctorNotes: Value(_clinicalNotesController.text),
@@ -493,7 +498,7 @@ class _AddProcedureScreenState extends ConsumerState<AddProcedureScreen> {
               ? 'Procedure: ${_procedureNameController.text}'
               : 'Medical Procedure - ${DateFormat('MMM d, yyyy').format(_recordDate)}',
           description: _procedureNotesController.text,
-          dataJson: jsonEncode(_buildDataJson()),
+          dataJson: '{}', // V6: Empty - using MedicalRecordFields
           diagnosis: _findingsController.text,
           treatment: _postOpInstructionsController.text,
           doctorNotes: _clinicalNotesController.text,
@@ -501,10 +506,15 @@ class _AddProcedureScreenState extends ConsumerState<AddProcedureScreen> {
           createdAt: widget.existingRecord!.createdAt,
         );
         await db.updateMedicalRecord(updatedRecord);
+        // V6: Delete old fields and re-insert
+        await db.deleteFieldsForMedicalRecord(widget.existingRecord!.id);
+        await db.insertMedicalRecordFieldsBatch(widget.existingRecord!.id, _selectedPatientId!, recordData);
         resultRecord = updatedRecord;
         recordId = widget.existingRecord!.id;
       } else {
         recordId = await db.insertMedicalRecord(companion);
+        // V6: Save fields to normalized table
+        await db.insertMedicalRecordFieldsBatch(recordId, _selectedPatientId!, recordData);
         resultRecord = await db.getMedicalRecordById(recordId);
       }
 
@@ -785,6 +795,8 @@ class _AddProcedureScreenState extends ConsumerState<AddProcedureScreen> {
                   hint: 'Clinical indication for procedure...',
                   maxLines: 2,
                   accentColor: _primaryColor,
+                  enableVoice: true,
+                  suggestions: chiefComplaintSuggestions,
                 ),
                 const SizedBox(height: AppSpacing.md),
                 Row(
@@ -906,6 +918,8 @@ class _AddProcedureScreenState extends ConsumerState<AddProcedureScreen> {
                   hint: 'Findings during procedure...',
                   maxLines: 4,
                   accentColor: Colors.blue,
+                  enableVoice: true,
+                  suggestions: investigationResultsSuggestions,
                 ),
                 const SizedBox(height: AppSpacing.md),
                 RecordTextField(
@@ -986,6 +1000,8 @@ class _AddProcedureScreenState extends ConsumerState<AddProcedureScreen> {
                   hint: 'Post-procedure care instructions...',
                   maxLines: 4,
                   accentColor: _primaryColor,
+                  enableVoice: true,
+                  suggestions: treatmentSuggestions,
                 ),
                 const SizedBox(height: AppSpacing.md),
                 RecordFieldGrid(
@@ -1010,6 +1026,8 @@ class _AddProcedureScreenState extends ConsumerState<AddProcedureScreen> {
                   label: 'Additional Notes',
                   hint: 'Additional clinical notes...',
                   accentColor: Colors.indigo,
+                  enableVoice: true,
+                  suggestions: clinicalNotesSuggestions,
                 ),
               ],
             ),

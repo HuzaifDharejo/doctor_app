@@ -6,6 +6,7 @@ import 'package:intl/intl.dart';
 import '../../../db/doctor_db.dart';
 import '../../../providers/db_provider.dart';
 import 'components/patient_selector_card.dart';
+import 'components/record_components.dart';
 
 /// Common referral specialties
 final _referralSpecialties = [
@@ -122,14 +123,16 @@ class _AddReferralScreenState extends ConsumerState<AddReferralScreen> {
     }
   }
 
-  void _loadExistingRecord() {
+  void _loadExistingRecord() async {
     final record = widget.existingRecord!;
     _referralDate = record.recordDate;
     _notesController.text = record.doctorNotes ?? '';
     
-    if (record.dataJson != null) {
-      try {
-        final data = jsonDecode(record.dataJson!) as Map<String, dynamic>;
+    // V6: Use normalized fields with fallback to dataJson
+    final db = await ref.read(doctorDbProvider.future);
+    final data = await db.getMedicalRecordFieldsCompat(record.id);
+    if (data.isNotEmpty && mounted) {
+      setState(() {
         _selectedSpecialty = data['specialty'] as String?;
         _referToController.text = (data['refer_to'] as String?) ?? '';
         _hospitalController.text = (data['hospital'] as String?) ?? '';
@@ -146,7 +149,7 @@ class _AddReferralScreenState extends ConsumerState<AddReferralScreen> {
             orElse: () => ReferralUrgency.routine,
           );
         }
-      } catch (_) {}
+      });
     }
   }
 
@@ -183,7 +186,8 @@ class _AddReferralScreenState extends ConsumerState<AddReferralScreen> {
     try {
       final db = await ref.read(doctorDbProvider.future);
       
-      final dataJson = jsonEncode({
+      // V6: Build data for normalized storage
+      final recordData = {
         'specialty': _selectedSpecialty,
         'refer_to': _referToController.text,
         'hospital': _hospitalController.text,
@@ -193,7 +197,7 @@ class _AddReferralScreenState extends ConsumerState<AddReferralScreen> {
         'current_treatment': _currentTreatmentController.text,
         'specific_questions': _specificQuestionsController.text,
         'urgency': _urgency.name,
-      });
+      };
 
       final referTo = _referToController.text.isNotEmpty 
           ? _referToController.text 
@@ -208,7 +212,7 @@ class _AddReferralScreenState extends ConsumerState<AddReferralScreen> {
             recordType: 'referral',
             title: title,
             description: '',
-            dataJson: dataJson,
+            dataJson: '{}', // V6: Empty - using MedicalRecordFields
             diagnosis: '',
             treatment: '',
             doctorNotes: _notesController.text,
@@ -216,17 +220,22 @@ class _AddReferralScreenState extends ConsumerState<AddReferralScreen> {
             createdAt: widget.existingRecord!.createdAt,
           ),
         );
+        // V6: Delete old fields and re-insert
+        await db.deleteFieldsForMedicalRecord(widget.existingRecord!.id);
+        await db.insertMedicalRecordFieldsBatch(widget.existingRecord!.id, _selectedPatientId!, recordData);
       } else {
-        await db.insertMedicalRecord(
+        final recordId = await db.insertMedicalRecord(
           MedicalRecordsCompanion.insert(
             patientId: _selectedPatientId!,
             recordType: 'referral',
             title: title,
-            dataJson: Value(dataJson),
+            dataJson: const Value('{}'), // V6: Empty - using MedicalRecordFields
             doctorNotes: Value(_notesController.text),
             recordDate: _referralDate,
           ),
         );
+        // V6: Save fields to normalized table
+        await db.insertMedicalRecordFieldsBatch(recordId, _selectedPatientId!, recordData);
       }
 
       if (mounted) {
@@ -364,19 +373,13 @@ class _AddReferralScreenState extends ConsumerState<AddReferralScreen> {
               isDark: isDark,
               title: 'Reason for Referral',
               icon: Icons.help_outline,
-              child: TextFormField(
+              child: RecordTextField(
                 controller: _reasonController,
                 maxLines: 3,
+                hint: 'Why is this patient being referred?',
                 validator: (v) => v?.isEmpty ?? true ? 'Please enter reason' : null,
-                decoration: InputDecoration(
-                  hintText: 'Why is this patient being referred?',
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(12),
-                    borderSide: BorderSide.none,
-                  ),
-                  filled: true,
-                  fillColor: isDark ? Colors.white.withValues(alpha: 0.05) : Colors.grey[100],
-                ),
+                enableVoice: true,
+                suggestions: chiefComplaintSuggestions,
               ),
             ),
             const SizedBox(height: 16),
@@ -386,18 +389,12 @@ class _AddReferralScreenState extends ConsumerState<AddReferralScreen> {
               isDark: isDark,
               title: 'Clinical Summary',
               icon: Icons.summarize,
-              child: TextFormField(
+              child: RecordTextField(
                 controller: _clinicalSummaryController,
                 maxLines: 5,
-                decoration: InputDecoration(
-                  hintText: 'Brief history, examination findings, current diagnosis...',
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(12),
-                    borderSide: BorderSide.none,
-                  ),
-                  filled: true,
-                  fillColor: isDark ? Colors.white.withValues(alpha: 0.05) : Colors.grey[100],
-                ),
+                hint: 'Brief history, examination findings, current diagnosis...',
+                enableVoice: true,
+                suggestions: diagnosisSuggestions,
               ),
             ),
             const SizedBox(height: 16),
@@ -407,18 +404,12 @@ class _AddReferralScreenState extends ConsumerState<AddReferralScreen> {
               isDark: isDark,
               title: 'Investigations Done',
               icon: Icons.science,
-              child: TextFormField(
+              child: RecordTextField(
                 controller: _investigationsController,
                 maxLines: 3,
-                decoration: InputDecoration(
-                  hintText: 'List any tests/imaging already performed...',
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(12),
-                    borderSide: BorderSide.none,
-                  ),
-                  filled: true,
-                  fillColor: isDark ? Colors.white.withValues(alpha: 0.05) : Colors.grey[100],
-                ),
+                hint: 'List any tests/imaging already performed...',
+                enableVoice: true,
+                suggestions: investigationResultsSuggestions,
               ),
             ),
             const SizedBox(height: 16),
@@ -428,18 +419,12 @@ class _AddReferralScreenState extends ConsumerState<AddReferralScreen> {
               isDark: isDark,
               title: 'Current Treatment',
               icon: Icons.medication,
-              child: TextFormField(
+              child: RecordTextField(
                 controller: _currentTreatmentController,
                 maxLines: 3,
-                decoration: InputDecoration(
-                  hintText: 'Current medications and treatment...',
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(12),
-                    borderSide: BorderSide.none,
-                  ),
-                  filled: true,
-                  fillColor: isDark ? Colors.white.withValues(alpha: 0.05) : Colors.grey[100],
-                ),
+                hint: 'Current medications and treatment...',
+                enableVoice: true,
+                suggestions: treatmentSuggestions,
               ),
             ),
             const SizedBox(height: 16),
@@ -472,18 +457,12 @@ class _AddReferralScreenState extends ConsumerState<AddReferralScreen> {
               title: 'Internal Notes',
               icon: Icons.note,
               subtitle: 'Not included in referral letter',
-              child: TextFormField(
+              child: RecordTextField(
                 controller: _notesController,
                 maxLines: 2,
-                decoration: InputDecoration(
-                  hintText: 'Notes for your records...',
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(12),
-                    borderSide: BorderSide.none,
-                  ),
-                  filled: true,
-                  fillColor: isDark ? Colors.white.withValues(alpha: 0.05) : Colors.grey[100],
-                ),
+                hint: 'Notes for your records...',
+                enableVoice: true,
+                suggestions: clinicalNotesSuggestions,
               ),
             ),
             const SizedBox(height: 24),

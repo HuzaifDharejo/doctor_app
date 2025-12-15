@@ -184,16 +184,18 @@ class _AddPediatricCheckupScreenState extends ConsumerState<AddPediatricCheckupS
     ];
   }
 
-  void _loadExistingRecord() {
+  void _loadExistingRecord() async {
     final record = widget.existingRecord!;
     _recordDate = record.recordDate;
     _diagnosisController.text = record.diagnosis ?? '';
     _treatmentController.text = record.treatment ?? '';
     _clinicalNotesController.text = record.doctorNotes ?? '';
     
-    if (record.dataJson != null) {
-      try {
-        final data = jsonDecode(record.dataJson!) as Map<String, dynamic>;
+    // V6: Use normalized fields with fallback to dataJson
+    final db = await ref.read(doctorDbProvider.future);
+    final data = await db.getMedicalRecordFieldsCompat(record.id);
+    if (data.isNotEmpty && mounted) {
+      setState(() {
         final growth = data['growth'] as Map<String, dynamic>?;
         if (growth != null) {
           _weightController.text = (growth['weight'] as String?) ?? '';
@@ -206,7 +208,7 @@ class _AddPediatricCheckupScreenState extends ConsumerState<AddPediatricCheckupS
         _selectedVaccinations = List<String>.from((data['vaccinations'] as List?) ?? []);
         _selectedNutritionConcerns = List<String>.from((data['nutrition_concerns'] as List?) ?? []);
         _selectedFindings = List<String>.from((data['findings'] as List?) ?? []);
-      } catch (_) {}
+      });
     }
   }
 
@@ -380,12 +382,15 @@ class _AddPediatricCheckupScreenState extends ConsumerState<AddPediatricCheckupS
     }
     setState(() => _isSaving = true);
     try {
+      // V6: Build data for normalized storage
+      final recordData = _buildDataJson();
+      
       final companion = MedicalRecordsCompanion.insert(
         patientId: _selectedPatientId!,
         recordType: 'pediatric_checkup',
         title: 'Pediatric Checkup - ${DateFormat('MMM d, yyyy').format(_recordDate)}',
         description: Value(_diagnosisController.text),
-        dataJson: Value(jsonEncode(_buildDataJson())),
+        dataJson: const Value('{}'), // V6: Empty - using MedicalRecordFields
         diagnosis: Value(_diagnosisController.text),
         treatment: Value(_treatmentController.text),
         doctorNotes: Value(_clinicalNotesController.text),
@@ -397,15 +402,20 @@ class _AddPediatricCheckupScreenState extends ConsumerState<AddPediatricCheckupS
           id: widget.existingRecord!.id, patientId: _selectedPatientId!,
           recordType: 'pediatric_checkup',
           title: 'Pediatric Checkup - ${DateFormat('MMM d, yyyy').format(_recordDate)}',
-          description: _diagnosisController.text, dataJson: jsonEncode(_buildDataJson()),
+          description: _diagnosisController.text, dataJson: '{}', // V6: Empty - using MedicalRecordFields
           diagnosis: _diagnosisController.text, treatment: _treatmentController.text,
           doctorNotes: _clinicalNotesController.text, recordDate: _recordDate,
           createdAt: widget.existingRecord!.createdAt,
         );
         await db.updateMedicalRecord(updatedRecord);
+        // V6: Delete old fields and re-insert
+        await db.deleteFieldsForMedicalRecord(widget.existingRecord!.id);
+        await db.insertMedicalRecordFieldsBatch(widget.existingRecord!.id, _selectedPatientId!, recordData);
         resultRecord = updatedRecord;
       } else {
         final recordId = await db.insertMedicalRecord(companion);
+        // V6: Save fields to normalized table
+        await db.insertMedicalRecordFieldsBatch(recordId, _selectedPatientId!, recordData);
         resultRecord = await db.getMedicalRecordById(recordId);
       }
       if (mounted) {
@@ -609,9 +619,9 @@ class _AddPediatricCheckupScreenState extends ConsumerState<AddPediatricCheckupS
             initiallyExpanded: _expandedSections['examination'] ?? true,
             onToggle: (expanded) => setState(() => _expandedSections['examination'] = expanded),
             child: Column(children: [
-              RecordTextField(controller: _generalExamController, label: 'General', hint: 'Activity, appearance', maxLines: 2),
+              RecordTextField(controller: _generalExamController, label: 'General', hint: 'Activity, appearance', maxLines: 2, enableVoice: true, suggestions: examinationFindingsSuggestions),
               const SizedBox(height: AppSpacing.md),
-              RecordTextField(controller: _systemicExamController, label: 'Systemic', hint: 'CVS, RS, Abdomen, CNS', maxLines: 3),
+              RecordTextField(controller: _systemicExamController, label: 'Systemic', hint: 'CVS, RS, Abdomen, CNS', maxLines: 3, enableVoice: true, suggestions: examinationFindingsSuggestions),
               const SizedBox(height: AppSpacing.md),
               ChipSelectorSection(
                 title: 'Findings',
@@ -634,11 +644,11 @@ class _AddPediatricCheckupScreenState extends ConsumerState<AddPediatricCheckupS
             initiallyExpanded: _expandedSections['assessment'] ?? true,
             onToggle: (expanded) => setState(() => _expandedSections['assessment'] = expanded),
             child: Column(children: [
-              RecordTextField(controller: _diagnosisController, label: 'Diagnosis', hint: 'Assessment', maxLines: 2),
+              RecordTextField(controller: _diagnosisController, label: 'Diagnosis', hint: 'Assessment', maxLines: 2, enableVoice: true, suggestions: diagnosisSuggestions),
               const SizedBox(height: AppSpacing.md),
-              RecordTextField(controller: _treatmentController, label: 'Treatment', hint: 'Medications, advice', maxLines: 3),
+              RecordTextField(controller: _treatmentController, label: 'Treatment', hint: 'Medications, advice', maxLines: 3, enableVoice: true, suggestions: treatmentSuggestions),
               const SizedBox(height: AppSpacing.md),
-              RecordTextField(controller: _clinicalNotesController, label: 'Notes', hint: 'Additional', maxLines: 2),
+              RecordTextField(controller: _clinicalNotesController, label: 'Notes', hint: 'Additional', maxLines: 2, enableVoice: true, suggestions: clinicalNotesSuggestions),
               const SizedBox(height: AppSpacing.md),
               RecordTextField(controller: _nextVisitController, label: 'Next Visit', hint: 'Schedule'),
             ]),

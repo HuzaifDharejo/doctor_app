@@ -27,6 +27,7 @@ import 'add_orthopedic_exam_screen.dart';
 import 'add_gyn_exam_screen.dart';
 import 'add_neuro_exam_screen.dart';
 import 'add_gi_exam_screen.dart';
+import 'example_record_screen.dart';
 
 /// Screen for selecting which type of medical record to add
 /// Redesigned with modern theme-consistent styling and specialty awareness
@@ -96,21 +97,25 @@ class _SelectRecordTypeScreenState extends ConsumerState<SelectRecordTypeScreen>
     'lab': 'lab_result',
     'imaging': 'imaging',
     'procedure': 'procedure',
+    'vitals': 'vitals',
+    'certificate': 'certificate',
+    'referral': 'referral',
     // Mental health types
     'pulmonary': 'pulmonary_evaluation',
     'psychiatric': 'psychiatric_assessment',
     'therapy': 'therapy_session',
     'psychiatrist': 'psychiatrist_note',
     // Specialty examination types
-    'cardiac': 'cardiac_exam',
+    'cardiac': 'cardiac_examination',
     'pediatric': 'pediatric_checkup',
-    'eye': 'eye_exam',
-    'skin': 'skin_exam',
-    'ent': 'ent_exam',
-    'orthopedic': 'orthopedic_exam',
-    'gyn': 'gyn_exam',
-    'neuro': 'neuro_exam',
-    'gi': 'gi_exam',
+    'eye': 'eye_examination',
+    'skin': 'skin_examination',
+    'ent': 'ent_examination',
+    'orthopedic': 'orthopedic_examination',
+    'gyn': 'gyn_examination',
+    'neuro': 'neuro_examination',
+    'gi': 'gi_examination',
+    // Note: 'example' is NOT in this mapping, so it always shows (for testing)
   };
 
   bool _isTypeEnabled(String typeId, List<String> enabledTypes) {
@@ -175,7 +180,7 @@ class _SelectRecordTypeScreenState extends ConsumerState<SelectRecordTypeScreen>
                   crossAxisCount: screenWidth > 600 ? 4 : 3,
                   mainAxisSpacing: AppSpacing.md,
                   crossAxisSpacing: AppSpacing.md,
-                  childAspectRatio: screenWidth > 600 ? 1.0 : 0.9,
+                  childAspectRatio: screenWidth > 600 ? 1.0 : 0.85,
                 ),
                 delegate: SliverChildBuilderDelegate(
                   (context, index) {
@@ -211,7 +216,7 @@ class _SelectRecordTypeScreenState extends ConsumerState<SelectRecordTypeScreen>
                 crossAxisCount: screenWidth > 600 ? 3 : 2,
                 mainAxisSpacing: AppSpacing.lg,
                 crossAxisSpacing: AppSpacing.lg,
-                childAspectRatio: screenWidth > 600 ? 1.0 : 0.85,
+                childAspectRatio: screenWidth > 600 ? 1.0 : 0.8,
               ),
               delegate: SliverChildBuilderDelegate(
                 (context, index) {
@@ -876,6 +881,18 @@ class _SelectRecordTypeScreenState extends ConsumerState<SelectRecordTypeScreen>
           AddGIExamScreen(preselectedPatient: widget.preselectedPatient),
         ),
       ),
+      // Example record for testing reusable components
+      _RecordTypeInfo(
+        id: 'example',
+        title: 'Example\nRecord',
+        icon: Icons.science_rounded,
+        description: 'Test new components',
+        gradientColors: [const Color(0xFF8B5CF6), const Color(0xFF7C3AED)],
+        onTap: () => _navigateToScreen(
+          context,
+          ExampleRecordScreen(preselectedPatient: widget.preselectedPatient),
+        ),
+      ),
     ];
   }
 
@@ -929,70 +946,62 @@ class _SelectRecordTypeScreenState extends ConsumerState<SelectRecordTypeScreen>
             ),
             // Content
             Padding(
-              padding: EdgeInsets.all(isCompact ? AppSpacing.md : AppSpacing.lg),
+              padding: EdgeInsets.all(isCompact ? AppSpacing.sm : AppSpacing.md),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
                   // Icon with gradient background
                   Container(
-                    padding: EdgeInsets.all(isCompact ? 10 : 12),
+                    padding: EdgeInsets.all(isCompact ? 8 : 10),
                     decoration: BoxDecoration(
                       gradient: LinearGradient(
                         colors: info.gradientColors,
                         begin: Alignment.topLeft,
                         end: Alignment.bottomRight,
                       ),
-                      borderRadius: BorderRadius.circular(14),
+                      borderRadius: BorderRadius.circular(12),
                       boxShadow: [
                         BoxShadow(
-                          color: info.gradientColors[0].withValues(alpha: 0.4),
-                          blurRadius: 12,
-                          offset: const Offset(0, 4),
+                          color: info.gradientColors[0].withValues(alpha: 0.3),
+                          blurRadius: 8,
+                          offset: const Offset(0, 3),
                         ),
                       ],
                     ),
                     child: Icon(
                       info.icon,
                       color: Colors.white,
-                      size: isCompact ? 22 : 26,
+                      size: isCompact ? 20 : 22,
                     ),
                   ),
-                  const Spacer(),
-                  // Title
-                  Text(
-                    info.title,
-                    style: TextStyle(
-                      color: isDark ? Colors.white : AppColors.textPrimary,
-                      fontSize: isCompact ? 14 : 15,
-                      fontWeight: FontWeight.w700,
-                      height: 1.2,
-                    ),
-                  ),
-                  const SizedBox(height: 4),
-                  // Description
-                  Text(
-                    info.description,
-                    style: TextStyle(
-                      color: isDark ? AppColors.darkTextSecondary : AppColors.textSecondary,
-                      fontSize: isCompact ? 11 : 12,
-                    ),
-                  ),
-                  const SizedBox(height: 10),
-                  // Arrow indicator
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.end,
+                  // Bottom content group
+                  Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    mainAxisSize: MainAxisSize.min,
                     children: [
-                      Container(
-                        padding: const EdgeInsets.all(6),
-                        decoration: BoxDecoration(
-                          color: info.gradientColors[0].withValues(alpha: 0.12),
-                          borderRadius: BorderRadius.circular(8),
+                      // Title
+                      Text(
+                        info.title,
+                        style: TextStyle(
+                          color: isDark ? Colors.white : AppColors.textPrimary,
+                          fontSize: isCompact ? 13 : 14,
+                          fontWeight: FontWeight.w700,
+                          height: 1.2,
                         ),
-                        child: Icon(
-                          Icons.arrow_forward_rounded,
-                          color: info.gradientColors[0],
-                          size: 14,
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                      const SizedBox(height: 2),
+                      // Description
+                      Text(
+                        info.description,
+                        style: TextStyle(
+                          color: isDark ? AppColors.darkTextSecondary : AppColors.textSecondary,
+                          fontSize: isCompact ? 10 : 11,
                         ),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
                       ),
                     ],
                   ),

@@ -1,9 +1,12 @@
 import 'package:flutter/material.dart';
 import '../../../../theme/app_theme.dart';
+import '../../../../services/voice_dictation_service.dart';
+import 'quick_picker_bottom_sheet.dart';
 
 /// A styled text input field for medical record forms
-/// Supports various configurations including multi-line, prefix/suffix icons, etc.
-class RecordTextField extends StatelessWidget {
+/// Supports various configurations including multi-line, prefix/suffix icons,
+/// voice dictation, and autocomplete suggestions.
+class RecordTextField extends StatefulWidget {
   const RecordTextField({
     super.key,
     required this.controller,
@@ -30,6 +33,9 @@ class RecordTextField extends StatelessWidget {
     this.focusNode,
     this.textInputAction,
     this.onSubmitted,
+    this.enableVoice = false,
+    this.suggestions,
+    this.onSuggestionSelected,
   });
 
   final TextEditingController controller;
@@ -56,30 +62,246 @@ class RecordTextField extends StatelessWidget {
   final FocusNode? focusNode;
   final TextInputAction? textInputAction;
   final ValueChanged<String>? onSubmitted;
+  
+  /// Whether to show voice dictation button
+  final bool enableVoice;
+  
+  /// List of suggestions to show as autocomplete
+  final List<String>? suggestions;
+  
+  /// Callback when a suggestion is selected
+  final ValueChanged<String>? onSuggestionSelected;
+
+  @override
+  State<RecordTextField> createState() => _RecordTextFieldState();
+}
+
+class _RecordTextFieldState extends State<RecordTextField> {
+  final VoiceDictationService _voiceService = VoiceDictationService();
+  bool _isListening = false;
+  final LayerLink _layerLink = LayerLink();
+  OverlayEntry? _overlayEntry;
+  late FocusNode _internalFocusNode;
+  List<String> _filteredSuggestions = [];
+
+  @override
+  void initState() {
+    super.initState();
+    _internalFocusNode = widget.focusNode ?? FocusNode();
+    _internalFocusNode.addListener(_onFocusChange);
+    widget.controller.addListener(_onTextChanged);
+  }
+
+  @override
+  void dispose() {
+    _removeOverlay();
+    if (widget.focusNode == null) {
+      _internalFocusNode.dispose();
+    }
+    _internalFocusNode.removeListener(_onFocusChange);
+    widget.controller.removeListener(_onTextChanged);
+    super.dispose();
+  }
+
+  void _onFocusChange() {
+    if (!_internalFocusNode.hasFocus) {
+      _removeOverlay();
+    } else {
+      _updateSuggestions();
+    }
+  }
+
+  void _onTextChanged() {
+    _updateSuggestions();
+  }
+
+  void _updateSuggestions() {
+    if (widget.suggestions == null || widget.suggestions!.isEmpty) return;
+    
+    final text = widget.controller.text.toLowerCase();
+    if (text.isEmpty) {
+      _removeOverlay();
+      return;
+    }
+
+    // Get last word being typed (for multi-line content)
+    final words = text.split(RegExp(r'[\s,;.]+'));
+    final lastWord = words.isNotEmpty ? words.last : '';
+    
+    if (lastWord.length < 2) {
+      _removeOverlay();
+      return;
+    }
+
+    _filteredSuggestions = widget.suggestions!
+        .where((s) => s.toLowerCase().contains(lastWord))
+        .take(6)
+        .toList();
+
+    if (_filteredSuggestions.isNotEmpty && _internalFocusNode.hasFocus) {
+      _showOverlay();
+    } else {
+      _removeOverlay();
+    }
+  }
+
+  void _showOverlay() {
+    _removeOverlay();
+    
+    _overlayEntry = OverlayEntry(
+      builder: (context) => Positioned(
+        width: 300,
+        child: CompositedTransformFollower(
+          link: _layerLink,
+          showWhenUnlinked: false,
+          offset: const Offset(0, 56),
+          child: Material(
+            elevation: 8,
+            borderRadius: BorderRadius.circular(12),
+            child: Container(
+              constraints: const BoxConstraints(maxHeight: 200),
+              decoration: BoxDecoration(
+                color: Theme.of(context).brightness == Brightness.dark
+                    ? AppColors.darkSurface
+                    : Colors.white,
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(
+                  color: widget.accentColor ?? AppColors.primary,
+                  width: 1,
+                ),
+              ),
+              child: ListView.builder(
+                shrinkWrap: true,
+                padding: const EdgeInsets.symmetric(vertical: 4),
+                itemCount: _filteredSuggestions.length,
+                itemBuilder: (context, index) {
+                  final suggestion = _filteredSuggestions[index];
+                  return ListTile(
+                    dense: true,
+                    title: Text(
+                      suggestion,
+                      style: const TextStyle(fontSize: 13),
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                    onTap: () => _selectSuggestion(suggestion),
+                  );
+                },
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+
+    Overlay.of(context).insert(_overlayEntry!);
+  }
+
+  void _removeOverlay() {
+    _overlayEntry?.remove();
+    _overlayEntry = null;
+  }
+
+  void _selectSuggestion(String suggestion) {
+    widget.controller.text = suggestion;
+    widget.controller.selection = TextSelection.fromPosition(
+      TextPosition(offset: suggestion.length),
+    );
+    widget.onSuggestionSelected?.call(suggestion);
+    _removeOverlay();
+  }
+
+  Future<void> _toggleVoice() async {
+    if (_isListening) {
+      await _voiceService.stopListening();
+      setState(() => _isListening = false);
+    } else {
+      final available = await _voiceService.initialize();
+      if (!available) return;
+      
+      setState(() => _isListening = true);
+      
+      await _voiceService.startListening(
+        onResult: (text) {
+          if (text.isNotEmpty) {
+            final current = widget.controller.text;
+            if (current.isEmpty) {
+              widget.controller.text = text;
+            } else {
+              widget.controller.text = '$current $text';
+            }
+            widget.controller.selection = TextSelection.fromPosition(
+              TextPosition(offset: widget.controller.text.length),
+            );
+          }
+        },
+        onError: (error) {
+          setState(() => _isListening = false);
+        },
+        onStatusChange: (isListening) {
+          if (mounted) {
+            setState(() => _isListening = isListening);
+          }
+        },
+      );
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    final color = accentColor ?? AppColors.primary;
+    final color = widget.accentColor ?? AppColors.primary;
+
+    // Build suffix widget with voice button
+    Widget? suffix = widget.suffixIcon;
+    if (widget.enableVoice) {
+      suffix = Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          if (widget.suffixIcon != null) widget.suffixIcon!,
+          GestureDetector(
+            onTap: _toggleVoice,
+            child: Container(
+              padding: const EdgeInsets.all(8),
+              child: AnimatedContainer(
+                duration: const Duration(milliseconds: 200),
+                padding: const EdgeInsets.all(4),
+                decoration: BoxDecoration(
+                  color: _isListening 
+                      ? Colors.red.withValues(alpha: 0.1) 
+                      : Colors.transparent,
+                  shape: BoxShape.circle,
+                ),
+                child: Icon(
+                  _isListening ? Icons.stop_rounded : Icons.mic_rounded,
+                  color: _isListening ? Colors.red : color,
+                  size: 20,
+                ),
+              ),
+            ),
+          ),
+        ],
+      );
+    }
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         // Label
-        if (label != null)
+        if (widget.label != null)
           Padding(
             padding: const EdgeInsets.only(bottom: 8),
             child: Row(
               children: [
                 Text(
-                  label!,
+                  widget.label!,
                   style: TextStyle(
                     fontWeight: FontWeight.w500,
                     fontSize: 14,
                     color: isDark ? Colors.white70 : AppColors.textSecondary,
                   ),
                 ),
-                if (isRequired)
+                if (widget.isRequired)
                   Text(
                     ' *',
                     style: TextStyle(
@@ -87,76 +309,111 @@ class RecordTextField extends StatelessWidget {
                       fontWeight: FontWeight.w600,
                     ),
                   ),
+                if (_isListening) ...[
+                  const SizedBox(width: 8),
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                    decoration: BoxDecoration(
+                      color: Colors.red.withValues(alpha: 0.1),
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Container(
+                          width: 6,
+                          height: 6,
+                          decoration: const BoxDecoration(
+                            color: Colors.red,
+                            shape: BoxShape.circle,
+                          ),
+                        ),
+                        const SizedBox(width: 4),
+                        const Text(
+                          'Listening...',
+                          style: TextStyle(
+                            fontSize: 11,
+                            color: Colors.red,
+                            fontWeight: FontWeight.w500,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
               ],
             ),
           ),
 
-        // Text field
-        TextFormField(
-          controller: controller,
-          focusNode: focusNode,
-          decoration: InputDecoration(
-            hintText: hint,
-            helperText: helperText,
-            prefixIcon: prefixIcon != null
-                ? Icon(prefixIcon, color: color, size: 20)
-                : null,
-            suffixIcon: suffixIcon,
-            suffixText: suffixText,
-            filled: true,
-            fillColor: isDark
-                ? AppColors.darkSurface
-                : Colors.grey.shade50,
-            border: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(12),
-              borderSide: BorderSide(
-                color: isDark ? Colors.white12 : Colors.grey.shade300,
+        // Text field with suggestions
+        CompositedTransformTarget(
+          link: _layerLink,
+          child: TextFormField(
+            controller: widget.controller,
+            focusNode: _internalFocusNode,
+            decoration: InputDecoration(
+              hintText: widget.hint,
+              helperText: widget.helperText,
+              prefixIcon: widget.prefixIcon != null
+                  ? Icon(widget.prefixIcon, color: color, size: 20)
+                  : null,
+              suffixIcon: suffix,
+              suffixText: widget.suffixText,
+              filled: true,
+              fillColor: isDark
+                  ? AppColors.darkSurface
+                  : Colors.grey.shade50,
+              border: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(12),
+                borderSide: BorderSide(
+                  color: isDark ? Colors.white12 : Colors.grey.shade300,
+                ),
+              ),
+              enabledBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(12),
+                borderSide: BorderSide(
+                  color: isDark ? Colors.white12 : Colors.grey.shade300,
+                ),
+              ),
+              focusedBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(12),
+                borderSide: BorderSide(color: color, width: 2),
+              ),
+              errorBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(12),
+                borderSide: BorderSide(color: AppColors.error),
+              ),
+              focusedErrorBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(12),
+                borderSide: BorderSide(color: AppColors.error, width: 2),
+              ),
+              contentPadding: EdgeInsets.symmetric(
+                horizontal: 16,
+                vertical: widget.maxLines == 1 ? 14 : 12,
+              ),
+              hintStyle: TextStyle(
+                color: isDark ? Colors.white38 : Colors.grey.shade500,
               ),
             ),
-            enabledBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(12),
-              borderSide: BorderSide(
-                color: isDark ? Colors.white12 : Colors.grey.shade300,
-              ),
+            style: TextStyle(
+              fontSize: 14,
+              color: isDark ? Colors.white : AppColors.textPrimary,
             ),
-            focusedBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(12),
-              borderSide: BorderSide(color: color, width: 2),
-            ),
-            errorBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(12),
-              borderSide: BorderSide(color: AppColors.error),
-            ),
-            focusedErrorBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(12),
-              borderSide: BorderSide(color: AppColors.error, width: 2),
-            ),
-            contentPadding: EdgeInsets.symmetric(
-              horizontal: 16,
-              vertical: maxLines == 1 ? 14 : 12,
-            ),
-            hintStyle: TextStyle(
-              color: isDark ? Colors.white38 : Colors.grey.shade500,
-            ),
+            maxLines: widget.maxLines,
+            minLines: widget.minLines,
+            maxLength: widget.maxLength,
+            keyboardType: widget.keyboardType,
+            textCapitalization: widget.textCapitalization,
+            onChanged: widget.onChanged,
+            validator: widget.validator,
+            enabled: widget.enabled,
+            readOnly: widget.readOnly,
+            obscureText: widget.obscureText,
+            autofocus: widget.autofocus,
+            onTap: widget.onTap,
+            textInputAction: widget.textInputAction,
+            onFieldSubmitted: widget.onSubmitted,
           ),
-          style: TextStyle(
-            fontSize: 14,
-            color: isDark ? Colors.white : AppColors.textPrimary,
-          ),
-          maxLines: maxLines,
-          minLines: minLines,
-          maxLength: maxLength,
-          keyboardType: keyboardType,
-          textCapitalization: textCapitalization,
-          onChanged: onChanged,
-          validator: validator,
-          enabled: enabled,
-          readOnly: readOnly,
-          obscureText: obscureText,
-          autofocus: autofocus,
-          onTap: onTap,
-          textInputAction: textInputAction,
-          onFieldSubmitted: onSubmitted,
         ),
       ],
     );
@@ -242,6 +499,8 @@ class RecordNotesField extends StatelessWidget {
     this.onChanged,
     this.enabled = true,
     this.accentColor,
+    this.enableVoice = false,
+    this.suggestions,
   });
 
   final TextEditingController controller;
@@ -253,6 +512,8 @@ class RecordNotesField extends StatelessWidget {
   final ValueChanged<String>? onChanged;
   final bool enabled;
   final Color? accentColor;
+  final bool enableVoice;
+  final List<String>? suggestions;
 
   @override
   Widget build(BuildContext context) {
@@ -269,6 +530,8 @@ class RecordNotesField extends StatelessWidget {
       enabled: enabled,
       accentColor: accentColor,
       textCapitalization: TextCapitalization.sentences,
+      enableVoice: enableVoice,
+      suggestions: suggestions,
     );
   }
 }

@@ -212,16 +212,18 @@ class _AddCardiacExamScreenState extends ConsumerState<AddCardiacExamScreen> {
     ];
   }
 
-  void _loadExistingRecord() {
+  void _loadExistingRecord() async {
     final record = widget.existingRecord!;
     _recordDate = record.recordDate;
     _diagnosisController.text = record.diagnosis ?? '';
     _treatmentController.text = record.treatment ?? '';
     _clinicalNotesController.text = record.doctorNotes ?? '';
     
-    if (record.dataJson != null) {
-      try {
-        final data = jsonDecode(record.dataJson!) as Map<String, dynamic>;
+    // V6: Use normalized fields with fallback to dataJson
+    final db = await ref.read(doctorDbProvider.future);
+    final data = await db.getMedicalRecordFieldsCompat(record.id);
+    if (data.isNotEmpty) {
+      setState(() {
         _chiefComplaintController.text = (data['chief_complaint'] as String?) ?? '';
         _durationController.text = (data['duration'] as String?) ?? '';
         _selectedSymptoms = List<String>.from((data['symptoms'] as List?) ?? []);
@@ -259,7 +261,7 @@ class _AddCardiacExamScreenState extends ConsumerState<AddCardiacExamScreen> {
         _ecgFindingsController.text = (data['ecg_findings'] as String?) ?? '';
         _echoFindingsController.text = (data['echo_findings'] as String?) ?? '';
         _labResultsController.text = (data['lab_results'] as String?) ?? '';
-      } catch (_) {}
+      });
     }
   }
 
@@ -336,6 +338,9 @@ class _AddCardiacExamScreenState extends ConsumerState<AddCardiacExamScreen> {
     setState(() => _isSaving = true);
 
     try {
+      // V6: Build data for normalized storage
+      final recordData = _buildDataJson();
+      
       final companion = MedicalRecordsCompanion.insert(
         patientId: _selectedPatientId!,
         recordType: 'cardiac_examination',
@@ -343,7 +348,7 @@ class _AddCardiacExamScreenState extends ConsumerState<AddCardiacExamScreen> {
             ? 'Cardiac: ${_diagnosisController.text}'
             : 'Cardiac Examination - ${DateFormat('MMM d, yyyy').format(_recordDate)}',
         description: Value(_chiefComplaintController.text),
-        dataJson: Value(jsonEncode(_buildDataJson())),
+        dataJson: const Value('{}'), // V6: Empty - using MedicalRecordFields table
         diagnosis: Value(_diagnosisController.text),
         treatment: Value(_treatmentController.text),
         doctorNotes: Value(_clinicalNotesController.text),
@@ -361,7 +366,7 @@ class _AddCardiacExamScreenState extends ConsumerState<AddCardiacExamScreen> {
               ? 'Cardiac: ${_diagnosisController.text}'
               : 'Cardiac Examination - ${DateFormat('MMM d, yyyy').format(_recordDate)}',
           description: _chiefComplaintController.text,
-          dataJson: jsonEncode(_buildDataJson()),
+          dataJson: '{}', // V6: Empty - using MedicalRecordFields table
           diagnosis: _diagnosisController.text,
           treatment: _treatmentController.text,
           doctorNotes: _clinicalNotesController.text,
@@ -369,9 +374,18 @@ class _AddCardiacExamScreenState extends ConsumerState<AddCardiacExamScreen> {
           createdAt: widget.existingRecord!.createdAt,
         );
         await db.updateMedicalRecord(updatedRecord);
+        
+        // V6: Delete old fields and re-insert
+        await db.deleteFieldsForMedicalRecord(widget.existingRecord!.id);
+        await db.insertMedicalRecordFieldsBatch(widget.existingRecord!.id, _selectedPatientId!, recordData);
+        
         resultRecord = updatedRecord;
       } else {
         final recordId = await db.insertMedicalRecord(companion);
+        
+        // V6: Save fields to normalized table
+        await db.insertMedicalRecordFieldsBatch(recordId, _selectedPatientId!, recordData);
+        
         resultRecord = await db.getMedicalRecordById(recordId);
       }
 
@@ -623,6 +637,8 @@ class _AddCardiacExamScreenState extends ConsumerState<AddCardiacExamScreen> {
                   label: 'Chief Complaint',
                   hint: 'e.g., Chest pain, shortness of breath',
                   maxLines: 2,
+                  enableVoice: true,
+                  suggestions: chiefComplaintSuggestions,
                 ),
                 const SizedBox(height: AppSpacing.md),
                 RecordTextField(
@@ -844,6 +860,8 @@ class _AddCardiacExamScreenState extends ConsumerState<AddCardiacExamScreen> {
                   label: 'Diagnosis',
                   hint: 'e.g., ACS, Heart Failure, Arrhythmia',
                   maxLines: 2,
+                  enableVoice: true,
+                  suggestions: diagnosisSuggestions,
                 ),
                 const SizedBox(height: AppSpacing.md),
                 RecordTextField(
@@ -851,6 +869,8 @@ class _AddCardiacExamScreenState extends ConsumerState<AddCardiacExamScreen> {
                   label: 'Treatment Plan',
                   hint: 'Medications, interventions, follow-up',
                   maxLines: 3,
+                  enableVoice: true,
+                  suggestions: treatmentSuggestions,
                 ),
                 const SizedBox(height: AppSpacing.md),
                 RecordTextField(
@@ -858,6 +878,8 @@ class _AddCardiacExamScreenState extends ConsumerState<AddCardiacExamScreen> {
                   label: 'Clinical Notes',
                   hint: 'Additional observations',
                   maxLines: 3,
+                  enableVoice: true,
+                  suggestions: clinicalNotesSuggestions,
                 ),
               ],
             ),

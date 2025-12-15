@@ -296,16 +296,18 @@ class _AddPulmonaryScreenState extends ConsumerState<AddPulmonaryScreen> {
     ),
   ];
 
-  void _loadExistingRecord() {
+  void _loadExistingRecord() async {
     final record = widget.existingRecord!;
     _recordDate = record.recordDate;
     _diagnosisController.text = record.diagnosis ?? '';
     _treatmentController.text = record.treatment ?? '';
     _clinicalNotesController.text = record.doctorNotes ?? '';
     
-    if (record.dataJson != null) {
-      try {
-        final data = jsonDecode(record.dataJson!) as Map<String, dynamic>;
+    // V6: Use normalized fields with fallback to dataJson
+    final db = await ref.read(doctorDbProvider.future);
+    final data = await db.getMedicalRecordFieldsCompat(record.id);
+    if (data.isNotEmpty && mounted) {
+      setState(() {
         _chiefComplaintController.text = (data['chief_complaint'] as String?) ?? '';
         _durationController.text = (data['duration'] as String?) ?? '';
         _symptomCharacterController.text = (data['symptom_character'] as String?) ?? '';
@@ -342,7 +344,7 @@ class _AddPulmonaryScreenState extends ConsumerState<AddPulmonaryScreen> {
           _spo2Controller.text = (vitals['spo2'] as String?) ?? '';
           _peakFlowController.text = (vitals['peak_flow_rate'] as String?) ?? '';
         }
-      } catch (_) {}
+      });
     }
   }
 
@@ -427,6 +429,9 @@ class _AddPulmonaryScreenState extends ConsumerState<AddPulmonaryScreen> {
     setState(() => _isSaving = true);
 
     try {
+      // V6: Build data for normalized storage
+      final recordData = _buildDataJson();
+      
       final companion = MedicalRecordsCompanion.insert(
         patientId: _selectedPatientId!,
         recordType: 'pulmonary_evaluation',
@@ -434,7 +439,7 @@ class _AddPulmonaryScreenState extends ConsumerState<AddPulmonaryScreen> {
             ? 'Pulmonary: ${_diagnosisController.text}'
             : 'Pulmonary Evaluation - ${DateFormat('MMM d, yyyy').format(_recordDate)}',
         description: Value(_chiefComplaintController.text),
-        dataJson: Value(jsonEncode(_buildDataJson())),
+        dataJson: const Value('{}'), // V6: Empty - using MedicalRecordFields
         diagnosis: Value(_diagnosisController.text),
         treatment: Value(_treatmentController.text),
         doctorNotes: Value(_clinicalNotesController.text),
@@ -452,7 +457,7 @@ class _AddPulmonaryScreenState extends ConsumerState<AddPulmonaryScreen> {
               ? 'Pulmonary: ${_diagnosisController.text}'
               : 'Pulmonary Evaluation - ${DateFormat('MMM d, yyyy').format(_recordDate)}',
           description: _chiefComplaintController.text,
-          dataJson: jsonEncode(_buildDataJson()),
+          dataJson: '{}', // V6: Empty - using MedicalRecordFields
           diagnosis: _diagnosisController.text,
           treatment: _treatmentController.text,
           doctorNotes: _clinicalNotesController.text,
@@ -460,9 +465,14 @@ class _AddPulmonaryScreenState extends ConsumerState<AddPulmonaryScreen> {
           createdAt: widget.existingRecord!.createdAt,
         );
         await db.updateMedicalRecord(updatedRecord);
+        // V6: Delete old fields and re-insert
+        await db.deleteFieldsForMedicalRecord(widget.existingRecord!.id);
+        await db.insertMedicalRecordFieldsBatch(widget.existingRecord!.id, _selectedPatientId!, recordData);
         resultRecord = updatedRecord;
       } else {
         final recordId = await db.insertMedicalRecord(companion);
+        // V6: Save fields to normalized table
+        await db.insertMedicalRecordFieldsBatch(recordId, _selectedPatientId!, recordData);
         resultRecord = await db.getMedicalRecordById(recordId);
       }
 
@@ -503,6 +513,317 @@ class _AddPulmonaryScreenState extends ConsumerState<AddPulmonaryScreen> {
     return completed;
   }
 
+  // ============================================================================
+  // SYMPTOMS & RED FLAGS UI BUILDERS
+  // ============================================================================
+
+  /// Symptom options with icons for the quick picker
+  static const List<PickerOption> _symptomPickerOptions = [
+    PickerOption(label: 'Fever', icon: Icons.thermostat_rounded),
+    PickerOption(label: 'Night sweats', icon: Icons.nightlight_rounded),
+    PickerOption(label: 'Weight loss', icon: Icons.monitor_weight_outlined),
+    PickerOption(label: 'Fatigue', icon: Icons.battery_1_bar_rounded),
+    PickerOption(label: 'Loss of appetite', icon: Icons.no_food_rounded),
+    PickerOption(label: 'Malaise', icon: Icons.sentiment_very_dissatisfied_rounded),
+    PickerOption(label: 'Chills', icon: Icons.ac_unit_rounded),
+    PickerOption(label: 'Rigors', icon: Icons.vibration_rounded),
+    PickerOption(label: 'Joint pain', icon: Icons.accessibility_new_rounded),
+    PickerOption(label: 'Muscle aches', icon: Icons.sports_martial_arts_rounded),
+    PickerOption(label: 'Headache', icon: Icons.psychology_rounded),
+    PickerOption(label: 'Sore throat', icon: Icons.record_voice_over_rounded),
+    PickerOption(label: 'Nasal congestion', icon: Icons.air_rounded),
+    PickerOption(label: 'Post-nasal drip', icon: Icons.water_drop_rounded),
+    PickerOption(label: 'Hoarseness', icon: Icons.mic_off_rounded),
+  ];
+
+  /// Red flag options with icons - grouped by severity/type
+  static const List<PickerOption> _redFlagPickerOptions = [
+    // Critical respiratory
+    PickerOption(label: 'Severe dyspnea', icon: Icons.airline_seat_flat_rounded, subtitle: 'Critical'),
+    PickerOption(label: 'Cyanosis', icon: Icons.favorite_rounded, subtitle: 'Critical'),
+    PickerOption(label: 'Silent chest', icon: Icons.volume_off_rounded, subtitle: 'Critical'),
+    PickerOption(label: 'Stridor', icon: Icons.graphic_eq_rounded, subtitle: 'Airway obstruction'),
+    PickerOption(label: 'Use of accessory muscles', icon: Icons.accessibility_rounded, subtitle: 'Respiratory distress'),
+    PickerOption(label: 'SpO2 <92% on room air', icon: Icons.bloodtype_rounded, subtitle: 'Hypoxia'),
+    // Hemodynamic
+    PickerOption(label: 'Hypotension', icon: Icons.trending_down_rounded, subtitle: 'Shock'),
+    PickerOption(label: 'Tachycardia >120', icon: Icons.favorite_border_rounded, subtitle: 'Hemodynamic'),
+    PickerOption(label: 'Altered consciousness', icon: Icons.psychology_alt_rounded, subtitle: 'CNS'),
+    // Bleeding/PE risk
+    PickerOption(label: 'Hemoptysis', icon: Icons.bloodtype_rounded, subtitle: 'Bleeding'),
+    PickerOption(label: 'Sudden onset chest pain', icon: Icons.flash_on_rounded, subtitle: 'PE/Pneumothorax'),
+    PickerOption(label: 'Unilateral leg swelling', icon: Icons.accessibility_rounded, subtitle: 'DVT risk'),
+    PickerOption(label: 'Recent surgery/immobilization', icon: Icons.hotel_rounded, subtitle: 'VTE risk'),
+    // Systemic
+    PickerOption(label: 'Fever >39°C', icon: Icons.thermostat_rounded, subtitle: 'High fever'),
+    PickerOption(label: 'Respiratory rate >30', icon: Icons.speed_rounded, subtitle: 'Tachypnea'),
+    PickerOption(label: 'Significant weight loss', icon: Icons.trending_down_rounded, subtitle: 'Malignancy'),
+    PickerOption(label: 'History of malignancy', icon: Icons.warning_amber_rounded, subtitle: 'Cancer'),
+    PickerOption(label: 'Immunocompromised state', icon: Icons.shield_outlined, subtitle: 'Infection risk'),
+  ];
+
+  Widget _buildSymptomsSection(bool isDark) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        // Header with count
+        Row(
+          children: [
+            Container(
+              padding: const EdgeInsets.all(8),
+              decoration: BoxDecoration(
+                color: AppColors.warning.withValues(alpha: 0.1),
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: Icon(
+                Icons.sick_rounded,
+                color: AppColors.warning,
+                size: 20,
+              ),
+            ),
+            const SizedBox(width: 12),
+            Text(
+              'Systemic Symptoms',
+              style: TextStyle(
+                fontSize: 16,
+                fontWeight: FontWeight.w600,
+                color: isDark ? Colors.white : AppColors.textPrimary,
+              ),
+            ),
+            const Spacer(),
+            if (_selectedSystemicSymptoms.isNotEmpty)
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                decoration: BoxDecoration(
+                  color: AppColors.warning,
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Text(
+                  '${_selectedSystemicSymptoms.length}',
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontSize: 12,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+              ),
+          ],
+        ),
+        const SizedBox(height: 12),
+        
+        // Quick picker field
+        QuickPickerField(
+          label: '',
+          selected: _selectedSystemicSymptoms,
+          options: _symptomPickerOptions,
+          onChanged: (list) => setState(() => _selectedSystemicSymptoms = list),
+          accentColor: AppColors.warning,
+          icon: Icons.add_circle_outline_rounded,
+          hint: 'Tap to select symptoms',
+          pickerTitle: 'Systemic Symptoms',
+          pickerSubtitle: 'Select all associated symptoms',
+        ),
+      ],
+    );
+  }
+
+  Widget _buildRedFlagsSection(bool isDark) {
+    final hasRedFlags = _selectedRedFlags.isNotEmpty;
+    
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        // Warning banner when red flags are selected
+        if (hasRedFlags)
+          Container(
+            margin: const EdgeInsets.only(bottom: 16),
+            padding: const EdgeInsets.all(12),
+            decoration: BoxDecoration(
+              color: AppColors.error.withValues(alpha: 0.1),
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(
+                color: AppColors.error.withValues(alpha: 0.3),
+                width: 1,
+              ),
+            ),
+            child: Row(
+              children: [
+                Container(
+                  padding: const EdgeInsets.all(8),
+                  decoration: BoxDecoration(
+                    color: AppColors.error.withValues(alpha: 0.2),
+                    shape: BoxShape.circle,
+                  ),
+                  child: Icon(
+                    Icons.warning_amber_rounded,
+                    color: AppColors.error,
+                    size: 20,
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        '${_selectedRedFlags.length} Red Flag${_selectedRedFlags.length > 1 ? 's' : ''} Identified',
+                        style: TextStyle(
+                          color: AppColors.error,
+                          fontWeight: FontWeight.bold,
+                          fontSize: 14,
+                        ),
+                      ),
+                      const SizedBox(height: 2),
+                      Text(
+                        'Urgent evaluation recommended',
+                        style: TextStyle(
+                          color: AppColors.error.withValues(alpha: 0.8),
+                          fontSize: 12,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          ),
+
+        // Header with count
+        Row(
+          children: [
+            Container(
+              padding: const EdgeInsets.all(8),
+              decoration: BoxDecoration(
+                color: AppColors.error.withValues(alpha: 0.1),
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: Icon(
+                Icons.warning_rounded,
+                color: AppColors.error,
+                size: 20,
+              ),
+            ),
+            const SizedBox(width: 12),
+            Text(
+              'Red Flags',
+              style: TextStyle(
+                fontSize: 16,
+                fontWeight: FontWeight.w600,
+                color: isDark ? Colors.white : AppColors.textPrimary,
+              ),
+            ),
+            const SizedBox(width: 8),
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+              decoration: BoxDecoration(
+                color: AppColors.error.withValues(alpha: 0.1),
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: Text(
+                'URGENT',
+                style: TextStyle(
+                  color: AppColors.error,
+                  fontSize: 10,
+                  fontWeight: FontWeight.bold,
+                  letterSpacing: 0.5,
+                ),
+              ),
+            ),
+            const Spacer(),
+            if (hasRedFlags)
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                decoration: BoxDecoration(
+                  color: AppColors.error,
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Text(
+                  '${_selectedRedFlags.length}',
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontSize: 12,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+              ),
+          ],
+        ),
+        const SizedBox(height: 12),
+        
+        // Quick picker field for red flags
+        QuickPickerField(
+          label: '',
+          selected: _selectedRedFlags,
+          options: _redFlagPickerOptions,
+          onChanged: (list) => setState(() => _selectedRedFlags = list),
+          accentColor: AppColors.error,
+          icon: Icons.add_circle_outline_rounded,
+          hint: 'Tap to identify red flags',
+          pickerTitle: 'Red Flags',
+          pickerSubtitle: 'Select any warning signs present',
+        ),
+        
+        // Selected red flags as chips with icons
+        if (hasRedFlags) ...[
+          const SizedBox(height: 12),
+          Wrap(
+            spacing: 8,
+            runSpacing: 8,
+            children: _selectedRedFlags.map((flag) {
+              // Find the icon for this flag
+              final option = _redFlagPickerOptions.firstWhere(
+                (o) => o.label == flag,
+                orElse: () => PickerOption(label: flag, icon: Icons.warning_rounded),
+              );
+              return Container(
+                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                decoration: BoxDecoration(
+                  color: AppColors.error.withValues(alpha: 0.1),
+                  borderRadius: BorderRadius.circular(20),
+                  border: Border.all(
+                    color: AppColors.error.withValues(alpha: 0.3),
+                  ),
+                ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(
+                      option.icon,
+                      size: 14,
+                      color: AppColors.error,
+                    ),
+                    const SizedBox(width: 6),
+                    Text(
+                      flag,
+                      style: TextStyle(
+                        color: AppColors.error,
+                        fontSize: 12,
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                    const SizedBox(width: 4),
+                    GestureDetector(
+                      onTap: () {
+                        setState(() {
+                          _selectedRedFlags.remove(flag);
+                        });
+                      },
+                      child: Icon(
+                        Icons.close_rounded,
+                        size: 14,
+                        color: AppColors.error.withValues(alpha: 0.7),
+                      ),
+                    ),
+                  ],
+                ),
+              );
+            }).toList(),
+          ),
+        ],
+      ],
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final dbAsync = ref.watch(doctorDbProvider);
@@ -523,6 +844,505 @@ class _AddPulmonaryScreenState extends ConsumerState<AddPulmonaryScreen> {
         ),
         error: (err, stack) => Center(child: Text('Error: $err')),
       ),
+    );
+  }
+
+  // ============================================================================
+  // PICKER OPTIONS WITH ICONS
+  // ============================================================================
+
+  /// Comorbidities picker options with icons
+  static const List<PickerOption> _comorbiditiesPickerOptions = [
+    PickerOption(label: 'None', icon: Icons.check_circle_outline_rounded),
+    PickerOption(label: 'Hypertension', icon: Icons.favorite_rounded, subtitle: 'Cardiovascular'),
+    PickerOption(label: 'Diabetes mellitus', icon: Icons.bloodtype_rounded, subtitle: 'Metabolic'),
+    PickerOption(label: 'DM + HTN', icon: Icons.add_circle_outline_rounded, subtitle: 'Combined'),
+    PickerOption(label: 'Coronary artery disease', icon: Icons.heart_broken_rounded, subtitle: 'Cardiovascular'),
+    PickerOption(label: 'Heart failure', icon: Icons.healing_rounded, subtitle: 'Cardiovascular'),
+    PickerOption(label: 'Atrial fibrillation', icon: Icons.monitor_heart_rounded, subtitle: 'Arrhythmia'),
+    PickerOption(label: 'Chronic kidney disease', icon: Icons.water_drop_rounded, subtitle: 'Renal'),
+    PickerOption(label: 'Liver disease', icon: Icons.science_rounded, subtitle: 'Hepatic'),
+    PickerOption(label: 'Obesity', icon: Icons.monitor_weight_rounded, subtitle: 'Metabolic'),
+    PickerOption(label: 'GERD', icon: Icons.local_fire_department_rounded, subtitle: 'GI'),
+    PickerOption(label: 'OSA', icon: Icons.nightlight_rounded, subtitle: 'Sleep disorder'),
+    PickerOption(label: 'Depression/anxiety', icon: Icons.psychology_rounded, subtitle: 'Mental health'),
+    PickerOption(label: 'Osteoporosis', icon: Icons.accessibility_new_rounded, subtitle: 'Bone'),
+    PickerOption(label: 'Rheumatoid arthritis', icon: Icons.sports_martial_arts_rounded, subtitle: 'Autoimmune'),
+    PickerOption(label: 'Immunocompromised state', icon: Icons.shield_outlined, subtitle: 'Immune'),
+    PickerOption(label: 'HIV', icon: Icons.coronavirus_rounded, subtitle: 'Infection'),
+    PickerOption(label: 'Malignancy', icon: Icons.warning_amber_rounded, subtitle: 'Oncology'),
+    PickerOption(label: 'Allergic rhinitis', icon: Icons.air_rounded, subtitle: 'Allergic'),
+    PickerOption(label: 'Chronic sinusitis', icon: Icons.face_rounded, subtitle: 'ENT'),
+  ];
+
+  /// Added sounds picker options with icons
+  static const List<PickerOption> _addedSoundsPickerOptions = [
+    PickerOption(label: 'None', icon: Icons.volume_off_rounded),
+    PickerOption(label: 'Bilateral wheeze', icon: Icons.graphic_eq_rounded, subtitle: 'Obstructive'),
+    PickerOption(label: 'Unilateral wheeze', icon: Icons.graphic_eq_rounded, subtitle: 'Focal'),
+    PickerOption(label: 'Bilateral polyphonic wheeze', icon: Icons.waves_rounded, subtitle: 'Diffuse obstruction'),
+    PickerOption(label: 'Bilateral basal crackles', icon: Icons.bubble_chart_rounded, subtitle: 'Restrictive/ILD'),
+    PickerOption(label: 'Unilateral crackles', icon: Icons.bubble_chart_outlined, subtitle: 'Focal'),
+    PickerOption(label: 'Diffuse crackles', icon: Icons.blur_on_rounded, subtitle: 'Widespread'),
+    PickerOption(label: 'Bilateral Velcro crackles', icon: Icons.grain_rounded, subtitle: 'Fibrosis'),
+    PickerOption(label: 'Scattered rhonchi', icon: Icons.water_rounded, subtitle: 'Secretions'),
+    PickerOption(label: 'Right-sided crepitations', icon: Icons.arrow_forward_rounded, subtitle: 'Right lung'),
+    PickerOption(label: 'Left-sided crepitations', icon: Icons.arrow_back_rounded, subtitle: 'Left lung'),
+    PickerOption(label: 'Pleural rub right', icon: Icons.texture_rounded, subtitle: 'Right'),
+    PickerOption(label: 'Pleural rub left', icon: Icons.texture_rounded, subtitle: 'Left'),
+    PickerOption(label: 'Stridor present', icon: Icons.warning_rounded, subtitle: 'Airway obstruction'),
+    PickerOption(label: 'Silent chest - no air entry', icon: Icons.volume_off_rounded, subtitle: 'Emergency'),
+  ];
+
+  /// Investigations picker options with icons - grouped by category
+  static const List<PickerOption> _investigationsPickerOptions = [
+    // Imaging
+    PickerOption(label: 'Chest X-Ray PA view', icon: Icons.image_rounded, subtitle: 'Basic imaging'),
+    PickerOption(label: 'HRCT Chest', icon: Icons.view_in_ar_rounded, subtitle: 'High resolution CT'),
+    PickerOption(label: 'CT Chest with contrast', icon: Icons.view_in_ar_rounded, subtitle: 'CT with contrast'),
+    PickerOption(label: 'CT Pulmonary Angiography', icon: Icons.bloodtype_rounded, subtitle: 'PE evaluation'),
+    // Pulmonary function
+    PickerOption(label: 'Spirometry', icon: Icons.air_rounded, subtitle: 'Basic PFT'),
+    PickerOption(label: 'Spirometry with bronchodilator response', icon: Icons.compare_arrows_rounded, subtitle: 'Reversibility'),
+    PickerOption(label: 'Full PFT with DLCO', icon: Icons.analytics_rounded, subtitle: 'Complete PFT'),
+    PickerOption(label: 'Peak Flow Monitoring', icon: Icons.speed_rounded, subtitle: 'PEFR diary'),
+    PickerOption(label: '6 Minute Walk Test', icon: Icons.directions_walk_rounded, subtitle: 'Functional'),
+    // Blood gases & oximetry
+    PickerOption(label: 'Arterial Blood Gas', icon: Icons.bloodtype_rounded, subtitle: 'ABG'),
+    PickerOption(label: 'Pulse Oximetry', icon: Icons.monitor_heart_rounded, subtitle: 'SpO2'),
+    // Labs
+    PickerOption(label: 'CBC', icon: Icons.science_rounded, subtitle: 'Blood count'),
+    PickerOption(label: 'CRP', icon: Icons.local_fire_department_rounded, subtitle: 'Inflammation'),
+    PickerOption(label: 'Procalcitonin', icon: Icons.coronavirus_rounded, subtitle: 'Bacterial marker'),
+    PickerOption(label: 'D-Dimer', icon: Icons.emergency_rounded, subtitle: 'Thrombosis'),
+    PickerOption(label: 'IgE levels', icon: Icons.spa_rounded, subtitle: 'Allergy'),
+    PickerOption(label: 'Eosinophil count', icon: Icons.bubble_chart_rounded, subtitle: 'Allergy/Asthma'),
+    // Sputum
+    PickerOption(label: 'Sputum routine', icon: Icons.biotech_rounded, subtitle: 'Microscopy'),
+    PickerOption(label: 'Sputum culture', icon: Icons.science_rounded, subtitle: 'Culture'),
+    PickerOption(label: 'Sputum AFB smear', icon: Icons.search_rounded, subtitle: 'TB screening'),
+    PickerOption(label: 'Sputum GeneXpert', icon: Icons.biotech_rounded, subtitle: 'TB PCR'),
+    // TB workup
+    PickerOption(label: 'Mantoux test', icon: Icons.vaccines_rounded, subtitle: 'TST'),
+    PickerOption(label: 'IGRA/QuantiFERON', icon: Icons.bloodtype_rounded, subtitle: 'TB blood test'),
+    // Procedures
+    PickerOption(label: 'Bronchoscopy', icon: Icons.search_rounded, subtitle: 'Procedure'),
+    PickerOption(label: 'BAL analysis', icon: Icons.water_drop_rounded, subtitle: 'Lavage'),
+    PickerOption(label: 'Pleural fluid analysis', icon: Icons.science_rounded, subtitle: 'Effusion'),
+    PickerOption(label: 'CT-guided lung biopsy', icon: Icons.gps_fixed_rounded, subtitle: 'Biopsy'),
+    // Sleep & cardiac
+    PickerOption(label: 'Sleep study/Polysomnography', icon: Icons.bedtime_rounded, subtitle: 'OSA'),
+    PickerOption(label: 'Echocardiography', icon: Icons.favorite_rounded, subtitle: 'Echo'),
+    PickerOption(label: 'ECG', icon: Icons.show_chart_rounded, subtitle: 'Cardiac'),
+  ];
+
+  Widget _buildComorbiditiesSection(bool isDark) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        // Header with count
+        Row(
+          children: [
+            Container(
+              padding: const EdgeInsets.all(8),
+              decoration: BoxDecoration(
+                color: AppColors.info.withValues(alpha: 0.1),
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: Icon(
+                Icons.medical_services_rounded,
+                color: AppColors.info,
+                size: 20,
+              ),
+            ),
+            const SizedBox(width: 12),
+            Text(
+              'Comorbidities',
+              style: TextStyle(
+                fontSize: 16,
+                fontWeight: FontWeight.w600,
+                color: isDark ? Colors.white : AppColors.textPrimary,
+              ),
+            ),
+            const Spacer(),
+            if (_selectedComorbidities.isNotEmpty)
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                decoration: BoxDecoration(
+                  color: AppColors.info,
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Text(
+                  '${_selectedComorbidities.length}',
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontSize: 12,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+              ),
+          ],
+        ),
+        const SizedBox(height: 12),
+        
+        // Quick picker field
+        QuickPickerField(
+          label: '',
+          selected: _selectedComorbidities,
+          options: _comorbiditiesPickerOptions,
+          onChanged: (list) => setState(() => _selectedComorbidities = list),
+          accentColor: AppColors.info,
+          icon: Icons.add_circle_outline_rounded,
+          hint: 'Tap to select comorbidities',
+          pickerTitle: 'Comorbidities',
+          pickerSubtitle: 'Select all relevant conditions',
+        ),
+      ],
+    );
+  }
+
+  Widget _buildAddedSoundsSection(bool isDark) {
+    final hasAbnormalSounds = _selectedAddedSounds.isNotEmpty && 
+        !_selectedAddedSounds.contains('None');
+    
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        // Warning when abnormal sounds detected
+        if (hasAbnormalSounds)
+          Container(
+            margin: const EdgeInsets.only(bottom: 12),
+            padding: const EdgeInsets.all(10),
+            decoration: BoxDecoration(
+              color: AppColors.accent.withValues(alpha: 0.1),
+              borderRadius: BorderRadius.circular(10),
+              border: Border.all(
+                color: AppColors.accent.withValues(alpha: 0.3),
+              ),
+            ),
+            child: Row(
+              children: [
+                Icon(
+                  Icons.graphic_eq_rounded,
+                  color: AppColors.accent,
+                  size: 18,
+                ),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: Text(
+                    '${_selectedAddedSounds.length} adventitious sound${_selectedAddedSounds.length > 1 ? 's' : ''} identified',
+                    style: TextStyle(
+                      color: AppColors.accent,
+                      fontSize: 13,
+                      fontWeight: FontWeight.w500,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+
+        // Header with count
+        Row(
+          children: [
+            Container(
+              padding: const EdgeInsets.all(8),
+              decoration: BoxDecoration(
+                color: AppColors.accent.withValues(alpha: 0.1),
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: Icon(
+                Icons.hearing_rounded,
+                color: AppColors.accent,
+                size: 20,
+              ),
+            ),
+            const SizedBox(width: 12),
+            Text(
+              'Added Sounds',
+              style: TextStyle(
+                fontSize: 16,
+                fontWeight: FontWeight.w600,
+                color: isDark ? Colors.white : AppColors.textPrimary,
+              ),
+            ),
+            const Spacer(),
+            if (_selectedAddedSounds.isNotEmpty)
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                decoration: BoxDecoration(
+                  color: AppColors.accent,
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Text(
+                  '${_selectedAddedSounds.length}',
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontSize: 12,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+              ),
+          ],
+        ),
+        const SizedBox(height: 12),
+        
+        // Quick picker field
+        QuickPickerField(
+          label: '',
+          selected: _selectedAddedSounds,
+          options: _addedSoundsPickerOptions,
+          onChanged: (list) => setState(() => _selectedAddedSounds = list),
+          accentColor: AppColors.accent,
+          icon: Icons.add_circle_outline_rounded,
+          hint: 'Tap to select adventitious sounds',
+          pickerTitle: 'Adventitious Sounds',
+          pickerSubtitle: 'Select all sounds heard on auscultation',
+        ),
+
+        // Selected sounds as visual chips
+        if (hasAbnormalSounds) ...[
+          const SizedBox(height: 12),
+          Wrap(
+            spacing: 8,
+            runSpacing: 8,
+            children: _selectedAddedSounds.where((s) => s != 'None').map((sound) {
+              final option = _addedSoundsPickerOptions.firstWhere(
+                (o) => o.label == sound,
+                orElse: () => PickerOption(label: sound, icon: Icons.hearing_rounded),
+              );
+              return Container(
+                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                decoration: BoxDecoration(
+                  color: AppColors.accent.withValues(alpha: 0.1),
+                  borderRadius: BorderRadius.circular(20),
+                  border: Border.all(
+                    color: AppColors.accent.withValues(alpha: 0.3),
+                  ),
+                ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(
+                      option.icon,
+                      size: 14,
+                      color: AppColors.accent,
+                    ),
+                    const SizedBox(width: 6),
+                    Text(
+                      sound,
+                      style: TextStyle(
+                        color: AppColors.accent,
+                        fontSize: 12,
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                    const SizedBox(width: 4),
+                    GestureDetector(
+                      onTap: () {
+                        setState(() {
+                          _selectedAddedSounds.remove(sound);
+                        });
+                      },
+                      child: Icon(
+                        Icons.close_rounded,
+                        size: 14,
+                        color: AppColors.accent.withValues(alpha: 0.7),
+                      ),
+                    ),
+                  ],
+                ),
+              );
+            }).toList(),
+          ),
+        ],
+      ],
+    );
+  }
+
+  Widget _buildInvestigationsSection(bool isDark) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        // Summary banner when investigations selected
+        if (_selectedInvestigations.isNotEmpty)
+          Container(
+            margin: const EdgeInsets.only(bottom: 16),
+            padding: const EdgeInsets.all(12),
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                colors: [
+                  Colors.cyan.withValues(alpha: 0.1),
+                  Colors.cyan.withValues(alpha: 0.05),
+                ],
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+              ),
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(
+                color: Colors.cyan.withValues(alpha: 0.3),
+              ),
+            ),
+            child: Row(
+              children: [
+                Container(
+                  padding: const EdgeInsets.all(8),
+                  decoration: BoxDecoration(
+                    color: Colors.cyan.withValues(alpha: 0.2),
+                    shape: BoxShape.circle,
+                  ),
+                  child: const Icon(
+                    Icons.biotech_rounded,
+                    color: Colors.cyan,
+                    size: 20,
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        '${_selectedInvestigations.length} Investigation${_selectedInvestigations.length > 1 ? 's' : ''} Ordered',
+                        style: const TextStyle(
+                          color: Colors.cyan,
+                          fontWeight: FontWeight.bold,
+                          fontSize: 14,
+                        ),
+                      ),
+                      const SizedBox(height: 2),
+                      Text(
+                        _selectedInvestigations.take(3).join(', ') + 
+                            (_selectedInvestigations.length > 3 ? '...' : ''),
+                        style: TextStyle(
+                          color: Colors.cyan.withValues(alpha: 0.8),
+                          fontSize: 12,
+                        ),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          ),
+
+        // Header with count
+        Row(
+          children: [
+            Container(
+              padding: const EdgeInsets.all(8),
+              decoration: BoxDecoration(
+                color: Colors.cyan.withValues(alpha: 0.1),
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: const Icon(
+                Icons.science_rounded,
+                color: Colors.cyan,
+                size: 20,
+              ),
+            ),
+            const SizedBox(width: 12),
+            Text(
+              'Select Investigations',
+              style: TextStyle(
+                fontSize: 16,
+                fontWeight: FontWeight.w600,
+                color: isDark ? Colors.white : AppColors.textPrimary,
+              ),
+            ),
+            const Spacer(),
+            if (_selectedInvestigations.isNotEmpty)
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                decoration: BoxDecoration(
+                  color: Colors.cyan,
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Text(
+                  '${_selectedInvestigations.length}',
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontSize: 12,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+              ),
+          ],
+        ),
+        const SizedBox(height: 12),
+        
+        // Quick picker field
+        QuickPickerField(
+          label: '',
+          selected: _selectedInvestigations,
+          options: _investigationsPickerOptions,
+          onChanged: (list) => setState(() => _selectedInvestigations = list),
+          accentColor: Colors.cyan,
+          icon: Icons.add_circle_outline_rounded,
+          hint: 'Tap to select investigations',
+          pickerTitle: 'Investigations Required',
+          pickerSubtitle: 'Select all tests to be ordered',
+        ),
+
+        // Selected investigations as grouped chips
+        if (_selectedInvestigations.isNotEmpty) ...[
+          const SizedBox(height: 12),
+          Wrap(
+            spacing: 8,
+            runSpacing: 8,
+            children: _selectedInvestigations.map((inv) {
+              final option = _investigationsPickerOptions.firstWhere(
+                (o) => o.label == inv,
+                orElse: () => PickerOption(label: inv, icon: Icons.biotech_rounded),
+              );
+              return Container(
+                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                decoration: BoxDecoration(
+                  color: Colors.cyan.withValues(alpha: 0.1),
+                  borderRadius: BorderRadius.circular(20),
+                  border: Border.all(
+                    color: Colors.cyan.withValues(alpha: 0.3),
+                  ),
+                ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(
+                      option.icon,
+                      size: 14,
+                      color: Colors.cyan,
+                    ),
+                    const SizedBox(width: 6),
+                    Text(
+                      inv,
+                      style: const TextStyle(
+                        color: Colors.cyan,
+                        fontSize: 12,
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                    const SizedBox(width: 4),
+                    GestureDetector(
+                      onTap: () {
+                        setState(() {
+                          _selectedInvestigations.remove(inv);
+                        });
+                      },
+                      child: Icon(
+                        Icons.close_rounded,
+                        size: 14,
+                        color: Colors.cyan.withValues(alpha: 0.7),
+                      ),
+                    ),
+                  ],
+                ),
+              );
+            }).toList(),
+          ),
+        ],
+      ],
     );
   }
 
@@ -593,13 +1413,14 @@ class _AddPulmonaryScreenState extends ConsumerState<AddPulmonaryScreen> {
             onToggle: (expanded) => setState(() => _expandedSections['complaint'] = expanded),
             child: Column(
               children: [
-                SuggestionTextField(
+                RecordTextField(
                   controller: _chiefComplaintController,
                   label: 'Chief Complaint',
                   hint: 'Describe the main respiratory complaint...',
                   prefixIcon: Icons.air,
                   maxLines: 3,
-                  suggestions: PulmonarySuggestions.chiefComplaints,
+                  enableVoice: true,
+                  suggestions: chiefComplaintSuggestions,
                 ),
                 const SizedBox(height: AppSpacing.md),
                 Row(
@@ -640,24 +1461,13 @@ class _AddPulmonaryScreenState extends ConsumerState<AddPulmonaryScreen> {
             initiallyExpanded: _expandedSections['symptoms'] ?? true,
             onToggle: (expanded) => setState(() => _expandedSections['symptoms'] = expanded),
             child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                ChipSelectorSection(
-                  title: 'Systemic Symptoms',
-                  options: PulmonarySuggestions.systemicSymptoms,
-                  selected: _selectedSystemicSymptoms,
-                  onChanged: (list) => setState(() => _selectedSystemicSymptoms = list),
-                  accentColor: AppColors.warning,
-                  showClearButton: true,
-                ),
-                const SizedBox(height: AppSpacing.lg),
-                ChipSelectorSection(
-                  title: 'Red Flags',
-                  options: PulmonarySuggestions.redFlags,
-                  selected: _selectedRedFlags,
-                  onChanged: (list) => setState(() => _selectedRedFlags = list),
-                  accentColor: AppColors.error,
-                  showClearButton: true,
-                ),
+                // Systemic Symptoms with Quick Picker
+                _buildSymptomsSection(isDark),
+                const SizedBox(height: AppSpacing.xl),
+                // Red Flags with warning banner
+                _buildRedFlagsSection(isDark),
               ],
             ),
           ),
@@ -708,14 +1518,7 @@ class _AddPulmonaryScreenState extends ConsumerState<AddPulmonaryScreen> {
                   maxLines: 2,
                 ),
                 const SizedBox(height: AppSpacing.lg),
-                ChipSelectorSection(
-                  title: 'Comorbidities',
-                  options: PulmonarySuggestions.comorbidities,
-                  selected: _selectedComorbidities,
-                  onChanged: (list) => setState(() => _selectedComorbidities = list),
-                  accentColor: AppColors.info,
-                  showClearButton: true,
-                ),
+                _buildComorbiditiesSection(isDark),
               ],
             ),
           ),
@@ -813,15 +1616,8 @@ class _AddPulmonaryScreenState extends ConsumerState<AddPulmonaryScreen> {
                   prefixIcon: Icons.hearing,
                   suggestions: PulmonarySuggestions.breathSounds,
                 ),
-                const SizedBox(height: AppSpacing.md),
-                ChipSelectorSection(
-                  title: 'Added Sounds',
-                  options: PulmonarySuggestions.addedSounds,
-                  selected: _selectedAddedSounds,
-                  onChanged: (list) => setState(() => _selectedAddedSounds = list),
-                  accentColor: AppColors.accent,
-                  showClearButton: true,
-                ),
+                const SizedBox(height: AppSpacing.lg),
+                _buildAddedSoundsSection(isDark),
                 const SizedBox(height: AppSpacing.lg),
                 Text(
                   'Zone-wise Findings',
@@ -888,6 +1684,8 @@ class _AddPulmonaryScreenState extends ConsumerState<AddPulmonaryScreen> {
                   label: 'Additional Findings',
                   hint: 'Additional auscultation findings...',
                   maxLines: 2,
+                  enableVoice: true,
+                  suggestions: examinationFindingsSuggestions,
                 ),
               ],
             ),
@@ -903,14 +1701,7 @@ class _AddPulmonaryScreenState extends ConsumerState<AddPulmonaryScreen> {
             collapsible: true,
             initiallyExpanded: _expandedSections['investigations'] ?? true,
             onToggle: (expanded) => setState(() => _expandedSections['investigations'] = expanded),
-            child: ChipSelectorSection(
-              title: 'Select Investigations',
-              options: PulmonarySuggestions.investigations,
-              selected: _selectedInvestigations,
-              onChanged: (list) => setState(() => _selectedInvestigations = list),
-              accentColor: Colors.cyan,
-              showClearButton: true,
-            ),
+            child: _buildInvestigationsSection(isDark),
           ),
           const SizedBox(height: AppSpacing.lg),
 
@@ -923,25 +1714,14 @@ class _AddPulmonaryScreenState extends ConsumerState<AddPulmonaryScreen> {
             collapsible: true,
             initiallyExpanded: _expandedSections['diagnosis'] ?? true,
             onToggle: (expanded) => setState(() => _expandedSections['diagnosis'] = expanded),
-            child: SuggestionTextField(
+            child: RecordTextField(
               controller: _diagnosisController,
               label: 'Diagnosis',
               hint: 'Enter diagnosis...',
               prefixIcon: Icons.medical_information_outlined,
               maxLines: 3,
-              suggestions: const [
-                'Bronchial Asthma',
-                'COPD',
-                'Acute Bronchitis',
-                'Pneumonia',
-                'Pulmonary Tuberculosis',
-                'Interstitial Lung Disease',
-                'Bronchiectasis',
-                'Pleural Effusion',
-                'Allergic Rhinitis',
-                'Upper Respiratory Tract Infection',
-                'Lower Respiratory Tract Infection',
-              ],
+              enableVoice: true,
+              suggestions: diagnosisSuggestions,
             ),
           ),
           const SizedBox(height: AppSpacing.lg),
@@ -957,11 +1737,14 @@ class _AddPulmonaryScreenState extends ConsumerState<AddPulmonaryScreen> {
             onToggle: (expanded) => setState(() => _expandedSections['treatment'] = expanded),
             child: Column(
               children: [
-                RecordNotesField(
+                RecordTextField(
                   controller: _treatmentController,
                   label: 'Treatment Plan',
                   hint: 'Enter treatment plan...',
                   maxLines: 4,
+                  prefixIcon: Icons.healing,
+                  enableVoice: true,
+                  suggestions: treatmentSuggestions,
                 ),
                 const SizedBox(height: AppSpacing.md),
                 RecordNotesField(
@@ -971,11 +1754,14 @@ class _AddPulmonaryScreenState extends ConsumerState<AddPulmonaryScreen> {
                   maxLines: 3,
                 ),
                 const SizedBox(height: AppSpacing.md),
-                RecordNotesField(
+                RecordTextField(
                   controller: _clinicalNotesController,
                   label: 'Additional Notes',
                   hint: 'Additional clinical notes...',
                   maxLines: 4,
+                  prefixIcon: Icons.notes,
+                  enableVoice: true,
+                  suggestions: clinicalNotesSuggestions,
                 ),
               ],
             ),

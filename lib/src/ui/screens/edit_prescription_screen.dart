@@ -818,54 +818,51 @@ class _EditPrescriptionScreenState extends ConsumerState<EditPrescriptionScreen>
     try {
       final db = await ref.read(doctorDbProvider.future);
 
-      // Build medications list
-      final medications = _medications
-          .where((med) => med.nameController.text.isNotEmpty)
-          .map((med) => med.toJson())
-          .toList();
-
-      // Try to preserve additional data from original prescription
-      Map<String, dynamic> originalData = {};
-      try {
-        final parsed = jsonDecode(widget.prescription.itemsJson);
-        if (parsed is Map<String, dynamic>) {
-          originalData = parsed;
-        }
-      } catch (_) {}
-
-      // Build full prescription JSON (same format as add_prescription_screen)
-      final fullPrescriptionJson = jsonEncode({
-        'prescription_date': widget.prescription.createdAt.toIso8601String(),
-        'patient': {
-          'id': widget.prescription.patientId,
-        },
-        'vitals': widget.prescription.vitalsJson != null 
-            ? jsonDecode(widget.prescription.vitalsJson!) 
-            : null,
-        'symptoms': _symptomsController.text,
-        'diagnosis': _diagnosisController.text,
-        'medications': medications,
-        'lab_tests': originalData['lab_tests'] ?? [],
-        'advice': _instructionsController.text,
-        'notes': originalData['notes'] ?? '',
-        'follow_up': originalData['follow_up'],
-      });
-
+      // V5: Update prescription with empty itemsJson - data goes to normalized table
       final updatedPrescription = PrescriptionsCompanion(
         id: Value(widget.prescription.id),
         patientId: Value(widget.prescription.patientId),
         createdAt: Value(widget.prescription.createdAt),
-        itemsJson: Value(fullPrescriptionJson),
+        itemsJson: const Value('[]'), // V5: Empty - using normalized table
         instructions: Value(_instructionsController.text),
         isRefillable: Value(_isRefillable),
         appointmentId: Value(widget.prescription.appointmentId),
         medicalRecordId: Value(widget.prescription.medicalRecordId),
         diagnosis: Value(_diagnosisController.text),
         chiefComplaint: Value(_symptomsController.text),
-        vitalsJson: Value(widget.prescription.vitalsJson),
+        vitalsJson: const Value('{}'), // V5: Vitals stored in VitalSigns table
       );
 
       await db.updatePrescription(updatedPrescription);
+
+      // V5: Delete old medications and re-insert with updated data
+      await db.deleteMedicationsForPrescription(widget.prescription.id);
+
+      // V5: Save medications to normalized PrescriptionMedications table
+      final validMedications = _medications
+          .where((med) => med.nameController.text.isNotEmpty)
+          .toList();
+      
+      for (int i = 0; i < validMedications.length; i++) {
+        final med = validMedications[i];
+        await db.insertPrescriptionMedication(
+          PrescriptionMedicationsCompanion.insert(
+            prescriptionId: widget.prescription.id,
+            patientId: widget.prescription.patientId,
+            medicationName: med.nameController.text,
+            strength: Value(med.dosageController.text),
+            frequency: Value(med.frequency),
+            timing: Value(med.timing),
+            durationText: Value(med.durationController.text),
+            specialInstructions: Value(med.instructionsController.text),
+            displayOrder: Value(i),
+            // Parse timing to set meal-related flags
+            beforeFood: Value(med.timing.toLowerCase().contains('before')),
+            afterFood: Value(med.timing.toLowerCase().contains('after')),
+            withFood: Value(med.timing.toLowerCase().contains('with')),
+          ),
+        );
+      }
 
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(

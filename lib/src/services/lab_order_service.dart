@@ -1,3 +1,5 @@
+import 'dart:convert';
+
 import 'package:drift/drift.dart';
 import 'package:flutter/foundation.dart';
 import '../db/doctor_db.dart';
@@ -199,6 +201,90 @@ class LabOrderService {
   // ═══════════════════════════════════════════════════════════════════════════════
   // SCREEN COMPATIBILITY METHODS
   // ═══════════════════════════════════════════════════════════════════════════════
+
+  /// Get display test names for a lab order (V5: from LabTestResults table)
+  /// Falls back to parsing testNames JSON if no normalized data exists
+  Future<String> getDisplayTestName(int labOrderId) async {
+    // First try normalized LabTestResults table (V5)
+    final results = await _db.getResultsForLabOrder(labOrderId);
+    if (results.isNotEmpty) {
+      final names = results.map((r) => r.testName).toList();
+      return names.join(', ');
+    }
+    
+    // Fallback to legacy testNames field (JSON array)
+    final order = await getLabOrderById(labOrderId);
+    if (order != null && order.testNames.isNotEmpty && order.testNames != '[]') {
+      try {
+        final parsed = (order.testNames.startsWith('[')) 
+            ? (List<String>.from(jsonDecode(order.testNames) as List))
+            : order.testNames.split(',').where((s) => s.trim().isNotEmpty).toList();
+        if (parsed.isNotEmpty) {
+          return parsed.join(', ');
+        }
+      } catch (_) {
+        // If parsing fails, return as-is
+        return order.testNames;
+      }
+    }
+    
+    return 'Lab Order';
+  }
+
+  /// Get display test code for a lab order (V5: from LabTestResults table)
+  Future<String?> getDisplayTestCode(int labOrderId) async {
+    final results = await _db.getResultsForLabOrder(labOrderId);
+    if (results.isNotEmpty) {
+      final codes = results.map((r) => r.testCode).where((c) => c.isNotEmpty).toList();
+      if (codes.isNotEmpty) {
+        return codes.join(', ');
+      }
+    }
+    
+    // Fallback to legacy testCodes field
+    final order = await getLabOrderById(labOrderId);
+    if (order != null && order.testCodes.isNotEmpty && order.testCodes != '[]') {
+      try {
+        final parsed = (order.testCodes.startsWith('[')) 
+            ? (List<String>.from(jsonDecode(order.testCodes) as List))
+            : order.testCodes.split(',').where((s) => s.trim().isNotEmpty).toList();
+        if (parsed.isNotEmpty) {
+          return parsed.join(', ');
+        }
+      } catch (_) {
+        return order.testCodes;
+      }
+    }
+    
+    return null;
+  }
+
+  /// Get test results count for a lab order
+  Future<int> getTestResultsCount(int labOrderId) async {
+    final results = await _db.getResultsForLabOrder(labOrderId);
+    return results.length;
+  }
+
+  /// Get lab orders with display names for patient
+  Future<List<Map<String, dynamic>>> getLabOrdersWithDetails(int patientId, {String? statusFilter}) async {
+    final orders = statusFilter != null 
+        ? await getLabOrdersByStatus(patientId, statusFilter)
+        : await getLabOrdersForPatient(patientId);
+    
+    final List<Map<String, dynamic>> ordersWithDetails = [];
+    for (final order in orders) {
+      final testName = await getDisplayTestName(order.id);
+      final testCode = await getDisplayTestCode(order.id);
+      final testCount = await getTestResultsCount(order.id);
+      ordersWithDetails.add({
+        'order': order,
+        'displayTestName': testName,
+        'displayTestCode': testCode,
+        'testCount': testCount,
+      });
+    }
+    return ordersWithDetails;
+  }
 
   /// Cancel lab order (screen compatibility)
   Future<bool> cancelLabOrder(int id, [String? reason]) async {

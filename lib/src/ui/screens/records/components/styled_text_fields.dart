@@ -1,23 +1,26 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import '../../../../core/theme/design_tokens.dart';
+import '../../../../services/voice_dictation_service.dart';
 
 /// A styled text input field for medical record forms
 /// 
 /// Provides consistent styling, validation indicators, and medical-specific
-/// features like character limits and multi-line support.
+/// features like character limits, multi-line support, voice dictation,
+/// and autocomplete suggestions.
 /// 
 /// Example:
 /// ```dart
 /// StyledTextField(
 ///   label: 'Chief Complaint',
-///   value: _chiefComplaint,
-///   onChanged: (v) => setState(() => _chiefComplaint = v),
+///   controller: _chiefComplaintController,
 ///   maxLines: 3,
 ///   isRequired: true,
+///   enableVoice: true,
+///   suggestions: ['Fever', 'Cough', 'Headache'],
 /// )
 /// ```
-class StyledTextField extends StatelessWidget {
+class StyledTextField extends StatefulWidget {
   const StyledTextField({
     super.key,
     required this.label,
@@ -46,6 +49,9 @@ class StyledTextField extends StatelessWidget {
     this.focusNode,
     this.onSubmitted,
     this.onEditingComplete,
+    this.enableVoice = false,
+    this.suggestions,
+    this.onSuggestionSelected,
   });
 
   /// Field label
@@ -125,123 +131,428 @@ class StyledTextField extends StatelessWidget {
   
   /// Callback when editing complete
   final VoidCallback? onEditingComplete;
+  
+  /// Enable voice dictation button
+  final bool enableVoice;
+  
+  /// List of suggestions to show as user types
+  final List<String>? suggestions;
+  
+  /// Callback when a suggestion is selected
+  final ValueChanged<String>? onSuggestionSelected;
+
+  @override
+  State<StyledTextField> createState() => _StyledTextFieldState();
+}
+
+class _StyledTextFieldState extends State<StyledTextField> {
+  late TextEditingController _internalController;
+  final VoiceDictationService _dictationService = VoiceDictationService();
+  bool _isListening = false;
+  bool _voiceAvailable = false;
+  bool _showSuggestions = false;
+  List<String> _filteredSuggestions = [];
+  final FocusNode _internalFocusNode = FocusNode();
+  final LayerLink _layerLink = LayerLink();
+  OverlayEntry? _overlayEntry;
+
+  @override
+  void initState() {
+    super.initState();
+    _internalController = widget.controller ?? TextEditingController(text: widget.value);
+    
+    if (widget.enableVoice) {
+      _initVoice();
+    }
+    
+    if (widget.suggestions != null && widget.suggestions!.isNotEmpty) {
+      _internalController.addListener(_onTextChanged);
+      (widget.focusNode ?? _internalFocusNode).addListener(_onFocusChanged);
+    }
+  }
+
+  Future<void> _initVoice() async {
+    final available = await _dictationService.initialize();
+    if (mounted) {
+      setState(() => _voiceAvailable = available);
+    }
+  }
+
+  void _onTextChanged() {
+    if (widget.suggestions == null) return;
+    
+    final text = _internalController.text.toLowerCase();
+    if (text.length < 2) {
+      _hideSuggestions();
+      return;
+    }
+    
+    // Get last word being typed
+    final words = text.split(RegExp(r'[,.\s]+'));
+    final lastWord = words.isNotEmpty ? words.last : '';
+    
+    if (lastWord.length < 2) {
+      _hideSuggestions();
+      return;
+    }
+    
+    _filteredSuggestions = widget.suggestions!
+        .where((s) => s.toLowerCase().contains(lastWord) && 
+                      !text.contains(s.toLowerCase()))
+        .take(5)
+        .toList();
+    
+    if (_filteredSuggestions.isNotEmpty) {
+      _showSuggestionsOverlay();
+    } else {
+      _hideSuggestions();
+    }
+  }
+
+  void _onFocusChanged() {
+    if (!(widget.focusNode ?? _internalFocusNode).hasFocus) {
+      _hideSuggestions();
+    }
+  }
+
+  void _showSuggestionsOverlay() {
+    _hideSuggestions();
+    
+    final overlay = Overlay.of(context);
+    _overlayEntry = OverlayEntry(
+      builder: (context) => Positioned(
+        width: context.findRenderObject() != null 
+            ? (context.findRenderObject() as RenderBox).size.width 
+            : 300,
+        child: CompositedTransformFollower(
+          link: _layerLink,
+          showWhenUnlinked: false,
+          offset: const Offset(0, 60),
+          child: Material(
+            elevation: 8,
+            borderRadius: BorderRadius.circular(12),
+            child: _buildSuggestionsDropdown(),
+          ),
+        ),
+      ),
+    );
+    
+    overlay.insert(_overlayEntry!);
+    setState(() => _showSuggestions = true);
+  }
+
+  void _hideSuggestions() {
+    _overlayEntry?.remove();
+    _overlayEntry = null;
+    if (mounted) {
+      setState(() => _showSuggestions = false);
+    }
+  }
+
+  Widget _buildSuggestionsDropdown() {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final color = widget.accentColor ?? Theme.of(context).primaryColor;
+    
+    return Container(
+      constraints: const BoxConstraints(maxHeight: 200),
+      decoration: BoxDecoration(
+        color: isDark ? const Color(0xFF2A2A2A) : Colors.white,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(
+          color: color.withValues(alpha: 0.3),
+        ),
+      ),
+      child: ListView.builder(
+        shrinkWrap: true,
+        padding: const EdgeInsets.symmetric(vertical: 4),
+        itemCount: _filteredSuggestions.length,
+        itemBuilder: (context, index) {
+          final suggestion = _filteredSuggestions[index];
+          return InkWell(
+            onTap: () => _selectSuggestion(suggestion),
+            borderRadius: BorderRadius.circular(8),
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+              child: Row(
+                children: [
+                  Icon(
+                    Icons.add_circle_outline_rounded,
+                    size: 18,
+                    color: color,
+                  ),
+                  const SizedBox(width: 10),
+                  Text(
+                    suggestion,
+                    style: TextStyle(
+                      fontSize: 14,
+                      color: isDark ? Colors.white : Colors.black87,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          );
+        },
+      ),
+    );
+  }
+
+  void _selectSuggestion(String suggestion) {
+    final currentText = _internalController.text;
+    final words = currentText.split(RegExp(r'[,.\s]+'));
+    
+    // Replace last partial word with suggestion
+    if (words.isNotEmpty) {
+      words.removeLast();
+      final newText = words.isEmpty 
+          ? suggestion 
+          : '${words.join(', ')}, $suggestion';
+      _internalController.text = newText;
+      _internalController.selection = TextSelection.collapsed(offset: newText.length);
+    }
+    
+    _hideSuggestions();
+    widget.onChanged?.call(_internalController.text);
+    widget.onSuggestionSelected?.call(suggestion);
+  }
+
+  Future<void> _toggleVoice() async {
+    if (_isListening) {
+      await _dictationService.stopListening();
+      setState(() => _isListening = false);
+    } else {
+      setState(() => _isListening = true);
+      await _dictationService.startListening(
+        onResult: (text) {
+          if (mounted && text.isNotEmpty) {
+            final currentText = _internalController.text;
+            final newText = currentText.isEmpty 
+                ? text 
+                : '$currentText $text';
+            _internalController.text = newText;
+            _internalController.selection = TextSelection.collapsed(offset: newText.length);
+            widget.onChanged?.call(newText);
+          }
+        },
+        onError: (error) {
+          if (mounted) {
+            setState(() => _isListening = false);
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(content: Text('Voice error: $error')),
+            );
+          }
+        },
+        onStatusChange: (listening) {
+          if (mounted) {
+            setState(() => _isListening = listening);
+          }
+        },
+      );
+    }
+  }
+
+  @override
+  void dispose() {
+    _hideSuggestions();
+    if (widget.controller == null) {
+      _internalController.dispose();
+    }
+    _dictationService.dispose();
+    _internalFocusNode.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    final effectiveColor = accentColor ?? Theme.of(context).primaryColor;
+    final effectiveColor = widget.accentColor ?? Theme.of(context).primaryColor;
 
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        // Label row
-        Padding(
-          padding: const EdgeInsets.only(bottom: 6),
-          child: Row(
-            children: [
-              if (icon != null) ...[
-                Icon(
-                  icon,
-                  size: 16,
-                  color: isDark ? Colors.grey.shade400 : Colors.grey.shade600,
-                ),
-                const SizedBox(width: 6),
-              ],
-              Text(
-                label,
-                style: TextStyle(
-                  fontSize: 13,
-                  fontWeight: FontWeight.w500,
-                  color: isDark ? Colors.grey.shade300 : Colors.grey.shade700,
-                ),
+    // Build suffix icon with voice button if enabled
+    Widget? effectiveSuffixIcon = widget.suffixIcon;
+    if (widget.enableVoice && _voiceAvailable) {
+      effectiveSuffixIcon = Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          if (widget.suffixIcon != null) widget.suffixIcon!,
+          GestureDetector(
+            onTap: _toggleVoice,
+            child: AnimatedContainer(
+              duration: const Duration(milliseconds: 200),
+              padding: const EdgeInsets.all(8),
+              margin: const EdgeInsets.only(right: 4),
+              decoration: BoxDecoration(
+                color: _isListening 
+                    ? Colors.red 
+                    : Colors.transparent,
+                borderRadius: BorderRadius.circular(8),
               ),
-              if (isRequired) ...[
-                const SizedBox(width: 4),
+              child: Icon(
+                _isListening ? Icons.mic_rounded : Icons.mic_none_rounded,
+                size: 20,
+                color: _isListening 
+                    ? Colors.white 
+                    : (isDark ? Colors.grey.shade400 : Colors.grey.shade500),
+              ),
+            ),
+          ),
+        ],
+      );
+    }
+
+    return CompositedTransformTarget(
+      link: _layerLink,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // Label row
+          Padding(
+            padding: const EdgeInsets.only(bottom: 6),
+            child: Row(
+              children: [
+                if (widget.icon != null) ...[
+                  Icon(
+                    widget.icon,
+                    size: 16,
+                    color: isDark ? Colors.grey.shade400 : Colors.grey.shade600,
+                  ),
+                  const SizedBox(width: 6),
+                ],
                 Text(
-                  '*',
+                  widget.label,
                   style: TextStyle(
-                    color: Colors.red.shade400,
-                    fontWeight: FontWeight.bold,
+                    fontSize: 13,
+                    fontWeight: FontWeight.w500,
+                    color: isDark ? Colors.grey.shade300 : Colors.grey.shade700,
                   ),
                 ),
+                if (widget.isRequired) ...[
+                  const SizedBox(width: 4),
+                  Text(
+                    '*',
+                    style: TextStyle(
+                      color: Colors.red.shade400,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                ],
+                const Spacer(),
+                // Voice indicator
+                if (_isListening)
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                    decoration: BoxDecoration(
+                      color: Colors.red.withValues(alpha: 0.15),
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Container(
+                          width: 6,
+                          height: 6,
+                          decoration: const BoxDecoration(
+                            color: Colors.red,
+                            shape: BoxShape.circle,
+                          ),
+                        ),
+                        const SizedBox(width: 4),
+                        Text(
+                          'Listening...',
+                          style: TextStyle(
+                            fontSize: 11,
+                            color: Colors.red.shade700,
+                            fontWeight: FontWeight.w500,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
               ],
-            ],
-          ),
-        ),
-        // Text field
-        TextFormField(
-          controller: controller,
-          initialValue: controller == null ? value : null,
-          onChanged: onChanged,
-          maxLines: maxLines,
-          minLines: minLines,
-          maxLength: maxLength,
-          validator: validator,
-          keyboardType: keyboardType,
-          inputFormatters: inputFormatters,
-          enabled: enabled,
-          readOnly: readOnly,
-          obscureText: obscureText,
-          autofocus: autofocus,
-          textCapitalization: textCapitalization,
-          focusNode: focusNode,
-          onFieldSubmitted: onSubmitted,
-          onEditingComplete: onEditingComplete,
-          style: TextStyle(
-            fontSize: 14,
-            color: isDark ? Colors.white : Colors.grey.shade800,
-          ),
-          decoration: InputDecoration(
-            hintText: hint,
-            hintStyle: TextStyle(
-              color: isDark ? Colors.grey.shade500 : Colors.grey.shade400,
-              fontSize: 13,
-            ),
-            prefixText: prefixText,
-            suffixText: suffixText,
-            suffixIcon: suffixIcon,
-            helperText: helperText,
-            helperStyle: TextStyle(
-              fontSize: 11,
-              color: isDark ? Colors.grey.shade500 : Colors.grey.shade500,
-            ),
-            filled: true,
-            fillColor: isDark 
-                ? Colors.grey.shade800.withValues(alpha: 0.5) 
-                : Colors.grey.shade50,
-            border: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(10),
-              borderSide: BorderSide(
-                color: isDark ? Colors.grey.shade700 : Colors.grey.shade300,
-              ),
-            ),
-            enabledBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(10),
-              borderSide: BorderSide(
-                color: isDark ? Colors.grey.shade700 : Colors.grey.shade300,
-              ),
-            ),
-            focusedBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(10),
-              borderSide: BorderSide(color: effectiveColor, width: 1.5),
-            ),
-            errorBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(10),
-              borderSide: BorderSide(color: Colors.red.shade400),
-            ),
-            disabledBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(10),
-              borderSide: BorderSide(
-                color: isDark ? Colors.grey.shade800 : Colors.grey.shade200,
-              ),
-            ),
-            contentPadding: EdgeInsets.symmetric(
-              horizontal: 14,
-              vertical: maxLines > 1 ? 14 : 12,
             ),
           ),
-        ),
-      ],
+          // Text field
+          TextFormField(
+            controller: _internalController,
+            onChanged: (value) {
+              widget.onChanged?.call(value);
+            },
+            maxLines: widget.maxLines,
+            minLines: widget.minLines,
+            maxLength: widget.maxLength,
+            validator: widget.validator,
+            keyboardType: widget.keyboardType,
+            inputFormatters: widget.inputFormatters,
+            enabled: widget.enabled,
+            readOnly: widget.readOnly,
+            obscureText: widget.obscureText,
+            autofocus: widget.autofocus,
+            textCapitalization: widget.textCapitalization,
+            focusNode: widget.focusNode ?? _internalFocusNode,
+            onFieldSubmitted: widget.onSubmitted,
+            onEditingComplete: widget.onEditingComplete,
+            style: TextStyle(
+              fontSize: 14,
+              color: isDark ? Colors.white : Colors.grey.shade800,
+            ),
+            decoration: InputDecoration(
+              hintText: widget.hint,
+              hintStyle: TextStyle(
+                color: isDark ? Colors.grey.shade500 : Colors.grey.shade400,
+                fontSize: 13,
+              ),
+              prefixText: widget.prefixText,
+              suffixText: widget.suffixText,
+              suffixIcon: effectiveSuffixIcon,
+              helperText: widget.helperText,
+              helperStyle: TextStyle(
+                fontSize: 11,
+                color: isDark ? Colors.grey.shade500 : Colors.grey.shade500,
+              ),
+              filled: true,
+              fillColor: _isListening 
+                  ? Colors.red.withValues(alpha: 0.05)
+                  : (isDark 
+                      ? Colors.grey.shade800.withValues(alpha: 0.5) 
+                      : Colors.grey.shade50),
+              border: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(10),
+                borderSide: BorderSide(
+                  color: isDark ? Colors.grey.shade700 : Colors.grey.shade300,
+                ),
+              ),
+              enabledBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(10),
+                borderSide: BorderSide(
+                  color: _isListening 
+                      ? Colors.red.withValues(alpha: 0.5)
+                      : (isDark ? Colors.grey.shade700 : Colors.grey.shade300),
+                ),
+              ),
+              focusedBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(10),
+                borderSide: BorderSide(
+                  color: _isListening ? Colors.red : effectiveColor, 
+                  width: 1.5,
+                ),
+              ),
+              errorBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(10),
+                borderSide: BorderSide(color: Colors.red.shade400),
+              ),
+              disabledBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(10),
+                borderSide: BorderSide(
+                  color: isDark ? Colors.grey.shade800 : Colors.grey.shade200,
+                ),
+              ),
+              contentPadding: EdgeInsets.symmetric(
+                horizontal: 14,
+                vertical: widget.maxLines > 1 ? 14 : 12,
+              ),
+            ),
+          ),
+        ],
+      ),
     );
   }
 }

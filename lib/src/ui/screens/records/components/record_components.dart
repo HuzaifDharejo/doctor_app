@@ -62,3 +62,31 @@ export 'styled_text_fields.dart';
 
 // Finding/observation rows - Normal/Abnormal status
 export 'finding_row.dart';
+
+// ============================================================================
+// NEW REUSABLE COMPONENTS - Phase 3 Refactoring (More Reusable)
+// ============================================================================
+
+// Base mixin for all record screens - common state and utilities
+export 'base_record_mixin.dart';
+
+// Common form sections - ChiefComplaint, Assessment, Investigations, Notes
+export 'common_sections.dart';
+
+// Record data builder - standardized save/load pattern
+export 'record_data_builder.dart';
+
+// Enhanced record scaffold - full-featured layout with gradient header, nav, FAB
+export 'enhanced_record_scaffold.dart';
+
+// Quick picker bottom sheet - workflow-style multi-select with icons
+export 'quick_picker_bottom_sheet.dart';
+
+// Dynamic suggestion text field - auto-learning suggestions from user input
+export 'dynamic_suggestion_text_field.dart';
+
+// Suggestion saving mixin - for forms to save user input as suggestions
+export 'suggestion_saving_mixin.dart';
+
+// Re-export the suggestion categories for easy access
+export '../../../../services/dynamic_suggestions_service.dart' show SuggestionCategory;

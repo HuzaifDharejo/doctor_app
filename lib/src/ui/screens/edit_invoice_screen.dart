@@ -1008,24 +1008,17 @@ class _EditInvoiceScreenState extends ConsumerState<EditInvoiceScreen> {
     try {
       final db = await ref.read(doctorDbProvider.future);
 
-      // Build items JSON
-      final itemsJson = jsonEncode(
-        _items
-            .where((item) => item.description.isNotEmpty)
-            .map((item) => item.toJson())
-            .toList(),
-      );
-
       final discountPercent = double.tryParse(_discountController.text) ?? 0;
       final taxPercent = double.tryParse(_taxController.text) ?? 0;
 
+      // V5: Update invoice with empty itemsJson - data goes to normalized table
       final updatedInvoice = InvoicesCompanion(
         id: Value(widget.invoice.id),
         patientId: Value(widget.invoice.patientId),
         invoiceNumber: Value(widget.invoice.invoiceNumber),
         invoiceDate: Value(widget.invoice.invoiceDate),
         dueDate: Value(_dueDate),
-        itemsJson: Value(itemsJson),
+        itemsJson: const Value('[]'), // V5: Empty - using normalized table
         subtotal: Value(_subtotal),
         discountPercent: Value(discountPercent),
         discountAmount: Value(_discountAmount),
@@ -1042,6 +1035,30 @@ class _EditInvoiceScreenState extends ConsumerState<EditInvoiceScreen> {
       );
 
       await db.updateInvoice(updatedInvoice);
+
+      // V5: Delete old line items and re-insert with updated data
+      await db.deleteLineItemsForInvoice(widget.invoice.id);
+
+      // V5: Save line items to normalized InvoiceLineItems table
+      final validItems = _items
+          .where((item) => item.description.isNotEmpty)
+          .toList();
+      
+      for (int i = 0; i < validItems.length; i++) {
+        final item = validItems[i];
+        await db.insertInvoiceLineItem(
+          InvoiceLineItemsCompanion.insert(
+            invoiceId: widget.invoice.id,
+            patientId: widget.invoice.patientId,
+            description: item.descriptionController.text,
+            itemType: Value(item.type.toLowerCase()),
+            unitPrice: Value(item.rate),
+            quantity: Value(item.quantity.toDouble()),
+            totalAmount: Value(item.total),
+            displayOrder: Value(i),
+          ),
+        );
+      }
 
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
