@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../../../theme/app_theme.dart';
+import '../../../../core/extensions/context_extensions.dart';
 
 /// Medication adherence widget
 class MedicationAdherenceWidget extends StatelessWidget {
@@ -38,7 +39,7 @@ class MedicationAdherenceWidget extends StatelessWidget {
     final adherenceColor = _getAdherenceColor();
 
     return Container(
-      padding: const EdgeInsets.all(16),
+      padding: EdgeInsets.all(context.responsivePadding),
       decoration: BoxDecoration(
         color: isDark ? AppColors.darkSurface : Colors.white,
         borderRadius: BorderRadius.circular(18),

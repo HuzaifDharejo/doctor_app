@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../../../core/extensions/context_extensions.dart';
 import 'medication_models.dart';
 import 'medication_theme.dart';
 
@@ -604,7 +605,7 @@ class _AllTemplatesSheet extends StatelessWidget {
           ),
           // Header
           Padding(
-            padding: const EdgeInsets.all(16),
+            padding: EdgeInsets.all(context.responsivePadding),
             child: Row(
               children: [
                 Container(
@@ -648,23 +649,35 @@ class _AllTemplatesSheet extends StatelessWidget {
           const Divider(height: 1),
           // Grid
           Expanded(
-            child: GridView.builder(
-              padding: const EdgeInsets.all(16),
-              gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                crossAxisCount: 2,
-                childAspectRatio: 1.3,
-                crossAxisSpacing: 12,
-                mainAxisSpacing: 12,
-              ),
-              itemCount: PrescriptionTemplates.all.length,
-              itemBuilder: (context, index) {
-                final template = PrescriptionTemplates.all[index];
-                return _TemplateGridItem(
-                  template: template,
-                  isDark: isDark,
-                  onTap: () {
-                    Navigator.pop(context);
-                    onSelect(template);
+            child: LayoutBuilder(
+              builder: (context, constraints) {
+                return GridView.builder(
+                  padding: EdgeInsets.all(context.responsivePadding),
+                  gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                    crossAxisCount: context.responsive(
+                      compact: 2,
+                      medium: 3,
+                      expanded: 4,
+                    ),
+                    childAspectRatio: context.responsive(
+                      compact: 1.2,
+                      medium: 1.3,
+                      expanded: 1.4,
+                    ),
+                    crossAxisSpacing: context.responsiveItemSpacing,
+                    mainAxisSpacing: context.responsiveItemSpacing,
+                  ),
+                  itemCount: PrescriptionTemplates.all.length,
+                  itemBuilder: (context, index) {
+                    final template = PrescriptionTemplates.all[index];
+                    return _TemplateGridItem(
+                      template: template,
+                      isDark: isDark,
+                      onTap: () {
+                        Navigator.pop(context);
+                        onSelect(template);
+                      },
+                    );
                   },
                 );
               },
@@ -672,9 +685,9 @@ class _AllTemplatesSheet extends StatelessWidget {
           ),
         ],
       ),
-    );
+      );
+    }
   }
-}
 
 class _TemplateGridItem extends StatelessWidget {
   const _TemplateGridItem({

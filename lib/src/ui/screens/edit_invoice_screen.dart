@@ -9,6 +9,7 @@ import '../../services/suggestions_service.dart';
 import '../../theme/app_theme.dart';
 import '../widgets/suggestion_text_field.dart';
 import '../../core/widgets/keyboard_aware_scaffold.dart';
+import '../../core/extensions/context_extensions.dart';
 
 class EditInvoiceScreen extends ConsumerStatefulWidget {
   const EditInvoiceScreen({
@@ -138,7 +139,7 @@ class _EditInvoiceScreenState extends ConsumerState<EditInvoiceScreen> {
     final padding = isCompact ? 16.0 : 20.0;
 
     return Scaffold(
-      backgroundColor: isDark ? const Color(0xFF0F0F0F) : const Color(0xFFF8F9FA),
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       body: Form(
         key: _formKey,
         child: CustomScrollView(
@@ -196,7 +197,7 @@ class _EditInvoiceScreenState extends ConsumerState<EditInvoiceScreen> {
                           borderRadius: BorderRadius.circular(12),
                           borderSide: BorderSide.none,
                         ),
-                        contentPadding: const EdgeInsets.all(16),
+                        contentPadding: EdgeInsets.all(context.responsivePadding),
                       ),
                       style: TextStyle(color: isDark ? Colors.white : Colors.black87),
                     ),
@@ -218,26 +219,32 @@ class _EditInvoiceScreenState extends ConsumerState<EditInvoiceScreen> {
   }
 
   Widget _buildModernSliverAppBar(BuildContext context, bool isDark) {
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+    
     return SliverAppBar(
-      expandedHeight: 140,
+      expandedHeight: 160,
+      floating: false,
       pinned: true,
       elevation: 0,
-      scrolledUnderElevation: 1,
-      backgroundColor: isDark ? const Color(0xFF1A1A1A) : Colors.white,
+      backgroundColor: colorScheme.surface,
+      surfaceTintColor: Colors.transparent,
       leading: Padding(
-        padding: const EdgeInsets.all(8),
-        child: GestureDetector(
-          onTap: () => Navigator.pop(context),
-          child: Container(
-            decoration: BoxDecoration(
-              color: isDark ? Colors.white.withValues(alpha: 0.1) : Colors.grey.withValues(alpha: 0.1),
-              borderRadius: BorderRadius.circular(12),
+        padding: const EdgeInsets.all(8.0),
+        child: Container(
+          decoration: BoxDecoration(
+            color: isDark 
+                ? Colors.white.withValues(alpha: 0.1) 
+                : Colors.black.withValues(alpha: 0.05),
+            borderRadius: BorderRadius.circular(12),
+          ),
+          child: IconButton(
+            icon: Icon(
+              Icons.arrow_back_ios_new_rounded,
+              size: 18,
+              color: isDark ? Colors.white : AppColors.textPrimary,
             ),
-            child: Icon(
-              Icons.arrow_back_rounded,
-              color: isDark ? Colors.white : Colors.black87,
-              size: 22,
-            ),
+            onPressed: () => Navigator.pop(context),
           ),
         ),
       ),
@@ -245,49 +252,53 @@ class _EditInvoiceScreenState extends ConsumerState<EditInvoiceScreen> {
         background: Container(
           decoration: BoxDecoration(
             gradient: LinearGradient(
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
               colors: isDark
-                  ? [const Color(0xFF1A1A1A), const Color(0xFF0F0F0F)]
-                  : [Colors.white, const Color(0xFFF8F9FA)],
-              begin: Alignment.topCenter,
-              end: Alignment.bottomCenter,
+                  ? [const Color(0xFF1A1A2E), colorScheme.surface]
+                  : [colorScheme.surface, Theme.of(context).scaffoldBackgroundColor],
             ),
           ),
           child: SafeArea(
             child: Padding(
-              padding: const EdgeInsets.fromLTRB(20, 50, 20, 0),
+              padding: const EdgeInsets.fromLTRB(20, 60, 20, 20),
               child: Row(
                 children: [
                   Container(
-                    padding: const EdgeInsets.all(14),
+                    padding: EdgeInsets.all(context.responsivePadding),
                     decoration: BoxDecoration(
                       gradient: const LinearGradient(
-                        colors: [Color(0xFF8B5CF6), Color(0xFF6366F1)],
+                        colors: [Color(0xFF8B5CF6), Color(0xFF7C3AED)],
                         begin: Alignment.topLeft,
                         end: Alignment.bottomRight,
                       ),
-                      borderRadius: BorderRadius.circular(16),
+                      borderRadius: BorderRadius.circular(20),
                       boxShadow: [
                         BoxShadow(
-                          color: const Color(0xFF8B5CF6).withValues(alpha: 0.3),
-                          blurRadius: 12,
-                          offset: const Offset(0, 4),
+                          color: AppColors.billing.withValues(alpha: 0.4),
+                          blurRadius: 20,
+                          offset: const Offset(0, 8),
                         ),
                       ],
                     ),
-                    child: const Icon(Icons.edit_document, color: Colors.white, size: 28),
+                    child: const Icon(
+                      Icons.edit_note_rounded,
+                      color: Colors.white,
+                      size: 32,
+                    ),
                   ),
                   const SizedBox(width: 16),
                   Expanded(
                     child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
                       mainAxisSize: MainAxisSize.min,
+                      crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
                           'Edit Invoice',
                           style: TextStyle(
-                            fontSize: 22,
+                            fontSize: 28,
                             fontWeight: FontWeight.w800,
-                            color: isDark ? Colors.white : Colors.black87,
+                            color: isDark ? AppColors.darkTextPrimary : AppColors.textPrimary,
                             letterSpacing: -0.5,
                           ),
                         ),
@@ -295,8 +306,8 @@ class _EditInvoiceScreenState extends ConsumerState<EditInvoiceScreen> {
                         Text(
                           widget.invoice.invoiceNumber,
                           style: TextStyle(
-                            fontSize: 13,
-                            color: isDark ? Colors.grey[400] : Colors.grey[600],
+                            fontSize: 14,
+                            color: isDark ? AppColors.darkTextSecondary : AppColors.textSecondary,
                           ),
                         ),
                       ],
@@ -313,7 +324,7 @@ class _EditInvoiceScreenState extends ConsumerState<EditInvoiceScreen> {
 
   Widget _buildPatientCard(BuildContext context, bool isDark) {
     return Container(
-      padding: const EdgeInsets.all(16),
+      padding: EdgeInsets.all(context.responsivePadding),
       decoration: BoxDecoration(
         gradient: const LinearGradient(
           colors: [Color(0xFF6366F1), Color(0xFF8B5CF6)],
@@ -378,13 +389,20 @@ class _EditInvoiceScreenState extends ConsumerState<EditInvoiceScreen> {
   }) {
     return Container(
       decoration: BoxDecoration(
-        color: isDark ? const Color(0xFF1A1A1A) : Colors.white,
+        gradient: LinearGradient(
+          colors: [
+            iconColor.withValues(alpha: 0.12),
+            iconColor.withValues(alpha: 0.04),
+          ],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+        ),
         borderRadius: BorderRadius.circular(20),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withValues(alpha: 0.05),
-            blurRadius: 10,
-            offset: const Offset(0, 2),
+            color: iconColor.withValues(alpha: 0.1),
+            blurRadius: 12,
+            offset: const Offset(0, 4),
           ),
         ],
       ),
@@ -398,7 +416,12 @@ class _EditInvoiceScreenState extends ConsumerState<EditInvoiceScreen> {
                 Container(
                   padding: const EdgeInsets.all(10),
                   decoration: BoxDecoration(
-                    color: iconColor.withValues(alpha: 0.1),
+                    gradient: LinearGradient(
+                      colors: [
+                        iconColor.withValues(alpha: 0.2),
+                        iconColor.withValues(alpha: 0.1),
+                      ],
+                    ),
                     borderRadius: BorderRadius.circular(12),
                   ),
                   child: Icon(icon, color: iconColor, size: 20),
@@ -472,13 +495,24 @@ class _EditInvoiceScreenState extends ConsumerState<EditInvoiceScreen> {
     final item = _items[index];
     return Container(
       margin: EdgeInsets.only(bottom: index < _items.length - 1 ? 12 : 0),
-      padding: const EdgeInsets.all(16),
+      padding: EdgeInsets.all(context.responsivePadding),
       decoration: BoxDecoration(
-        color: isDark ? Colors.white.withValues(alpha: 0.05) : Colors.grey.withValues(alpha: 0.05),
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(
-          color: isDark ? Colors.white.withValues(alpha: 0.1) : Colors.grey.withValues(alpha: 0.2),
+        gradient: LinearGradient(
+          colors: [
+            AppColors.billing.withValues(alpha: 0.1),
+            AppColors.billing.withValues(alpha: 0.03),
+          ],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
         ),
+        borderRadius: BorderRadius.circular(16),
+        boxShadow: [
+          BoxShadow(
+            color: AppColors.billing.withValues(alpha: 0.08),
+            blurRadius: 8,
+            offset: const Offset(0, 3),
+          ),
+        ],
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -749,7 +783,7 @@ class _EditInvoiceScreenState extends ConsumerState<EditInvoiceScreen> {
             }
           },
           child: Container(
-            padding: const EdgeInsets.all(16),
+            padding: EdgeInsets.all(context.responsivePadding),
             decoration: BoxDecoration(
               color: isDark ? Colors.white.withValues(alpha: 0.05) : Colors.grey.withValues(alpha: 0.1),
               borderRadius: BorderRadius.circular(12),
@@ -846,7 +880,7 @@ class _EditInvoiceScreenState extends ConsumerState<EditInvoiceScreen> {
   Widget _buildSummaryCard(BuildContext context, bool isDark) {
     final currencyFormat = NumberFormat.currency(symbol: 'Rs. ', decimalDigits: 0);
     return Container(
-      padding: const EdgeInsets.all(20),
+      padding: EdgeInsets.all(context.responsivePadding),
       decoration: BoxDecoration(
         gradient: LinearGradient(
           colors: [const Color(0xFF10B981), const Color(0xFF059669)],

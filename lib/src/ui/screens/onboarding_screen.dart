@@ -4,6 +4,7 @@ import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../../core/extensions/context_extensions.dart';
 import '../../data/demo_data.dart';
 import '../../providers/db_provider.dart';
 import '../../providers/google_calendar_provider.dart';
@@ -120,28 +121,37 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen>
     unawaited(HapticFeedback.mediumImpact());
     setState(() => _isLoading = true);
     
-    final userInfo = await ref.read(googleCalendarProvider.notifier).signInAndGetUserInfo();
-    
-    if (userInfo != null) {
-      unawaited(HapticFeedback.heavyImpact());
-      setState(() {
-        _isSignedIn = true;
-        _googleUserInfo = userInfo;
-        _nameController.text = userInfo.displayName ?? '';
-        _emailController.text = userInfo.email;
-        _isLoading = false;
-      });
+    try {
+      final userInfo = await ref.read(googleCalendarProvider.notifier).signInAndGetUserInfo();
+      
+      if (userInfo != null) {
+        unawaited(HapticFeedback.heavyImpact());
+        setState(() {
+          _isSignedIn = true;
+          _googleUserInfo = userInfo;
+          _nameController.text = userInfo.displayName ?? '';
+          _emailController.text = userInfo.email;
+          _isLoading = false;
+        });
 
-      if (mounted) {
-        _showSuccessSnackBar('Signed in as ${userInfo.email}');
-        await Future<void>.delayed(const Duration(milliseconds: 500));
-        _nextPage();
+        if (mounted) {
+          _showSuccessSnackBar('Signed in as ${userInfo.email}');
+          await Future<void>.delayed(const Duration(milliseconds: 500));
+          _nextPage();
+        }
+      } else {
+        unawaited(HapticFeedback.vibrate());
+        setState(() => _isLoading = false);
+        if (mounted) {
+          _showErrorSnackBar('Sign-in failed. Please try again.');
+        }
       }
-    } else {
+    } catch (e) {
+      // Google Calendar not available (e.g., on web)
       unawaited(HapticFeedback.vibrate());
       setState(() => _isLoading = false);
       if (mounted) {
-        _showErrorSnackBar('Sign-in failed. Please try again.');
+        _showErrorSnackBar('Google Sign-In is not available on this platform.');
       }
     }
   }
@@ -244,10 +254,17 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen>
     final theme = Theme.of(context);
     final isDark = theme.brightness == Brightness.dark;
     final size = MediaQuery.of(context).size;
-    final calendarState = ref.watch(googleCalendarProvider);
     
-    if (calendarState.isConnected && !_isSignedIn) {
-      _isSignedIn = true;
+    // Safely watch Google Calendar provider - may not be available on web
+    GoogleCalendarState calendarState;
+    try {
+      calendarState = ref.watch(googleCalendarProvider);
+      if (calendarState.isConnected && !_isSignedIn) {
+        _isSignedIn = true;
+      }
+    } catch (e) {
+      // Google Calendar not available (e.g., on web) - use default state
+      calendarState = const GoogleCalendarState();
     }
 
     return Scaffold(
@@ -277,7 +294,7 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen>
                     _buildWelcomePage(isDark, size),
                     _buildFeaturesPage(isDark, size),
                     _buildProfilePage(isDark, size),
-                    _buildCompletionPage(isDark, size, calendarState),
+                    _buildCompletionPage(isDark, size, calendarState ?? const GoogleCalendarState()),
                   ],
                 ),
               ),
@@ -337,7 +354,7 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen>
 
   Widget _buildNavigation(bool isDark) {
     return Container(
-      padding: const EdgeInsets.all(24),
+      padding: EdgeInsets.all(context.responsivePadding),
       child: Row(
         children: [
           // Back button
@@ -480,7 +497,7 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen>
   // ============= PAGE 1: WELCOME =============
   Widget _buildWelcomePage(bool isDark, Size size) {
     return SingleChildScrollView(
-      padding: const EdgeInsets.symmetric(horizontal: 24),
+      padding: EdgeInsets.symmetric(horizontal: context.responsivePadding),
       child: Column(
         children: [
           SizedBox(height: size.height * 0.05),
@@ -528,7 +545,7 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen>
               children: [
                 Expanded(child: Divider(color: isDark ? Colors.white12 : Colors.black12)),
                 Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 16),
+                  padding: EdgeInsets.symmetric(horizontal: context.responsivePadding),
                   child: Text(
                     'OR',
                     style: TextStyle(
@@ -676,7 +693,7 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen>
     }
     
     return Container(
-      padding: const EdgeInsets.all(24),
+      padding: EdgeInsets.all(context.responsivePadding),
       decoration: BoxDecoration(
         color: isDark ? Colors.white.withValues(alpha: 0.05) : Colors.white,
         borderRadius: BorderRadius.circular(24),
@@ -694,7 +711,7 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen>
       child: Column(
         children: [
           Container(
-            padding: const EdgeInsets.all(16),
+            padding: EdgeInsets.all(context.responsivePadding),
             decoration: BoxDecoration(
               color: const Color(0xFF4285F4).withValues(alpha: 0.1),
               borderRadius: BorderRadius.circular(16),
@@ -746,15 +763,11 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen>
                   : Row(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
-                        Image.network(
-                          'https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg',
-                          width: 24,
-                          height: 24,
-                          errorBuilder: (_, __, ___) => const Icon(
-                            Icons.g_mobiledata_rounded,
-                            size: 28,
-                            color: Color(0xFF4285F4),
-                          ),
+                        // Use icon instead of SVG to avoid ImageCodecException
+                        const Icon(
+                          Icons.g_mobiledata_rounded,
+                          size: 28,
+                          color: Color(0xFF4285F4),
                         ),
                         const SizedBox(width: 12),
                         const Text(
@@ -775,7 +788,7 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen>
 
   Widget _buildSignedInCard(bool isDark) {
     return Container(
-      padding: const EdgeInsets.all(24),
+      padding: EdgeInsets.all(context.responsivePadding),
       decoration: BoxDecoration(
         gradient: LinearGradient(
           begin: Alignment.topLeft,
@@ -932,7 +945,7 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen>
     ];
 
     return SingleChildScrollView(
-      padding: const EdgeInsets.symmetric(horizontal: 24),
+      padding: EdgeInsets.symmetric(horizontal: context.responsivePadding),
       child: Column(
         children: [
           const SizedBox(height: 24),
@@ -960,18 +973,32 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen>
           const SizedBox(height: 32),
           
           // Feature grid
-          GridView.builder(
-            shrinkWrap: true,
-            physics: const NeverScrollableScrollPhysics(),
-            gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-              crossAxisCount: 2,
-              mainAxisSpacing: 16,
-              crossAxisSpacing: 16,
-              childAspectRatio: 0.9,
-            ),
-            itemCount: features.length,
-            itemBuilder: (context, index) {
-              return _buildFeatureCard(features[index], isDark, index);
+          LayoutBuilder(
+            builder: (context, constraints) {
+              final crossAxisCount = context.responsive(
+                compact: 2,
+                medium: 3,
+                expanded: 4,
+              );
+              final aspectRatio = context.responsive(
+                compact: context.isShortScreen ? 0.85 : 0.87,
+                medium: 0.95,
+                expanded: 1.0,
+              );
+              return GridView.builder(
+                shrinkWrap: true,
+                physics: const NeverScrollableScrollPhysics(),
+                gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                  crossAxisCount: crossAxisCount,
+                  mainAxisSpacing: context.responsiveItemSpacing,
+                  crossAxisSpacing: context.responsiveItemSpacing,
+                  childAspectRatio: aspectRatio,
+                ),
+                itemCount: features.length,
+                itemBuilder: (context, index) {
+                  return _buildFeatureCard(features[index], isDark, index);
+                },
+              );
             },
           ),
           
@@ -996,7 +1023,7 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen>
         );
       },
       child: Container(
-        padding: const EdgeInsets.all(20),
+        padding: const EdgeInsets.all(18),
         decoration: BoxDecoration(
           color: isDark ? Colors.white.withValues(alpha: 0.05) : Colors.white,
           borderRadius: BorderRadius.circular(20),
@@ -1017,7 +1044,7 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen>
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Container(
-              padding: const EdgeInsets.all(12),
+              padding: const EdgeInsets.all(11),
               decoration: BoxDecoration(
                 color: feature.color.withValues(alpha: 0.1),
                 borderRadius: BorderRadius.circular(14),
@@ -1025,27 +1052,28 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen>
               child: Icon(
                 feature.icon,
                 color: feature.color,
-                size: 26,
+                size: 25,
               ),
             ),
-            const SizedBox(height: 16),
+            const SizedBox(height: 14),
             Text(
               feature.title,
               style: TextStyle(
-                fontSize: 15,
+                fontSize: 14.5,
                 fontWeight: FontWeight.bold,
                 color: isDark ? Colors.white : Colors.black87,
+                height: 1.15,
               ),
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
             ),
-            const SizedBox(height: 6),
+            const SizedBox(height: 5),
             Text(
               feature.description,
               style: TextStyle(
-                fontSize: 12,
+                fontSize: 11.5,
                 color: isDark ? Colors.white60 : Colors.black54,
-                height: 1.4,
+                height: 1.35,
               ),
               maxLines: 3,
               overflow: TextOverflow.ellipsis,
@@ -1059,7 +1087,7 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen>
   // ============= PAGE 3: PROFILE =============
   Widget _buildProfilePage(bool isDark, Size size) {
     return SingleChildScrollView(
-      padding: const EdgeInsets.symmetric(horizontal: 24),
+      padding: EdgeInsets.symmetric(horizontal: context.responsivePadding),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -1076,7 +1104,7 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen>
                   )
                 else
                   Container(
-                    padding: const EdgeInsets.all(20),
+                    padding: EdgeInsets.all(context.responsivePadding),
                     decoration: BoxDecoration(
                       gradient: const LinearGradient(
                         colors: [_gradientStart, _gradientEnd],
@@ -1355,7 +1383,7 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen>
   // ============= PAGE 4: COMPLETION =============
   Widget _buildCompletionPage(bool isDark, Size size, GoogleCalendarState calendarState) {
     return SingleChildScrollView(
-      padding: const EdgeInsets.symmetric(horizontal: 24),
+      padding: EdgeInsets.symmetric(horizontal: context.responsivePadding),
       child: Column(
         children: [
           SizedBox(height: size.height * 0.05),
@@ -1385,7 +1413,7 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen>
                 shape: BoxShape.circle,
               ),
               child: Container(
-                padding: const EdgeInsets.all(24),
+                padding: EdgeInsets.all(context.responsivePadding),
                 decoration: const BoxDecoration(
                   gradient: LinearGradient(
                     colors: [_accentGradientStart, _accentGradientEnd],
@@ -1426,7 +1454,7 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen>
           
           // Profile summary card
           Container(
-            padding: const EdgeInsets.all(24),
+            padding: EdgeInsets.all(context.responsivePadding),
             decoration: BoxDecoration(
               color: isDark ? Colors.white.withValues(alpha: 0.05) : Colors.white,
               borderRadius: BorderRadius.circular(20),
@@ -1559,7 +1587,7 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen>
   Widget _buildQuickTip(String number, String title, String subtitle, Color color, bool isDark) {
     return Container(
       margin: const EdgeInsets.only(bottom: 12),
-      padding: const EdgeInsets.all(16),
+      padding: EdgeInsets.all(context.responsivePadding),
       decoration: BoxDecoration(
         color: isDark ? Colors.white.withValues(alpha: 0.03) : Colors.white,
         borderRadius: BorderRadius.circular(14),

@@ -66,7 +66,7 @@ class _ClinicalDashboardState extends ConsumerState<ClinicalDashboard>
     final isDark = context.isDarkMode;
 
     return Scaffold(
-      backgroundColor: isDark ? AppColors.darkBackground : const Color(0xFFF8FAFC),
+      backgroundColor: isDark ? AppColors.darkBackground : AppColors.background,
       body: SafeArea(
         child: dbAsync.when(
           data: (db) => _buildDashboard(context, db),
@@ -99,28 +99,56 @@ class _ClinicalDashboardState extends ConsumerState<ClinicalDashboard>
   Future<DashboardData> _loadDashboardData(DoctorDatabase db) async {
     final today = DateTime.now();
     final startOfDay = DateTime(today.year, today.month, today.day);
+    final yesterday = startOfDay.subtract(const Duration(days: 1));
     
-    // Parallel data loading for performance
+    // Optimized parallel data loading - only load what's needed
     final results = await Future.wait([
-      db.getAllPatients(),
+      // Get patient counts and at-risk patients only
+      db.getPatientCount(),
+      db.getPatientsByRiskLevel(5), // High risk patients (riskLevel >= 4, but we'll filter)
       db.getAppointmentsForDay(today),
-      db.getAllVitalSigns(),
+      // Only load recent vitals (last 24 hours) instead of all
+      db.getVitalSignsForDateRange(yesterday, DateTime.now()),
       db.getPendingFollowUps(),
       db.getOverdueFollowUps(),
-      db.getAllTreatmentOutcomes(),
-      db.getAllPrescriptions(),
+      // Only load ongoing treatments instead of all
+      db.getOngoingTreatmentOutcomes(),
+      // Only load recent prescriptions (last 30 days) for drug interaction checks
+      db.getRecentPrescriptions(DateTime.now().subtract(const Duration(days: 30))),
     ]);
     
-    final patients = results[0] as List<Patient>;
-    final todayAppointments = results[1] as List<Appointment>;
-    final allVitalSigns = results[2] as List<VitalSign>;
-    final pendingFollowUps = results[3] as List<ScheduledFollowUp>;
-    final overdueFollowUps = results[4] as List<ScheduledFollowUp>;
-    final treatments = results[5] as List<TreatmentOutcome>;
-    final prescriptions = results[6] as List<Prescription>;
+    final totalPatients = results[0] as int;
+    final highRiskPatients = results[1] as List<Patient>;
+    final todayAppointments = results[2] as List<Appointment>;
+    final recentVitals = results[3] as List<VitalSign>;
+    final pendingFollowUps = results[4] as List<ScheduledFollowUp>;
+    final overdueFollowUps = results[5] as List<ScheduledFollowUp>;
+    final ongoingTreatments = results[6] as List<TreatmentOutcome>;
+    final recentPrescriptions = results[7] as List<Prescription>;
     
-    // Process patient categories
-    final atRiskPatients = patients.where((p) => p.riskLevel >= 4).toList();
+    // Get additional patient data only if needed
+    final atRiskPatients = highRiskPatients.where((p) => p.riskLevel >= 4).toList();
+    
+    // Collect patient IDs needed for alerts and display
+    final patientIdsForAlerts = <int>{};
+    patientIdsForAlerts.addAll(recentVitals.map((v) => v.patientId));
+    patientIdsForAlerts.addAll(recentPrescriptions.map((p) => p.patientId));
+    patientIdsForAlerts.addAll(atRiskPatients.map((p) => p.id));
+    
+    // Load only patients needed for alerts and display
+    final patients = <Patient>[];
+    if (patientIdsForAlerts.isNotEmpty) {
+      patients.addAll(await (db.select(db.patients)
+        ..where((p) => p.id.isIn(patientIdsForAlerts)))
+        .get());
+    }
+    // Add at-risk patients that might not be in the set
+    for (final p in atRiskPatients) {
+      if (!patients.any((patient) => patient.id == p.id)) {
+        patients.add(p);
+      }
+    }
+    
     final activePatients = patients.where((p) => p.riskLevel < 4).toList();
     
     // Process appointments
@@ -131,18 +159,15 @@ class _ClinicalDashboardState extends ConsumerState<ClinicalDashboard>
     final completedAppts = todayAppointments.where((a) => 
         a.status == 'completed').toList();
     
-    // Process vital signs - find abnormal readings from last 24 hours
-    final recentVitals = allVitalSigns.where((v) => 
-        v.recordedAt.isAfter(startOfDay.subtract(const Duration(days: 1)))).toList();
+    // Process vital signs - already filtered to last 24 hours
     final abnormalVitals = _findAbnormalVitals(recentVitals, patients);
     
-    // Process treatments
-    final ongoingTreatments = treatments.where((t) => t.outcome == 'ongoing').toList();
-    final improvedTreatments = treatments.where((t) => t.outcome == 'improved').toList();
-    final worsenedTreatments = treatments.where((t) => t.outcome == 'worsened').toList();
+    // Get improved and worsened treatments (only if needed for display)
+    final improvedTreatments = await db.getTreatmentOutcomesByOutcome('improved', limit: 10);
+    final worsenedTreatments = await db.getTreatmentOutcomesByOutcome('worsened', limit: 10);
     
-    // Process drug interactions and allergies
-    final alerts = await _checkClinicalAlerts(patients, prescriptions, db);
+    // Process drug interactions and allergies (using optimized patient list)
+    final alerts = await _checkClinicalAlerts(patients, recentPrescriptions, db);
     
     return DashboardData(
       patients: patients,
@@ -158,7 +183,7 @@ class _ClinicalDashboardState extends ConsumerState<ClinicalDashboard>
       ongoingTreatments: ongoingTreatments,
       improvedTreatments: improvedTreatments,
       worsenedTreatments: worsenedTreatments,
-      prescriptions: prescriptions,
+      prescriptions: recentPrescriptions,
       clinicalAlerts: alerts,
     );
   }
@@ -277,14 +302,14 @@ class _ClinicalDashboardState extends ConsumerState<ClinicalDashboard>
 
   Widget _buildContent(BuildContext context, DoctorDatabase db, DashboardData data) {
     final isDark = context.isDarkMode;
-    final isCompact = MediaQuery.of(context).size.width < 600;
-    final padding = isCompact ? 16.0 : 24.0;
+    final isCompact = context.isCompact;
+    final padding = context.responsivePadding;
 
     return RefreshIndicator(
       key: _refreshKey,
       onRefresh: _onRefresh,
       color: AppColors.primary,
-      backgroundColor: isDark ? AppColors.darkSurface : Colors.white,
+      backgroundColor: isDark ? AppColors.darkSurface : AppColors.surface,
       child: CustomScrollView(
         physics: const AlwaysScrollableScrollPhysics(parent: BouncingScrollPhysics()),
         slivers: [
@@ -380,15 +405,15 @@ class _ClinicalDashboardState extends ConsumerState<ClinicalDashboard>
     
     String greeting = 'Good Morning';
     IconData greetingIcon = Icons.wb_sunny_rounded;
-    Color greetingColor = const Color(0xFFFBBF24);
+    Color greetingColor = AppColors.warning;
     
     if (now.hour >= 12 && now.hour < 17) {
       greeting = 'Good Afternoon';
-      greetingColor = const Color(0xFFF97316);
+      greetingColor = AppColors.quickActionOrange;
     } else if (now.hour >= 17) {
       greeting = 'Good Evening';
       greetingIcon = Icons.nightlight_round;
-      greetingColor = const Color(0xFF8B5CF6);
+      greetingColor = AppColors.billing;
     }
 
     return Container(
@@ -404,8 +429,10 @@ class _ClinicalDashboardState extends ConsumerState<ClinicalDashboard>
                 child: Container(
                   padding: const EdgeInsets.all(AppSpacing.md),
                   decoration: BoxDecoration(
-                    color: isDark ? Colors.white.withValues(alpha: 0.08) : Colors.grey.withValues(alpha: 0.1),
-                    borderRadius: BorderRadius.circular(14),
+                    color: isDark
+                        ? AppColors.darkTextPrimary.withValues(alpha: 0.08)
+                        : AppColors.textSecondary.withValues(alpha: 0.1),
+                    borderRadius: BorderRadius.circular(AppRadius.md + 2),
                   ),
                   child: Icon(Icons.arrow_back_rounded, 
                       color: isDark ? AppColors.darkTextPrimary : AppColors.textPrimary, size: 22),
@@ -425,7 +452,7 @@ class _ClinicalDashboardState extends ConsumerState<ClinicalDashboard>
                           AppColors.primary.withValues(alpha: 0.05),
                         ],
                       ),
-                      borderRadius: BorderRadius.circular(14),
+                      borderRadius: BorderRadius.circular(AppRadius.md + 2),
                       border: Border.all(color: AppColors.primary.withValues(alpha: 0.2)),
                     ),
                     child: Icon(Icons.menu_rounded, color: AppColors.primary, size: 22),
@@ -437,7 +464,7 @@ class _ClinicalDashboardState extends ConsumerState<ClinicalDashboard>
                 padding: const EdgeInsets.symmetric(horizontal: AppSpacing.md, vertical: AppSpacing.xs),
                 decoration: BoxDecoration(
                   color: isDark ? Colors.white.withValues(alpha: 0.08) : Colors.grey.withValues(alpha: 0.1),
-                  borderRadius: BorderRadius.circular(20),
+                  borderRadius: BorderRadius.circular(AppRadius.xl),
                 ),
                 child: Row(
                   mainAxisSize: MainAxisSize.min,
@@ -471,8 +498,10 @@ class _ClinicalDashboardState extends ConsumerState<ClinicalDashboard>
                     Container(
                       padding: const EdgeInsets.all(AppSpacing.md),
                       decoration: BoxDecoration(
-                        color: isDark ? Colors.white.withValues(alpha: 0.08) : Colors.grey.withValues(alpha: 0.1),
-                        borderRadius: BorderRadius.circular(14),
+                        color: isDark
+                        ? AppColors.darkTextPrimary.withValues(alpha: 0.08)
+                        : AppColors.textSecondary.withValues(alpha: 0.1),
+                        borderRadius: BorderRadius.circular(AppRadius.md + 2),
                       ),
                       child: Icon(Icons.notifications_outlined, 
                           color: isDark ? AppColors.darkTextSecondary : AppColors.textSecondary, size: 22),
@@ -485,7 +514,11 @@ class _ClinicalDashboardState extends ConsumerState<ClinicalDashboard>
                           decoration: BoxDecoration(
                             color: AppColors.error,
                             shape: BoxShape.circle,
-                            border: Border.all(color: isDark ? AppColors.darkBackground : Colors.white, width: 2),
+                            border: Border.all(
+                                color: isDark
+                                    ? AppColors.darkBackground
+                                    : AppColors.surface,
+                                width: 2),
                           ),
                         ),
                       ),
@@ -504,7 +537,7 @@ class _ClinicalDashboardState extends ConsumerState<ClinicalDashboard>
                   gradient: LinearGradient(
                     colors: [greetingColor.withValues(alpha: 0.2), greetingColor.withValues(alpha: 0.1)],
                   ),
-                  borderRadius: BorderRadius.circular(16),
+                  borderRadius: BorderRadius.circular(AppRadius.card),
                 ),
                 child: Icon(greetingIcon, color: greetingColor, size: 28),
               ),
@@ -521,7 +554,9 @@ class _ClinicalDashboardState extends ConsumerState<ClinicalDashboard>
                       'Dr. ${profile.name.isNotEmpty ? profile.name : "Doctor"}',
                       style: TextStyle(
                         fontSize: isCompact ? 22 : 26, fontWeight: FontWeight.w800,
-                        color: isDark ? Colors.white : AppColors.textPrimary,
+                        color: isDark
+                            ? AppColors.darkTextPrimary
+                            : AppColors.textPrimary,
                         letterSpacing: -0.5,
                       ),
                     ),
@@ -589,23 +624,33 @@ class _ClinicalDashboardState extends ConsumerState<ClinicalDashboard>
       padding: const EdgeInsets.symmetric(horizontal: AppSpacing.lg, vertical: AppSpacing.md),
       gradient: LinearGradient(
         colors: criticalCount > 0 
-            ? [const Color(0xFFDC2626).withValues(alpha: 0.15), const Color(0xFFDC2626).withValues(alpha: 0.05)]
-            : [const Color(0xFFF59E0B).withValues(alpha: 0.15), const Color(0xFFF59E0B).withValues(alpha: 0.05)],
+            ? [
+                AppColors.error.withValues(alpha: 0.15),
+                AppColors.error.withValues(alpha: 0.05)
+              ]
+            : [
+                AppColors.warning.withValues(alpha: 0.15),
+                AppColors.warning.withValues(alpha: 0.05)
+              ],
       ),
       borderRadius: BorderRadius.circular(16),
       borderColor: criticalCount > 0 
-          ? const Color(0xFFDC2626).withValues(alpha: 0.3)
-          : const Color(0xFFF59E0B).withValues(alpha: 0.3),
+          ? AppColors.error.withValues(alpha: 0.3)
+          : AppColors.warning.withValues(alpha: 0.3),
       borderWidth: 1,
       child: Row(
         children: [
           Container(
             padding: const EdgeInsets.all(AppSpacing.sm),
             decoration: BoxDecoration(
-              color: criticalCount > 0 ? const Color(0xFFDC2626) : const Color(0xFFF59E0B),
+              color: criticalCount > 0 ? AppColors.error : AppColors.warning,
               borderRadius: BorderRadius.circular(10),
             ),
-            child: const Icon(Icons.warning_rounded, color: Colors.white, size: 20),
+            child: Icon(
+              Icons.warning_rounded,
+              color: AppColors.surface,
+              size: AppIconSize.sm,
+            ),
           ),
           const SizedBox(width: 12),
           Expanded(
@@ -616,7 +661,9 @@ class _ClinicalDashboardState extends ConsumerState<ClinicalDashboard>
                   criticalCount > 0 ? 'Critical Alerts Require Attention' : 'Warnings Need Review',
                   style: TextStyle(
                     fontSize: 14, fontWeight: FontWeight.w700,
-                    color: criticalCount > 0 ? const Color(0xFFDC2626) : const Color(0xFFD97706),
+                    color: criticalCount > 0
+                        ? AppColors.error
+                        : AppColors.warning,
                   ),
                 ),
                 Text(
@@ -627,7 +674,9 @@ class _ClinicalDashboardState extends ConsumerState<ClinicalDashboard>
             ),
           ),
           Icon(Icons.arrow_forward_ios_rounded, size: 16, 
-              color: criticalCount > 0 ? const Color(0xFFDC2626) : const Color(0xFFF59E0B)),
+              color: criticalCount > 0
+                  ? AppColors.error
+                  : AppColors.warning),
         ],
       ),
     );
@@ -689,7 +738,7 @@ class _ClinicalDashboardState extends ConsumerState<ClinicalDashboard>
               gradient: LinearGradient(
                 colors: [color.withValues(alpha: 0.2), color.withValues(alpha: 0.1)],
               ),
-              borderRadius: BorderRadius.circular(12),
+              borderRadius: BorderRadius.circular(AppRadius.md),
             ),
             child: Icon(icon, color: color, size: 22),
           ),

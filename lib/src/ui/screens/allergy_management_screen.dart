@@ -58,11 +58,11 @@ class _AllergyManagementScreenState extends ConsumerState<AllergyManagementScree
             elevation: 0,
             scrolledUnderElevation: 1,
             leading: Padding(
-              padding: const EdgeInsets.all(8.0),
+              padding: const EdgeInsets.all(AppSpacing.sm),
               child: Container(
                 decoration: BoxDecoration(
                   color: isDark ? Colors.white.withValues(alpha: 0.1) : Colors.black.withValues(alpha: 0.05),
-                  borderRadius: BorderRadius.circular(12),
+                  borderRadius: BorderRadius.circular(AppRadius.md),
                 ),
                 child: IconButton(
                   icon: Icon(
@@ -86,18 +86,18 @@ class _AllergyManagementScreenState extends ConsumerState<AllergyManagementScree
                 ),
                 child: SafeArea(
                   child: Padding(
-                    padding: const EdgeInsets.fromLTRB(20, 50, 20, 16),
+                    padding: const EdgeInsets.fromLTRB(AppSpacing.xl, AppSpacing.xxxxl, AppSpacing.xl, AppSpacing.lg),
                     child: Row(
                       children: [
                         Container(
-                          padding: const EdgeInsets.all(14),
+                          padding: const EdgeInsets.all(AppSpacing.md),
                           decoration: BoxDecoration(
                             gradient: const LinearGradient(
                               colors: [Color(0xFFEF4444), Color(0xFFF87171)],
                               begin: Alignment.topLeft,
                               end: Alignment.bottomRight,
                             ),
-                            borderRadius: BorderRadius.circular(16),
+                            borderRadius: BorderRadius.circular(AppRadius.lg),
                             boxShadow: [
                               BoxShadow(
                                 color: const Color(0xFFEF4444).withValues(alpha: 0.3),
@@ -109,10 +109,10 @@ class _AllergyManagementScreenState extends ConsumerState<AllergyManagementScree
                           child: const Icon(
                             Icons.warning_amber_rounded,
                             color: Colors.white,
-                            size: 28,
+                            size: AppIconSize.lg,
                           ),
                         ),
-                        const SizedBox(width: 16),
+                        const SizedBox(width: AppSpacing.lg),
                         Expanded(
                           child: Column(
                             mainAxisAlignment: MainAxisAlignment.center,
@@ -121,16 +121,16 @@ class _AllergyManagementScreenState extends ConsumerState<AllergyManagementScree
                               Text(
                                 'Allergy Management',
                                 style: TextStyle(
-                                  fontSize: 22,
+                                  fontSize: AppFontSize.xxxl,
                                   fontWeight: FontWeight.bold,
                                   color: textColor,
                                 ),
                               ),
-                              const SizedBox(height: 4),
+                              const SizedBox(height: AppSpacing.xs),
                               Text(
                                 'Track & manage patient allergies',
                                 style: TextStyle(
-                                  fontSize: 14,
+                                  fontSize: AppFontSize.lg,
                                   color: isDark ? AppColors.darkTextSecondary : AppColors.textSecondary,
                                 ),
                               ),
@@ -237,7 +237,7 @@ class _AllergyManagementScreenState extends ConsumerState<AllergyManagementScree
               hintText: 'Search allergens...',
               prefixIcon: const Icon(Icons.search),
               border: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(12),
+                borderRadius: BorderRadius.circular(AppRadius.input),
               ),
               contentPadding: const EdgeInsets.symmetric(horizontal: AppSpacing.lg),
             ),
@@ -409,14 +409,14 @@ class _AllergyManagementScreenState extends ConsumerState<AllergyManagementScree
                 ),
                 const SizedBox(height: 12),
                 Container(
-                  decoration: BoxDecoration(
-                    border: Border.all(
-                      color: isDark
-                          ? Colors.white10
-                          : Colors.grey[300]!,
-                    ),
-                    borderRadius: BorderRadius.circular(12),
-                  ),
+        decoration: BoxDecoration(
+          border: Border.all(
+            color: isDark
+                ? Colors.white10
+                : Colors.grey[300]!,
+          ),
+          borderRadius: BorderRadius.circular(AppRadius.md),
+        ),
                   child: ListView.separated(
                     shrinkWrap: true,
                     physics: const NeverScrollableScrollPhysics(),
@@ -439,7 +439,7 @@ class _AllergyManagementScreenState extends ConsumerState<AllergyManagementScree
                                   child: Text(
                                     allergen.name,
                                     style: const TextStyle(
-                                      fontSize: 13,
+                                      fontSize: AppFontSize.md,
                                       fontWeight: FontWeight.w500,
                                     ),
                                   ),
@@ -447,7 +447,7 @@ class _AllergyManagementScreenState extends ConsumerState<AllergyManagementScree
                                 Text(
                                   '${allergen.count} patients',
                                   style: TextStyle(
-                                    fontSize: 12,
+                                    fontSize: AppFontSize.sm,
                                     color: isDark
                                         ? Colors.white70
                                         : Colors.black54,
@@ -468,11 +468,11 @@ class _AllergyManagementScreenState extends ConsumerState<AllergyManagementScree
                                 ),
                               ),
                             ),
-                            const SizedBox(height: 4),
+                            const SizedBox(height: AppSpacing.xs),
                             Text(
                               '$percentage%',
                               style: TextStyle(
-                                fontSize: 11,
+                                fontSize: AppFontSize.xs,
                                 color: isDark
                                     ? Colors.white70
                                     : Colors.black54,
@@ -501,11 +501,11 @@ class _AllergyManagementScreenState extends ConsumerState<AllergyManagementScree
   }) {
     return Container(
       padding: const EdgeInsets.all(AppSpacing.lg),
-      decoration: BoxDecoration(
-        color: color.withValues(alpha: 0.1),
-        border: Border.all(color: color.withValues(alpha: 0.3)),
-        borderRadius: BorderRadius.circular(12),
-      ),
+        decoration: BoxDecoration(
+          color: color.withValues(alpha: 0.1),
+          border: Border.all(color: color.withValues(alpha: 0.3)),
+          borderRadius: BorderRadius.circular(AppRadius.md),
+        ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -545,19 +545,19 @@ class _AllergyManagementScreenState extends ConsumerState<AllergyManagementScree
             Row(
               children: [
                 CircleAvatar(
-                  radius: 24,
+                  radius: AppSpacing.xxl,
                   backgroundColor:
                       patientInfo.riskColor.withValues(alpha: 0.2),
                   child: Text(
                     patientInfo.initials,
                     style: TextStyle(
-                      fontSize: 14,
+                      fontSize: AppFontSize.lg,
                       fontWeight: FontWeight.w600,
                       color: patientInfo.riskColor,
                     ),
                   ),
                 ),
-                const SizedBox(width: 12),
+                const SizedBox(width: AppSpacing.md),
                 Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
@@ -565,14 +565,14 @@ class _AllergyManagementScreenState extends ConsumerState<AllergyManagementScree
                       Text(
                         patientInfo.fullName,
                         style: const TextStyle(
-                          fontSize: 15,
+                          fontSize: AppFontSize.titleLarge,
                           fontWeight: FontWeight.w600,
                         ),
                       ),
                       Text(
                         '${patientInfo.allergyCount} allergies',
                         style: TextStyle(
-                          fontSize: 13,
+                          fontSize: AppFontSize.md,
                           color: isDark ? Colors.white70 : Colors.black54,
                         ),
                       ),
@@ -581,17 +581,17 @@ class _AllergyManagementScreenState extends ConsumerState<AllergyManagementScree
                 ),
                 Container(
                   padding: const EdgeInsets.symmetric(
-                    horizontal: 12,
-                    vertical: 6,
+                    horizontal: AppSpacing.md,
+                    vertical: AppSpacing.xs,
                   ),
                   decoration: BoxDecoration(
                     color: patientInfo.riskColor.withValues(alpha: 0.15),
-                    borderRadius: BorderRadius.circular(8),
+                    borderRadius: BorderRadius.circular(AppRadius.sm),
                   ),
                   child: Text(
                     patientInfo.riskLevel,
                     style: TextStyle(
-                      fontSize: 12,
+                      fontSize: AppFontSize.sm,
                       fontWeight: FontWeight.w600,
                       color: patientInfo.riskColor,
                     ),
@@ -599,24 +599,24 @@ class _AllergyManagementScreenState extends ConsumerState<AllergyManagementScree
                 ),
               ],
             ),
-            const SizedBox(height: 12),
+            const SizedBox(height: AppSpacing.md),
             Wrap(
               spacing: 6,
               runSpacing: 6,
               children: patientInfo.allergens.map((allergen) {
                 return Container(
                   padding: const EdgeInsets.symmetric(
-                    horizontal: 10,
-                    vertical: 5,
+                    horizontal: AppSpacing.sm,
+                    vertical: AppSpacing.xs,
                   ),
                   decoration: BoxDecoration(
                     color: const Color(0xFFDC2626).withValues(alpha: 0.15),
-                    borderRadius: BorderRadius.circular(6),
+                    borderRadius: BorderRadius.circular(AppRadius.xs),
                   ),
                   child: Text(
                     allergen,
                     style: const TextStyle(
-                      fontSize: 12,
+                      fontSize: AppFontSize.sm,
                       color: Color(0xFFDC2626),
                       fontWeight: FontWeight.w500,
                     ),

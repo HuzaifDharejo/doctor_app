@@ -13,6 +13,7 @@ import '../../services/vital_thresholds_service.dart' as vital_service;
 import '../../theme/app_theme.dart';
 import '../widgets/vital_signs_alert_dialog.dart';
 import '../widgets/quick_vital_entry_modal.dart';
+import '../widgets/persistent_allergy_warning_banner.dart';
 
 /// Screen to view and add vital signs for a patient
 class VitalSignsScreen extends ConsumerStatefulWidget {
@@ -34,6 +35,7 @@ class _VitalSignsScreenState extends ConsumerState<VitalSignsScreen>
   List<VitalSign> _vitalSigns = [];
   bool _isLoading = true;
   late TabController _tabController;
+  Patient? _patient;
 
   @override
   void initState() {
@@ -51,16 +53,37 @@ class _VitalSignsScreenState extends ConsumerState<VitalSignsScreen>
   Future<void> _loadVitalSigns() async {
     try {
       final db = await ref.read(doctorDbProvider.future);
-      final vitals = await db.getVitalSignsForPatient(widget.patientId);
+      final results = await Future.wait([
+        db.getVitalSignsForPatient(widget.patientId)
+            .timeout(const Duration(seconds: 10), onTimeout: () => <VitalSign>[])
+            .catchError((e) {
+              // Log error but continue with empty list
+              return <VitalSign>[];
+            }),
+        db.getPatientById(widget.patientId)
+            .timeout(const Duration(seconds: 10), onTimeout: () => null)
+            .catchError((e) {
+              // Log error but continue with null
+              return null;
+            }),
+      ]);
+      
+      final vitals = results[0] as List<VitalSign>;
+      final patient = results[1] as Patient?;
+      
       if (mounted) {
         setState(() {
           _vitalSigns = vitals;
+          _patient = patient;
           _isLoading = false;
         });
       }
     } catch (e) {
       if (mounted) {
-        setState(() => _isLoading = false);
+        setState(() {
+          _isLoading = false;
+          // Keep existing data if available, don't clear on error
+        });
       }
     }
   }
@@ -253,32 +276,62 @@ class _VitalSignsScreenState extends ConsumerState<VitalSignsScreen>
   }
 
   Widget _buildHistoryTab(ColorScheme colorScheme) {
-    if (_vitalSigns.isEmpty) {
-      return Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(Icons.monitor_heart_outlined, size: 64, color: colorScheme.outline),
-            const SizedBox(height: 16),
-            Text(
-              'No vital signs recorded yet',
-              style: TextStyle(fontSize: 18, color: colorScheme.outline),
-            ),
-            const SizedBox(height: 8),
-            const Text('Tap the button below to add vitals'),
-          ],
-        ),
-      );
-    }
-
-    return ListView.builder(
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    
+    return CustomScrollView(
       primary: false,
-      padding: const EdgeInsets.all(AppSpacing.lg),
-      itemCount: _vitalSigns.length,
-      itemBuilder: (context, index) {
-        final vital = _vitalSigns[index];
-        return _buildVitalCard(vital, colorScheme);
-      },
+      slivers: [
+        // Allergy warning banner at top
+        if (_patient?.allergies.isNotEmpty == true)
+          SliverToBoxAdapter(
+            child: Padding(
+              padding: const EdgeInsets.fromLTRB(
+                AppSpacing.lg,
+                AppSpacing.md,
+                AppSpacing.lg,
+                0,
+              ),
+              child: PersistentAllergyWarningBanner(
+                allergies: _patient!.allergies,
+                compact: true,
+              ),
+            ),
+          ),
+        
+        // Vitals list or empty state
+        if (_vitalSigns.isEmpty)
+          SliverFillRemaining(
+            hasScrollBody: false,
+            child: Center(
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Icon(Icons.monitor_heart_outlined, size: 64, color: colorScheme.outline),
+                  const SizedBox(height: 16),
+                  Text(
+                    'No vital signs recorded yet',
+                    style: TextStyle(fontSize: 18, color: colorScheme.outline),
+                  ),
+                  const SizedBox(height: 8),
+                  const Text('Tap the button below to add vitals'),
+                ],
+              ),
+            ),
+          )
+        else
+          SliverPadding(
+            padding: const EdgeInsets.all(AppSpacing.lg),
+            sliver: SliverList(
+              delegate: SliverChildBuilderDelegate(
+                (context, index) {
+                  final vital = _vitalSigns[index];
+                  return _buildVitalCard(vital, colorScheme);
+                },
+                childCount: _vitalSigns.length,
+              ),
+            ),
+          ),
+      ],
     );
   }
 

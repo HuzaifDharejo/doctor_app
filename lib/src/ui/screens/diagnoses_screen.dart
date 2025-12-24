@@ -5,6 +5,7 @@ import 'package:intl/intl.dart';
 import '../../providers/db_provider.dart';
 import '../../theme/app_theme.dart';
 import '../../core/theme/design_tokens.dart';
+import '../../core/extensions/context_extensions.dart';
 
 /// Screen to display all diagnoses for a patient across all medical records
 class DiagnosesScreen extends ConsumerStatefulWidget {
@@ -338,7 +339,7 @@ class _DiagnosesScreenState extends ConsumerState<DiagnosesScreen> {
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
             Container(
-              padding: const EdgeInsets.all(24),
+              padding: EdgeInsets.all(context.responsivePadding),
               decoration: BoxDecoration(
                 gradient: LinearGradient(
                   colors: [
@@ -531,7 +532,7 @@ class _DiagnosesScreenState extends ConsumerState<DiagnosesScreen> {
           children: [
             Container(
               width: double.infinity,
-              padding: const EdgeInsets.all(16),
+              padding: EdgeInsets.all(context.responsivePadding),
               decoration: BoxDecoration(
                 color: isDark 
                     ? Colors.white.withValues(alpha: 0.03) 

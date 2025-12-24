@@ -3,6 +3,7 @@ library;
 
 import 'package:flutter/material.dart';
 import '../theme/design_tokens.dart';
+import '../extensions/context_extensions.dart';
 
 /// A shimmer effect widget that animates a gradient across its child
 class ShimmerEffect extends StatefulWidget {
@@ -183,7 +184,7 @@ class SkeletonPatientCard extends StatelessWidget {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     return Container(
       margin: const EdgeInsets.only(bottom: 12),
-      padding: const EdgeInsets.all(16),
+      padding: EdgeInsets.all(context.responsivePadding),
       decoration: BoxDecoration(
         color: isDark ? const Color(0xFF1A1A1A) : Colors.white,
         borderRadius: BorderRadius.circular(16),
@@ -232,7 +233,7 @@ class SkeletonAppointmentCard extends StatelessWidget {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     return Container(
       margin: const EdgeInsets.only(bottom: 12),
-      padding: const EdgeInsets.all(16),
+      padding: EdgeInsets.all(context.responsivePadding),
       decoration: BoxDecoration(
         color: isDark ? const Color(0xFF1A1A1A) : Colors.white,
         borderRadius: BorderRadius.circular(16),
@@ -288,7 +289,7 @@ class DashboardSkeleton extends StatelessWidget {
   Widget build(BuildContext context) {
     return ShimmerEffect(
       child: SingleChildScrollView(
-        padding: const EdgeInsets.all(20),
+        padding: EdgeInsets.all(context.responsivePadding),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -380,6 +381,239 @@ class AppointmentListSkeleton extends StatelessWidget {
           children: List.generate(
             itemCount,
             (index) => const SkeletonAppointmentCard(),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+/// Skeleton prescription card placeholder
+class SkeletonPrescriptionCard extends StatelessWidget {
+  const SkeletonPrescriptionCard({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    return Container(
+      margin: const EdgeInsets.only(bottom: 16),
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: isDark ? const Color(0xFF1A1A1A) : Colors.white,
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(
+          color: isDark ? Colors.grey[800]! : Colors.grey[200]!,
+        ),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              const SkeletonCircle(size: 48),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const SkeletonBox(width: 140, height: 16),
+                    const SizedBox(height: 8),
+                    const SkeletonBox(width: 100, height: 12),
+                  ],
+                ),
+              ),
+              const SkeletonBox(width: 60, height: 24, borderRadius: 12),
+            ],
+          ),
+          const SizedBox(height: 16),
+          const SkeletonBox(width: 200, height: 14),
+          const SizedBox(height: 8),
+          Row(
+            children: [
+              const Flexible(child: SkeletonBox(width: 80, height: 10)),
+              const SizedBox(width: 12),
+              const Flexible(child: SkeletonBox(width: 90, height: 10)),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+/// Loading skeleton for prescription list
+class PrescriptionListSkeleton extends StatelessWidget {
+  const PrescriptionListSkeleton({
+    super.key,
+    this.itemCount = 5,
+  });
+
+  final int itemCount;
+
+  @override
+  Widget build(BuildContext context) {
+    return ShimmerEffect(
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 20),
+        child: Column(
+          children: List.generate(
+            itemCount,
+            (index) => const SkeletonPrescriptionCard(),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+/// Skeleton invoice card placeholder
+class SkeletonInvoiceCard extends StatelessWidget {
+  const SkeletonInvoiceCard({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    return Container(
+      margin: const EdgeInsets.only(bottom: 12),
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: isDark ? const Color(0xFF1A1A1A) : Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(
+          color: isDark ? Colors.grey[800]! : Colors.grey[200]!,
+        ),
+      ),
+      child: Row(
+        children: [
+          Container(
+            width: 4,
+            height: 50,
+            decoration: BoxDecoration(
+              color: isDark ? Colors.grey[700] : Colors.grey[300],
+              borderRadius: BorderRadius.circular(2),
+            ),
+          ),
+          const SizedBox(width: 16),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    const Expanded(
+                      child: SkeletonBox(width: 120, height: 16),
+                    ),
+                    const SkeletonBox(width: 70, height: 24, borderRadius: 12),
+                  ],
+                ),
+                const SizedBox(height: 8),
+                const SkeletonBox(width: 180, height: 12),
+                const SizedBox(height: 6),
+                Row(
+                  children: [
+                    const SkeletonBox(width: 80, height: 14),
+                    const Spacer(),
+                    const SkeletonBox(width: 60, height: 14),
+                  ],
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+/// Loading skeleton for invoice list
+class InvoiceListSkeleton extends StatelessWidget {
+  const InvoiceListSkeleton({
+    super.key,
+    this.itemCount = 5,
+  });
+
+  final int itemCount;
+
+  @override
+  Widget build(BuildContext context) {
+    return ShimmerEffect(
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 20),
+        child: Column(
+          children: List.generate(
+            itemCount,
+            (index) => const SkeletonInvoiceCard(),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+/// Skeleton medical record card placeholder
+class SkeletonMedicalRecordCard extends StatelessWidget {
+  const SkeletonMedicalRecordCard({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    return Container(
+      margin: const EdgeInsets.only(bottom: 12),
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: isDark ? const Color(0xFF1A1A1A) : Colors.white,
+        borderRadius: BorderRadius.circular(18),
+        border: Border.all(
+          color: isDark ? Colors.grey[800]! : Colors.grey[200]!,
+        ),
+      ),
+      child: Row(
+        children: [
+          const SkeletonCircle(size: 48),
+          const SizedBox(width: 14),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const SkeletonBox(width: 150, height: 16),
+                const SizedBox(height: 8),
+                const SkeletonBox(width: 80, height: 20, borderRadius: 6),
+                const SizedBox(height: 8),
+                Row(
+                  children: [
+                    const SkeletonBox(width: 12, height: 12),
+                    const SizedBox(width: 4),
+                    const SkeletonBox(width: 100, height: 12),
+                  ],
+                ),
+              ],
+            ),
+          ),
+          const SkeletonBox(width: 24, height: 24, borderRadius: 12),
+        ],
+      ),
+    );
+  }
+}
+
+/// Loading skeleton for medical record list
+class MedicalRecordListSkeleton extends StatelessWidget {
+  const MedicalRecordListSkeleton({
+    super.key,
+    this.itemCount = 5,
+  });
+
+  final int itemCount;
+
+  @override
+  Widget build(BuildContext context) {
+    return ShimmerEffect(
+      child: Padding(
+        padding: const EdgeInsets.all(20),
+        child: Column(
+          children: List.generate(
+            itemCount,
+            (index) => const SkeletonMedicalRecordCard(),
           ),
         ),
       ),

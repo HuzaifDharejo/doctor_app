@@ -37,7 +37,7 @@ class DemoData {
     },
   );
 
-  /// Sample patients for demo mode - matches seed_data_service.dart
+  /// Sample patients for demo mode (onboarding display only)
   static List<Patient> get patients => [
     // Chronic Disease Management
     Patient(

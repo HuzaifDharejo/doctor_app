@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../core/extensions/context_extensions.dart';
 import '../../providers/encounter_provider.dart';
 import '../../services/suggestions_service.dart';
 import '../../theme/app_theme.dart';
@@ -89,7 +90,7 @@ class _VitalsEntryModalState extends ConsumerState<VitalsEntryModal> {
             child: Form(
               key: _formKey,
               child: ListView(
-                padding: const EdgeInsets.symmetric(horizontal: 20),
+                padding: EdgeInsets.symmetric(horizontal: context.responsivePadding),
                 children: [
                   _buildBloodPressureCard(isDark),
                   const SizedBox(height: 16),
@@ -130,7 +131,7 @@ class _VitalsEntryModalState extends ConsumerState<VitalsEntryModal> {
     final secondaryTextColor = isDark ? AppColors.darkTextSecondary : AppColors.textSecondary;
 
     return Container(
-      padding: const EdgeInsets.all(20),
+      padding: EdgeInsets.all(context.responsivePadding),
       child: Row(
         children: [
           Container(
@@ -663,7 +664,7 @@ class _VitalsEntryModalState extends ConsumerState<VitalsEntryModal> {
     required bool isDark,
   }) {
     return Container(
-      padding: const EdgeInsets.all(16),
+      padding: EdgeInsets.all(context.responsivePadding),
       decoration: BoxDecoration(
         color: isDark ? AppColors.darkSurface : Colors.white,
         borderRadius: BorderRadius.circular(16),
@@ -764,7 +765,7 @@ class _VitalsEntryModalState extends ConsumerState<VitalsEntryModal> {
 
   Widget _buildBottomBar(bool isDark) {
     return Container(
-      padding: const EdgeInsets.all(20),
+      padding: EdgeInsets.all(context.responsivePadding),
       decoration: BoxDecoration(
         color: isDark ? AppColors.darkSurface : Colors.white,
         boxShadow: [

@@ -1,6 +1,8 @@
 import 'dart:convert';
 import 'package:flutter/foundation.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'logger_service.dart';
+import 'pdf_template_config.dart';
 
 class DoctorProfile { // Base64 encoded profile photo
 
@@ -23,7 +25,8 @@ class DoctorProfile { // Base64 encoded profile photo
     this.workingHours = const {},
     this.signatureData,
     this.photoData,
-  });
+    PdfTemplateConfig? pdfTemplateConfig,
+  }) : pdfTemplateConfig = pdfTemplateConfig ?? PdfTemplateConfig();
 
   factory DoctorProfile.fromJson(Map<String, dynamic> json) {
     return DoctorProfile(
@@ -49,6 +52,9 @@ class DoctorProfile { // Base64 encoded profile photo
       ),
       signatureData: json['signatureData'] as String?,
       photoData: json['photoData'] as String?,
+      pdfTemplateConfig: json['pdfTemplateConfig'] != null
+          ? PdfTemplateConfig.fromJson(json['pdfTemplateConfig'] as Map<String, dynamic>)
+          : null,
     );
   }
   final String name;
@@ -69,6 +75,7 @@ class DoctorProfile { // Base64 encoded profile photo
   final Map<String, Map<String, dynamic>> workingHours;
   final String? signatureData; // Base64 encoded signature image
   final String? photoData;
+  final PdfTemplateConfig pdfTemplateConfig; // PDF template configuration
 
   String get initials {
     if (name.isEmpty) return 'DR';
@@ -102,6 +109,7 @@ class DoctorProfile { // Base64 encoded profile photo
     Map<String, Map<String, dynamic>>? workingHours,
     String? signatureData,
     String? photoData,
+    PdfTemplateConfig? pdfTemplateConfig,
   }) {
     return DoctorProfile(
       name: name ?? this.name,
@@ -122,6 +130,7 @@ class DoctorProfile { // Base64 encoded profile photo
       workingHours: workingHours ?? this.workingHours,
       signatureData: signatureData ?? this.signatureData,
       photoData: photoData ?? this.photoData,
+      pdfTemplateConfig: pdfTemplateConfig ?? this.pdfTemplateConfig,
     );
   }
 
@@ -145,6 +154,7 @@ class DoctorProfile { // Base64 encoded profile photo
       'workingHours': workingHours,
       'signatureData': signatureData,
       'photoData': photoData,
+      'pdfTemplateConfig': pdfTemplateConfig.toJson(),
     };
   }
 
@@ -182,8 +192,8 @@ class DoctorSettingsService extends ChangeNotifier {
       }
       _isLoaded = true;
       notifyListeners();
-    } catch (e) {
-      debugPrint('Error loading doctor profile: $e');
+    } catch (e, stackTrace) {
+      log.e('DOCTOR_SETTINGS', 'Error loading doctor profile', error: e, stackTrace: stackTrace);
       _isLoaded = true;
       notifyListeners();
     }
@@ -196,8 +206,8 @@ class DoctorSettingsService extends ChangeNotifier {
       await prefs.setString(_storageKey, jsonString);
       _profile = profile;
       notifyListeners();
-    } catch (e) {
-      debugPrint('Error saving doctor profile: $e');
+    } catch (e, stackTrace) {
+      log.e('DOCTOR_SETTINGS', 'Error saving doctor profile', error: e, stackTrace: stackTrace);
     }
   }
 
@@ -246,8 +256,8 @@ class DoctorSettingsService extends ChangeNotifier {
       await prefs.remove(_storageKey);
       _profile = DoctorProfile.empty();
       notifyListeners();
-    } catch (e) {
-      debugPrint('Error clearing doctor profile: $e');
+    } catch (e, stackTrace) {
+      log.e('DOCTOR_SETTINGS', 'Error clearing doctor profile', error: e, stackTrace: stackTrace);
     }
   }
 }
@@ -438,8 +448,8 @@ class AppSettingsService extends ChangeNotifier {
       }
       _isLoaded = true;
       notifyListeners();
-    } catch (e) {
-      debugPrint('Error loading app settings: $e');
+    } catch (e, stackTrace) {
+      log.e('DOCTOR_SETTINGS', 'Error loading app settings', error: e, stackTrace: stackTrace);
       _isLoaded = true;
       notifyListeners();
     }
@@ -450,8 +460,8 @@ class AppSettingsService extends ChangeNotifier {
       final prefs = await SharedPreferences.getInstance();
       final jsonString = jsonEncode(_settings.toJson());
       await prefs.setString(_storageKey, jsonString);
-    } catch (e) {
-      debugPrint('Error saving app settings: $e');
+    } catch (e, stackTrace) {
+      log.e('DOCTOR_SETTINGS', 'Error saving app settings', error: e, stackTrace: stackTrace);
     }
   }
 
@@ -487,8 +497,8 @@ class AppSettingsService extends ChangeNotifier {
       await prefs.remove(_storageKey);
       _settings = AppSettings();
       notifyListeners();
-    } catch (e) {
-      debugPrint('Error clearing app settings: $e');
+    } catch (e, stackTrace) {
+      log.e('DOCTOR_SETTINGS', 'Error clearing app settings', error: e, stackTrace: stackTrace);
     }
   }
 

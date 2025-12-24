@@ -228,18 +228,18 @@ class _AddLabResultScreenState extends ConsumerState<AddLabResultScreen> {
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(AppRadius.lg)),
         title: Row(
           children: [
             Container(
-              padding: const EdgeInsets.all(8),
+              padding: const EdgeInsets.all(AppSpacing.sm),
               decoration: BoxDecoration(
                 color: Colors.amber.shade100,
-                borderRadius: BorderRadius.circular(10),
+                borderRadius: BorderRadius.circular(AppRadius.md),
               ),
               child: Icon(Icons.restore, color: Colors.amber.shade700),
             ),
-            const SizedBox(width: 12),
+            const SizedBox(width: AppSpacing.md),
             const Text('Restore Draft?'),
           ],
         ),
@@ -248,18 +248,18 @@ class _AddLabResultScreenState extends ConsumerState<AddLabResultScreen> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             const Text('A previous draft was found for this form.'),
-            const SizedBox(height: 8),
+            const SizedBox(height: AppSpacing.sm),
             Container(
-              padding: const EdgeInsets.all(12),
+              padding: const EdgeInsets.all(AppSpacing.md),
               decoration: BoxDecoration(
                 color: Colors.grey.shade100,
-                borderRadius: BorderRadius.circular(8),
+                borderRadius: BorderRadius.circular(AppRadius.sm),
               ),
               child: Row(
                 children: [
-                  Icon(Icons.access_time, size: 16, color: Colors.grey.shade600),
-                  const SizedBox(width: 8),
-                  Text('Saved ${draft.timeAgo}', style: TextStyle(color: Colors.grey.shade700)),
+                  Icon(Icons.access_time, size: AppIconSize.xs, color: Colors.grey.shade600),
+                  const SizedBox(width: AppSpacing.sm),
+                  Text('Saved ${draft.timeAgo}', style: TextStyle(color: Colors.grey.shade700, fontSize: AppFontSize.md)),
                 ],
               ),
             ),
@@ -281,7 +281,7 @@ class _AddLabResultScreenState extends ConsumerState<AddLabResultScreen> {
             style: ElevatedButton.styleFrom(
               backgroundColor: Colors.amber.shade600,
               foregroundColor: Colors.white,
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(AppRadius.sm)),
             ),
             child: const Text('Restore'),
           ),
@@ -309,10 +309,10 @@ class _AddLabResultScreenState extends ConsumerState<AddLabResultScreen> {
     });
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
-        content: const Row(children: [Icon(Icons.check_circle, color: Colors.white, size: 18), SizedBox(width: 8), Text('Draft restored')]),
+        content: const Row(children: [Icon(Icons.check_circle, color: Colors.white, size: AppIconSize.sm), SizedBox(width: AppSpacing.sm), Text('Draft restored')]),
         backgroundColor: Colors.green.shade600,
         behavior: SnackBarBehavior.floating,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(AppRadius.md)),
         duration: const Duration(seconds: 2),
       ),
     );

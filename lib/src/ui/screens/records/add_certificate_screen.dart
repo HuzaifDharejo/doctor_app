@@ -6,6 +6,7 @@ import 'package:intl/intl.dart';
 import '../../../db/doctor_db.dart';
 import '../../../providers/db_provider.dart';
 import 'components/record_components.dart';
+import '../../../core/extensions/context_extensions.dart';
 
 /// Types of medical certificates
 enum CertificateType {
@@ -386,7 +387,7 @@ class _AddCertificateScreenState extends ConsumerState<AddCertificateScreen> {
       body: Form(
         key: _formKey,
         child: ListView(
-          padding: const EdgeInsets.all(16),
+          padding: EdgeInsets.all(context.responsivePadding),
           children: [
             // Patient Selection
             if (widget.preselectedPatient != null)
@@ -535,7 +536,7 @@ class _AddCertificateScreenState extends ConsumerState<AddCertificateScreen> {
 
   Widget _buildCertificateTypeSelector(bool isDark) {
     return Container(
-      padding: const EdgeInsets.all(16),
+      padding: EdgeInsets.all(context.responsivePadding),
       decoration: BoxDecoration(
         color: isDark ? Colors.white.withValues(alpha: 0.05) : Colors.white,
         borderRadius: BorderRadius.circular(16),
@@ -612,7 +613,7 @@ class _AddCertificateScreenState extends ConsumerState<AddCertificateScreen> {
 
   Widget _buildDateCard(bool isDark) {
     return Container(
-      padding: const EdgeInsets.all(16),
+      padding: EdgeInsets.all(context.responsivePadding),
       decoration: BoxDecoration(
         color: isDark ? Colors.white.withValues(alpha: 0.05) : Colors.white,
         borderRadius: BorderRadius.circular(16),
@@ -674,7 +675,7 @@ class _AddCertificateScreenState extends ConsumerState<AddCertificateScreen> {
 
   Widget _buildDateRangeCard(bool isDark) {
     return Container(
-      padding: const EdgeInsets.all(16),
+      padding: EdgeInsets.all(context.responsivePadding),
       decoration: BoxDecoration(
         color: isDark ? Colors.white.withValues(alpha: 0.05) : Colors.white,
         borderRadius: BorderRadius.circular(16),
@@ -816,7 +817,7 @@ class _AddCertificateScreenState extends ConsumerState<AddCertificateScreen> {
   Widget _buildPatientInfoCard(bool isDark) {
     final patient = widget.preselectedPatient!;
     return Container(
-      padding: const EdgeInsets.all(16),
+      padding: EdgeInsets.all(context.responsivePadding),
       decoration: BoxDecoration(
         color: isDark ? Colors.white.withValues(alpha: 0.05) : Colors.white,
         borderRadius: BorderRadius.circular(16),
@@ -902,7 +903,7 @@ class _AddCertificateScreenState extends ConsumerState<AddCertificateScreen> {
     String? subtitle,
   }) {
     return Container(
-      padding: const EdgeInsets.all(16),
+      padding: EdgeInsets.all(context.responsivePadding),
       decoration: BoxDecoration(
         color: isDark ? Colors.white.withValues(alpha: 0.05) : Colors.white,
         borderRadius: BorderRadius.circular(16),

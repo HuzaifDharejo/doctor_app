@@ -53,7 +53,7 @@ class RecordSaveButton extends StatelessWidget {
       height: compact ? 44 : 52,
       decoration: BoxDecoration(
         gradient: effectiveGradient,
-        borderRadius: BorderRadius.circular(compact ? 10 : 12),
+        borderRadius: BorderRadius.circular(compact ? AppRadius.md : AppRadius.md),
         boxShadow: isEnabled
             ? [
                 BoxShadow(
@@ -68,12 +68,12 @@ class RecordSaveButton extends StatelessWidget {
         color: Colors.transparent,
         child: InkWell(
           onTap: isEnabled ? onPressed : null,
-          borderRadius: BorderRadius.circular(compact ? 10 : 12),
+          borderRadius: BorderRadius.circular(compact ? AppRadius.md : AppRadius.md),
           child: Center(
             child: loading
                 ? SizedBox(
-                    width: 24,
-                    height: 24,
+                    width: AppIconSize.md,
+                    height: AppIconSize.md,
                     child: CircularProgressIndicator(
                       strokeWidth: 2.5,
                       valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
@@ -85,15 +85,15 @@ class RecordSaveButton extends StatelessWidget {
                       Icon(
                         icon,
                         color: Colors.white,
-                        size: compact ? 18 : 20,
+                        size: compact ? AppIconSize.sm : AppIconSize.sm,
                       ),
-                      const SizedBox(width: 8),
+                      const SizedBox(width: AppSpacing.sm),
                       Text(
                         label,
                         style: TextStyle(
                           color: Colors.white,
                           fontWeight: FontWeight.w600,
-                          fontSize: compact ? 14 : 15,
+                          fontSize: compact ? AppFontSize.lg : AppFontSize.titleLarge,
                         ),
                       ),
                     ],
@@ -134,7 +134,7 @@ class RecordCancelButton extends StatelessWidget {
         color: isDark
             ? Colors.white.withValues(alpha: 0.1)
             : Colors.grey.shade100,
-        borderRadius: BorderRadius.circular(compact ? 10 : 12),
+        borderRadius: BorderRadius.circular(compact ? AppRadius.md : AppRadius.md),
         border: Border.all(
           color: isDark ? Colors.white24 : Colors.grey.shade300,
         ),
@@ -143,14 +143,14 @@ class RecordCancelButton extends StatelessWidget {
         color: Colors.transparent,
         child: InkWell(
           onTap: onPressed,
-          borderRadius: BorderRadius.circular(compact ? 10 : 12),
+          borderRadius: BorderRadius.circular(compact ? AppRadius.md : AppRadius.md),
           child: Center(
             child: Text(
               label,
               style: TextStyle(
                 color: isDark ? Colors.white70 : AppColors.textSecondary,
                 fontWeight: FontWeight.w500,
-                fontSize: compact ? 14 : 15,
+                fontSize: compact ? AppFontSize.lg : AppFontSize.titleLarge,
               ),
             ),
           ),
@@ -171,7 +171,7 @@ class RecordActionButtons extends StatelessWidget {
     this.isLoading = false,
     this.canSave = true,
     this.showCancel = true,
-    this.spacing = 12,
+    this.spacing = AppSpacing.md,
     this.padding,
   });
 
@@ -237,8 +237,8 @@ class RecordFloatingSaveButton extends StatelessWidget {
       backgroundColor: enabled ? AppColors.primary : Colors.grey,
       icon: isLoading
           ? const SizedBox(
-              width: 20,
-              height: 20,
+              width: AppIconSize.sm,
+              height: AppIconSize.sm,
               child: CircularProgressIndicator(
                 strokeWidth: 2,
                 valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
@@ -281,9 +281,9 @@ class RecordIconButton extends StatelessWidget {
     final button = IconButton(
       onPressed: enabled ? onPressed : null,
       icon: Icon(icon, size: size, color: iconColor),
-      padding: const EdgeInsets.all(8),
+      padding: const EdgeInsets.all(AppSpacing.sm),
       constraints: const BoxConstraints(),
-      splashRadius: 20,
+      splashRadius: AppIconSize.sm,
     );
 
     if (tooltip != null) {

@@ -8,6 +8,7 @@ import '../../providers/db_provider.dart';
 import '../../services/suggestions_service.dart';
 import '../../theme/app_theme.dart';
 import '../widgets/suggestion_text_field.dart';
+import '../../core/extensions/context_extensions.dart';
 
 class EditMedicalRecordScreen extends ConsumerStatefulWidget {
   const EditMedicalRecordScreen({
@@ -215,7 +216,7 @@ class _EditMedicalRecordScreenState extends ConsumerState<EditMedicalRecordScree
         borderRadius: BorderRadius.circular(12),
         borderSide: BorderSide.none,
       ),
-      contentPadding: const EdgeInsets.all(16),
+      contentPadding: EdgeInsets.all(context.responsivePadding),
     );
   }
 
@@ -331,7 +332,7 @@ class _EditMedicalRecordScreenState extends ConsumerState<EditMedicalRecordScree
 
   Widget _buildPatientCard(BuildContext context, bool isDark) {
     return Container(
-      padding: const EdgeInsets.all(16),
+      padding: EdgeInsets.all(context.responsivePadding),
       decoration: BoxDecoration(
         gradient: const LinearGradient(
           colors: [Color(0xFF6366F1), Color(0xFF8B5CF6)],
@@ -391,7 +392,7 @@ class _EditMedicalRecordScreenState extends ConsumerState<EditMedicalRecordScree
     final typeIcon = _recordTypeIcons[_recordType] ?? Icons.description;
     
     return Container(
-      padding: const EdgeInsets.all(16),
+      padding: EdgeInsets.all(context.responsivePadding),
       decoration: BoxDecoration(
         color: isDark ? const Color(0xFF1A1A1A) : Colors.white,
         borderRadius: BorderRadius.circular(16),
@@ -510,7 +511,7 @@ class _EditMedicalRecordScreenState extends ConsumerState<EditMedicalRecordScree
         }
       },
       child: Container(
-        padding: const EdgeInsets.all(16),
+        padding: EdgeInsets.all(context.responsivePadding),
         decoration: BoxDecoration(
           color: isDark ? Colors.white.withValues(alpha: 0.05) : Colors.grey.withValues(alpha: 0.1),
           borderRadius: BorderRadius.circular(12),

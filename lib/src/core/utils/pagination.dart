@@ -95,54 +95,76 @@ class PaginationController<T> extends ChangeNotifier {
   /// Whether loading has started at least once.
   bool get isEmpty => _hasInitialized && _items.isEmpty && !_isLoading;
   
+  /// Track disposal state to prevent notifyListeners after disposal
+  bool _isDisposed = false;
+  
+  /// Safely notify listeners only if not disposed
+  void _safeNotifyListeners() {
+    if (!_isDisposed) {
+      notifyListeners();
+    }
+  }
+  
   /// Load the initial page.
   Future<void> loadInitial() async {
-    if (_isLoading) return;
+    if (_isLoading || _isDisposed) return;
     
     _isLoading = true;
     _error = null;
     _items.clear();
     _currentPage = 0;
-    notifyListeners();
+    _safeNotifyListeners();
     
     try {
       final (items, total) = await fetchPage(0, pageSize);
+      if (_isDisposed) return;
       _items.addAll(items);
       _totalItems = total;
       _hasInitialized = true;
     } catch (e) {
+      if (_isDisposed) return;
       _error = e.toString();
     } finally {
-      _isLoading = false;
-      notifyListeners();
+      if (!_isDisposed) {
+        _isLoading = false;
+        _safeNotifyListeners();
+      }
     }
   }
   
   /// Load the next page if available.
   Future<void> loadNextPage() async {
-    if (_isLoading || !hasMore) return;
+    if (_isLoading || !hasMore || _isDisposed) return;
     
     _isLoading = true;
     _error = null;
-    notifyListeners();
+    _safeNotifyListeners();
     
     try {
       final nextPage = _currentPage + 1;
       final (items, total) = await fetchPage(nextPage, pageSize);
+      if (_isDisposed) return;
       _items.addAll(items);
       _totalItems = total;
       _currentPage = nextPage;
     } catch (e) {
+      if (_isDisposed) return;
       _error = e.toString();
     } finally {
-      _isLoading = false;
-      notifyListeners();
+      if (!_isDisposed) {
+        _isLoading = false;
+        _safeNotifyListeners();
+      }
     }
   }
   
   /// Refresh and reload from the beginning.
   Future<void> refresh() async {
+    _items.clear();
+    _error = null;
     _hasInitialized = false;
+    _currentPage = 0;
+    _totalItems = 0;
     await loadInitial();
   }
   
@@ -160,6 +182,7 @@ class PaginationController<T> extends ChangeNotifier {
   
   @override
   void dispose() {
+    _isDisposed = true;
     _items.clear();
     super.dispose();
   }

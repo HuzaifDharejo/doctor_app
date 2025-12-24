@@ -7,6 +7,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:share_plus/share_plus.dart';
 import 'package:url_launcher/url_launcher.dart';
+import 'package:intl/intl.dart';
 import '../../../core/routing/app_router.dart';
 import '../../../db/doctor_db.dart';
 import '../../../providers/audit_provider.dart';
@@ -18,6 +19,7 @@ import '../../../services/problem_list_service.dart';
 import '../../../services/immunization_service.dart';
 import '../../../core/components/app_button.dart';
 import '../../../core/mixins/responsive_mixin.dart';
+import '../../../core/theme/design_tokens.dart';
 import '../../../theme/app_theme.dart';
 import '../add_appointment_screen.dart';
 import '../add_invoice_screen.dart';
@@ -37,11 +39,16 @@ import '../records/records.dart';
 
 // Import modular tab components
 import 'patient_clinical_tab.dart';
+import 'patient_clinical_features_tab.dart';
 import 'patient_billing_tab.dart';
 import 'patient_timeline_tab.dart';
 import 'patient_visits_tab.dart';
 import 'patient_view_widgets.dart';
 import 'widgets/patient_view_widgets.dart' as widgets;
+import '../../../core/extensions/context_extensions.dart';
+import '../../../services/logger_service.dart';
+import '../../../ui/widgets/patient_visit_context_panel.dart';
+import '../../../ui/widgets/confirmation_dialog.dart';
 
 /// Alias for backward compatibility with PatientViewScreenModern
 typedef PatientViewScreenModern = PatientViewScreen;
@@ -105,114 +112,193 @@ class _PatientViewScreenState extends ConsumerState<PatientViewScreen>
   @override
   void initState() {
     super.initState();
-    // 5 tabs: Summary, Visits, Clinical (Rx+Records+Docs), Billing, Timeline
-    _tabController = TabController(length: 5, vsync: this);
+    // 6 tabs: Summary, Visits, Clinical (Rx+Records+Docs), Clinical Features, Billing, Timeline
+    _tabController = TabController(length: 6, vsync: this);
     _initializeControllers();
     _loadPatientData();
     _logPatientView();
   }
   
+  bool _isLoadingData = true;
+  String? _loadingError;
+
   Future<void> _loadPatientData() async {
-    final db = await ref.read(doctorDbProvider.future);
-    final vitals = await db.getLatestVitalSignsForPatient(widget.patient.id);
-    final appointments = await db.getAppointmentsForPatient(widget.patient.id);
-    final encounters = await db.getEncountersForPatient(widget.patient.id);
+    if (!mounted) return;
     
-    // Load clinical features data
-    final familyHistoryService = FamilyHistoryService(db: db);
-    final problemListService = ProblemListService(db: db);
-    final immunizationService = ImmunizationService(db: db);
-    
-    final familyHistory = await familyHistoryService.getFamilyHistoryForPatient(widget.patient.id);
-    final problems = await problemListService.getProblemsForPatient(widget.patient.id);
-    final activeProblems = await problemListService.getActiveProblems(widget.patient.id);
-    final immunizations = await immunizationService.getImmunizationsForPatient(widget.patient.id);
-    
-    // Load enhanced UI data
-    final prescriptions = await db.getPrescriptionsForPatient(widget.patient.id);
-    // Prescriptions are considered active if created within 30 days
-    final activePrescriptions = prescriptions.where((p) => 
-        DateTime.now().difference(p.createdAt).inDays <= 30).toList();
-    final invoices = await db.getInvoicesForPatient(widget.patient.id);
-    final unpaidInvoices = invoices.where((i) => i.paymentStatus != 'paid').toList();
-    final medicalRecords = await db.getMedicalRecordsForPatient(widget.patient.id);
-    final allVitals = await db.getVitalSignsForPatient(widget.patient.id);
-    
-    // Find next upcoming appointment
-    final now = DateTime.now();
-    final upcoming = appointments
-        .where((a) => a.appointmentDateTime.isAfter(now) && a.status == 'scheduled')
-        .toList()
-      ..sort((a, b) => a.appointmentDateTime.compareTo(b.appointmentDateTime));
-    
-    // Get last visit date from encounters
-    DateTime? lastVisit;
-    if (encounters.isNotEmpty) {
-      final sortedEncounters = List<Encounter>.from(encounters)
-        ..sort((a, b) => b.encounterDate.compareTo(a.encounterDate));
-      lastVisit = sortedEncounters.first.encounterDate;
-    }
-    
-    // Build recent activities list
-    final activities = <widgets.ActivityItem>[];
-    
-    // Add recent appointments
-    for (final apt in appointments.take(2)) {
-      activities.add(widgets.ActivityItem(
-        type: widgets.ActivityType.appointment,
-        title: apt.reason.isNotEmpty ? apt.reason : 'Appointment',
-        timestamp: apt.appointmentDateTime,
-        subtitle: apt.status,
-      ));
-    }
-    
-    // Add recent prescriptions
-    for (final rx in prescriptions.take(2)) {
-      // Parse itemsJson to get medication info
-      final rxTitle = rx.diagnosis.isNotEmpty ? rx.diagnosis : 'Prescription';
-      activities.add(widgets.ActivityItem(
-        type: widgets.ActivityType.prescription,
-        title: rxTitle,
-        timestamp: rx.createdAt,
-        subtitle: rx.instructions.isNotEmpty ? rx.instructions.split('\n').first : 'Medication',
-      ));
-    }
-    
-    // Add recent vitals
-    if (allVitals.isNotEmpty) {
-      for (final v in allVitals.take(2)) {
+    setState(() {
+      _isLoadingData = true;
+      _loadingError = null;
+    });
+
+    try {
+      final db = await ref.read(doctorDbProvider.future);
+      
+      // Load essential data in parallel for better performance
+      // Use Future.wait with individual error handling to prevent one failure from blocking all data
+      final results = await Future.wait([
+        db.getLatestVitalSignsForPatient(widget.patient.id)
+            .timeout(const Duration(seconds: 10), onTimeout: () => null)
+            .catchError((e) {
+              log.w('PATIENT_VIEW', 'Error loading latest vitals: $e');
+              return null;
+            }),
+        db.getAppointmentsForPatient(widget.patient.id)
+            .timeout(const Duration(seconds: 10), onTimeout: () => <Appointment>[])
+            .catchError((e) {
+              log.w('PATIENT_VIEW', 'Error loading appointments: $e');
+              return <Appointment>[];
+            }),
+        db.getEncountersForPatient(widget.patient.id)
+            .timeout(const Duration(seconds: 10), onTimeout: () => <Encounter>[])
+            .catchError((e) {
+              log.w('PATIENT_VIEW', 'Error loading encounters: $e');
+              return <Encounter>[];
+            }),
+        db.getPrescriptionsForPatient(widget.patient.id)
+            .timeout(const Duration(seconds: 10), onTimeout: () => <Prescription>[])
+            .catchError((e) {
+              log.w('PATIENT_VIEW', 'Error loading prescriptions: $e');
+              return <Prescription>[];
+            }),
+        db.getInvoicesForPatient(widget.patient.id)
+            .timeout(const Duration(seconds: 10), onTimeout: () => <Invoice>[])
+            .catchError((e) {
+              log.w('PATIENT_VIEW', 'Error loading invoices: $e');
+              return <Invoice>[];
+            }),
+        db.getMedicalRecordsForPatient(widget.patient.id)
+            .timeout(const Duration(seconds: 10), onTimeout: () => <MedicalRecord>[])
+            .catchError((e) {
+              log.w('PATIENT_VIEW', 'Error loading medical records: $e');
+              return <MedicalRecord>[];
+            }),
+        db.getVitalSignsForPatient(widget.patient.id)
+            .timeout(const Duration(seconds: 10), onTimeout: () => <VitalSign>[])
+            .catchError((e) {
+              log.w('PATIENT_VIEW', 'Error loading all vitals: $e');
+              return <VitalSign>[];
+            }),
+      ]);
+
+      final vitals = results[0] as VitalSign?;
+      final appointments = results[1] as List<Appointment>;
+      final encounters = results[2] as List<Encounter>;
+      final prescriptions = results[3] as List<Prescription>;
+      final invoices = results[4] as List<Invoice>;
+      final medicalRecords = results[5] as List<MedicalRecord>;
+      final allVitals = results[6] as List<VitalSign>;
+      
+      // Load clinical features data (optional, can fail gracefully)
+      List<FamilyMedicalHistoryData> familyHistory = [];
+      List<ProblemListData> problems = [];
+      List<ProblemListData> activeProblems = [];
+      int immunizationCount = 0;
+      
+      try {
+        final familyHistoryService = FamilyHistoryService(db: db);
+        final problemListService = ProblemListService(db: db);
+        final immunizationService = ImmunizationService(db: db);
+        
+        familyHistory = await familyHistoryService.getFamilyHistoryForPatient(widget.patient.id);
+        problems = await problemListService.getProblemsForPatient(widget.patient.id);
+        activeProblems = await problemListService.getActiveProblems(widget.patient.id);
+        final immunizations = await immunizationService.getImmunizationsForPatient(widget.patient.id);
+        immunizationCount = immunizations.length;
+      } catch (e) {
+        // Clinical features are optional, log but don't fail
+        log.w('PATIENT_VIEW', 'Error loading clinical features: $e');
+      }
+      
+      // Process data
+      final activePrescriptions = prescriptions.where((p) => 
+          DateTime.now().difference(p.createdAt).inDays <= 30).toList();
+      final unpaidInvoices = invoices.where((i) => i.paymentStatus != 'paid').toList();
+      
+      // Find next upcoming appointment
+      final now = DateTime.now();
+      final upcoming = appointments
+          .where((a) => a.appointmentDateTime.isAfter(now) && a.status == 'scheduled')
+          .toList()
+        ..sort((a, b) => a.appointmentDateTime.compareTo(b.appointmentDateTime));
+      
+      // Get last visit date from encounters
+      DateTime? lastVisit;
+      if (encounters.isNotEmpty) {
+        final sortedEncounters = List<Encounter>.from(encounters)
+          ..sort((a, b) => b.encounterDate.compareTo(a.encounterDate));
+        lastVisit = sortedEncounters.first.encounterDate;
+      }
+      
+      // Build recent activities list (simplified)
+      final activities = <widgets.ActivityItem>[];
+      
+      // Add recent appointments
+      for (final apt in appointments.take(3)) {
         activities.add(widgets.ActivityItem(
-          type: widgets.ActivityType.vitalSigns,
-          title: 'Vital Signs Recorded',
-          timestamp: v.recordedAt,
-          subtitle: 'BP: ${v.systolicBp?.toInt() ?? '--'}/${v.diastolicBp?.toInt() ?? '--'}',
+          type: widgets.ActivityType.appointment,
+          title: apt.reason.isNotEmpty ? apt.reason : 'Appointment',
+          timestamp: apt.appointmentDateTime,
+          subtitle: apt.status,
         ));
       }
-    }
-    
-    // Sort by timestamp descending
-    activities.sort((a, b) => b.timestamp.compareTo(a.timestamp));
-    
-    if (mounted) {
-      setState(() {
-        _latestVitals = vitals;
-        _nextAppointment = upcoming.isNotEmpty ? upcoming.first : null;
-        _totalEncounters = encounters.length;
-        _familyHistoryCount = familyHistory.length;
-        _problemListCount = problems.length;
-        _immunizationCount = immunizations.length;
-        _activeProblems = activeProblems.take(3).toList();
-        _recentFamilyHistory = familyHistory.take(3).toList();
-        // Enhanced UI data
-        _activePrescriptionCount = activePrescriptions.length;
-        _upcomingAppointmentCount = upcoming.length;
-        _unpaidInvoiceCount = unpaidInvoices.length;
-        _clinicalRecordsCount = medicalRecords.length + prescriptions.length;
-        _timelineEventsCount = appointments.length + prescriptions.length + invoices.length + medicalRecords.length;
-        _recentVitals = allVitals.take(5).toList();
-        _recentActivities = activities.take(5).toList();
-        _lastVisitDate = lastVisit;
-      });
+      
+      // Add recent prescriptions
+      for (final rx in prescriptions.take(3)) {
+        final rxTitle = rx.diagnosis.isNotEmpty ? rx.diagnosis : 'Prescription';
+        activities.add(widgets.ActivityItem(
+          type: widgets.ActivityType.prescription,
+          title: rxTitle,
+          timestamp: rx.createdAt,
+          subtitle: rx.instructions.isNotEmpty ? rx.instructions.split('\n').first : 'Medication',
+        ));
+      }
+      
+      // Add recent vitals
+      if (allVitals.isNotEmpty) {
+        for (final v in allVitals.take(2)) {
+          activities.add(widgets.ActivityItem(
+            type: widgets.ActivityType.vitalSigns,
+            title: 'Vital Signs Recorded',
+            timestamp: v.recordedAt,
+            subtitle: 'BP: ${v.systolicBp?.toInt() ?? '--'}/${v.diastolicBp?.toInt() ?? '--'}',
+          ));
+        }
+      }
+      
+      // Sort by timestamp descending
+      activities.sort((a, b) => b.timestamp.compareTo(a.timestamp));
+      
+      if (mounted) {
+        setState(() {
+          _latestVitals = vitals;
+          _nextAppointment = upcoming.isNotEmpty ? upcoming.first : null;
+          _totalEncounters = encounters.length;
+          _familyHistoryCount = familyHistory.length;
+          _problemListCount = problems.length;
+          _immunizationCount = immunizationCount;
+          _activeProblems = activeProblems.take(3).toList();
+          _recentFamilyHistory = familyHistory.take(3).toList();
+          // Enhanced UI data
+          _activePrescriptionCount = activePrescriptions.length;
+          _upcomingAppointmentCount = upcoming.length;
+          _unpaidInvoiceCount = unpaidInvoices.length;
+          _clinicalRecordsCount = medicalRecords.length + prescriptions.length;
+          _timelineEventsCount = appointments.length + prescriptions.length + invoices.length + medicalRecords.length;
+          _recentVitals = allVitals.take(5).toList();
+          _recentActivities = activities.take(5).toList();
+          _lastVisitDate = lastVisit;
+          _isLoadingData = false;
+          _loadingError = null;
+        });
+      }
+    } catch (e, stackTrace) {
+      log.e('PATIENT_VIEW', 'Error loading patient data: $e\n$stackTrace');
+      if (mounted) {
+        setState(() {
+          _isLoadingData = false;
+          _loadingError = 'Failed to load patient data: ${e.toString()}';
+        });
+      }
     }
   }
   
@@ -401,9 +487,9 @@ class _PatientViewScreenState extends ConsumerState<PatientViewScreen>
   }
 
   String _getRiskLabel(int riskLevel) {
-    if (riskLevel == 0) return 'Low Risk';
-    if (riskLevel == 1) return 'Medium Risk';
-    return 'High Risk';
+    if (riskLevel >= 5) return 'High';
+    if (riskLevel >= 3) return 'Medium';
+    return 'Low';
   }
 
   Color _getTagColor(String tag) {
@@ -609,22 +695,10 @@ Address: ${patient.address}
   }
 
   Future<void> _showDeleteConfirmation(Patient patient) async {
-    final confirmed = await showDialog<bool>(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Delete Patient'),
-        content: Text('Are you sure you want to delete ${patient.firstName} ${patient.lastName}? This action cannot be undone.'),
-        actions: [
-          AppButton.tertiary(
-            label: 'Cancel',
-            onPressed: () => Navigator.pop(context, false),
-          ),
-          AppButton.danger(
-            label: 'Delete',
-            onPressed: () => Navigator.pop(context, true),
-          ),
-        ],
-      ),
+    final confirmed = await ConfirmationDialog.showDelete(
+      context,
+      itemName: 'Patient',
+      message: 'Are you sure you want to delete ${patient.firstName} ${patient.lastName}? This action cannot be undone.',
     );
 
     if (confirmed == true && mounted) {
@@ -710,8 +784,8 @@ Address: ${patient.address}
     // Modern theme colors
     const primaryGradient = [Color(0xFF6366F1), Color(0xFF8B5CF6)];
     
-    // Calculate dynamic height based on content needs
-    final expandedHeight = isCompactScreen ? 320.0 : 360.0;
+    // Calculate dynamic height - reduced for compact design
+    final expandedHeight = isCompactScreen ? 200.0 : 240.0;
     
     return Scaffold(
       backgroundColor: isDark ? AppColors.darkBackground : const Color(0xFFF8FAFC),
@@ -738,13 +812,13 @@ Address: ${patient.address}
                   },
                   child: Container(
                     decoration: BoxDecoration(
-                      color: Colors.white.withValues(alpha: 0.2),
+                      color: isDark ? AppColors.darkSurfaceMid : Colors.grey.shade200,
                       borderRadius: BorderRadius.circular(12),
                     ),
-                    child: const Icon(
+                    child: Icon(
                       Icons.arrow_back_ios_new_rounded,
                       size: 18,
-                      color: Colors.white,
+                      color: isDark ? AppColors.darkTextPrimary : AppColors.textPrimary,
                     ),
                   ),
                 ),
@@ -775,22 +849,11 @@ Address: ${patient.address}
               flexibleSpace: FlexibleSpaceBar(
                 background: Container(
                   decoration: BoxDecoration(
-                    gradient: LinearGradient(
-                      begin: Alignment.topLeft,
-                      end: Alignment.bottomRight,
-                      colors: primaryGradient,
-                    ),
+                    color: isDark ? AppColors.darkSurface : Colors.white,
                     borderRadius: const BorderRadius.only(
                       bottomLeft: Radius.circular(32),
                       bottomRight: Radius.circular(32),
                     ),
-                    boxShadow: [
-                      BoxShadow(
-                        color: primaryGradient[0].withValues(alpha: 0.3),
-                        blurRadius: 20,
-                        offset: const Offset(0, 10),
-                      ),
-                    ],
                   ),
                   child: SafeArea(
                     child: _buildModernPatientHeader(patient, riskColor, isCompactScreen),
@@ -816,6 +879,7 @@ Address: ${patient.address}
                       _buildTab('Summary', Icons.dashboard_rounded, null),
                       _buildTab('Visits', Icons.calendar_today_rounded, _upcomingAppointmentCount),
                       _buildTab('Clinical', Icons.medical_services_rounded, _activePrescriptionCount),
+                      _buildTab('Features', Icons.medical_information_rounded, _problemListCount),
                       _buildTab('Billing', Icons.receipt_long_rounded, _unpaidInvoiceCount),
                       _buildTab('Timeline', Icons.timeline_rounded, null),
                     ],
@@ -845,6 +909,8 @@ Address: ${patient.address}
             PatientVisitsTab(key: ValueKey('visits_$_dataRefreshKey'), patient: patient),
             // Clinical - combined Rx + Records + Documents
             PatientClinicalTab(key: ValueKey('clinical_$_dataRefreshKey'), patient: patient),
+            // Clinical Features - Problem List, Family History, Immunizations, Allergies, Referrals
+            PatientClinicalFeaturesTab(key: ValueKey('features_$_dataRefreshKey'), patient: patient),
             // Billing - invoices and payments
             PatientBillingTab(key: ValueKey('billing_$_dataRefreshKey'), patient: patient),
             // Timeline - chronological view
@@ -857,95 +923,470 @@ Address: ${patient.address}
   }
   
   Widget _buildSummaryTab(Patient patient, bool isDark) {
+    // Show loading state
+    if (_isLoadingData) {
+      return const Center(
+        child: Padding(
+          padding: EdgeInsets.all(AppSpacing.xl),
+          child: CircularProgressIndicator(),
+        ),
+      );
+    }
+
+    // Show error state
+    if (_loadingError != null) {
+      return Center(
+        child: Padding(
+          padding: const EdgeInsets.all(AppSpacing.xl),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(Icons.error_outline, size: 48, color: AppColors.error),
+              const SizedBox(height: AppSpacing.md),
+              Text(
+                _loadingError!,
+                style: TextStyle(
+                  color: isDark ? AppColors.darkTextSecondary : AppColors.textSecondary,
+                ),
+                textAlign: TextAlign.center,
+              ),
+              const SizedBox(height: AppSpacing.md),
+              ElevatedButton(
+                onPressed: _loadPatientData,
+                child: const Text('Retry'),
+              ),
+            ],
+          ),
+        ),
+      );
+    }
+
     final cardColor = isDark ? AppColors.darkSurface : Colors.white;
     final textColor = isDark ? AppColors.darkTextPrimary : AppColors.textPrimary;
     final secondaryColor = isDark ? AppColors.darkTextSecondary : AppColors.textSecondary;
     
     return SingleChildScrollView(
       primary: false,
-      padding: const EdgeInsets.all(16),
+      padding: EdgeInsets.all(context.responsivePadding),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // QUICK ACTIONS STRIP
-          _buildQuickActionsStrip(patient),
+          // Patient Visit Context Panel - Shows today's visit info and quick actions
+          PatientVisitContextPanel(patient: patient),
+          const SizedBox(height: AppSpacing.lg),
           
-          const SizedBox(height: 16),
+          // SIMPLIFIED: Essential Info Cards
+          _buildHealthOverviewCards(patient, isDark),
           
-          // CLINICAL FLAGS RIBBON
-          _buildClinicalFlagsRibbon(patient),
+          const SizedBox(height: AppSpacing.lg),
           
-          const SizedBox(height: 16),
-          
-          // CRITICAL ALERTS SECTION (Always First)
-          _buildCriticalAlertsSection(patient, isDark),
-          
-          const SizedBox(height: 16),
-          
-          // APPOINTMENT COUNTDOWN (if next appointment exists)
-          if (_nextAppointment != null)
-            widgets.AppointmentCountdown(
-              appointmentDateTime: _nextAppointment!.appointmentDateTime,
-              appointmentType: _nextAppointment!.reason.isNotEmpty ? _nextAppointment!.reason : 'Check-up',
-              onReschedule: () => _navigateToRescheduleAppointment(_nextAppointment!),
-            ),
-          
-          if (_nextAppointment != null)
-            const SizedBox(height: 16),
-          
-          // HEALTH SCORE AND QUICK STATS ROW
-          _buildHealthScoreRow(isDark),
-          
-          const SizedBox(height: 16),
-          
-          // VITALS TREND SPARKLINES
-          if (_recentVitals.isNotEmpty)
-            _buildVitalsTrendSection(isDark),
-          
-          if (_recentVitals.isNotEmpty)
-            const SizedBox(height: 16),
-          
-          // MEDICATION ADHERENCE
-          widgets.MedicationAdherenceWidget(
-            activePrescriptions: _activePrescriptionCount,
-            onViewMedications: () => _tabController.animateTo(2), // Clinical tab
-            onAddPrescription: () => _navigateToAddPrescription(patient),
-          ),
-          
-          const SizedBox(height: 16),
-          
-          // RECENT ACTIVITY TIMELINE
-          widgets.RecentActivityTimeline(
-            activities: _recentActivities,
-            maxItems: 4,
-            onViewAll: () => _tabController.animateTo(4), // Timeline tab
-          ),
-          
-          const SizedBox(height: 16),
-          
-          // CONTACT INFO
+          // CONTACT INFO (Simplified)
           _buildContactCard(patient, cardColor, textColor, secondaryColor),
           
-          const SizedBox(height: 16),
+          const SizedBox(height: AppSpacing.lg),
           
-          // MEDICAL HISTORY
-          if (patient.medicalHistory.isNotEmpty)
+          // MEDICAL INFO (Simplified - only if exists)
+          if (patient.medicalHistory.isNotEmpty || patient.allergies.isNotEmpty) ...[
             _buildInfoCard(
-              title: 'Medical History',
-              content: patient.medicalHistory,
-              icon: Icons.history_rounded,
-              color: const Color(0xFF6366F1),
+              title: 'Medical Information',
+              content: [
+                if (patient.allergies.isNotEmpty) 'Allergies: ${patient.allergies}',
+                if (patient.medicalHistory.isNotEmpty) 'History: ${patient.medicalHistory}',
+              ].join('\n\n'),
+              icon: Icons.medical_information_rounded,
+              color: AppColors.primary,
               cardColor: cardColor,
               textColor: textColor,
             ),
+            const SizedBox(height: AppSpacing.lg),
+          ],
           
-          const SizedBox(height: 16),
+          // NEXT APPOINTMENT (if exists)
+          if (_nextAppointment != null) ...[
+            _buildNextAppointmentCard(_nextAppointment!, cardColor, textColor, isDark),
+            const SizedBox(height: AppSpacing.lg),
+          ],
           
-          // CLINICAL FEATURES
-          _buildClinicalFeaturesSection(patient, isDark, textColor),
+          // LATEST VITALS (if exists)
+          if (_latestVitals != null) ...[
+            _buildLatestVitalsCard(_latestVitals!, cardColor, textColor, secondaryColor, isDark),
+            const SizedBox(height: AppSpacing.lg),
+          ],
           
-          const SizedBox(height: 100), // Space for FAB + emergency button
+          // QUICK ACTIONS (Simplified)
+          _buildQuickActionsStrip(patient),
+          
+          const SizedBox(height: 100), // Space for FAB
         ],
+      ),
+    );
+  }
+
+  Widget _buildNextAppointmentCard(Appointment appointment, Color cardColor, Color textColor, bool isDark) {
+    final dateFormat = DateFormat('MMM d, yyyy • h:mm a');
+    return Container(
+      padding: EdgeInsets.all(context.responsivePadding),
+      decoration: BoxDecoration(
+        color: cardColor,
+        borderRadius: BorderRadius.circular(AppRadius.card),
+        boxShadow: isDark ? null : AppShadow.small,
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Icon(Icons.calendar_today_rounded, color: AppColors.primary, size: AppIconSize.md),
+              SizedBox(width: AppSpacing.sm),
+              Text(
+                'Next Appointment',
+                style: TextStyle(
+                  fontSize: AppFontSize.titleMedium,
+                  fontWeight: FontWeight.w700,
+                  color: textColor,
+                ),
+              ),
+            ],
+          ),
+          SizedBox(height: AppSpacing.md),
+          Text(
+            dateFormat.format(appointment.appointmentDateTime),
+            style: TextStyle(
+              fontSize: AppFontSize.bodyLarge,
+              fontWeight: FontWeight.w600,
+              color: textColor,
+            ),
+          ),
+          if (appointment.reason.isNotEmpty) ...[
+            SizedBox(height: AppSpacing.xs),
+            Text(
+              appointment.reason,
+              style: TextStyle(
+                fontSize: AppFontSize.bodyMedium,
+                color: isDark ? AppColors.darkTextSecondary : AppColors.textSecondary,
+              ),
+            ),
+          ],
+        ],
+      ),
+    );
+  }
+
+  Widget _buildLatestVitalsCard(VitalSign vitals, Color cardColor, Color textColor, Color secondaryColor, bool isDark) {
+    return Container(
+      padding: EdgeInsets.all(context.responsivePadding),
+      decoration: BoxDecoration(
+        color: cardColor,
+        borderRadius: BorderRadius.circular(AppRadius.card),
+        boxShadow: isDark ? null : AppShadow.small,
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Icon(Icons.favorite_rounded, color: AppColors.error, size: AppIconSize.md),
+              SizedBox(width: AppSpacing.sm),
+              Text(
+                'Latest Vital Signs',
+                style: TextStyle(
+                  fontSize: AppFontSize.titleMedium,
+                  fontWeight: FontWeight.w700,
+                  color: textColor,
+                ),
+              ),
+              Spacer(),
+              Text(
+                DateFormat('MMM d, yyyy').format(vitals.recordedAt),
+                style: TextStyle(
+                  fontSize: AppFontSize.bodySmall,
+                  color: secondaryColor,
+                ),
+              ),
+            ],
+          ),
+          SizedBox(height: AppSpacing.md),
+            Wrap(
+            spacing: AppSpacing.md,
+            runSpacing: AppSpacing.sm,
+            children: [
+              if (vitals.systolicBp != null && vitals.diastolicBp != null)
+                _buildSimpleVitalItem('BP', '${vitals.systolicBp!.toInt()}/${vitals.diastolicBp!.toInt()}', textColor, secondaryColor),
+              if (vitals.heartRate != null)
+                _buildSimpleVitalItem('HR', '${vitals.heartRate!.toInt()} bpm', textColor, secondaryColor),
+              if (vitals.temperature != null)
+                _buildSimpleVitalItem('Temp', '${vitals.temperature!.toStringAsFixed(1)}°C', textColor, secondaryColor),
+              if (vitals.oxygenSaturation != null)
+                _buildSimpleVitalItem('SpO2', '${vitals.oxygenSaturation!.toInt()}%', textColor, secondaryColor),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildSimpleVitalItem(String label, String value, Color textColor, Color secondaryColor) {
+    return Container(
+      padding: EdgeInsets.symmetric(horizontal: AppSpacing.md, vertical: AppSpacing.sm),
+      decoration: BoxDecoration(
+        color: AppColors.primary.withValues(alpha: 0.1),
+        borderRadius: BorderRadius.circular(AppRadius.sm),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            label,
+            style: TextStyle(
+              fontSize: AppFontSize.bodySmall,
+              color: secondaryColor,
+            ),
+          ),
+          SizedBox(height: AppSpacing.xs),
+          Text(
+            value,
+            style: TextStyle(
+              fontSize: AppFontSize.bodyLarge,
+              fontWeight: FontWeight.w700,
+              color: textColor,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+  
+  /// Build Health Overview Cards (Compact Stats)
+  Widget _buildHealthOverviewCards(Patient patient, bool isDark) {
+    return Row(
+      children: [
+        Expanded(
+          child: _buildOverviewCard(
+            label: 'Risk Level',
+            value: patient.riskLevel.toString(),
+            subValue: _getRiskLabel(patient.riskLevel),
+            color: _getRiskColor(patient.riskLevel),
+            icon: Icons.warning_rounded,
+            isDark: isDark,
+          ),
+        ),
+        SizedBox(width: AppSpacing.md),
+        Expanded(
+          child: _buildOverviewCard(
+            label: 'Total Visits',
+            value: '$_totalEncounters',
+            subValue: 'This year',
+            color: AppColors.primary,
+            icon: Icons.calendar_today_rounded,
+            isDark: isDark,
+          ),
+        ),
+        SizedBox(width: AppSpacing.md),
+        Expanded(
+          child: _buildOverviewCard(
+            label: 'Last Visit',
+            value: _lastVisitDate != null 
+                ? '${DateTime.now().difference(_lastVisitDate!).inDays}d'
+                : 'N/A',
+            subValue: _lastVisitDate != null ? 'ago' : '',
+            color: AppColors.info,
+            icon: Icons.access_time_rounded,
+            isDark: isDark,
+          ),
+        ),
+      ],
+    );
+  }
+  
+  Widget _buildOverviewCard({
+    required String label,
+    required String value,
+    required String subValue,
+    required Color color,
+    required IconData icon,
+    required bool isDark,
+  }) {
+    return Container(
+      padding: EdgeInsets.all(AppSpacing.md),
+      decoration: BoxDecoration(
+        color: isDark ? AppColors.darkSurface : Colors.white,
+        borderRadius: BorderRadius.circular(AppRadius.card),
+        border: Border.all(color: color.withValues(alpha: 0.2)),
+        boxShadow: isDark ? null : AppShadow.small,
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Container(
+                padding: EdgeInsets.all(AppSpacing.xs + 2),
+                decoration: BoxDecoration(
+                  color: color.withValues(alpha: 0.15),
+                  borderRadius: BorderRadius.circular(AppRadius.sm),
+                ),
+                child: Icon(icon, size: AppIconSize.sm, color: color),
+              ),
+              const Spacer(),
+            ],
+          ),
+          SizedBox(height: AppSpacing.sm),
+          Text(
+            value,
+            style: TextStyle(
+              fontSize: AppFontSize.titleLarge,
+              fontWeight: FontWeight.w800,
+              color: color,
+            ),
+          ),
+          if (subValue.isNotEmpty)
+            Text(
+              subValue,
+              style: TextStyle(
+                fontSize: AppFontSize.bodySmall,
+                color: isDark
+                    ? AppColors.darkTextSecondary
+                    : AppColors.textSecondary,
+              ),
+            ),
+          SizedBox(height: AppSpacing.xs),
+          Text(
+            label,
+            style: TextStyle(
+              fontSize: AppFontSize.bodySmall,
+              fontWeight: FontWeight.w600,
+              color: isDark
+                  ? AppColors.darkTextSecondary
+                  : AppColors.textSecondary,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+  
+  /// Build Active Items Section
+  Widget _buildActiveItemsSection(
+    Patient patient,
+    bool isDark,
+    Color cardColor,
+    Color textColor,
+    Color secondaryColor,
+  ) {
+    final activeItems = <Map<String, dynamic>>[];
+    
+    if (_activePrescriptionCount > 0) {
+      activeItems.add({
+        'icon': Icons.medication_rounded,
+        'label': '$_activePrescriptionCount Active Prescription${_activePrescriptionCount > 1 ? 's' : ''}',
+        'color': AppColors.warning,
+        'onTap': () => _tabController.animateTo(2), // Clinical tab
+      });
+    }
+    
+    if (_upcomingAppointmentCount > 0) {
+      activeItems.add({
+        'icon': Icons.calendar_today_rounded,
+        'label': '$_upcomingAppointmentCount Upcoming Appointment${_upcomingAppointmentCount > 1 ? 's' : ''}',
+        'color': AppColors.primary,
+        'onTap': () => _tabController.animateTo(1), // Visits tab
+      });
+    }
+    
+    if (_unpaidInvoiceCount > 0) {
+      activeItems.add({
+        'icon': Icons.receipt_long_rounded,
+        'label': '$_unpaidInvoiceCount Unpaid Invoice${_unpaidInvoiceCount > 1 ? 's' : ''}',
+        'color': AppColors.error,
+        'onTap': () => _tabController.animateTo(3), // Billing tab
+      });
+    }
+    
+    if (activeItems.isEmpty) return const SizedBox.shrink();
+    
+    return Container(
+      padding: EdgeInsets.all(AppSpacing.md),
+      decoration: BoxDecoration(
+        color: cardColor,
+        borderRadius: BorderRadius.circular(AppRadius.card),
+        boxShadow: isDark ? null : AppShadow.small,
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Icon(
+                Icons.checklist_rounded,
+                size: AppIconSize.md,
+                color: AppColors.primary,
+              ),
+              SizedBox(width: AppSpacing.sm),
+              Text(
+                'Active Items',
+                style: TextStyle(
+                  fontSize: AppFontSize.titleMedium,
+                  fontWeight: FontWeight.w700,
+                  color: textColor,
+                ),
+              ),
+            ],
+          ),
+          SizedBox(height: AppSpacing.md),
+          ...activeItems.map((item) => _buildActiveItemTile(
+            item,
+            isDark,
+            textColor,
+            secondaryColor,
+          )),
+        ],
+      ),
+    );
+  }
+  
+  Widget _buildActiveItemTile(
+    Map<String, dynamic> item,
+    bool isDark,
+    Color textColor,
+    Color secondaryColor,
+  ) {
+    return InkWell(
+      onTap: item['onTap'] as VoidCallback?,
+      borderRadius: BorderRadius.circular(AppRadius.sm),
+      child: Padding(
+        padding: EdgeInsets.symmetric(vertical: AppSpacing.sm),
+        child: Row(
+          children: [
+            Container(
+              padding: EdgeInsets.all(AppSpacing.sm),
+              decoration: BoxDecoration(
+                color: (item['color'] as Color).withValues(alpha: 0.15),
+                borderRadius: BorderRadius.circular(AppRadius.sm),
+              ),
+              child: Icon(
+                item['icon'] as IconData,
+                size: AppIconSize.sm,
+                color: item['color'] as Color,
+              ),
+            ),
+            SizedBox(width: AppSpacing.md),
+            Expanded(
+              child: Text(
+                item['label'] as String,
+                style: TextStyle(
+                  fontSize: AppFontSize.bodyMedium,
+                  fontWeight: FontWeight.w600,
+                  color: textColor,
+                ),
+              ),
+            ),
+            Icon(
+              Icons.chevron_right_rounded,
+              size: AppIconSize.sm,
+              color: secondaryColor,
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -1278,7 +1719,7 @@ Address: ${patient.address}
   
   Widget _buildQuickStatsDashboard(bool isDark, Color textColor) {
     return Container(
-      padding: const EdgeInsets.all(16),
+      padding: EdgeInsets.all(context.responsivePadding),
       decoration: BoxDecoration(
         color: isDark ? AppColors.darkSurface : Colors.white,
         borderRadius: BorderRadius.circular(16),
@@ -1460,7 +1901,7 @@ Address: ${patient.address}
   
   Widget _buildVitalsCard(Color cardColor, Color textColor, Color secondaryColor, bool isDark) {
     return Container(
-      padding: const EdgeInsets.all(16),
+      padding: EdgeInsets.all(context.responsivePadding),
       decoration: BoxDecoration(
         color: cardColor,
         borderRadius: BorderRadius.circular(16),
@@ -1521,7 +1962,7 @@ Address: ${patient.address}
           const SizedBox(height: 16),
           if (_latestVitals == null)
             Container(
-              padding: const EdgeInsets.all(20),
+              padding: EdgeInsets.all(context.responsivePadding),
               decoration: BoxDecoration(
                 color: isDark ? AppColors.darkDivider : const Color(0xFFF8FAFC),
                 borderRadius: BorderRadius.circular(12),
@@ -1628,7 +2069,7 @@ Address: ${patient.address}
   Widget _buildContactCard(Patient patient, Color cardColor, Color textColor, Color secondaryColor) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     return Container(
-      padding: const EdgeInsets.all(16),
+      padding: EdgeInsets.all(context.responsivePadding),
       decoration: BoxDecoration(
         color: cardColor,
         borderRadius: BorderRadius.circular(16),
@@ -1773,7 +2214,7 @@ Address: ${patient.address}
   }) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     return Container(
-      padding: const EdgeInsets.all(16),
+      padding: EdgeInsets.all(context.responsivePadding),
       decoration: BoxDecoration(
         color: cardColor,
         borderRadius: BorderRadius.circular(16),
@@ -1836,7 +2277,7 @@ Address: ${patient.address}
     final patientName = '${patient.firstName} ${patient.lastName}';
     
     return Container(
-      padding: const EdgeInsets.all(16),
+      padding: EdgeInsets.all(context.responsivePadding),
       decoration: BoxDecoration(
         color: cardColor,
         borderRadius: BorderRadius.circular(16),
@@ -2289,6 +2730,7 @@ Address: ${patient.address}
     required IconData icon,
     required VoidCallback onTap,
   }) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     return Padding(
       padding: const EdgeInsets.only(right: 4),
       child: GestureDetector(
@@ -2296,10 +2738,10 @@ Address: ${patient.address}
         child: Container(
           padding: const EdgeInsets.all(10),
           decoration: BoxDecoration(
-            color: Colors.white.withValues(alpha: 0.2),
+            color: isDark ? AppColors.darkSurfaceMid : Colors.grey.shade200,
             borderRadius: BorderRadius.circular(12),
           ),
-          child: Icon(icon, size: 20, color: Colors.white),
+          child: Icon(icon, size: 20, color: isDark ? AppColors.darkTextPrimary : AppColors.textPrimary),
         ),
       ),
     );
@@ -2321,112 +2763,131 @@ Address: ${patient.address}
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            // Patient Icon with Risk Indicator
-            Stack(
-              alignment: Alignment.center,
-              children: [
-                // Outer glow ring
-                Container(
-                  width: isCompactScreen ? 68 : 80, // Slightly reduced
-                  height: isCompactScreen ? 68 : 80,
-                  decoration: BoxDecoration(
-                    shape: BoxShape.circle,
-                    border: Border.all(
-                      color: Colors.white.withValues(alpha: 0.3),
-                      width: 2,
-                    ),
-                    boxShadow: [
-                      BoxShadow(
-                        color: Colors.black.withValues(alpha: 0.2),
-                        blurRadius: 20,
-                        spreadRadius: 2,
-                      ),
-                    ],
-                  ),
-                  child: Container(
+            // Big Patient Card with Name, Age, and Icon
+            Container(
+              width: double.infinity,
+              padding: EdgeInsets.all(isCompactScreen ? 20 : 24),
+              decoration: BoxDecoration(
+                color: Colors.transparent,
+                borderRadius: BorderRadius.circular(20),
+              ),
+              child: Row(
+                children: [
+                  // Icon
+                  Container(
+                    width: isCompactScreen ? 60 : 70,
+                    height: isCompactScreen ? 60 : 70,
                     decoration: BoxDecoration(
                       shape: BoxShape.circle,
-                      gradient: LinearGradient(
-                        begin: Alignment.topLeft,
-                        end: Alignment.bottomRight,
-                        colors: [
-                          Colors.white.withValues(alpha: 0.25),
-                          Colors.white.withValues(alpha: 0.1),
-                        ],
-                      ),
-                    ),
-                    child: Icon(
-                      Icons.person_rounded,
-                      size: isCompactScreen ? 34 : 40, // Slightly reduced
-                      color: Colors.white,
-                    ),
-                  ),
-                ),
-                // Risk badge
-                Positioned(
-                  bottom: 0,
-                  right: 0,
-                  child: Container(
-                    padding: const EdgeInsets.all(5), // Slightly reduced
-                    decoration: BoxDecoration(
-                      color: riskColor,
-                      shape: BoxShape.circle,
-                      border: Border.all(color: Colors.white, width: 2),
+                      color: isDark ? AppColors.darkSurfaceMid : Colors.grey.shade200,
                       boxShadow: [
                         BoxShadow(
-                          color: riskColor.withValues(alpha: 0.5),
+                          color: Colors.black.withValues(alpha: 0.1),
                           blurRadius: 8,
                           spreadRadius: 1,
                         ),
                       ],
                     ),
-                    child: Icon(
-                      patient.riskLevel == 0
-                          ? Icons.check_rounded
-                          : (patient.riskLevel == 1 ? Icons.warning_amber_rounded : Icons.priority_high_rounded),
-                      color: Colors.white,
-                      size: 11, // Slightly reduced
+                    child: Stack(
+                      alignment: Alignment.center,
+                      children: [
+                        Icon(
+                          Icons.person_rounded,
+                          size: isCompactScreen ? 32 : 38,
+                          color: isDark ? AppColors.darkTextPrimary : AppColors.textPrimary,
+                        ),
+                        // Risk badge
+                        Positioned(
+                          bottom: 0,
+                          right: 0,
+                          child: Container(
+                            padding: const EdgeInsets.all(4),
+                            decoration: BoxDecoration(
+                              color: riskColor,
+                              shape: BoxShape.circle,
+                              border: Border.all(color: Colors.white, width: 2),
+                              boxShadow: [
+                                BoxShadow(
+                                  color: riskColor.withValues(alpha: 0.5),
+                                  blurRadius: 6,
+                                  spreadRadius: 1,
+                                ),
+                              ],
+                            ),
+                            child: Icon(
+                              patient.riskLevel == 0
+                                  ? Icons.check_rounded
+                                  : (patient.riskLevel == 1 ? Icons.warning_amber_rounded : Icons.priority_high_rounded),
+                              color: Colors.white,
+                              size: 10,
+                            ),
+                          ),
+                        ),
+                      ],
                     ),
                   ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 10), // Reduced from 12
-            
-            // Patient Name
-            Text(
-              '${patient.firstName} ${patient.lastName}'.trim(),
-              style: TextStyle(
-                fontSize: isCompactScreen ? 19 : 22, // Slightly reduced
-                fontWeight: FontWeight.w800,
-                color: Colors.white,
-                letterSpacing: -0.5,
-                shadows: [
-                  Shadow(
-                    color: Colors.black.withValues(alpha: 0.2),
-                    blurRadius: 4,
-                    offset: const Offset(0, 2),
+                  SizedBox(width: isCompactScreen ? 16 : 20),
+                  // Name and Age
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        // Patient Name
+                        Text(
+                          '${patient.firstName} ${patient.lastName}'.trim(),
+                          style: TextStyle(
+                            fontSize: isCompactScreen ? 22 : 26,
+                            fontWeight: FontWeight.w800,
+                            color: isDark ? AppColors.darkTextPrimary : AppColors.textPrimary,
+                            letterSpacing: -0.5,
+                          ),
+                          maxLines: 2,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                        if (age != null) ...[
+                          SizedBox(height: isCompactScreen ? 6 : 8),
+                          Row(
+                            children: [
+                              Icon(
+                                Icons.cake_rounded,
+                                size: 16,
+                                color: isDark ? AppColors.darkTextSecondary : AppColors.textSecondary,
+                              ),
+                              SizedBox(width: 6),
+                              Text(
+                                '$age years old',
+                                style: TextStyle(
+                                  fontSize: isCompactScreen ? 15 : 17,
+                                  fontWeight: FontWeight.w600,
+                                  color: isDark ? AppColors.darkTextSecondary : AppColors.textSecondary,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ],
+                      ],
+                    ),
                   ),
                 ],
               ),
-              textAlign: TextAlign.center,
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
             ),
-            const SizedBox(height: 6), // Reduced from 8
+            const SizedBox(height: 16),
           
-            // Patient Info Row
+            // Patient Info Row - Using Wrap to prevent overflow
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6), // Reduced padding
               decoration: BoxDecoration(
-                color: Colors.white.withValues(alpha: 0.15),
+                color: isDark ? AppColors.darkSurfaceMid.withValues(alpha: 0.5) : Colors.grey.shade100,
                 borderRadius: BorderRadius.circular(24),
                 border: Border.all(
-                  color: Colors.white.withValues(alpha: 0.2),
+                  color: isDark ? AppColors.darkDivider : Colors.grey.shade300,
                 ),
               ),
-              child: Row(
-                mainAxisSize: MainAxisSize.min,
+              child: Wrap(
+                alignment: WrapAlignment.center,
+                spacing: 8,
+                runSpacing: 4,
                 children: [
                   // Patient ID
                   _buildInfoBadge(
@@ -2456,70 +2917,71 @@ Address: ${patient.address}
             ),
             const SizedBox(height: 8), // Reduced from 10
             
-            // Risk Level & Status
-            Row(
-              mainAxisAlignment: MainAxisAlignment.center,
+            // Risk Level & Status - Using Wrap to prevent overflow
+            Wrap(
+              alignment: WrapAlignment.center,
+              spacing: 8,
+              runSpacing: 6,
               children: [
                 Container(
                   padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5), // Reduced padding
-                decoration: BoxDecoration(
-                  color: riskColor.withValues(alpha: 0.2),
-                  borderRadius: BorderRadius.circular(20),
-                  border: Border.all(
-                    color: riskColor.withValues(alpha: 0.5),
+                  decoration: BoxDecoration(
+                    color: riskColor.withValues(alpha: 0.15),
+                    borderRadius: BorderRadius.circular(20),
+                    border: Border.all(
+                      color: riskColor.withValues(alpha: 0.4),
+                    ),
+                  ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(
+                        patient.riskLevel == 0 
+                            ? Icons.verified_rounded 
+                            : patient.riskLevel == 1 
+                                ? Icons.warning_amber_rounded 
+                                : Icons.error_rounded,
+                        size: 14,
+                        color: riskColor,
+                      ),
+                      const SizedBox(width: 6),
+                      Text(
+                        _getRiskLabel(patient.riskLevel),
+                        style: TextStyle(
+                          color: riskColor,
+                          fontSize: 12,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    ],
                   ),
                 ),
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Icon(
-                      patient.riskLevel == 0 
-                          ? Icons.verified_rounded 
-                          : patient.riskLevel == 1 
-                              ? Icons.warning_amber_rounded 
-                              : Icons.error_rounded,
-                      size: 14,
-                      color: Colors.white,
-                    ),
-                    const SizedBox(width: 6),
-                    Text(
-                      _getRiskLabel(patient.riskLevel),
-                      style: const TextStyle(
-                        color: Colors.white,
-                        fontSize: 12,
-                        fontWeight: FontWeight.w600,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-              if (patient.tags.isNotEmpty) ...[
-                const SizedBox(width: 8),
-                ...patient.tags
-                    .split(',')
-                    .where((t) => t.trim().isNotEmpty)
-                    .take(2)
-                    .map((tag) => Padding(
-                          padding: const EdgeInsets.only(left: 6),
-                          child: Container(
+                if (patient.tags.isNotEmpty)
+                  ...patient.tags
+                      .split(',')
+                      .where((t) => t.trim().isNotEmpty)
+                      .take(2)
+                      .map((tag) => Container(
                             padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
                             decoration: BoxDecoration(
-                              color: Colors.white.withValues(alpha: 0.2),
+                              color: isDark ? AppColors.darkSurfaceMid : Colors.grey.shade200,
                               borderRadius: BorderRadius.circular(20),
+                              border: Border.all(
+                                color: isDark ? AppColors.darkDivider : Colors.grey.shade300,
+                              ),
                             ),
                             child: Text(
                               tag.trim(),
-                              style: const TextStyle(
-                                color: Colors.white,
+                              style: TextStyle(
+                                color: isDark ? AppColors.darkTextPrimary : AppColors.textPrimary,
                                 fontSize: 11,
                                 fontWeight: FontWeight.w600,
                               ),
+                              overflow: TextOverflow.ellipsis,
                             ),
-                          ),
-                        )),
+                          )),
               ],
-            ],
-          ),
+            ),
           ],
         ),
       ),
@@ -2527,15 +2989,16 @@ Address: ${patient.address}
   }
   
   Widget _buildInfoBadge({required IconData icon, required String text}) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     return Row(
       mainAxisSize: MainAxisSize.min,
       children: [
-        Icon(icon, size: 14, color: Colors.white.withValues(alpha: 0.9)),
+        Icon(icon, size: 14, color: isDark ? AppColors.darkTextSecondary : AppColors.textSecondary),
         const SizedBox(width: 4),
         Text(
           text,
           style: TextStyle(
-            color: Colors.white.withValues(alpha: 0.95),
+            color: isDark ? AppColors.darkTextSecondary : AppColors.textSecondary,
             fontSize: 13,
             fontWeight: FontWeight.w600,
           ),
@@ -2545,13 +3008,14 @@ Address: ${patient.address}
   }
   
   Widget _buildDividerDot() {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 10),
       child: Container(
         width: 4,
         height: 4,
         decoration: BoxDecoration(
-          color: Colors.white.withValues(alpha: 0.5),
+          color: isDark ? AppColors.darkDivider : Colors.grey.shade400,
           shape: BoxShape.circle,
         ),
       ),

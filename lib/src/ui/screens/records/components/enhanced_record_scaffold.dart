@@ -8,6 +8,7 @@ import 'date_picker_card.dart';
 import 'form_progress_indicator.dart';
 import 'patient_selector_card.dart';
 import 'quick_fill_template_bar.dart';
+import '../../../../core/extensions/context_extensions.dart';
 
 /// An enhanced scaffold widget for medical record forms with full features
 /// 
@@ -444,7 +445,7 @@ class EnhancedRecordScaffold extends StatelessWidget {
 
   Widget _buildFAB(BuildContext context) {
     return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 20),
+      padding: EdgeInsets.symmetric(horizontal: context.responsivePadding),
       child: Row(
         children: [
           // Reset button (optional)

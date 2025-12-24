@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../theme/app_theme.dart';
+import '../extensions/context_extensions.dart';
 
 /// Shimmer effect widget for loading states
 class ShimmerLoading extends StatefulWidget {
@@ -229,7 +230,7 @@ class ScheduleItemShimmer extends StatelessWidget {
     
     return ShimmerLoading(
       child: Container(
-        padding: const EdgeInsets.all(16),
+        padding: EdgeInsets.all(context.responsivePadding),
         decoration: BoxDecoration(
           color: isDark ? AppColors.darkSurface : Colors.white,
           borderRadius: BorderRadius.circular(16),

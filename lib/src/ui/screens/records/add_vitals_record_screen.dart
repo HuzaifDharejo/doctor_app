@@ -8,6 +8,7 @@ import '../../../db/doctor_db.dart';
 import '../../../providers/db_provider.dart';
 import 'components/patient_selector_card.dart';
 import 'components/record_components.dart';
+import '../../../core/extensions/context_extensions.dart';
 
 /// Screen for quickly recording patient vitals
 class AddVitalsRecordScreen extends ConsumerStatefulWidget {
@@ -241,7 +242,7 @@ class _AddVitalsRecordScreenState extends ConsumerState<AddVitalsRecordScreen> {
       body: Form(
         key: _formKey,
         child: ListView(
-          padding: const EdgeInsets.all(16),
+          padding: EdgeInsets.all(context.responsivePadding),
           children: [
             // Patient Selection
             if (widget.preselectedPatient != null)
@@ -494,7 +495,7 @@ class _AddVitalsRecordScreenState extends ConsumerState<AddVitalsRecordScreen> {
 
   Widget _buildDateCard(bool isDark) {
     return Container(
-      padding: const EdgeInsets.all(16),
+      padding: EdgeInsets.all(context.responsivePadding),
       decoration: BoxDecoration(
         color: isDark ? Colors.white.withValues(alpha: 0.05) : Colors.white,
         borderRadius: BorderRadius.circular(16),
@@ -560,7 +561,7 @@ class _AddVitalsRecordScreenState extends ConsumerState<AddVitalsRecordScreen> {
   Widget _buildPatientInfoCard(bool isDark) {
     final patient = widget.preselectedPatient!;
     return Container(
-      padding: const EdgeInsets.all(16),
+      padding: EdgeInsets.all(context.responsivePadding),
       decoration: BoxDecoration(
         color: isDark ? Colors.white.withValues(alpha: 0.05) : Colors.white,
         borderRadius: BorderRadius.circular(16),
@@ -646,7 +647,7 @@ class _AddVitalsRecordScreenState extends ConsumerState<AddVitalsRecordScreen> {
     required Widget child,
   }) {
     return Container(
-      padding: const EdgeInsets.all(16),
+      padding: EdgeInsets.all(context.responsivePadding),
       decoration: BoxDecoration(
         color: isDark ? Colors.white.withValues(alpha: 0.05) : Colors.white,
         borderRadius: BorderRadius.circular(16),

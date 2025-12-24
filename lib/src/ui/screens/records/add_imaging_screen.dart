@@ -1,6 +1,9 @@
-import 'dart:convert';
+import 'dart:io';
+import 'package:path/path.dart' as path;
+import 'package:path_provider/path_provider.dart';
 
 import 'package:drift/drift.dart' hide Column;
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
@@ -10,6 +13,7 @@ import '../../../db/doctor_db.dart';
 import '../../../providers/db_provider.dart';
 import '../../../services/suggestions_service.dart';
 import '../../widgets/suggestion_text_field.dart';
+import '../../widgets/medical_record_image_attachments.dart';
 import 'components/record_components.dart';
 import 'record_form_widgets.dart';
 
@@ -78,6 +82,9 @@ class _AddImagingScreenState extends ConsumerState<AddImagingScreen> {
 
   bool _contrastUsed = false;
   String _urgency = 'Routine';
+
+  // Image attachments
+  List<ImageAttachmentData> _images = [];
 
   @override
   void initState() {
@@ -190,6 +197,131 @@ class _AddImagingScreenState extends ConsumerState<AddImagingScreen> {
         _contrastUsed = (data['contrast_used'] as bool?) ?? false;
         _urgency = (data['urgency'] as String?) ?? 'Routine';
       });
+    }
+    
+    // Load existing images
+    await _loadExistingImages(db, record.id);
+  }
+
+  Future<void> _loadExistingImages(DoctorDatabase db, int recordId) async {
+    try {
+      final attachments = await db.getAttachmentsForEntity('medical_record', recordId);
+      final images = <ImageAttachmentData>[];
+      
+      for (final attachment in attachments) {
+        // Only load image attachments
+        if (attachment.fileType.startsWith('image/')) {
+          try {
+            if (!kIsWeb) {
+              final file = File(attachment.filePath);
+              if (await file.exists()) {
+                final bytes = await file.readAsBytes();
+                images.add(ImageAttachmentData(
+                  fileName: attachment.fileName,
+                  filePath: attachment.filePath,
+                  fileBytes: bytes,
+                  fileType: attachment.fileType,
+                  fileSizeBytes: attachment.fileSizeBytes ?? bytes.length,
+                  attachmentId: attachment.id,
+                ));
+              }
+            } else {
+              // For web, we'd need to load from storage or base64
+              // For now, skip web attachments
+            }
+          } catch (e) {
+            // Skip if file doesn't exist
+          }
+        }
+      }
+      
+      if (mounted) {
+        setState(() {
+          _images = images;
+        });
+      }
+    } catch (e) {
+      // Ignore errors loading images
+    }
+  }
+
+  Future<void> _saveImages(DoctorDatabase db, int recordId) async {
+    if (kIsWeb) {
+      // On web, images are stored in memory - we'd need to implement base64 storage
+      // For now, skip saving images on web
+      return;
+    }
+
+    try {
+      // Get existing attachments for this record
+      final existingAttachments = await db.getAttachmentsForEntity('medical_record', recordId);
+      final existingImageIds = existingAttachments
+          .where((a) => a.fileType.startsWith('image/'))
+          .map((a) => a.id)
+          .toSet();
+
+      // Get current image attachment IDs (images that were loaded from DB)
+      final currentImageIds = _images
+          .where((img) => img.attachmentId != null)
+          .map((img) => img.attachmentId!)
+          .toSet();
+
+      // Delete images that were removed
+      final toDelete = existingImageIds.where((id) => !currentImageIds.contains(id));
+      for (final id in toDelete) {
+        final attachment = existingAttachments.firstWhere((a) => a.id == id);
+        try {
+          final file = File(attachment.filePath);
+          if (await file.exists()) {
+            await file.delete();
+          }
+        } catch (e) {
+          // Ignore deletion errors
+        }
+        await db.deleteAttachment(id);
+      }
+
+      // Save new images
+      final appDir = await getApplicationDocumentsDirectory();
+      final recordImagesDir = Directory(path.join(appDir.path, 'medical_records', recordId.toString(), 'images'));
+      if (!await recordImagesDir.exists()) {
+        await recordImagesDir.create(recursive: true);
+      }
+
+      int displayOrder = 0;
+      for (final image in _images) {
+        // Skip if already saved
+        if (image.attachmentId != null) {
+          displayOrder++;
+          continue;
+        }
+
+        // Save image file
+        final fileName = '${DateTime.now().millisecondsSinceEpoch}_${image.fileName}';
+        final filePath = path.join(recordImagesDir.path, fileName);
+        final file = File(filePath);
+        await file.writeAsBytes(image.fileBytes);
+
+        // Save attachment record
+        final extension = path.extension(image.fileName).replaceAll('.', '');
+        await db.insertAttachment(AttachmentsCompanion.insert(
+          patientId: _selectedPatientId!,
+          entityType: 'medical_record',
+          entityId: recordId,
+          fileName: fileName,
+          originalFileName: Value(image.fileName),
+          filePath: filePath,
+          fileType: Value(image.fileType),
+          fileExtension: Value(extension),
+          fileSizeBytes: Value(image.fileSizeBytes),
+          category: const Value('image'),
+          displayOrder: Value(displayOrder),
+        ));
+
+        displayOrder++;
+      }
+    } catch (e) {
+      // Ignore errors saving images - don't block record save
     }
   }
 
@@ -371,12 +503,18 @@ class _AddImagingScreenState extends ConsumerState<AddImagingScreen> {
         await db.deleteFieldsForMedicalRecord(widget.existingRecord!.id);
         await db.insertMedicalRecordFieldsBatch(widget.existingRecord!.id, _selectedPatientId!, recordData);
         resultRecord = updatedRecord;
+        
+        // Save images
+        await _saveImages(db, resultRecord.id);
       } else {
         final recordId = await db.insertMedicalRecord(companion);
         // V6: Save fields to normalized table
         await db.insertMedicalRecordFieldsBatch(recordId, _selectedPatientId!, recordData);
         resultRecord = await db.getMedicalRecordById(recordId);
       }
+
+      // Save images
+      await _saveImages(db, resultRecord!.id);
 
       if (mounted) {
         RecordFormWidgets.showSuccessSnackbar(
@@ -672,6 +810,21 @@ class _AddImagingScreenState extends ConsumerState<AddImagingScreen> {
               suggestions: clinicalNotesSuggestions,
             ),
           ),
+          const SizedBox(height: AppSpacing.lg),
+
+          // Image Attachments Section
+          if (_selectedPatientId != null)
+            MedicalRecordImageAttachments(
+              patientId: _selectedPatientId!,
+              recordId: widget.existingRecord?.id,
+              initialImages: _images,
+              onImagesChanged: (images) {
+                setState(() {
+                  _images = images;
+                });
+              },
+              maxImages: 10,
+            ),
           const SizedBox(height: AppSpacing.xl),
 
           // Action Buttons

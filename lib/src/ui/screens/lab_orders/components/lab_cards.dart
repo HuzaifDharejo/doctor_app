@@ -7,6 +7,7 @@ import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'lab_models.dart';
 import 'lab_theme.dart';
+import '../../../../core/extensions/context_extensions.dart';
 
 /// Full lab order card with all details and actions
 class LabOrderCard extends StatelessWidget {
@@ -43,7 +44,7 @@ class LabOrderCard extends StatelessWidget {
           onTap: onTap,
           borderRadius: BorderRadius.circular(20),
           child: Padding(
-            padding: const EdgeInsets.all(16),
+            padding: EdgeInsets.all(context.responsivePadding),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
@@ -246,7 +247,7 @@ class LabResultCard extends StatelessWidget {
           ],
         ),
         child: Padding(
-          padding: const EdgeInsets.all(16),
+          padding: EdgeInsets.all(context.responsivePadding),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
@@ -354,7 +355,7 @@ class LabPanelCard extends StatelessWidget {
         onTap: onTap,
         borderRadius: BorderRadius.circular(16),
         child: Padding(
-          padding: const EdgeInsets.all(16),
+          padding: EdgeInsets.all(context.responsivePadding),
           child: Row(
             children: [
               Container(
@@ -640,7 +641,7 @@ class EmptyLabOrdersState extends StatelessWidget {
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
             Container(
-              padding: const EdgeInsets.all(24),
+              padding: EdgeInsets.all(context.responsivePadding),
               decoration: BoxDecoration(
                 color: LabColors.primary.withValues(alpha: 0.1),
                 borderRadius: BorderRadius.circular(24),
@@ -700,7 +701,7 @@ class SelectPatientState extends StatelessWidget {
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
             Container(
-              padding: const EdgeInsets.all(24),
+              padding: EdgeInsets.all(context.responsivePadding),
               decoration: BoxDecoration(
                 color: Colors.orange.withValues(alpha: 0.1),
                 borderRadius: BorderRadius.circular(24),

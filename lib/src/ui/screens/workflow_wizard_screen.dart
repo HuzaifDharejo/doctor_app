@@ -4,6 +4,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 
+import '../../core/extensions/context_extensions.dart';
 import '../../core/routing/app_router.dart';
 import '../../core/theme/design_tokens.dart';
 import '../../db/doctor_db.dart';
@@ -11,6 +12,7 @@ import '../../providers/db_provider.dart';
 import '../../providers/encounter_provider.dart';
 import '../../services/encounter_service.dart';
 import '../../services/logger_service.dart';
+import '../../services/problem_list_service.dart';
 import '../../theme/app_theme.dart';
 import '../widgets/vitals_entry_modal.dart';
 import 'add_appointment_screen.dart';
@@ -79,9 +81,9 @@ class _WorkflowWizardScreenState extends ConsumerState<WorkflowWizardScreen> {
   bool _skipChiefComplaint = false;
   bool _skipVitals = false;
   bool _skipDiagnosis = false;
-  bool _skipLabOrders = true; // Default skip
+  bool _skipLabOrders = false; // Don't skip by default - user must explicitly choose
   bool _skipPrescription = false;
-  bool _skipFollowUp = true; // Default skip
+  bool _skipFollowUp = false; // Don't skip by default - user must explicitly choose
   bool _skipClinicalNotes = false;
   
   // New optimized workflow steps:
@@ -1258,7 +1260,7 @@ class _WorkflowWizardScreenState extends ConsumerState<WorkflowWizardScreen> {
     if (_followUp != null) items.add('Follow-up: ${DateFormat('MMM d').format(_followUp!.scheduledDate)}');
 
     return Container(
-      padding: const EdgeInsets.all(16),
+      padding: EdgeInsets.all(context.responsivePadding),
       decoration: BoxDecoration(
         color: isDark ? Colors.grey[900] : Colors.grey[50],
         borderRadius: BorderRadius.circular(12),
@@ -2013,6 +2015,11 @@ class _WorkflowWizardScreenState extends ConsumerState<WorkflowWizardScreen> {
           _completedSteps[3] = true;
         }
       });
+      
+      // Save complaints as problems
+      if (_chiefComplaint.isNotEmpty && _patient != null) {
+        _saveComplaintsAsProblems(_chiefComplaint);
+      }
     }
   }
 
@@ -2050,7 +2057,7 @@ class _WorkflowWizardScreenState extends ConsumerState<WorkflowWizardScreen> {
       ),
       builder: (context) => StatefulBuilder(
         builder: (context, setModalState) => Padding(
-          padding: const EdgeInsets.all(20),
+          padding: EdgeInsets.all(context.responsivePadding),
           child: Column(
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -2195,10 +2202,16 @@ class _WorkflowWizardScreenState extends ConsumerState<WorkflowWizardScreen> {
                     child: ElevatedButton(
                       onPressed: selectedComplaints.isNotEmpty ? () {
                         Navigator.pop(context);
+                        final complaintsText = selectedComplaints.join(', ');
                         setState(() {
-                          _chiefComplaint = selectedComplaints.join(', ');
+                          _chiefComplaint = complaintsText;
                           _completedSteps[3] = true;
                         });
+                        
+                        // Save complaints as problems
+                        if (_patient != null) {
+                          _saveComplaintsAsProblems(complaintsText);
+                        }
                       } : null,
                       style: ElevatedButton.styleFrom(
                         backgroundColor: const Color(0xFFF59E0B),
@@ -2225,6 +2238,57 @@ class _WorkflowWizardScreenState extends ConsumerState<WorkflowWizardScreen> {
         ),
       ),
     );
+  }
+
+  /// Save chief complaints as problems in the ProblemList table
+  Future<void> _saveComplaintsAsProblems(String complaintsText) async {
+    if (_patient == null || complaintsText.isEmpty) {
+      return;
+    }
+
+    try {
+      final problemService = ProblemListService();
+      
+      // Get existing problems to check for duplicates
+      final existingProblems = await problemService.getProblemsForPatient(_patient!.id);
+      final existingProblemNames = existingProblems
+          .map((p) => p.problemName.toLowerCase().trim())
+          .toSet();
+
+      // Split complaints by comma and process each
+      final complaintList = complaintsText
+          .split(',')
+          .map((c) => c.trim())
+          .where((c) => c.isNotEmpty)
+          .toList();
+
+      for (final complaint in complaintList) {
+        // Check if this problem already exists (case-insensitive)
+        final complaintLower = complaint.toLowerCase();
+        if (existingProblemNames.contains(complaintLower)) {
+          log.d('WORKFLOW', 'Problem already exists, skipping: $complaint');
+          continue;
+        }
+
+        // Create problem with isChiefConcern flag set to true
+        await problemService.createProblem(
+          patientId: _patient!.id,
+          problemName: complaint,
+          isChiefConcern: true,
+          status: 'active',
+          category: 'medical',
+          priority: 1, // High priority for chief concerns
+        );
+
+        log.i('WORKFLOW', 'Saved complaint as problem', extra: {
+          'complaint': complaint,
+          'patientId': _patient!.id,
+        });
+      }
+    } catch (e) {
+      log.e('WORKFLOW', 'Error saving complaints as problems', error: e);
+      // Don't show error to user - this is a background operation
+    }
   }
 
   // Lab Orders Actions
@@ -2281,7 +2345,7 @@ class _WorkflowWizardScreenState extends ConsumerState<WorkflowWizardScreen> {
         borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
       ),
       builder: (context) => Padding(
-        padding: const EdgeInsets.all(20),
+        padding: EdgeInsets.all(context.responsivePadding),
         child: Column(
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -2395,6 +2459,55 @@ class _WorkflowWizardScreenState extends ConsumerState<WorkflowWizardScreen> {
     );
   }
 
+  /// Helper method to link a diagnosis string to encounter (checks for duplicates)
+  Future<void> _linkDiagnosisToEncounterIfNeeded(String diagnosisName) async {
+    if (_encounter == null || _patient == null) return;
+    
+    try {
+      final db = await ref.read(doctorDbProvider.future);
+      
+      // Find or create diagnosis
+      final existingDiagnoses = await db.getDiagnosesForPatient(_patient!.id);
+      var diagnosis = existingDiagnoses.where(
+        (d) => d.description.toLowerCase() == diagnosisName.toLowerCase(),
+      ).firstOrNull;
+      
+      if (diagnosis == null) {
+        final diagnosisId = await db.insertDiagnosis(DiagnosesCompanion.insert(
+          patientId: _patient!.id,
+          description: diagnosisName,
+          category: const Value('general'),
+          diagnosisStatus: const Value('active'),
+          diagnosedDate: DateTime.now(),
+        ));
+        diagnosis = await (db.select(db.diagnoses)
+          ..where((d) => d.id.equals(diagnosisId)))
+          .getSingleOrNull();
+      }
+      
+      // Check if already linked to encounter
+      if (diagnosis != null) {
+        final existingLinks = await db.getDiagnosesForEncounter(_encounter!.id);
+        final linkExists = existingLinks.any((ed) => ed.diagnosisId == diagnosis!.id);
+        
+        if (!linkExists) {
+          await db.into(db.encounterDiagnoses).insert(
+            EncounterDiagnosesCompanion.insert(
+              encounterId: _encounter!.id,
+              diagnosisId: diagnosis.id,
+              isNewDiagnosis: const Value(true),
+              encounterStatus: const Value('addressed'),
+            ),
+          );
+          log.d('WORKFLOW', 'Auto-linked diagnosis from medical record to encounter');
+        }
+      }
+    } catch (e) {
+      log.w('WORKFLOW', 'Failed to auto-link diagnosis to encounter: $e');
+      // Non-critical error, continue
+    }
+  }
+
   Future<void> _addMedicalRecord() async {
     if (_patient == null) {
       log.w('WORKFLOW', 'Cannot add medical record - no patient selected');
@@ -2427,6 +2540,12 @@ class _WorkflowWizardScreenState extends ConsumerState<WorkflowWizardScreen> {
         if (result.diagnosis.isNotEmpty && !_currentDiagnoses.contains(result.diagnosis)) {
           _currentDiagnoses.add(result.diagnosis);
           _currentDiagnosis = result.diagnosis;
+          
+          // If encounter exists, also link this diagnosis to the encounter
+          // (Medical record screens may not always do this automatically)
+          if (_encounter != null) {
+            _linkDiagnosisToEncounterIfNeeded(result.diagnosis);
+          }
         }
         // Mark diagnosis step as complete since we have a medical record
         _completedSteps[5] = true;
@@ -2464,18 +2583,28 @@ class _WorkflowWizardScreenState extends ConsumerState<WorkflowWizardScreen> {
       });
       
       // Save diagnoses to database if encounter exists
+      // Only save NEW diagnoses that aren't already in the database
       if (_encounter != null && diagnoses.isNotEmpty) {
         try {
           final db = await ref.read(doctorDbProvider.future);
+          
+          // Get existing encounter-diagnosis links to avoid duplicates
+          final existingLinks = await db.getDiagnosesForEncounter(_encounter!.id);
+          final linkedDiagnosisIds = existingLinks.map((ed) => ed.diagnosisId).toSet();
+          
+          // Get all patient diagnoses to check if diagnosis exists
+          final existingDiagnoses = await db.getDiagnosesForPatient(_patient!.id);
+          final existingDiagnosisMap = <String, Diagnose>{};
+          for (final d in existingDiagnoses) {
+            existingDiagnosisMap[d.description.toLowerCase()] = d;
+          }
+          
           for (final diagnosisName in diagnoses) {
-            // First, check if diagnosis already exists for this patient
-            final existingDiagnoses = await db.getDiagnosesForPatient(_patient!.id);
-            var diagnosis = existingDiagnoses.where(
-              (d) => d.description.toLowerCase() == diagnosisName.toLowerCase()
-            ).firstOrNull;
+            // Find or create diagnosis
+            dynamic diagnosis = existingDiagnosisMap[diagnosisName.toLowerCase()];
             
-            // If not exists, create new diagnosis
             if (diagnosis == null) {
+              // Create new diagnosis if it doesn't exist
               final diagnosisId = await db.insertDiagnosis(DiagnosesCompanion.insert(
                 patientId: _patient!.id,
                 description: diagnosisName,
@@ -2486,21 +2615,30 @@ class _WorkflowWizardScreenState extends ConsumerState<WorkflowWizardScreen> {
               diagnosis = await (db.select(db.diagnoses)
                 ..where((d) => d.id.equals(diagnosisId)))
                 .getSingleOrNull();
+              
+              if (diagnosis != null) {
+                existingDiagnosisMap[diagnosisName.toLowerCase()] = diagnosis;
+                log.d('WORKFLOW', 'Created new diagnosis: $diagnosisName');
+              }
             }
             
-            // Link diagnosis to encounter
-            if (diagnosis != null) {
+            // Link diagnosis to encounter only if not already linked
+            if (diagnosis != null && diagnosis.id != null && !linkedDiagnosisIds.contains(diagnosis.id)) {
               await db.into(db.encounterDiagnoses).insert(
                 EncounterDiagnosesCompanion.insert(
                   encounterId: _encounter!.id,
                   diagnosisId: diagnosis.id,
-                  isNewDiagnosis: const Value(true),
+                  isNewDiagnosis: Value(!existingDiagnosisMap.containsKey(diagnosisName.toLowerCase())),
                   encounterStatus: const Value('addressed'),
                 ),
               );
+              linkedDiagnosisIds.add(diagnosis.id); // Track as linked
+              log.d('WORKFLOW', 'Linked diagnosis ${diagnosis.id} to encounter ${_encounter!.id}');
+            } else if (diagnosis != null && diagnosis.id != null) {
+              log.d('WORKFLOW', 'Diagnosis ${diagnosis.id} already linked to encounter ${_encounter!.id}, skipping');
             }
           }
-          log.i('WORKFLOW', 'Diagnoses saved to database');
+          log.i('WORKFLOW', 'Diagnoses processed (${diagnoses.length} total, ${linkedDiagnosisIds.length - existingLinks.length} new links created)');
         } catch (e) {
           log.e('WORKFLOW', 'Failed to save diagnoses', error: e);
         }
@@ -2550,9 +2688,32 @@ class _WorkflowWizardScreenState extends ConsumerState<WorkflowWizardScreen> {
       });
       
       // Save treatment plan to database if patient exists
-      if (_patient != null) {
+      // Only save if not already saved (check if treatment plan already exists)
+      if (_patient != null && _treatmentPlan == null) {
         try {
           final db = await ref.read(doctorDbProvider.future);
+          
+          // Check if a similar treatment outcome already exists for this patient
+          final existingOutcomes = await db.getTreatmentOutcomesForPatient(_patient!.id);
+          try {
+            final similarOutcome = existingOutcomes.firstWhere(
+              (to) => to.treatmentDescription == description && to.diagnosis == diagnosis,
+            );
+            
+            // Use existing treatment outcome
+            log.d('WORKFLOW', 'Treatment plan already exists, reusing existing outcome');
+            if (mounted) {
+              setState(() {
+                _treatmentPlan = similarOutcome;
+                _completedSteps[5] = true;
+              });
+            }
+            return; // Exit early, don't create duplicate
+          } catch (_) {
+            // No similar outcome found, continue to create new one
+          }
+          
+          // Create new treatment outcome
           await db.insertTreatmentOutcome(
             TreatmentOutcomesCompanion.insert(
               patientId: _patient!.id,
@@ -2587,6 +2748,11 @@ class _WorkflowWizardScreenState extends ConsumerState<WorkflowWizardScreen> {
             );
           }
         }
+      } else if (_patient != null && _treatmentPlan != null) {
+        // Treatment plan already exists, just mark as completed
+        setState(() {
+          _completedSteps[5] = true;
+        });
       } else {
         // Just mark as completed without saving to DB
         setState(() {
@@ -2826,7 +2992,7 @@ class _PatientSelectionSheetState extends State<_PatientSelectionSheet> {
           ),
           // Header
           Padding(
-            padding: const EdgeInsets.all(16),
+            padding: EdgeInsets.all(context.responsivePadding),
             child: Column(
               children: [
                 Text(
@@ -2846,7 +3012,7 @@ class _PatientSelectionSheetState extends State<_PatientSelectionSheet> {
                     border: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(12),
                     ),
-                    contentPadding: const EdgeInsets.symmetric(horizontal: 16),
+                    contentPadding: EdgeInsets.symmetric(horizontal: context.responsivePadding),
                   ),
                 ),
               ],
@@ -3127,7 +3293,7 @@ class _DiagnosisEntryModalState extends State<_DiagnosisEntryModal> {
           
           // Header
           Padding(
-            padding: const EdgeInsets.all(16),
+            padding: EdgeInsets.all(context.responsivePadding),
             child: Row(
               children: [
                 Icon(
@@ -3175,7 +3341,7 @@ class _DiagnosisEntryModalState extends State<_DiagnosisEntryModal> {
           
           // Input field
           Padding(
-            padding: const EdgeInsets.all(16),
+            padding: EdgeInsets.all(context.responsivePadding),
             child: Row(
               children: [
                 Expanded(
@@ -3209,7 +3375,7 @@ class _DiagnosisEntryModalState extends State<_DiagnosisEntryModal> {
           // Current diagnoses
           if (_diagnoses.isNotEmpty)
             Container(
-              padding: const EdgeInsets.symmetric(horizontal: 16),
+              padding: EdgeInsets.symmetric(horizontal: context.responsivePadding),
               width: double.infinity,
               child: Wrap(
                 spacing: 8,
@@ -3229,7 +3395,7 @@ class _DiagnosisEntryModalState extends State<_DiagnosisEntryModal> {
           
           // Common diagnoses
           Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 16),
+            padding: EdgeInsets.symmetric(horizontal: context.responsivePadding),
             child: Row(
               children: [
                 Text(
@@ -3247,7 +3413,7 @@ class _DiagnosisEntryModalState extends State<_DiagnosisEntryModal> {
           
           Expanded(
             child: ListView.builder(
-              padding: const EdgeInsets.symmetric(horizontal: 16),
+              padding: EdgeInsets.symmetric(horizontal: context.responsivePadding),
               itemCount: _commonDiagnoses.length,
               itemBuilder: (context, index) {
                 final diagnosis = _commonDiagnoses[index];
@@ -3665,7 +3831,7 @@ class _TreatmentPlanModalState extends State<_TreatmentPlanModal> {
             
             // Header
             Padding(
-              padding: const EdgeInsets.all(16),
+              padding: EdgeInsets.all(context.responsivePadding),
               child: Row(
                 children: [
                   Icon(
@@ -3695,7 +3861,7 @@ class _TreatmentPlanModalState extends State<_TreatmentPlanModal> {
             
             Expanded(
               child: SingleChildScrollView(
-                padding: const EdgeInsets.all(16),
+                padding: EdgeInsets.all(context.responsivePadding),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
@@ -3880,7 +4046,7 @@ class _TreatmentPlanModalState extends State<_TreatmentPlanModal> {
             
             // Save button
             Padding(
-              padding: const EdgeInsets.all(16),
+              padding: EdgeInsets.all(context.responsivePadding),
               child: SizedBox(
                 width: double.infinity,
                 child: ElevatedButton(
@@ -4062,7 +4228,7 @@ class _FollowUpSchedulerModalState extends ConsumerState<_FollowUpSchedulerModal
           
           // Header
           Padding(
-            padding: const EdgeInsets.all(16),
+            padding: EdgeInsets.all(context.responsivePadding),
             child: Row(
               children: [
                 Icon(
@@ -4092,7 +4258,7 @@ class _FollowUpSchedulerModalState extends ConsumerState<_FollowUpSchedulerModal
           
           Expanded(
             child: SingleChildScrollView(
-              padding: const EdgeInsets.all(16),
+              padding: EdgeInsets.all(context.responsivePadding),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
@@ -4128,7 +4294,7 @@ class _FollowUpSchedulerModalState extends ConsumerState<_FollowUpSchedulerModal
                     onTap: _pickDate,
                     borderRadius: BorderRadius.circular(12),
                     child: Container(
-                      padding: const EdgeInsets.all(16),
+                      padding: EdgeInsets.all(context.responsivePadding),
                       decoration: BoxDecoration(
                         border: Border.all(color: Colors.grey.shade400),
                         borderRadius: BorderRadius.circular(12),
@@ -4198,7 +4364,7 @@ class _FollowUpSchedulerModalState extends ConsumerState<_FollowUpSchedulerModal
           
           // Save button
           Padding(
-            padding: const EdgeInsets.all(16),
+            padding: EdgeInsets.all(context.responsivePadding),
             child: SizedBox(
               width: double.infinity,
               child: ElevatedButton(
@@ -4296,7 +4462,7 @@ class _ChiefComplaintModalState extends State<_ChiefComplaintModal> {
           
           // Header
           Padding(
-            padding: const EdgeInsets.all(20),
+            padding: EdgeInsets.all(context.responsivePadding),
             child: Row(
               children: [
                 Container(
@@ -4341,7 +4507,7 @@ class _ChiefComplaintModalState extends State<_ChiefComplaintModal> {
           // Content
           Expanded(
             child: SingleChildScrollView(
-              padding: const EdgeInsets.symmetric(horizontal: 20),
+              padding: EdgeInsets.symmetric(horizontal: context.responsivePadding),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
@@ -4399,7 +4565,7 @@ class _ChiefComplaintModalState extends State<_ChiefComplaintModal> {
           
           // Save Button
           Padding(
-            padding: const EdgeInsets.all(20),
+            padding: EdgeInsets.all(context.responsivePadding),
             child: SizedBox(
               width: double.infinity,
               child: ElevatedButton(
@@ -4512,7 +4678,7 @@ class _LabOrderModalState extends State<_LabOrderModal> {
           
           // Header
           Padding(
-            padding: const EdgeInsets.all(20),
+            padding: EdgeInsets.all(context.responsivePadding),
             child: Row(
               children: [
                 Container(
@@ -4584,7 +4750,7 @@ class _LabOrderModalState extends State<_LabOrderModal> {
           // Common Tests
           Expanded(
             child: ListView(
-              padding: const EdgeInsets.symmetric(horizontal: 20),
+              padding: EdgeInsets.symmetric(horizontal: context.responsivePadding),
               children: [
                 Text(
                   'Common Tests',
@@ -4629,7 +4795,7 @@ class _LabOrderModalState extends State<_LabOrderModal> {
           
           // Save Button
           Padding(
-            padding: const EdgeInsets.all(20),
+            padding: EdgeInsets.all(context.responsivePadding),
             child: SizedBox(
               width: double.infinity,
               child: ElevatedButton(
@@ -4732,7 +4898,7 @@ class _ClinicalNotesModalState extends State<_ClinicalNotesModal> {
           
           // Header
           Padding(
-            padding: const EdgeInsets.all(20),
+            padding: EdgeInsets.all(context.responsivePadding),
             child: Row(
               children: [
                 Container(
@@ -4763,7 +4929,7 @@ class _ClinicalNotesModalState extends State<_ClinicalNotesModal> {
           // Content
           Expanded(
             child: SingleChildScrollView(
-              padding: const EdgeInsets.symmetric(horizontal: 20),
+              padding: EdgeInsets.symmetric(horizontal: context.responsivePadding),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
@@ -4803,7 +4969,7 @@ class _ClinicalNotesModalState extends State<_ClinicalNotesModal> {
           
           // Save Button
           Padding(
-            padding: const EdgeInsets.all(20),
+            padding: EdgeInsets.all(context.responsivePadding),
             child: SizedBox(
               width: double.infinity,
               child: ElevatedButton(
@@ -4966,7 +5132,7 @@ class _WalkInReasonPickerState extends State<_WalkInReasonPicker> {
           
           // Header
           Padding(
-            padding: const EdgeInsets.all(20),
+            padding: EdgeInsets.all(context.responsivePadding),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
@@ -5023,17 +5189,27 @@ class _WalkInReasonPickerState extends State<_WalkInReasonPicker> {
           ),
           
           // Common reasons
-          Container(
-            height: 200,
-            padding: const EdgeInsets.symmetric(horizontal: 16),
-            child: GridView.builder(
-              gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                crossAxisCount: 2,
-                mainAxisSpacing: 8,
-                crossAxisSpacing: 8,
-                childAspectRatio: 3.2,
-              ),
-              itemCount: _commonReasons.length,
+          LayoutBuilder(
+            builder: (context, constraints) {
+              return Container(
+                height: 200,
+                padding: EdgeInsets.symmetric(horizontal: context.responsivePadding),
+                child: GridView.builder(
+                  gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                    crossAxisCount: context.responsive(
+                      compact: 2,
+                      medium: 3,
+                      expanded: 4,
+                    ),
+                    mainAxisSpacing: context.responsiveItemSpacing,
+                    crossAxisSpacing: context.responsiveItemSpacing,
+                    childAspectRatio: context.responsive(
+                      compact: 3.0,
+                      medium: 3.2,
+                      expanded: 3.5,
+                    ),
+                  ),
+                  itemCount: _commonReasons.length,
               itemBuilder: (context, index) {
                 final reason = _commonReasons[index];
                 final isSelected = _selectedReason == reason;
@@ -5076,12 +5252,14 @@ class _WalkInReasonPickerState extends State<_WalkInReasonPicker> {
                   ),
                 );
               },
-            ),
+                ),
+              );
+            },
           ),
           
           // Custom reason input
           Padding(
-            padding: const EdgeInsets.all(16),
+            padding: EdgeInsets.all(context.responsivePadding),
             child: TextField(
               controller: _reasonController,
               decoration: InputDecoration(

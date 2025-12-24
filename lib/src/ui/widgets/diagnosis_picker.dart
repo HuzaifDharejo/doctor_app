@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../core/extensions/context_extensions.dart';
 import '../../db/doctor_db.dart';
 import '../../providers/encounter_provider.dart';
 import '../../theme/app_theme.dart';
@@ -216,7 +217,7 @@ class _DiagnosisPickerState extends ConsumerState<DiagnosisPicker>
 
   Widget _buildHeader() {
     return Container(
-      padding: const EdgeInsets.all(16),
+      padding: EdgeInsets.all(context.responsivePadding),
       decoration: BoxDecoration(
         color: AppColors.primary.withValues(alpha: 0.05),
         borderRadius: const BorderRadius.vertical(top: Radius.circular(16)),
@@ -268,7 +269,7 @@ class _DiagnosisPickerState extends ConsumerState<DiagnosisPicker>
 
   Widget _buildSearchBar() {
     return Padding(
-      padding: const EdgeInsets.all(16),
+      padding: EdgeInsets.all(context.responsivePadding),
       child: TextField(
         controller: _searchController,
         onChanged: _onSearch,
@@ -322,7 +323,7 @@ class _DiagnosisPickerState extends ConsumerState<DiagnosisPicker>
     }
 
     return ListView.builder(
-      padding: const EdgeInsets.symmetric(horizontal: 16),
+      padding: EdgeInsets.symmetric(horizontal: context.responsivePadding),
       itemCount: _searchResults.length,
       itemBuilder: (context, index) {
         final code = _searchResults[index];
@@ -415,7 +416,7 @@ class _DiagnosisPickerState extends ConsumerState<DiagnosisPicker>
     final chronic = diagnoses.where((d) => d.diagnosisStatus == 'chronic').toList();
 
     return ListView(
-      padding: const EdgeInsets.all(16),
+      padding: EdgeInsets.all(context.responsivePadding),
       children: [
         if (active.isNotEmpty) ...[
           _buildSectionHeader('Active', AppColors.primary, active.length),

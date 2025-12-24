@@ -103,8 +103,11 @@ class _SuggestionTextFieldState extends State<SuggestionTextField> {
           controller: widget.controller,
           focusNode: _focusNode,
           maxLines: widget.maxLines,
+          minLines: widget.maxLines > 1 ? widget.maxLines : null,
           keyboardType: widget.keyboardType,
+          textInputAction: widget.maxLines > 1 ? TextInputAction.newline : TextInputAction.done,
           validator: widget.validator,
+          textAlignVertical: widget.maxLines > 1 ? TextAlignVertical.top : null,
           decoration: InputDecoration(
             labelText: widget.label,
             hintText: widget.hint,
@@ -121,15 +124,21 @@ class _SuggestionTextFieldState extends State<SuggestionTextField> {
                 if (widget.enableVoiceDictation)
                   VoiceDictationButton(
                     onTextReceived: (text) {
-                      final current = widget.controller.text;
-                      if (current.isNotEmpty && !current.endsWith(' ')) {
-                        widget.controller.text = '$current $text';
-                      } else {
-                        widget.controller.text = '$current$text';
+                      if (!mounted) return;
+                      try {
+                        final current = widget.controller.text;
+                        if (current.isNotEmpty && !current.endsWith(' ')) {
+                          widget.controller.text = '$current $text';
+                        } else {
+                          widget.controller.text = '$current$text';
+                        }
+                        widget.controller.selection = TextSelection.collapsed(
+                          offset: widget.controller.text.length,
+                        );
+                      } catch (e) {
+                        // Controller may be disposed
+                        debugPrint('Voice dictation: Controller disposed or invalid: $e');
                       }
-                      widget.controller.selection = TextSelection.collapsed(
-                        offset: widget.controller.text.length,
-                      );
                     },
                     iconSize: 20,
                   ),

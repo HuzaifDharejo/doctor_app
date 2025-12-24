@@ -22,12 +22,9 @@ import '../services/offline_sync_service.dart';
 import '../services/problem_list_service.dart';
 import '../services/recurring_appointment_service.dart';
 import '../services/referral_service.dart';
-import '../services/seed_data_service.dart';
 import '../services/treatment_efficacy_service.dart';
 import '../services/waitlist_service.dart';
 
-/// Flag to track if database has been seeded
-bool _databaseSeeded = false;
 
 final doctorDbProvider = FutureProvider<DoctorDatabase>((ref) async {
   log
@@ -37,19 +34,7 @@ final doctorDbProvider = FutureProvider<DoctorDatabase>((ref) async {
   // Use singleton instance to prevent multiple database connections
   final db = DoctorDatabase.instance;
   
-  // Only seed once per app session
-  if (!_databaseSeeded) {
-    try {
-      log.d('DB', 'Starting database seeding...');
-      await seedSampleData(db);
-      _databaseSeeded = true;
-      log.i('DB', 'Database seeding completed');
-    } catch (e, st) {
-      log.w('DB', 'Database seeding failed', error: e, stackTrace: st);
-    }
-  } else {
-    log.d('DB', 'Database already seeded, skipping...');
-  }
+  // Database initialized - no auto-seeding
   
   log
     ..stopMetric('database_init')

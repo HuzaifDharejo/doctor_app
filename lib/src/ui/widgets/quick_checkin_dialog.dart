@@ -6,6 +6,7 @@ import 'package:intl/intl.dart';
 import '../../db/doctor_db.dart';
 import '../../services/encounter_service.dart';
 import '../../theme/app_theme.dart';
+import '../../core/extensions/context_extensions.dart';
 
 /// Quick Check-In Dialog
 /// 
@@ -110,7 +111,7 @@ class _QuickCheckInDialogState extends State<QuickCheckInDialog> {
           children: [
             // Header
             Container(
-              padding: const EdgeInsets.all(20),
+              padding: EdgeInsets.all(context.responsivePadding),
               decoration: BoxDecoration(
                 gradient: LinearGradient(
                   colors: [
@@ -173,13 +174,13 @@ class _QuickCheckInDialogState extends State<QuickCheckInDialog> {
 
             // Patient Info
             Padding(
-              padding: const EdgeInsets.all(20),
+              padding: EdgeInsets.all(context.responsivePadding),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   // Patient Card
                   Container(
-                    padding: const EdgeInsets.all(16),
+                    padding: EdgeInsets.all(context.responsivePadding),
                     decoration: BoxDecoration(
                       color: isDark 
                           ? Colors.white.withValues(alpha: 0.05) 

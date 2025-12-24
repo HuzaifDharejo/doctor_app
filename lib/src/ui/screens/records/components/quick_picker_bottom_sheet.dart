@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../../../../theme/app_theme.dart';
 import '../../../../services/voice_dictation_service.dart';
+import '../../../../core/extensions/context_extensions.dart';
 
 /// A data class for picker options with icons
 class PickerOption {
@@ -462,7 +463,7 @@ class _QuickPickerSheetState extends State<_QuickPickerSheet> {
           
           // Header
           Padding(
-            padding: const EdgeInsets.all(20),
+            padding: EdgeInsets.all(context.responsivePadding),
             child: Row(
               children: [
                 Container(
@@ -531,7 +532,7 @@ class _QuickPickerSheetState extends State<_QuickPickerSheet> {
           
           // Search bar with voice
           Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 20),
+            padding: EdgeInsets.symmetric(horizontal: context.responsivePadding),
             child: Row(
               children: [
                 Expanded(

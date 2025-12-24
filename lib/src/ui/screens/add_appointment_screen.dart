@@ -14,6 +14,8 @@ import '../../core/widgets/app_card.dart';
 import '../../core/theme/design_tokens.dart';
 import '../../theme/app_theme.dart';
 import '../../core/widgets/keyboard_aware_scaffold.dart';
+import '../../core/extensions/context_extensions.dart';
+import '../../core/widgets/toast.dart';
 
 class AddAppointmentScreen extends ConsumerStatefulWidget {
 
@@ -342,7 +344,7 @@ class _AddAppointmentScreenState extends ConsumerState<AddAppointmentScreen> {
       child: Column(
         children: [
           Padding(
-            padding: const EdgeInsets.all(20),
+            padding: EdgeInsets.all(context.responsivePadding),
             child: Row(
               children: [
                 Expanded(
@@ -953,7 +955,7 @@ class _AddAppointmentScreenState extends ConsumerState<AddAppointmentScreen> {
               hintText: 'Add any additional notes...',
               hintStyle: TextStyle(color: isDark ? Colors.grey[600] : Colors.grey[400]),
               border: InputBorder.none,
-              contentPadding: const EdgeInsets.all(16),
+              contentPadding: EdgeInsets.all(context.responsivePadding),
             ),
           ),
         ),
@@ -1403,33 +1405,13 @@ class _AddAppointmentScreenState extends ConsumerState<AddAppointmentScreen> {
         final syncMessage = calendarState.isConnected 
             ? 'Appointment scheduled & synced to calendar!'
             : 'Appointment scheduled successfully!';
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Row(
-              children: [
-                const Icon(Icons.check_circle, color: Colors.white),
-                const SizedBox(width: 12),
-                Expanded(child: Text(syncMessage)),
-              ],
-            ),
-            backgroundColor: AppColors.success,
-            behavior: SnackBarBehavior.floating,
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-          ),
-        );
+        context.showSuccessToast(syncMessage);
         Navigator.pop(context, createdAppointment);
       }
     } catch (e, st) {
       log.e('APPOINTMENT', 'Failed to save appointment', error: e, stackTrace: st);
       if (context.mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Error: $e'),
-            backgroundColor: AppColors.error,
-            behavior: SnackBarBehavior.floating,
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-          ),
-        );
+        context.showErrorToast('Error: $e');
       }
     } finally {
       if (mounted) {

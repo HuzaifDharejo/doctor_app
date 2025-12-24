@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 
+import '../../core/widgets/skeleton_loading.dart';
 import '../../db/doctor_db.dart';
 import '../../extensions/drift_extensions.dart';
 import '../../models/lab_order.dart';
@@ -12,6 +13,7 @@ import '../../services/lab_test_templates.dart';
 import '../../theme/app_theme.dart';
 import 'medical_record_detail_screen.dart';
 import 'records/add_lab_result_screen.dart';
+import '../../core/extensions/context_extensions.dart';
 
 /// Screen for managing lab orders and results
 class LabOrdersScreen extends ConsumerStatefulWidget {
@@ -153,7 +155,7 @@ class _LabOrdersScreenState extends ConsumerState<LabOrdersScreen>
               child: Row(
                 children: [
                   Container(
-                    padding: const EdgeInsets.all(16),
+                    padding: EdgeInsets.all(context.responsivePadding),
                     decoration: BoxDecoration(
                       gradient: const LinearGradient(
                         colors: [Color(0xFF8B5CF6), Color(0xFF7C3AED)],
@@ -357,7 +359,7 @@ class _LabOrdersScreenState extends ConsumerState<LabOrdersScreen>
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
                 Container(
-                  padding: const EdgeInsets.all(16),
+                  padding: EdgeInsets.all(context.responsivePadding),
                   decoration: BoxDecoration(
                     color: _themeColor.withValues(alpha: 0.1),
                     borderRadius: BorderRadius.circular(16),
@@ -439,7 +441,7 @@ class _LabOrdersScreenState extends ConsumerState<LabOrdersScreen>
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
             Container(
-              padding: const EdgeInsets.all(16),
+              padding: EdgeInsets.all(context.responsivePadding),
               decoration: BoxDecoration(
                 color: _themeColor.withValues(alpha: 0.1),
                 borderRadius: BorderRadius.circular(16),
@@ -465,7 +467,7 @@ class _LabOrdersScreenState extends ConsumerState<LabOrdersScreen>
         future: _fetchLabResults(db),
         builder: (context, snapshot) {
           if (snapshot.connectionState == ConnectionState.waiting) {
-            return const Center(child: CircularProgressIndicator(color: _themeColor));
+            return const MedicalRecordListSkeleton(itemCount: 5);
           }
 
           final results = snapshot.data ?? [];
@@ -517,7 +519,7 @@ class _LabOrdersScreenState extends ConsumerState<LabOrdersScreen>
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
           Container(
-            padding: const EdgeInsets.all(24),
+            padding: EdgeInsets.all(context.responsivePadding),
             decoration: BoxDecoration(
               color: _themeColor.withValues(alpha: 0.1),
               borderRadius: BorderRadius.circular(20),
@@ -639,7 +641,7 @@ class _LabOrdersScreenState extends ConsumerState<LabOrdersScreen>
           ],
         ),
         child: Padding(
-          padding: const EdgeInsets.all(16),
+          padding: EdgeInsets.all(context.responsivePadding),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
@@ -785,7 +787,7 @@ class _LabOrdersScreenState extends ConsumerState<LabOrdersScreen>
               onTap: () => _showOrderDetails(order),
               borderRadius: BorderRadius.circular(20),
               child: Padding(
-                padding: const EdgeInsets.all(16),
+                padding: EdgeInsets.all(context.responsivePadding),
                 child: _buildLabOrderCardContent(
                   order: order,
                   model: model,
@@ -1116,7 +1118,7 @@ class _LabOrdersScreenState extends ConsumerState<LabOrdersScreen>
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
             Container(
-              padding: const EdgeInsets.all(24),
+              padding: EdgeInsets.all(context.responsivePadding),
               decoration: BoxDecoration(
                 color: _themeColor.withValues(alpha: 0.1),
                 borderRadius: BorderRadius.circular(24),
@@ -1198,7 +1200,7 @@ class _LabOrdersScreenState extends ConsumerState<LabOrdersScreen>
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
             Container(
-              padding: const EdgeInsets.all(24),
+              padding: EdgeInsets.all(context.responsivePadding),
               decoration: BoxDecoration(
                 color: Colors.orange.withValues(alpha: 0.1),
                 borderRadius: BorderRadius.circular(24),
@@ -1263,7 +1265,7 @@ class _LabOrdersScreenState extends ConsumerState<LabOrdersScreen>
               ),
               child: ListView(
                 controller: scrollController,
-                padding: const EdgeInsets.all(20),
+                padding: EdgeInsets.all(context.responsivePadding),
                 children: [
                   // Handle
                   Center(
@@ -1329,7 +1331,7 @@ class _LabOrdersScreenState extends ConsumerState<LabOrdersScreen>
                   
                   // Details Grid
                   Container(
-                    padding: const EdgeInsets.all(16),
+                    padding: EdgeInsets.all(context.responsivePadding),
                     decoration: BoxDecoration(
                       color: isDark 
                           ? Colors.white.withValues(alpha: 0.05)
@@ -1394,7 +1396,7 @@ class _LabOrdersScreenState extends ConsumerState<LabOrdersScreen>
                     ),
                     const SizedBox(height: 12),
                     Container(
-                      padding: const EdgeInsets.all(16),
+                      padding: EdgeInsets.all(context.responsivePadding),
                       decoration: BoxDecoration(
                         color: ((order.isAbnormal ?? false) ? AppColors.error : AppColors.success).withValues(alpha: 0.08),
                         borderRadius: BorderRadius.circular(14),
@@ -1435,7 +1437,7 @@ class _LabOrdersScreenState extends ConsumerState<LabOrdersScreen>
                     ),
                     const SizedBox(height: 12),
                     Container(
-                      padding: const EdgeInsets.all(16),
+                      padding: EdgeInsets.all(context.responsivePadding),
                       decoration: BoxDecoration(
                         color: isDark 
                             ? Colors.white.withValues(alpha: 0.05)
@@ -1665,7 +1667,7 @@ class _LabOrdersScreenState extends ConsumerState<LabOrdersScreen>
                   color: isDark ? AppColors.darkSurface : Colors.white,
                   borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
                 ),
-                padding: const EdgeInsets.all(20),
+                padding: EdgeInsets.all(context.responsivePadding),
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -1759,7 +1761,7 @@ class _LabOrdersScreenState extends ConsumerState<LabOrdersScreen>
                             color: isDark ? AppColors.darkTextSecondary : AppColors.textSecondary,
                           ),
                           border: InputBorder.none,
-                          contentPadding: const EdgeInsets.all(16),
+                          contentPadding: EdgeInsets.all(context.responsivePadding),
                           alignLabelWithHint: true,
                         ),
                       ),
@@ -1934,7 +1936,7 @@ class _LabOrdersScreenState extends ConsumerState<LabOrdersScreen>
                   color: isDark ? AppColors.darkSurface : Colors.white,
                   borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
                 ),
-                padding: const EdgeInsets.all(20),
+                padding: EdgeInsets.all(context.responsivePadding),
                 constraints: BoxConstraints(
                   maxHeight: MediaQuery.of(context).size.height * 0.85,
                 ),
@@ -2005,7 +2007,7 @@ class _LabOrdersScreenState extends ConsumerState<LabOrdersScreen>
                       
                       // Quick Fill Templates Section
                       Container(
-                        padding: const EdgeInsets.all(16),
+                        padding: EdgeInsets.all(context.responsivePadding),
                         decoration: BoxDecoration(
                           gradient: LinearGradient(
                             colors: [
@@ -2512,7 +2514,7 @@ class _LabOrdersScreenState extends ConsumerState<LabOrdersScreen>
         ),
         backgroundColor: isDark ? AppColors.darkSurface : Colors.white,
         child: Padding(
-          padding: const EdgeInsets.all(20),
+          padding: EdgeInsets.all(context.responsivePadding),
           child: Column(
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.start,

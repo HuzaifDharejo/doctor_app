@@ -5,6 +5,7 @@ import '../../../db/doctor_db.dart';
 import '../../../providers/db_provider.dart';
 import '../../../services/dynamic_suggestions_service.dart';
 import '../../../theme/app_theme.dart';
+import '../../../core/extensions/context_extensions.dart';
 
 /// A screen to manage user-added suggestions
 /// Allows viewing, searching, and deleting saved suggestions
@@ -212,7 +213,7 @@ class _SuggestionsList extends StatelessWidget {
         }
 
         return ListView.builder(
-          padding: const EdgeInsets.all(16),
+          padding: EdgeInsets.all(context.responsivePadding),
           itemCount: filtered.length,
           itemBuilder: (context, index) {
             final suggestion = filtered[index];

@@ -1,7 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:flutter_localizations/flutter_localizations.dart';
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_localizations/flutter_localizations.dart';
 
 import 'core/core.dart';
 import 'core/theme/design_tokens.dart';
@@ -11,9 +12,12 @@ import 'providers/audit_provider.dart';
 import 'providers/db_provider.dart';
 import 'services/localization_service.dart';
 import 'services/logger_service.dart';
+import 'services/session_manager.dart';
 import 'theme/app_theme.dart';
+import 'core/widgets/user_activity_tracker.dart';
+import 'core/widgets/keyboard_shortcuts_handler.dart';
 import 'ui/screens/appointments_screen.dart';
-import 'ui/screens/dashboard_screen_modern.dart';
+import 'ui/screens/dashboard_screen.dart';
 import 'ui/screens/lock_screen.dart';
 import 'ui/screens/onboarding_screen.dart';
 import 'ui/screens/patients_screen.dart';
@@ -21,6 +25,16 @@ import 'ui/screens/workflow_wizard_screen.dart';
 
 class DoctorApp extends ConsumerWidget {
   const DoctorApp({super.key});
+
+  /// Get localization delegates - only available on non-web platforms
+  static List<LocalizationsDelegate<dynamic>>? _getLocalizationDelegates() {
+    if (kIsWeb) return null;
+    return const [
+      GlobalMaterialLocalizations.delegate,
+      GlobalWidgetsLocalizations.delegate,
+      GlobalCupertinoLocalizations.delegate,
+    ];
+  }
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -54,11 +68,7 @@ class DoctorApp extends ConsumerWidget {
         themeMode: isDarkMode ? ThemeMode.dark : ThemeMode.light,
         locale: localization.currentLocale,
         supportedLocales: LocalizationService.supportedLocales,
-        localizationsDelegates: const [
-          GlobalMaterialLocalizations.delegate,
-          GlobalWidgetsLocalizations.delegate,
-          GlobalCupertinoLocalizations.delegate,
-        ],
+        localizationsDelegates: kIsWeb ? null : _getLocalizationDelegates(),
         home: const OnboardingScreen(),
       );
     }
@@ -72,11 +82,7 @@ class DoctorApp extends ConsumerWidget {
       themeMode: isDarkMode ? ThemeMode.dark : ThemeMode.light,
       locale: localization.currentLocale,
       supportedLocales: LocalizationService.supportedLocales,
-      localizationsDelegates: const [
-        GlobalMaterialLocalizations.delegate,
-        GlobalWidgetsLocalizations.delegate,
-        GlobalCupertinoLocalizations.delegate,
-      ],
+      localizationsDelegates: kIsWeb ? null : _getLocalizationDelegates(),
       onGenerateRoute: AppRouter.generateRoute,
       navigatorObservers: [_LoggingNavigatorObserver()],
       home: const _AppLockWrapper(),
@@ -99,11 +105,29 @@ class _AppLockWrapperState extends ConsumerState<_AppLockWrapper>
   void initState() {
     super.initState();
     WidgetsBinding.instance.addObserver(this);
+    
+    // Initialize session manager after first frame
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      sessionManager.initialize(
+        context: context,
+        onSessionTimeout: () {
+          log.w('SESSION', 'Session timed out');
+        },
+        onWarning: () {
+          log.w('SESSION', 'Session timeout warning');
+        },
+        onLockApp: () {
+          ref.read(appLockServiceProvider).lock();
+        },
+      );
+    });
   }
 
   @override
   void dispose() {
     WidgetsBinding.instance.removeObserver(this);
+    sessionManager.dispose();
     super.dispose();
   }
 
@@ -111,6 +135,19 @@ class _AppLockWrapperState extends ConsumerState<_AppLockWrapper>
   void didChangeAppLifecycleState(AppLifecycleState state) {
     // Notify app lock service of lifecycle changes
     ref.read(appLockServiceProvider).onAppLifecycleChanged(state);
+    
+    // Handle session manager lifecycle
+    switch (state) {
+      case AppLifecycleState.paused:
+      case AppLifecycleState.inactive:
+        sessionManager.pause();
+        break;
+      case AppLifecycleState.resumed:
+        sessionManager.resume();
+        break;
+      default:
+        break;
+    }
   }
 
   @override
@@ -139,8 +176,12 @@ class _AppLockWrapperState extends ConsumerState<_AppLockWrapper>
       );
     }
     
-    // Show main app
-    return const HomeShell();
+    // Show main app with activity tracking and keyboard shortcuts
+    return const KeyboardShortcutsHandler(
+      child: UserActivityTracker(
+        child: HomeShell(),
+      ),
+    );
   }
 }
 
@@ -277,7 +318,7 @@ class _HomeShellState extends ConsumerState<HomeShell> {
   void initState() {
     super.initState();
     _pages = [
-      DashboardScreenModern(onMenuTap: _openDrawer),
+      DashboardScreen(onMenuTap: _openDrawer),
       const PatientsScreen(),
       const AppointmentsScreen(),
     ];

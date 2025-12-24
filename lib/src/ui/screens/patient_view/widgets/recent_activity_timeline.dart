@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../../../theme/app_theme.dart';
+import '../../../../core/extensions/context_extensions.dart';
 
 /// Activity type for timeline
 enum ActivityType {
@@ -123,11 +124,11 @@ class RecentActivityTimeline extends StatelessWidget {
     final displayActivities = activities.take(maxItems).toList();
 
     if (displayActivities.isEmpty) {
-      return _buildEmptyState(isDark);
+      return _buildEmptyState(context, isDark);
     }
 
     return Container(
-      padding: const EdgeInsets.all(16),
+      padding: EdgeInsets.all(context.responsivePadding),
       decoration: BoxDecoration(
         color: isDark ? AppColors.darkSurface : Colors.white,
         borderRadius: BorderRadius.circular(18),
@@ -216,9 +217,9 @@ class RecentActivityTimeline extends StatelessWidget {
     );
   }
 
-  Widget _buildEmptyState(bool isDark) {
+  Widget _buildEmptyState(BuildContext context, bool isDark) {
     return Container(
-      padding: const EdgeInsets.all(24),
+      padding: EdgeInsets.all(context.responsivePadding),
       decoration: BoxDecoration(
         color: isDark ? AppColors.darkSurface : Colors.white,
         borderRadius: BorderRadius.circular(18),

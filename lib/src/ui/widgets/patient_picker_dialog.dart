@@ -4,6 +4,7 @@ import '../../db/doctor_db.dart';
 import '../../services/encounter_service.dart';
 import '../../theme/app_theme.dart';
 import '../screens/encounter_screen.dart';
+import '../../core/extensions/context_extensions.dart';
 
 /// Shared patient picker dialog used across the app
 /// 
@@ -74,7 +75,7 @@ class _PatientPickerDialogState extends State<PatientPickerDialog> {
       child: Container(
         width: 400,
         height: 500,
-        padding: const EdgeInsets.all(20),
+        padding: EdgeInsets.all(context.responsivePadding),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [

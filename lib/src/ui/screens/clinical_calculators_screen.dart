@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../services/clinical_calculator_service.dart';
 import '../../theme/app_theme.dart';
+import '../../core/extensions/context_extensions.dart';
 
 /// Clinical Calculators Screen
 /// Provides common medical calculations for doctors
@@ -181,7 +182,7 @@ class _BasicCalculatorsTabState extends State<_BasicCalculatorsTab> {
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
     return SingleChildScrollView(
-      padding: const EdgeInsets.all(16),
+      padding: EdgeInsets.all(context.responsivePadding),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -339,7 +340,7 @@ class _RenalCalculatorsTabState extends State<_RenalCalculatorsTab> {
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
     return SingleChildScrollView(
-      padding: const EdgeInsets.all(16),
+      padding: EdgeInsets.all(context.responsivePadding),
       child: Column(
         children: [
           _buildCard(
@@ -487,7 +488,7 @@ class _CardiacCalculatorsTabState extends State<_CardiacCalculatorsTab> {
   @override
   Widget build(BuildContext context) {
     return SingleChildScrollView(
-      padding: const EdgeInsets.all(16),
+      padding: EdgeInsets.all(context.responsivePadding),
       child: Column(
         children: [
           _buildCard(
@@ -606,7 +607,7 @@ class _ClinicalScoresTabState extends State<_ClinicalScoresTab> {
   @override
   Widget build(BuildContext context) {
     return SingleChildScrollView(
-      padding: const EdgeInsets.all(16),
+      padding: EdgeInsets.all(context.responsivePadding),
       child: Column(
         children: [
           _buildCard(
@@ -981,7 +982,7 @@ class _PediatricCalculatorsTabState extends State<_PediatricCalculatorsTab> {
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
     return SingleChildScrollView(
-      padding: const EdgeInsets.all(16),
+      padding: EdgeInsets.all(context.responsivePadding),
       child: Column(
         children: [
           _buildCard(
@@ -1128,7 +1129,7 @@ Widget _buildCard(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Container(
-          padding: const EdgeInsets.all(16),
+          padding: EdgeInsets.all(context.responsivePadding),
           decoration: BoxDecoration(
             gradient: LinearGradient(
               colors: [color, color.withValues(alpha: 0.8)],
@@ -1169,7 +1170,7 @@ Widget _buildCard(
           ),
         ),
         Padding(
-          padding: const EdgeInsets.all(16),
+          padding: EdgeInsets.all(context.responsivePadding),
           child: child,
         ),
       ],

@@ -1,12 +1,15 @@
 import 'dart:convert';
 import 'dart:typed_data';
 
+import 'package:flutter/foundation.dart' show kDebugMode, kIsWeb;
+import 'package:flutter/services.dart';
 import 'package:pdf/pdf.dart';
 import 'package:pdf/widgets.dart' as pw;
 import 'package:printing/printing.dart';
 
 import '../db/doctor_db.dart';
 import 'logger_service.dart';
+import 'pdf_template_config.dart';
 
 class PdfService {
   static pw.Font? _regularFont;
@@ -14,6 +17,48 @@ class PdfService {
   static pw.Font? _italicFont;
   static bool _fontsInitialized = false;
   
+  /// Load predefined background image from assets
+  /// Returns null if asset doesn't exist or can't be loaded (graceful degradation)
+  static Future<pw.MemoryImage?> _loadPredefinedBackground(String imageType) async {
+    // Skip asset loading on web if assets are not properly configured
+    // On web, assets need to be explicitly included in the build
+    if (kIsWeb) {
+      // Silently return null on web - assets may not be available
+      return null;
+    }
+    
+    try {
+      // Map of background types to asset paths (when assets are added)
+      final assetMap = <String, String>{
+        'lungs': 'assets/backgrounds/lungs.png',
+        'heart': 'assets/backgrounds/heart.png',
+        'brain': 'assets/backgrounds/brain.png',
+        'xray': 'assets/backgrounds/xray.png',
+      };
+      
+      final assetPath = assetMap[imageType.toLowerCase()];
+      if (assetPath != null) {
+        try {
+          final byteData = await rootBundle.load(assetPath);
+          final bytes = byteData.buffer.asUint8List();
+          return pw.MemoryImage(bytes);
+        } catch (e) {
+          // Asset doesn't exist or can't be loaded - this is expected if assets haven't been added yet
+          // Only log in debug mode to reduce noise in production
+          if (kDebugMode) {
+            log.d('PDF', 'Background asset not available: $assetPath (this is expected if assets haven\'t been added)');
+          }
+          return null;
+        }
+      }
+      
+      return null;
+    } catch (e) {
+      // Silently return null on any error - graceful degradation
+      return null;
+    }
+  }
+
   /// Parse signature data which may be in JSON format (strokes or image)
   /// or raw base64 image data
   static Uint8List? _parseSignatureData(String? signatureData) {
@@ -81,6 +126,7 @@ class PdfService {
     String? clinicAddress,
     String? signatureData, // Base64 encoded signature
     List<Map<String, dynamic>>? medicationsList, // V5: Pre-loaded from normalized table
+    PdfTemplateConfig? templateConfig, // PDF template configuration
   }) async {
     await _initFonts();
     final pdf = await _generatePrescriptionPdf(
@@ -92,6 +138,7 @@ class PdfService {
       clinicAddress: clinicAddress,
       signatureData: signatureData,
       medicationsList: medicationsList,
+      templateConfig: templateConfig,
     );
     
     await Printing.sharePdf(
@@ -110,6 +157,7 @@ class PdfService {
     String? signatureData, // Base64 encoded signature
     String? doctorName,
     List<Map<String, dynamic>>? lineItemsList, // V5: Pre-loaded from normalized table
+    PdfTemplateConfig? templateConfig, // PDF template configuration
   }) async {
     await _initFonts();
     final pdf = await _generateInvoicePdf(
@@ -121,6 +169,7 @@ class PdfService {
       signatureData: signatureData,
       doctorName: doctorName,
       lineItemsList: lineItemsList,
+      templateConfig: templateConfig,
     );
     
     await Printing.sharePdf(
@@ -137,6 +186,7 @@ class PdfService {
     required String clinicName,
     String? clinicPhone,
     String? clinicAddress,
+    PdfTemplateConfig? templateConfig,
   }) async {
     await _initFonts();
     final pdf = await _generateMedicalRecordPdf(
@@ -186,9 +236,21 @@ class PdfService {
     required String clinicName,
     String? clinicPhone,
     String? clinicAddress,
+    PdfTemplateConfig? templateConfig,
   }) async {
+    final config = templateConfig ?? PdfTemplateConfig();
     final theme = _getTheme();
     final pdf = theme != null ? pw.Document(theme: theme) : pw.Document();
+    
+    // Parse logo if available
+    pw.MemoryImage? logoImage;
+    if (config.logoData != null && config.logoData!.isNotEmpty) {
+      try {
+        logoImage = pw.MemoryImage(base64Decode(config.logoData!));
+      } catch (e) {
+        log.w('PDF', 'Error loading logo: $e');
+      }
+    }
     
     // Parse record data
     Map<String, dynamic> data = {};
@@ -206,8 +268,21 @@ class PdfService {
         margin: const pw.EdgeInsets.all(40),
         build: (context) {
           return [
-            // Header
-            _buildPdfHeader(clinicName, clinicPhone, clinicAddress, doctorName),
+            // Header (if enabled)
+            if (config.showHeader)
+              _buildTemplateHeader(
+                config: config,
+                clinicName: clinicName,
+                clinicPhone: clinicPhone ?? config.clinicPhone1,
+                clinicAddress: clinicAddress ?? config.clinicAddressLine1,
+                doctorName: doctorName,
+                logoImage: logoImage,
+              ),
+            if (config.showHeader) ...[
+              pw.SizedBox(height: 20),
+              pw.Divider(color: PdfColors.blue800),
+              pw.SizedBox(height: 10),
+            ],
             pw.SizedBox(height: 20),
             pw.Divider(color: PdfColors.blue800),
             pw.SizedBox(height: 10),
@@ -1394,9 +1469,37 @@ class PdfService {
     String? clinicAddress,
     String? signatureData,
     List<Map<String, dynamic>>? medicationsList, // V5: Pre-loaded from normalized table
+    PdfTemplateConfig? templateConfig,
   }) async {
+    // Use template config if provided, otherwise create default
+    final config = templateConfig ?? PdfTemplateConfig();
     final theme = _getTheme();
     final pdf = theme != null ? pw.Document(theme: theme) : pw.Document();
+    
+    // Parse logo if available
+    pw.MemoryImage? logoImage;
+    if (config.logoData != null && config.logoData!.isNotEmpty) {
+      try {
+        logoImage = pw.MemoryImage(base64Decode(config.logoData!));
+      } catch (e) {
+        log.w('PDF', 'Error loading logo: $e');
+      }
+    }
+    
+    // Parse background image if available
+    pw.MemoryImage? backgroundImage;
+    if (config.backgroundImageType != 'none') {
+      try {
+        if (config.backgroundImageType == 'custom' && config.customBackgroundData != null && config.customBackgroundData!.isNotEmpty) {
+          backgroundImage = pw.MemoryImage(base64Decode(config.customBackgroundData!));
+        } else if (config.backgroundImageType != 'custom') {
+          // Load predefined background (lungs, heart, brain, xray)
+          backgroundImage = await _loadPredefinedBackground(config.backgroundImageType);
+        }
+      } catch (e) {
+        log.w('PDF', 'Error loading background image: $e');
+      }
+    }
     
     // Parse signature image if available
     pw.MemoryImage? signatureImage;
@@ -1456,14 +1559,24 @@ class PdfService {
         pageFormat: PdfPageFormat.a4,
         margin: const pw.EdgeInsets.all(40),
         build: (pw.Context context) {
-          return pw.Column(
+          // Build content with optional background
+          final content = pw.Column(
             crossAxisAlignment: pw.CrossAxisAlignment.start,
             children: [
-              // Header
-              _buildPdfHeader(clinicName, clinicPhone, clinicAddress, doctorName),
-              pw.SizedBox(height: 20),
-              pw.Divider(thickness: 2, color: PdfColors.blue800),
-              pw.SizedBox(height: 20),
+              // Header (if enabled)
+              if (config.showHeader) ...[
+                _buildTemplateHeader(
+                  config: config,
+                  clinicName: clinicName,
+                  clinicPhone: clinicPhone ?? config.clinicPhone1,
+                  clinicAddress: clinicAddress ?? config.clinicAddressLine1,
+                  doctorName: doctorName,
+                  logoImage: logoImage,
+                ),
+                pw.SizedBox(height: 20),
+                pw.Divider(thickness: 2, color: PdfColors.blue800),
+                pw.SizedBox(height: 20),
+              ],
               
               // Prescription Title
               pw.Center(
@@ -1488,13 +1601,14 @@ class PdfService {
                 child: pw.Row(
                   mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
                   children: [
-                    pw.Column(
-                      crossAxisAlignment: pw.CrossAxisAlignment.start,
-                      children: [
-                        pw.Text('Patient Name:', style: pw.TextStyle(fontWeight: pw.FontWeight.bold)),
-                        pw.Text('${patient.firstName} ${patient.lastName}'),
-                      ],
-                    ),
+                    if (config.showPatientName)
+                      pw.Column(
+                        crossAxisAlignment: pw.CrossAxisAlignment.start,
+                        children: [
+                          pw.Text('Patient Name:', style: pw.TextStyle(fontWeight: pw.FontWeight.bold)),
+                          pw.Text('${patient.firstName} ${patient.lastName}'),
+                        ],
+                      ),
                     pw.Column(
                       crossAxisAlignment: pw.CrossAxisAlignment.start,
                       children: [
@@ -1502,12 +1616,20 @@ class PdfService {
                         pw.Text(_formatDate(prescription.createdAt)),
                       ],
                     ),
-                    if (patient.phone.isNotEmpty)
+                    if (patient.phone.isNotEmpty && config.showAddress)
                       pw.Column(
                         crossAxisAlignment: pw.CrossAxisAlignment.start,
                         children: [
                           pw.Text('Phone:', style: pw.TextStyle(fontWeight: pw.FontWeight.bold)),
                           pw.Text(patient.phone),
+                        ],
+                      ),
+                    if (config.showAge && patient.age != null)
+                      pw.Column(
+                        crossAxisAlignment: pw.CrossAxisAlignment.start,
+                        children: [
+                          pw.Text('Age:', style: pw.TextStyle(fontWeight: pw.FontWeight.bold)),
+                          pw.Text('${patient.age} years'),
                         ],
                       ),
                   ],
@@ -1579,7 +1701,7 @@ class PdfService {
               ],
               
               // Diagnosis
-              if (diagnosis.isNotEmpty) ...[
+              if (diagnosis.isNotEmpty && config.showImpressionDiagnosis) ...[
                 pw.Container(
                   width: double.infinity,
                   padding: const pw.EdgeInsets.all(10),
@@ -1659,7 +1781,7 @@ class PdfService {
               ],
               
               // Lab Tests / Investigations
-              if (labTests.isNotEmpty) ...[
+              if (labTests.isNotEmpty && config.showLabsInvestigations) ...[
                 pw.Container(
                   width: double.infinity,
                   padding: const pw.EdgeInsets.all(10),
@@ -1718,7 +1840,7 @@ class PdfService {
               ],
               
               // Follow-up
-              if (followUp.isNotEmpty && followUp['date'] != null) ...[
+              if (followUp.isNotEmpty && followUp['date'] != null && config.showNextVisitDate) ...[
                 pw.Container(
                   width: double.infinity,
                   padding: const pw.EdgeInsets.all(10),
@@ -1764,30 +1886,50 @@ class PdfService {
               
               pw.Spacer(),
               
-              // Footer
-              pw.Divider(),
-              pw.SizedBox(height: 10),
-              pw.Row(
-                mainAxisAlignment: pw.MainAxisAlignment.end,
-                children: [
-                  pw.Column(
-                    children: [
-                      // Show signature image if available
-                      if (signatureImage != null) ...[
-                        pw.Image(signatureImage, height: 50, width: 120),
-                        pw.SizedBox(height: 4),
-                      ] else ...[
-                        pw.Container(width: 150, child: pw.Divider()),
-                        pw.SizedBox(height: 4),
+              // Footer (if enabled)
+              if (config.showFooter) ...[
+                pw.Divider(),
+                pw.SizedBox(height: 10),
+                pw.Row(
+                  mainAxisAlignment: pw.MainAxisAlignment.end,
+                  children: [
+                    pw.Column(
+                      children: [
+                        // Show signature image if available
+                        if (signatureImage != null) ...[
+                          pw.Image(signatureImage, height: 50, width: 120),
+                          pw.SizedBox(height: 4),
+                        ] else ...[
+                          pw.Container(width: 150, child: pw.Divider()),
+                          pw.SizedBox(height: 4),
+                        ],
+                        pw.Text('Dr. $doctorName', style: pw.TextStyle(fontWeight: pw.FontWeight.bold)),
+                        pw.Text('Signature'),
                       ],
-                      pw.Text('Dr. $doctorName', style: pw.TextStyle(fontWeight: pw.FontWeight.bold)),
-                      pw.Text('Signature'),
-                    ],
-                  ),
-                ],
-              ),
+                    ),
+                  ],
+                ),
+              ],
             ],
           );
+          
+          // Apply background if configured
+          if (backgroundImage != null) {
+            return pw.Stack(
+              children: [
+                // Background (blurred by making it very transparent)
+                pw.Positioned.fill(
+                  child: pw.Opacity(
+                    opacity: 0.15,
+                    child: pw.Image(backgroundImage, fit: pw.BoxFit.cover),
+                  ),
+                ),
+                // Content on top
+                content,
+              ],
+            );
+          }
+          return content;
         },
       ),
     );
@@ -1804,9 +1946,21 @@ class PdfService {
     String? signatureData,
     String? doctorName,
     List<Map<String, dynamic>>? lineItemsList, // V5: Pre-loaded from normalized table
+    PdfTemplateConfig? templateConfig,
   }) async {
+    final config = templateConfig ?? PdfTemplateConfig();
     final theme = _getTheme();
     final pdf = theme != null ? pw.Document(theme: theme) : pw.Document();
+    
+    // Parse logo if available
+    pw.MemoryImage? logoImage;
+    if (config.logoData != null && config.logoData!.isNotEmpty) {
+      try {
+        logoImage = pw.MemoryImage(base64Decode(config.logoData!));
+      } catch (e) {
+        log.w('PDF', 'Error loading logo: $e');
+      }
+    }
     
     // Parse signature image if available
     pw.MemoryImage? signatureImage;
@@ -1835,8 +1989,21 @@ class PdfService {
           return pw.Column(
             crossAxisAlignment: pw.CrossAxisAlignment.start,
             children: [
-              // Header
-              _buildPdfHeader(clinicName, clinicPhone, clinicAddress, null),
+              // Header (if enabled)
+              if (config.showHeader)
+                _buildTemplateHeader(
+                  config: config,
+                  clinicName: clinicName,
+                  clinicPhone: clinicPhone ?? config.clinicPhone1,
+                  clinicAddress: clinicAddress ?? config.clinicAddressLine1,
+                  doctorName: doctorName ?? '',
+                  logoImage: logoImage,
+                ),
+              if (config.showHeader) ...[
+                pw.SizedBox(height: 20),
+                pw.Divider(thickness: 2, color: PdfColors.green800),
+                pw.SizedBox(height: 20),
+              ],
               pw.SizedBox(height: 20),
               pw.Divider(thickness: 2, color: PdfColors.green800),
               pw.SizedBox(height: 20),
@@ -2011,6 +2178,28 @@ class PdfService {
   }
 
   static pw.Widget _buildPdfHeader(String clinicName, String? phone, String? address, String? doctorName) {
+    return _buildTemplateHeader(
+      config: PdfTemplateConfig(),
+      clinicName: clinicName,
+      clinicPhone: phone ?? '',
+      clinicAddress: address ?? '',
+      doctorName: doctorName ?? '',
+      logoImage: null,
+    );
+  }
+  
+  static pw.Widget _buildTemplateHeader({
+    required PdfTemplateConfig config,
+    required String clinicName,
+    required String clinicPhone,
+    required String clinicAddress,
+    required String doctorName,
+    pw.MemoryImage? logoImage,
+  }) {
+    final effectiveClinicName = clinicName.isNotEmpty ? clinicName : (config.clinicAddressLine1.isNotEmpty ? 'Medical Clinic' : '');
+    final effectivePhone = clinicPhone.isNotEmpty ? clinicPhone : (config.clinicPhone1.isNotEmpty ? config.clinicPhone1 : '');
+    final effectiveAddress = clinicAddress.isNotEmpty ? clinicAddress : (config.clinicAddressLine1.isNotEmpty ? config.clinicAddressLine1 : '');
+    
     return pw.Row(
       mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
       crossAxisAlignment: pw.CrossAxisAlignment.start,
@@ -2019,34 +2208,44 @@ class PdfService {
           crossAxisAlignment: pw.CrossAxisAlignment.start,
           children: [
             pw.Text(
-              clinicName,
+              effectiveClinicName,
               style: pw.TextStyle(
                 fontSize: 20,
                 fontWeight: pw.FontWeight.bold,
                 color: PdfColors.blue900,
               ),
             ),
-            if (doctorName != null)
+            if (doctorName.isNotEmpty)
               pw.Text('Dr. $doctorName', style: const pw.TextStyle(fontSize: 12)),
-            if (phone != null && phone.isNotEmpty)
-              pw.Text('Tel: $phone', style: const pw.TextStyle(fontSize: 10)),
-            if (address != null && address.isNotEmpty)
-              pw.Text(address, style: const pw.TextStyle(fontSize: 10)),
+            if (effectivePhone.isNotEmpty)
+              pw.Text('Tel: $effectivePhone', style: const pw.TextStyle(fontSize: 10)),
+            if (config.clinicPhone2.isNotEmpty)
+              pw.Text('Tel: ${config.clinicPhone2}', style: const pw.TextStyle(fontSize: 10)),
+            if (effectiveAddress.isNotEmpty)
+              pw.Text(effectiveAddress, style: const pw.TextStyle(fontSize: 10)),
+            if (config.clinicAddressLine2.isNotEmpty)
+              pw.Text(config.clinicAddressLine2, style: const pw.TextStyle(fontSize: 10)),
+            if (config.clinicHours.isNotEmpty)
+              pw.Text('Hours: ${config.clinicHours}', style: const pw.TextStyle(fontSize: 9)),
           ],
         ),
-        pw.Container(
-          padding: const pw.EdgeInsets.all(12),
-          decoration: pw.BoxDecoration(
-            color: PdfColors.blue100,
-            border: pw.Border.all(color: PdfColors.blue800, width: 2),
-            borderRadius: pw.BorderRadius.circular(8),
+        // Logo or placeholder
+        if (logoImage != null)
+          pw.Image(logoImage, height: 60, width: 120, fit: pw.BoxFit.contain)
+        else
+          pw.Container(
+            padding: const pw.EdgeInsets.all(12),
+            decoration: pw.BoxDecoration(
+              color: PdfColors.blue100,
+              border: pw.Border.all(color: PdfColors.blue800, width: 2),
+              borderRadius: pw.BorderRadius.circular(8),
+            ),
+            child: pw.Column(
+              children: [
+                pw.Text('+', style: pw.TextStyle(fontSize: 20, fontWeight: pw.FontWeight.bold, color: PdfColors.blue800)),
+              ],
+            ),
           ),
-          child: pw.Column(
-            children: [
-              pw.Text('+', style: pw.TextStyle(fontSize: 20, fontWeight: pw.FontWeight.bold, color: PdfColors.blue800)),
-            ],
-          ),
-        ),
       ],
     );
   }
@@ -2186,7 +2385,18 @@ class PdfService {
       pw.MultiPage(
         pageFormat: PdfPageFormat.a4,
         margin: const pw.EdgeInsets.all(40),
-        header: (context) => _buildPdfHeader(clinicName, clinicPhone, clinicAddress, doctorName),
+        header: (context) {
+          // For patient summary, use template header if available
+          final summaryConfig = PdfTemplateConfig(); // Default for now, could be passed
+          return _buildTemplateHeader(
+            config: summaryConfig,
+            clinicName: clinicName,
+            clinicPhone: clinicPhone ?? '',
+            clinicAddress: clinicAddress ?? '',
+            doctorName: doctorName,
+            logoImage: null, // Could be loaded from config if needed
+          );
+        },
         footer: (context) => pw.Container(
           alignment: pw.Alignment.centerRight,
           margin: const pw.EdgeInsets.only(top: 10),

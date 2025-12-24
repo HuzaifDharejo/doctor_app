@@ -55,16 +55,16 @@ class _ProblemListScreenState extends ConsumerState<ProblemListScreen>
             elevation: 0,
             scrolledUnderElevation: 1,
             leading: Padding(
-              padding: const EdgeInsets.all(8.0),
+              padding: const EdgeInsets.all(AppSpacing.sm),
               child: Container(
                 decoration: BoxDecoration(
-                  color: isDark ? Colors.white.withValues(alpha: 0.1) : Colors.black.withValues(alpha: 0.05),
-                  borderRadius: BorderRadius.circular(12),
+                  color: isDark ? AppColors.darkSurface : AppColors.background,
+                  borderRadius: BorderRadius.circular(AppRadius.md),
                 ),
                 child: IconButton(
                   icon: Icon(
                     Icons.arrow_back,
-                    color: isDark ? Colors.white : const Color(0xFF1A1A2E),
+                    color: isDark ? AppColors.darkTextPrimary : AppColors.textPrimary,
                   ),
                   onPressed: () => Navigator.pop(context),
                 ),
@@ -77,24 +77,24 @@ class _ProblemListScreenState extends ConsumerState<ProblemListScreen>
                     begin: Alignment.topLeft,
                     end: Alignment.bottomRight,
                     colors: isDark
-                        ? [const Color(0xFF1A1A2E), const Color(0xFF16213E)]
-                        : [const Color(0xFFF8FAFC), surfaceColor],
+                        ? [AppColors.darkBackground, AppColors.darkSurface]
+                        : [AppColors.background, surfaceColor],
                   ),
                 ),
                 child: SafeArea(
                   child: Padding(
-                    padding: const EdgeInsets.fromLTRB(20, 50, 20, 16),
+                    padding: const EdgeInsets.fromLTRB(AppSpacing.lg, AppSpacing.xxxxl, AppSpacing.lg, AppSpacing.lg),
                     child: Row(
                       children: [
                         Container(
-                          padding: const EdgeInsets.all(14),
+                          padding: const EdgeInsets.all(AppSpacing.md),
                           decoration: BoxDecoration(
-                            gradient: const LinearGradient(
-                              colors: [Color(0xFF3B82F6), Color(0xFF60A5FA)],
+                            gradient: LinearGradient(
+                              colors: [AppColors.primary, AppColors.primary.withValues(alpha: 0.7)],
                               begin: Alignment.topLeft,
                               end: Alignment.bottomRight,
                             ),
-                            borderRadius: BorderRadius.circular(16),
+                            borderRadius: BorderRadius.circular(AppRadius.lg),
                             boxShadow: [
                               BoxShadow(
                                 color: const Color(0xFF3B82F6).withValues(alpha: 0.3),
@@ -106,10 +106,10 @@ class _ProblemListScreenState extends ConsumerState<ProblemListScreen>
                           child: const Icon(
                             Icons.list_alt,
                             color: Colors.white,
-                            size: 28,
+                            size: AppIconSize.lg,
                           ),
                         ),
-                        const SizedBox(width: 16),
+                        const SizedBox(width: AppSpacing.lg),
                         Expanded(
                           child: Column(
                             mainAxisAlignment: MainAxisAlignment.center,
@@ -118,16 +118,16 @@ class _ProblemListScreenState extends ConsumerState<ProblemListScreen>
                               Text(
                                 'Problem List',
                                 style: TextStyle(
-                                  fontSize: 22,
-                                  fontWeight: FontWeight.bold,
+                                  fontSize: AppFontSize.xxxl,
+                                  fontWeight: FontWeight.w700,
                                   color: textColor,
                                 ),
                               ),
-                              const SizedBox(height: 4),
+                              const SizedBox(height: AppSpacing.xs),
                               Text(
                                 'Active conditions & diagnoses',
                                 style: TextStyle(
-                                  fontSize: 14,
+                                  fontSize: AppFontSize.lg,
                                   color: isDark ? AppColors.darkTextSecondary : AppColors.textSecondary,
                                 ),
                               ),
@@ -140,37 +140,49 @@ class _ProblemListScreenState extends ConsumerState<ProblemListScreen>
                 ),
               ),
             ),
-            bottom: TabBar(
-              controller: _tabController,
-              labelColor: AppColors.primary,
-              unselectedLabelColor: isDark ? AppColors.darkTextSecondary : AppColors.textSecondary,
-              indicatorColor: AppColors.primary,
-              indicatorWeight: 3,
-              tabs: const [
-                Tab(text: 'Active'),
-                Tab(text: 'Chronic'),
-                Tab(text: 'Resolved'),
-              ],
-            ),
           ),
         ],
         body: Column(
           children: [
+            // Search Bar
             Padding(
-              padding: const EdgeInsets.all(AppSpacing.lg),
-              child: TextField(
-                controller: _searchController,
-                decoration: InputDecoration(
-                  hintText: 'Search problems or ICD-10 codes...',
-                  prefixIcon: const Icon(Icons.search),
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  contentPadding: const EdgeInsets.symmetric(horizontal: AppSpacing.lg),
+              padding: const EdgeInsets.fromLTRB(AppSpacing.lg, AppSpacing.md, AppSpacing.lg, AppSpacing.sm),
+              child: Container(
+                decoration: BoxDecoration(
+                  color: isDark ? AppColors.darkSurface : Colors.white,
+                  borderRadius: BorderRadius.circular(AppRadius.card),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withValues(alpha: isDark ? 0.2 : 0.05),
+                      blurRadius: 10,
+                      offset: const Offset(0, 2),
+                    ),
+                  ],
                 ),
-                onChanged: (value) => setState(() {}),
+                child: TextField(
+                  controller: _searchController,
+                  style: TextStyle(
+                    color: isDark ? AppColors.darkTextPrimary : AppColors.textPrimary,
+                  ),
+                  decoration: InputDecoration(
+                    hintText: 'Search problems or ICD-10 codes...',
+                    hintStyle: TextStyle(
+                      color: isDark ? AppColors.darkTextSecondary : AppColors.textSecondary,
+                    ),
+                    prefixIcon: Icon(
+                      Icons.search_rounded,
+                      color: isDark ? AppColors.darkTextSecondary : AppColors.textSecondary,
+                    ),
+                    border: InputBorder.none,
+                    contentPadding: const EdgeInsets.symmetric(horizontal: AppSpacing.lg, vertical: AppSpacing.md),
+                  ),
+                  onChanged: (value) => setState(() {}),
+                ),
               ),
             ),
+            // Tab Bar
+            _buildTabBar(isDark),
+            // Content
             Expanded(
               child: TabBarView(
                 controller: _tabController,
@@ -185,13 +197,85 @@ class _ProblemListScreenState extends ConsumerState<ProblemListScreen>
         ),
       ),
       floatingActionButton: widget.patientId != null
-          ? FloatingActionButton.extended(
-              onPressed: () => _showAddProblemDialog(context),
-              icon: const Icon(Icons.add),
-              label: const Text('Add Problem'),
-              backgroundColor: const Color(0xFF3B82F6),
+          ? Container(
+              decoration: BoxDecoration(
+                gradient: const LinearGradient(
+                  colors: [Color(0xFF3B82F6), Color(0xFF2563EB)],
+                ),
+                borderRadius: BorderRadius.circular(16),
+                boxShadow: [
+                  BoxShadow(
+                    color: const Color(0xFF3B82F6).withValues(alpha: 0.4),
+                    blurRadius: 12,
+                    offset: const Offset(0, 4),
+                  ),
+                ],
+              ),
+              child: FloatingActionButton.extended(
+                onPressed: () => _showAddProblemDialog(context),
+                backgroundColor: Colors.transparent,
+                elevation: 0,
+                icon: const Icon(Icons.add_rounded, color: Colors.white),
+                label: const Text(
+                  'Add Problem',
+                  style: TextStyle(color: Colors.white, fontWeight: FontWeight.w600),
+                ),
+              ),
             )
           : null,
+    );
+  }
+
+  Widget _buildTabBar(bool isDark) {
+    return Container(
+      margin: const EdgeInsets.symmetric(horizontal: AppSpacing.lg, vertical: AppSpacing.sm),
+      decoration: BoxDecoration(
+        color: isDark ? AppColors.darkSurface : Colors.white,
+        borderRadius: BorderRadius.circular(AppRadius.card),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: isDark ? 0.2 : 0.05),
+            blurRadius: 10,
+            offset: const Offset(0, 2),
+          ),
+        ],
+      ),
+      child: TabBar(
+        controller: _tabController,
+        isScrollable: true,
+        tabAlignment: TabAlignment.start,
+        padding: const EdgeInsets.symmetric(horizontal: AppSpacing.sm),
+        labelColor: AppColors.primary,
+        unselectedLabelColor: isDark ? AppColors.darkTextSecondary : AppColors.textSecondary,
+        indicator: BoxDecoration(
+          color: AppColors.primary.withValues(alpha: 0.15),
+          borderRadius: BorderRadius.circular(AppRadius.md),
+        ),
+        indicatorPadding: const EdgeInsets.symmetric(vertical: AppSpacing.sm, horizontal: -AppSpacing.sm),
+        dividerColor: Colors.transparent,
+        labelStyle: const TextStyle(fontWeight: FontWeight.w700, fontSize: 13),
+        unselectedLabelStyle: const TextStyle(fontWeight: FontWeight.w500, fontSize: 13),
+        splashBorderRadius: BorderRadius.circular(AppRadius.md),
+        tabs: [
+          _buildProblemTab('Active', Icons.assignment_rounded),
+          _buildProblemTab('Chronic', Icons.schedule_rounded),
+          _buildProblemTab('Resolved', Icons.check_circle_rounded),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildProblemTab(String label, IconData icon) {
+    return Tab(
+      height: 48,
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(icon, size: 18),
+          const SizedBox(width: 6),
+          Text(label),
+        ],
+      ),
     );
   }
 
@@ -280,18 +364,18 @@ class _ProblemListScreenState extends ConsumerState<ProblemListScreen>
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Container(
-                    padding: const EdgeInsets.all(10),
+                    padding: const EdgeInsets.all(AppSpacing.sm),
                     decoration: BoxDecoration(
                       color: statusColor.withValues(alpha: 0.1),
-                      borderRadius: BorderRadius.circular(12),
+                      borderRadius: BorderRadius.circular(AppRadius.md),
                     ),
                     child: Icon(
                       _getProblemIcon(problem.problemName),
                       color: statusColor,
-                      size: 24,
+                      size: AppIconSize.md,
                     ),
                   ),
-                  const SizedBox(width: 12),
+                  const SizedBox(width: AppSpacing.md),
                   Expanded(
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
@@ -299,17 +383,17 @@ class _ProblemListScreenState extends ConsumerState<ProblemListScreen>
                         Text(
                           problem.problemName,
                           style: TextStyle(
-                            fontSize: 16,
+                            fontSize: AppFontSize.xl,
                             fontWeight: FontWeight.bold,
                             color: isDark ? AppColors.darkTextPrimary : AppColors.textPrimary,
                           ),
                         ),
                         if (problem.icdCode != null) ...[
-                          const SizedBox(height: 2),
+                          const SizedBox(height: AppSpacing.xxs),
                           Text(
                             'ICD-10: ${problem.icdCode}',
                             style: TextStyle(
-                              fontSize: 12,
+                              fontSize: AppFontSize.sm,
                               color: const Color(0xFF3B82F6),
                               fontWeight: FontWeight.w500,
                             ),
@@ -321,7 +405,7 @@ class _ProblemListScreenState extends ConsumerState<ProblemListScreen>
                   _buildStatusChip(problem.status, statusColor),
                 ],
               ),
-              const SizedBox(height: 12),
+              const SizedBox(height: AppSpacing.md),
               Row(
                 children: [
                   if (problem.severity != null) ...[
@@ -330,7 +414,7 @@ class _ProblemListScreenState extends ConsumerState<ProblemListScreen>
                       model.severity.displayName,
                       severityColor,
                     ),
-                    const SizedBox(width: 8),
+                    const SizedBox(width: AppSpacing.sm),
                   ],
                   if (problem.onsetDate != null)
                     _buildInfoChip(
@@ -341,15 +425,15 @@ class _ProblemListScreenState extends ConsumerState<ProblemListScreen>
                   const Spacer(),
                   if (problem.priority != null)
                     Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                      padding: const EdgeInsets.symmetric(horizontal: AppSpacing.sm, vertical: AppSpacing.xxs),
                       decoration: BoxDecoration(
                         color: Colors.purple.withValues(alpha: 0.1),
-                        borderRadius: BorderRadius.circular(4),
+                        borderRadius: BorderRadius.circular(AppRadius.xs),
                       ),
                       child: Text(
                         'Priority ${problem.priority}',
                         style: const TextStyle(
-                          fontSize: 10,
+                          fontSize: AppFontSize.xs,
                           color: Colors.purple,
                           fontWeight: FontWeight.w500,
                         ),
@@ -358,11 +442,11 @@ class _ProblemListScreenState extends ConsumerState<ProblemListScreen>
                 ],
               ),
               if (problem.notes != null && problem.notes!.isNotEmpty) ...[
-                const SizedBox(height: 8),
+                const SizedBox(height: AppSpacing.sm),
                 Text(
                   problem.notes!,
                   style: TextStyle(
-                    fontSize: 13,
+                    fontSize: AppFontSize.md,
                     color: isDark ? AppColors.darkTextSecondary : AppColors.textSecondary,
                   ),
                   maxLines: 2,
@@ -378,15 +462,15 @@ class _ProblemListScreenState extends ConsumerState<ProblemListScreen>
 
   Widget _buildStatusChip(String status, Color color) {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+      padding: const EdgeInsets.symmetric(horizontal: AppSpacing.sm, vertical: AppSpacing.xs),
       decoration: BoxDecoration(
         color: color.withValues(alpha: 0.1),
-        borderRadius: BorderRadius.circular(12),
+        borderRadius: BorderRadius.circular(AppRadius.md),
       ),
       child: Text(
         status.toUpperCase(),
         style: TextStyle(
-          fontSize: 10,
+          fontSize: AppFontSize.xs,
           fontWeight: FontWeight.bold,
           color: color,
         ),
@@ -396,20 +480,20 @@ class _ProblemListScreenState extends ConsumerState<ProblemListScreen>
 
   Widget _buildInfoChip(IconData icon, String label, Color color) {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+      padding: const EdgeInsets.symmetric(horizontal: AppSpacing.sm, vertical: AppSpacing.xs),
       decoration: BoxDecoration(
         color: color.withValues(alpha: 0.1),
-        borderRadius: BorderRadius.circular(8),
+        borderRadius: BorderRadius.circular(AppRadius.sm),
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Icon(icon, size: 12, color: color),
-          const SizedBox(width: 4),
+          Icon(icon, size: AppIconSize.xs, color: color),
+          const SizedBox(width: AppSpacing.xs),
           Text(
             label,
             style: TextStyle(
-              fontSize: 11,
+              fontSize: AppFontSize.xs,
               color: color,
               fontWeight: FontWeight.w500,
             ),
@@ -474,25 +558,25 @@ class _ProblemListScreenState extends ConsumerState<ProblemListScreen>
         children: [
           Icon(
             status == 'resolved' ? Icons.check_circle : Icons.list_alt,
-            size: 64,
+            size: AppIconSize.xxl,
             color: status == 'resolved' ? Colors.green[300] : (isDark ? Colors.grey[600] : Colors.grey[400]),
           ),
-          const SizedBox(height: 16),
+          const SizedBox(height: AppSpacing.lg),
           Text(
             status == 'resolved' 
                 ? 'No resolved problems'
                 : 'No $status problems',
             style: TextStyle(
-              fontSize: 18,
+              fontSize: AppFontSize.xxl,
               fontWeight: FontWeight.w500,
               color: isDark ? AppColors.darkTextSecondary : AppColors.textSecondary,
             ),
           ),
-          const SizedBox(height: 8),
+          const SizedBox(height: AppSpacing.sm),
           Text(
             'Add problems to track patient conditions',
             style: TextStyle(
-              fontSize: 14,
+              fontSize: AppFontSize.lg,
               color: isDark ? AppColors.darkTextSecondary : AppColors.textSecondary,
             ),
           ),
@@ -510,14 +594,14 @@ class _ProblemListScreenState extends ConsumerState<ProblemListScreen>
         children: [
           Icon(
             Icons.person_search,
-            size: 64,
+            size: AppIconSize.xxl,
             color: isDark ? Colors.grey[600] : Colors.grey[400],
           ),
-          const SizedBox(height: 16),
+          const SizedBox(height: AppSpacing.lg),
           Text(
             'Select a patient',
             style: TextStyle(
-              fontSize: 18,
+              fontSize: AppFontSize.xxl,
               fontWeight: FontWeight.w500,
               color: isDark ? AppColors.darkTextSecondary : AppColors.textSecondary,
             ),
@@ -555,26 +639,26 @@ class _ProblemListScreenState extends ConsumerState<ProblemListScreen>
                       height: 4,
                       decoration: BoxDecoration(
                         color: Colors.grey[300],
-                        borderRadius: BorderRadius.circular(2),
+                        borderRadius: BorderRadius.circular(AppRadius.xs),
                       ),
                     ),
                   ),
-                  const SizedBox(height: 16),
+                  const SizedBox(height: AppSpacing.lg),
                   Row(
                     children: [
                       Container(
-                        padding: const EdgeInsets.all(12),
+                        padding: const EdgeInsets.all(AppSpacing.md),
                         decoration: BoxDecoration(
                           color: _getStatusColor(problem.status).withValues(alpha: 0.1),
-                          borderRadius: BorderRadius.circular(12),
+                          borderRadius: BorderRadius.circular(AppRadius.md),
                         ),
                         child: Icon(
                           _getProblemIcon(problem.problemName),
                           color: _getStatusColor(problem.status),
-                          size: 28,
+                          size: AppIconSize.lg,
                         ),
                       ),
-                      const SizedBox(width: 12),
+                      const SizedBox(width: AppSpacing.md),
                       Expanded(
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
@@ -582,7 +666,7 @@ class _ProblemListScreenState extends ConsumerState<ProblemListScreen>
                             Text(
                               problem.problemName,
                               style: const TextStyle(
-                                fontSize: 20,
+                                fontSize: AppFontSize.xxxl,
                                 fontWeight: FontWeight.bold,
                               ),
                             ),
@@ -590,7 +674,7 @@ class _ProblemListScreenState extends ConsumerState<ProblemListScreen>
                               Text(
                                 'ICD-10: ${problem.icdCode}',
                                 style: const TextStyle(
-                                  fontSize: 14,
+                                  fontSize: AppFontSize.lg,
                                   color: Color(0xFF3B82F6),
                                 ),
                               ),
@@ -600,7 +684,7 @@ class _ProblemListScreenState extends ConsumerState<ProblemListScreen>
                       _buildStatusChip(problem.status, _getStatusColor(problem.status)),
                     ],
                   ),
-                  const SizedBox(height: 24),
+                  const SizedBox(height: AppSpacing.xxl),
                   _buildDetailSection('Status', model.status.displayName),
                   if (problem.severity != null)
                     _buildDetailSection('Severity', model.severity.displayName),
@@ -612,7 +696,7 @@ class _ProblemListScreenState extends ConsumerState<ProblemListScreen>
                     _buildDetailSection('Priority', 'Level ${problem.priority}'),
                   if (problem.notes != null && problem.notes!.isNotEmpty)
                     _buildDetailSection('Notes', problem.notes!),
-                  const SizedBox(height: 24),
+                  const SizedBox(height: AppSpacing.xxl),
                   if (problem.status != 'resolved')
                     Row(
                       children: [
@@ -626,7 +710,7 @@ class _ProblemListScreenState extends ConsumerState<ProblemListScreen>
                             ),
                           ),
                         ),
-                        const SizedBox(width: 12),
+                        const SizedBox(width: AppSpacing.md),
                         Expanded(
                           child: ElevatedButton.icon(
                             onPressed: () {
@@ -663,23 +747,23 @@ class _ProblemListScreenState extends ConsumerState<ProblemListScreen>
   Widget _buildDetailSection(String label, String value) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     return Padding(
-      padding: const EdgeInsets.only(bottom: 16),
+      padding: const EdgeInsets.only(bottom: AppSpacing.lg),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
             label,
             style: TextStyle(
-              fontSize: 12,
+              fontSize: AppFontSize.sm,
               fontWeight: FontWeight.w500,
               color: isDark ? AppColors.darkTextSecondary : AppColors.textSecondary,
             ),
           ),
-          const SizedBox(height: 4),
+          const SizedBox(height: AppSpacing.xs),
           Text(
             value,
             style: TextStyle(
-              fontSize: 16,
+              fontSize: AppFontSize.xl,
               color: isDark ? AppColors.darkTextPrimary : AppColors.textPrimary,
             ),
           ),
@@ -752,19 +836,19 @@ class _ProblemListScreenState extends ConsumerState<ProblemListScreen>
                           height: 4,
                           decoration: BoxDecoration(
                             color: Colors.grey[300],
-                            borderRadius: BorderRadius.circular(2),
+                            borderRadius: BorderRadius.circular(AppRadius.xs),
                           ),
                         ),
                       ),
-                      const SizedBox(height: 16),
+                      const SizedBox(height: AppSpacing.lg),
                       Text(
                         editProblem != null ? 'Edit Problem' : 'Add Problem',
                         style: const TextStyle(
-                          fontSize: 20,
+                          fontSize: AppFontSize.xxxl,
                           fontWeight: FontWeight.bold,
                         ),
                       ),
-                      const SizedBox(height: 20),
+                      const SizedBox(height: AppSpacing.xl),
                       TextField(
                         controller: nameController,
                         decoration: const InputDecoration(
@@ -773,7 +857,7 @@ class _ProblemListScreenState extends ConsumerState<ProblemListScreen>
                           border: OutlineInputBorder(),
                         ),
                       ),
-                      const SizedBox(height: 16),
+                      const SizedBox(height: AppSpacing.lg),
                       TextField(
                         controller: icdController,
                         decoration: const InputDecoration(
@@ -782,7 +866,7 @@ class _ProblemListScreenState extends ConsumerState<ProblemListScreen>
                           border: OutlineInputBorder(),
                         ),
                       ),
-                      const SizedBox(height: 16),
+                      const SizedBox(height: AppSpacing.lg),
                       Row(
                         children: [
                           Expanded(
@@ -800,7 +884,7 @@ class _ProblemListScreenState extends ConsumerState<ProblemListScreen>
                               },
                             ),
                           ),
-                          const SizedBox(width: 16),
+                          const SizedBox(width: AppSpacing.lg),
                           Expanded(
                             child: DropdownButtonFormField<String>(
                               value: selectedSeverity,
@@ -818,7 +902,7 @@ class _ProblemListScreenState extends ConsumerState<ProblemListScreen>
                           ),
                         ],
                       ),
-                      const SizedBox(height: 16),
+                      const SizedBox(height: AppSpacing.lg),
                       InkWell(
                         onTap: () async {
                           final date = await showDatePicker(
@@ -842,7 +926,7 @@ class _ProblemListScreenState extends ConsumerState<ProblemListScreen>
                           ),
                         ),
                       ),
-                      const SizedBox(height: 16),
+                      const SizedBox(height: AppSpacing.lg),
                       TextField(
                         controller: notesController,
                         maxLines: 3,
@@ -851,7 +935,7 @@ class _ProblemListScreenState extends ConsumerState<ProblemListScreen>
                           border: OutlineInputBorder(),
                         ),
                       ),
-                      const SizedBox(height: 24),
+                      const SizedBox(height: AppSpacing.xxl),
                       SizedBox(
                         width: double.infinity,
                         child: ElevatedButton(
@@ -906,7 +990,7 @@ class _ProblemListScreenState extends ConsumerState<ProblemListScreen>
                           },
                           style: ElevatedButton.styleFrom(
                             backgroundColor: const Color(0xFF3B82F6),
-                            padding: const EdgeInsets.symmetric(vertical: 16),
+                            padding: const EdgeInsets.symmetric(vertical: AppSpacing.lg),
                           ),
                           child: Text(editProblem != null ? 'Update Problem' : 'Add Problem'),
                         ),

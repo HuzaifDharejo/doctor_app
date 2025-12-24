@@ -37,13 +37,15 @@ class _DebugConsoleState extends State<DebugConsole> with SingleTickerProviderSt
     _logSubscription = log.logStream.listen((_) {
       if (mounted) {
         setState(() {});
-        if (_autoScroll && _scrollController.hasClients) {
+        if (_autoScroll && _scrollController.hasClients && mounted) {
           WidgetsBinding.instance.addPostFrameCallback((_) {
-            _scrollController.animateTo(
-              _scrollController.position.maxScrollExtent,
-              duration: const Duration(milliseconds: 200),
-              curve: Curves.easeOut,
-            );
+            if (mounted && _scrollController.hasClients) {
+              _scrollController.animateTo(
+                _scrollController.position.maxScrollExtent,
+                duration: const Duration(milliseconds: 200),
+                curve: Curves.easeOut,
+              );
+            }
           });
         }
       }

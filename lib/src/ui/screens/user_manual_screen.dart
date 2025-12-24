@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../core/core.dart';
+import '../../core/extensions/context_extensions.dart';
 import '../../core/theme/design_tokens.dart';
 
 class UserManualScreen extends ConsumerStatefulWidget {
@@ -302,15 +303,23 @@ class _UserManualScreenState extends ConsumerState<UserManualScreen>
       ('⚙️', 'Settings', 'App preferences'),
     ];
 
-    return GridView.count(
-      crossAxisCount: 2,
-      shrinkWrap: true,
-      physics: const NeverScrollableScrollPhysics(),
-      mainAxisSpacing: 16,
-      crossAxisSpacing: 16,
-      children: features
-          .map((f) => _buildFeatureCard(f.$1, f.$2, f.$3))
-          .toList(),
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        return GridView.count(
+          crossAxisCount: context.responsive(
+            compact: 2,
+            medium: 3,
+            expanded: 4,
+          ),
+          shrinkWrap: true,
+          physics: const NeverScrollableScrollPhysics(),
+          mainAxisSpacing: context.responsiveItemSpacing,
+          crossAxisSpacing: context.responsiveItemSpacing,
+          children: features
+              .map((f) => _buildFeatureCard(f.$1, f.$2, f.$3))
+              .toList(),
+        );
+      },
     );
   }
 

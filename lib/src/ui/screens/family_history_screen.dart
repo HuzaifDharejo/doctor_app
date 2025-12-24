@@ -16,9 +16,31 @@ class FamilyHistoryScreen extends ConsumerStatefulWidget {
   ConsumerState<FamilyHistoryScreen> createState() => _FamilyHistoryScreenState();
 }
 
-class _FamilyHistoryScreenState extends ConsumerState<FamilyHistoryScreen> {
+class _FamilyHistoryScreenState extends ConsumerState<FamilyHistoryScreen>
+    with SingleTickerProviderStateMixin {
+  late TabController _tabController;
   final _familyHistoryService = FamilyHistoryService();
   String _selectedRelationship = 'all';
+
+  @override
+  void initState() {
+    super.initState();
+    _tabController = TabController(length: 5, vsync: this);
+    _tabController.addListener(() {
+      if (!_tabController.indexIsChanging) {
+        final relationships = ['all', 'parent', 'sibling', 'grandparent', 'others'];
+        setState(() {
+          _selectedRelationship = relationships[_tabController.index];
+        });
+      }
+    });
+  }
+
+  @override
+  void dispose() {
+    _tabController.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -28,8 +50,8 @@ class _FamilyHistoryScreenState extends ConsumerState<FamilyHistoryScreen> {
 
     return Scaffold(
       backgroundColor: isDark ? AppColors.darkBackground : AppColors.background,
-      body: CustomScrollView(
-        slivers: [
+      body: NestedScrollView(
+        headerSliverBuilder: (context, innerBoxIsScrolled) => [
           SliverAppBar(
             expandedHeight: 180,
             floating: false,
@@ -39,16 +61,16 @@ class _FamilyHistoryScreenState extends ConsumerState<FamilyHistoryScreen> {
             elevation: 0,
             scrolledUnderElevation: 1,
             leading: Padding(
-              padding: const EdgeInsets.all(8.0),
+              padding: const EdgeInsets.all(AppSpacing.sm),
               child: Container(
                 decoration: BoxDecoration(
-                  color: isDark ? Colors.white.withValues(alpha: 0.1) : Colors.black.withValues(alpha: 0.05),
-                  borderRadius: BorderRadius.circular(12),
+                  color: isDark ? AppColors.darkSurface : AppColors.background,
+                  borderRadius: BorderRadius.circular(AppRadius.md),
                 ),
                 child: IconButton(
                   icon: Icon(
                     Icons.arrow_back,
-                    color: isDark ? Colors.white : const Color(0xFF1A1A2E),
+                    color: isDark ? AppColors.darkTextPrimary : AppColors.textPrimary,
                   ),
                   onPressed: () => Navigator.pop(context),
                 ),
@@ -61,24 +83,24 @@ class _FamilyHistoryScreenState extends ConsumerState<FamilyHistoryScreen> {
                     begin: Alignment.topLeft,
                     end: Alignment.bottomRight,
                     colors: isDark
-                        ? [const Color(0xFF1A1A2E), const Color(0xFF16213E)]
-                        : [const Color(0xFFF8FAFC), surfaceColor],
+                        ? [AppColors.darkBackground, AppColors.darkSurface]
+                        : [AppColors.background, surfaceColor],
                   ),
                 ),
                 child: SafeArea(
                   child: Padding(
-                    padding: const EdgeInsets.fromLTRB(20, 50, 20, 16),
+                    padding: const EdgeInsets.fromLTRB(AppSpacing.lg, AppSpacing.xxxxl, AppSpacing.lg, AppSpacing.lg),
                     child: Row(
                       children: [
                         Container(
-                          padding: const EdgeInsets.all(14),
+                          padding: const EdgeInsets.all(AppSpacing.md),
                           decoration: BoxDecoration(
                             gradient: const LinearGradient(
                               colors: [Color(0xFFF59E0B), Color(0xFFFBBF24)],
                               begin: Alignment.topLeft,
                               end: Alignment.bottomRight,
                             ),
-                            borderRadius: BorderRadius.circular(16),
+                            borderRadius: BorderRadius.circular(AppRadius.lg),
                             boxShadow: [
                               BoxShadow(
                                 color: const Color(0xFFF59E0B).withValues(alpha: 0.3),
@@ -90,10 +112,10 @@ class _FamilyHistoryScreenState extends ConsumerState<FamilyHistoryScreen> {
                           child: const Icon(
                             Icons.family_restroom,
                             color: Colors.white,
-                            size: 28,
+                            size: AppIconSize.lg,
                           ),
                         ),
-                        const SizedBox(width: 16),
+                        const SizedBox(width: AppSpacing.lg),
                         Expanded(
                           child: Column(
                             mainAxisAlignment: MainAxisAlignment.center,
@@ -102,16 +124,16 @@ class _FamilyHistoryScreenState extends ConsumerState<FamilyHistoryScreen> {
                               Text(
                                 'Family History',
                                 style: TextStyle(
-                                  fontSize: 22,
-                                  fontWeight: FontWeight.bold,
+                                  fontSize: AppFontSize.xxxl,
+                                  fontWeight: FontWeight.w700,
                                   color: textColor,
                                 ),
                               ),
-                              const SizedBox(height: 4),
+                              const SizedBox(height: AppSpacing.xs),
                               Text(
                                 'Hereditary conditions & risk factors',
                                 style: TextStyle(
-                                  fontSize: 14,
+                                  fontSize: AppFontSize.lg,
                                   color: isDark ? AppColors.darkTextSecondary : AppColors.textSecondary,
                                 ),
                               ),
@@ -125,28 +147,168 @@ class _FamilyHistoryScreenState extends ConsumerState<FamilyHistoryScreen> {
               ),
             ),
           ),
-          if (widget.patientId != null) ...[
-            SliverToBoxAdapter(
-              child: _buildRiskSummaryCard(),
-            ),
-            SliverToBoxAdapter(
-              child: _buildFilterChips(),
-            ),
-            _buildFamilyHistoryList(),
-          ] else
-            SliverFillRemaining(
-              child: _buildSelectPatientState(),
-            ),
         ],
+        body: widget.patientId == null
+            ? _buildSelectPatientState()
+            : Column(
+                children: [
+                  // Risk Summary Card
+                  _buildRiskSummaryCard(),
+                  // Tab Bar
+                  _buildTabBar(isDark),
+                  // Content
+                  Expanded(
+                    child: TabBarView(
+                      controller: _tabController,
+                      children: [
+                        _buildFamilyHistoryTab('all'),
+                        _buildFamilyHistoryTab('parent'),
+                        _buildFamilyHistoryTab('sibling'),
+                        _buildFamilyHistoryTab('grandparent'),
+                        _buildFamilyHistoryTab('others'),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
       ),
       floatingActionButton: widget.patientId != null
-          ? FloatingActionButton.extended(
-              onPressed: () => _showAddFamilyHistoryDialog(context),
-              icon: const Icon(Icons.add),
-              label: const Text('Add Entry'),
-              backgroundColor: const Color(0xFFF59E0B),
+          ? Container(
+              decoration: BoxDecoration(
+                gradient: const LinearGradient(
+                  colors: [Color(0xFFF59E0B), Color(0xFFD97706)],
+                ),
+                borderRadius: BorderRadius.circular(16),
+                boxShadow: [
+                  BoxShadow(
+                    color: const Color(0xFFF59E0B).withValues(alpha: 0.4),
+                    blurRadius: 12,
+                    offset: const Offset(0, 4),
+                  ),
+                ],
+              ),
+              child: FloatingActionButton.extended(
+                onPressed: () => _showAddFamilyHistoryDialog(context),
+                backgroundColor: Colors.transparent,
+                elevation: 0,
+                icon: const Icon(Icons.add_rounded, color: Colors.white),
+                label: const Text(
+                  'Add Entry',
+                  style: TextStyle(color: Colors.white, fontWeight: FontWeight.w600),
+                ),
+              ),
             )
           : null,
+    );
+  }
+
+  Widget _buildTabBar(bool isDark) {
+    return Container(
+      margin: const EdgeInsets.symmetric(horizontal: AppSpacing.lg, vertical: AppSpacing.md),
+      decoration: BoxDecoration(
+        color: isDark ? AppColors.darkSurface : Colors.white,
+        borderRadius: BorderRadius.circular(AppRadius.card),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: isDark ? 0.2 : 0.05),
+            blurRadius: 10,
+            offset: const Offset(0, 2),
+          ),
+        ],
+      ),
+      child: TabBar(
+        controller: _tabController,
+        isScrollable: true,
+        tabAlignment: TabAlignment.start,
+        padding: const EdgeInsets.symmetric(horizontal: AppSpacing.sm),
+        labelColor: const Color(0xFFF59E0B),
+        unselectedLabelColor: isDark ? AppColors.darkTextSecondary : AppColors.textSecondary,
+        indicator: BoxDecoration(
+          color: const Color(0xFFF59E0B).withValues(alpha: 0.15),
+          borderRadius: BorderRadius.circular(AppRadius.md),
+        ),
+        indicatorPadding: const EdgeInsets.symmetric(vertical: AppSpacing.sm, horizontal: -AppSpacing.sm),
+        dividerColor: Colors.transparent,
+        labelStyle: const TextStyle(fontWeight: FontWeight.w700, fontSize: 13),
+        unselectedLabelStyle: const TextStyle(fontWeight: FontWeight.w500, fontSize: 13),
+        splashBorderRadius: BorderRadius.circular(AppRadius.md),
+        tabs: [
+          _buildFamilyTab('All', Icons.list_alt_rounded),
+          _buildFamilyTab('Parents', Icons.elderly_rounded),
+          _buildFamilyTab('Siblings', Icons.people_rounded),
+          _buildFamilyTab('Grandparents', Icons.account_tree_rounded),
+          _buildFamilyTab('Others', Icons.person_outline_rounded),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildFamilyTab(String label, IconData icon) {
+    return Tab(
+      height: 48,
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(icon, size: 18),
+          const SizedBox(width: 6),
+          Text(label),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildFamilyHistoryTab(String relationship) {
+    return _buildFamilyHistoryListView(relationship);
+  }
+
+  Widget _buildFamilyHistoryListView(String relationship) {
+    return FutureBuilder<List<FamilyHistoryData>>(
+      future: _fetchFamilyHistoryForRelationship(relationship),
+      builder: (context, snapshot) {
+        if (snapshot.connectionState == ConnectionState.waiting) {
+          return const Center(child: CircularProgressIndicator());
+        }
+
+        if (!snapshot.hasData || snapshot.data!.isEmpty) {
+          return _buildEmptyState();
+        }
+
+        final entries = snapshot.data!;
+
+        return RefreshIndicator(
+          onRefresh: () async => setState(() {}),
+          child: ListView.builder(
+            padding: const EdgeInsets.symmetric(horizontal: AppSpacing.lg),
+            itemCount: entries.length,
+            itemBuilder: (context, index) {
+              return _buildFamilyHistoryCard(entries[index]);
+            },
+          ),
+        );
+      },
+    );
+  }
+
+  Future<List<FamilyHistoryData>> _fetchFamilyHistoryForRelationship(String relationship) async {
+    if (widget.patientId == null) return [];
+    
+    if (relationship == 'all') {
+      return _familyHistoryService.getFamilyHistoryForPatient(widget.patientId!);
+    }
+    
+    if (relationship == 'others') {
+      // Get all relationships that are not in the main tabs
+      final all = await _familyHistoryService.getFamilyHistoryForPatient(widget.patientId!);
+      return all.where((e) => 
+        e.relationship != 'parent' && 
+        e.relationship != 'sibling' && 
+        e.relationship != 'grandparent'
+      ).toList();
+    }
+    
+    return _familyHistoryService.getFamilyHistoryByRelationship(
+      widget.patientId!,
+      relationship,
     );
   }
 
@@ -193,20 +355,20 @@ class _FamilyHistoryScreenState extends ConsumerState<FamilyHistoryScreen> {
                   Icon(
                     Icons.warning_amber_rounded,
                     color: Colors.red[700],
-                    size: 24,
+                    size: AppIconSize.md,
                   ),
-                  const SizedBox(width: 8),
+                  const SizedBox(width: AppSpacing.sm),
                   Text(
                     'Hereditary Risk Factors',
                     style: TextStyle(
-                      fontSize: 16,
+                      fontSize: AppFontSize.xl,
                       fontWeight: FontWeight.bold,
                       color: Colors.red[700],
                     ),
                   ),
                 ],
               ),
-              const SizedBox(height: 12),
+              const SizedBox(height: AppSpacing.md),
               Wrap(
                 spacing: 8,
                 runSpacing: 8,
@@ -215,7 +377,7 @@ class _FamilyHistoryScreenState extends ConsumerState<FamilyHistoryScreen> {
                     label: Text(
                       condition,
                       style: TextStyle(
-                        fontSize: 12,
+                        fontSize: AppFontSize.sm,
                         color: isDark ? Colors.white : Colors.red[800],
                       ),
                     ),
@@ -231,81 +393,6 @@ class _FamilyHistoryScreenState extends ConsumerState<FamilyHistoryScreen> {
     );
   }
 
-  Widget _buildFilterChips() {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-    final relationships = ['all', 'parent', 'sibling', 'grandparent', 'uncle_aunt', 'child'];
-
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: AppSpacing.lg),
-      height: 50,
-      child: ListView(
-        scrollDirection: Axis.horizontal,
-        children: relationships.map((relationship) {
-          final isSelected = _selectedRelationship == relationship;
-          final label = relationship == 'all' 
-              ? 'All' 
-              : relationship.replaceAll('_', '/').split(' ').map((w) => 
-                  w[0].toUpperCase() + w.substring(1)).join(' ');
-
-          return Padding(
-            padding: const EdgeInsets.only(right: 8),
-            child: FilterChip(
-              label: Text(label),
-              selected: isSelected,
-              selectedColor: const Color(0xFFF59E0B).withValues(alpha: 0.2),
-              checkmarkColor: const Color(0xFFF59E0B),
-              onSelected: (selected) {
-                setState(() => _selectedRelationship = relationship);
-              },
-            ),
-          );
-        }).toList(),
-      ),
-    );
-  }
-
-  Widget _buildFamilyHistoryList() {
-    return FutureBuilder<List<FamilyHistoryData>>(
-      future: _fetchFamilyHistory(),
-      builder: (context, snapshot) {
-        if (snapshot.connectionState == ConnectionState.waiting) {
-          return const SliverFillRemaining(
-            child: Center(child: CircularProgressIndicator()),
-          );
-        }
-
-        if (!snapshot.hasData || snapshot.data!.isEmpty) {
-          return SliverFillRemaining(
-            child: _buildEmptyState(),
-          );
-        }
-
-        final entries = snapshot.data!;
-
-        return SliverList(
-          delegate: SliverChildBuilderDelegate(
-            (context, index) {
-              return _buildFamilyHistoryCard(entries[index]);
-            },
-            childCount: entries.length,
-          ),
-        );
-      },
-    );
-  }
-
-  Future<List<FamilyHistoryData>> _fetchFamilyHistory() async {
-    if (widget.patientId == null) return [];
-    
-    if (_selectedRelationship == 'all') {
-      return _familyHistoryService.getFamilyHistoryForPatient(widget.patientId!);
-    }
-    
-    return _familyHistoryService.getFamilyHistoryByRelationship(
-      widget.patientId!,
-      _selectedRelationship,
-    );
-  }
 
   Widget _buildFamilyHistoryCard(FamilyHistoryData entry) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
@@ -333,18 +420,18 @@ class _FamilyHistoryScreenState extends ConsumerState<FamilyHistoryScreen> {
               Row(
                 children: [
                   Container(
-                    padding: const EdgeInsets.all(10),
+                    padding: const EdgeInsets.all(AppSpacing.sm),
                     decoration: BoxDecoration(
                       color: const Color(0xFFF59E0B).withValues(alpha: 0.1),
-                      borderRadius: BorderRadius.circular(12),
+                      borderRadius: BorderRadius.circular(AppRadius.md),
                     ),
                     child: Icon(
                       relationshipIcon,
                       color: const Color(0xFFF59E0B),
-                      size: 24,
+                      size: AppIconSize.md,
                     ),
                   ),
-                  const SizedBox(width: 12),
+                  const SizedBox(width: AppSpacing.md),
                   Expanded(
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
@@ -354,23 +441,23 @@ class _FamilyHistoryScreenState extends ConsumerState<FamilyHistoryScreen> {
                             Text(
                               model.relationship.displayName,
                               style: TextStyle(
-                                fontSize: 16,
+                                fontSize: AppFontSize.xl,
                                 fontWeight: FontWeight.bold,
                                 color: isDark ? AppColors.darkTextPrimary : AppColors.textPrimary,
                               ),
                             ),
                             if (isDeceased) ...[
-                              const SizedBox(width: 8),
+                              const SizedBox(width: AppSpacing.sm),
                               Container(
-                                padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                                padding: const EdgeInsets.symmetric(horizontal: AppSpacing.xs, vertical: AppSpacing.xxs),
                                 decoration: BoxDecoration(
                                   color: Colors.grey.withValues(alpha: 0.2),
-                                  borderRadius: BorderRadius.circular(4),
+                                  borderRadius: BorderRadius.circular(AppRadius.xs),
                                 ),
                                 child: Text(
                                   'Deceased',
                                   style: TextStyle(
-                                    fontSize: 10,
+                                    fontSize: AppFontSize.xs,
                                     color: isDark ? AppColors.darkTextSecondary : AppColors.textSecondary,
                                   ),
                                 ),
@@ -384,7 +471,7 @@ class _FamilyHistoryScreenState extends ConsumerState<FamilyHistoryScreen> {
                                 ? 'Age at death: ${entry.ageAtDeath}'
                                 : 'Age: ${entry.relativeAge}',
                             style: TextStyle(
-                              fontSize: 12,
+                              fontSize: AppFontSize.sm,
                               color: isDark ? AppColors.darkTextSecondary : AppColors.textSecondary,
                             ),
                           ),
@@ -395,35 +482,35 @@ class _FamilyHistoryScreenState extends ConsumerState<FamilyHistoryScreen> {
                     Icon(
                       Icons.warning_amber_rounded,
                       color: Colors.red[400],
-                      size: 20,
+                      size: AppIconSize.sm,
                     ),
                 ],
               ),
-              const SizedBox(height: 12),
+              const SizedBox(height: AppSpacing.md),
               Text(
                 entry.condition,
                 style: TextStyle(
-                  fontSize: 15,
+                  fontSize: AppFontSize.titleLarge,
                   fontWeight: FontWeight.w500,
                   color: isDark ? AppColors.darkTextPrimary : AppColors.textPrimary,
                 ),
               ),
               if (entry.ageAtOnset != null) ...[
-                const SizedBox(height: 4),
+                const SizedBox(height: AppSpacing.xs),
                 Text(
                   'Onset at age ${entry.ageAtOnset}',
                   style: TextStyle(
-                    fontSize: 13,
+                    fontSize: AppFontSize.md,
                     color: isDark ? AppColors.darkTextSecondary : AppColors.textSecondary,
                   ),
                 ),
               ],
               if (entry.notes != null && entry.notes!.isNotEmpty) ...[
-                const SizedBox(height: 8),
+                const SizedBox(height: AppSpacing.sm),
                 Text(
                   entry.notes!,
                   style: TextStyle(
-                    fontSize: 13,
+                    fontSize: AppFontSize.md,
                     color: isDark ? AppColors.darkTextSecondary : AppColors.textSecondary,
                   ),
                   maxLines: 2,
@@ -473,23 +560,23 @@ class _FamilyHistoryScreenState extends ConsumerState<FamilyHistoryScreen> {
         children: [
           Icon(
             Icons.family_restroom,
-            size: 64,
+            size: AppIconSize.xxl,
             color: isDark ? Colors.grey[600] : Colors.grey[400],
           ),
-          const SizedBox(height: 16),
+          const SizedBox(height: AppSpacing.lg),
           Text(
             'No family history recorded',
             style: TextStyle(
-              fontSize: 18,
+              fontSize: AppFontSize.xxl,
               fontWeight: FontWeight.w500,
               color: isDark ? AppColors.darkTextSecondary : AppColors.textSecondary,
             ),
           ),
-          const SizedBox(height: 8),
+          const SizedBox(height: AppSpacing.sm),
           Text(
             'Add family medical history entries',
             style: TextStyle(
-              fontSize: 14,
+              fontSize: AppFontSize.lg,
               color: isDark ? AppColors.darkTextSecondary : AppColors.textSecondary,
             ),
           ),
@@ -507,23 +594,23 @@ class _FamilyHistoryScreenState extends ConsumerState<FamilyHistoryScreen> {
         children: [
           Icon(
             Icons.person_search,
-            size: 64,
+            size: AppIconSize.xxl,
             color: isDark ? Colors.grey[600] : Colors.grey[400],
           ),
-          const SizedBox(height: 16),
+          const SizedBox(height: AppSpacing.lg),
           Text(
             'Select a patient',
             style: TextStyle(
-              fontSize: 18,
+              fontSize: AppFontSize.xxl,
               fontWeight: FontWeight.w500,
               color: isDark ? AppColors.darkTextSecondary : AppColors.textSecondary,
             ),
           ),
-          const SizedBox(height: 8),
+          const SizedBox(height: AppSpacing.sm),
           Text(
             'Choose a patient to view family history',
             style: TextStyle(
-              fontSize: 14,
+              fontSize: AppFontSize.lg,
               color: isDark ? AppColors.darkTextSecondary : AppColors.textSecondary,
             ),
           ),
@@ -549,79 +636,79 @@ class _FamilyHistoryScreenState extends ConsumerState<FamilyHistoryScreen> {
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Center(
-                child: Container(
-                  width: 40,
-                  height: 4,
-                  decoration: BoxDecoration(
-                    color: Colors.grey[300],
-                    borderRadius: BorderRadius.circular(2),
-                  ),
-                ),
-              ),
-              const SizedBox(height: 16),
-              Row(
-                children: [
-                  Container(
-                    padding: const EdgeInsets.all(12),
-                    decoration: BoxDecoration(
-                      color: const Color(0xFFF59E0B).withValues(alpha: 0.1),
-                      borderRadius: BorderRadius.circular(12),
+                  Center(
+                    child: Container(
+                      width: 40,
+                      height: 4,
+                      decoration: BoxDecoration(
+                        color: Colors.grey[300],
+                        borderRadius: BorderRadius.circular(AppRadius.xs),
+                      ),
                     ),
+                  ),
+                  const SizedBox(height: AppSpacing.lg),
+                  Row(
+                    children: [
+                      Container(
+                        padding: const EdgeInsets.all(AppSpacing.md),
+                        decoration: BoxDecoration(
+                          color: const Color(0xFFF59E0B).withValues(alpha: 0.1),
+                          borderRadius: BorderRadius.circular(AppRadius.md),
+                        ),
                     child: Icon(
                       _getRelationshipIcon(entry.relationship),
                       color: const Color(0xFFF59E0B),
-                      size: 28,
+                      size: AppIconSize.lg,
                     ),
                   ),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          model.relationship.displayName,
-                          style: const TextStyle(
-                            fontSize: 20,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                        Text(
-                          entry.condition,
-                          style: TextStyle(
-                            fontSize: 14,
-                            color: isDark ? AppColors.darkTextSecondary : AppColors.textSecondary,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                  if (model.isHighRisk)
-                    Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                      decoration: BoxDecoration(
-                        color: Colors.red.withValues(alpha: 0.1),
-                        borderRadius: BorderRadius.circular(8),
-                      ),
-                      child: Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Icon(Icons.warning, size: 14, color: Colors.red[700]),
-                          const SizedBox(width: 4),
-                          Text(
-                            'High Risk',
-                            style: TextStyle(
-                              fontSize: 12,
-                              color: Colors.red[700],
-                              fontWeight: FontWeight.w500,
+                      const SizedBox(width: AppSpacing.md),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              model.relationship.displayName,
+                              style: const TextStyle(
+                                fontSize: AppFontSize.xxxl,
+                                fontWeight: FontWeight.bold,
+                              ),
                             ),
-                          ),
-                        ],
+                            Text(
+                              entry.condition,
+                              style: TextStyle(
+                                fontSize: AppFontSize.lg,
+                                color: isDark ? AppColors.darkTextSecondary : AppColors.textSecondary,
+                              ),
+                            ),
+                          ],
+                        ),
                       ),
-                    ),
-                ],
-              ),
-              const SizedBox(height: 24),
+                      if (model.isHighRisk)
+                        Container(
+                          padding: const EdgeInsets.symmetric(horizontal: AppSpacing.sm, vertical: AppSpacing.xs),
+                          decoration: BoxDecoration(
+                            color: Colors.red.withValues(alpha: 0.1),
+                            borderRadius: BorderRadius.circular(AppRadius.sm),
+                          ),
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Icon(Icons.warning, size: AppIconSize.xs, color: Colors.red[700]),
+                              const SizedBox(width: AppSpacing.xs),
+                              Text(
+                                'High Risk',
+                                style: TextStyle(
+                                  fontSize: AppFontSize.sm,
+                                  color: Colors.red[700],
+                                  fontWeight: FontWeight.w500,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                    ],
+                  ),
+                  const SizedBox(height: AppSpacing.xxl),
               if (entry.ageAtOnset != null)
                 _buildDetailRow('Age at Onset', '${entry.ageAtOnset} years'),
               if (entry.relativeAge != null)
@@ -635,7 +722,7 @@ class _FamilyHistoryScreenState extends ConsumerState<FamilyHistoryScreen> {
               ],
               if (entry.notes != null && entry.notes!.isNotEmpty)
                 _buildDetailRow('Notes', entry.notes!),
-              const SizedBox(height: 16),
+              const SizedBox(height: AppSpacing.lg),
               Row(
                 children: [
                   Expanded(
@@ -651,7 +738,7 @@ class _FamilyHistoryScreenState extends ConsumerState<FamilyHistoryScreen> {
                       ),
                     ),
                   ),
-                  const SizedBox(width: 12),
+                  const SizedBox(width: AppSpacing.md),
                   Expanded(
                     child: ElevatedButton.icon(
                       onPressed: () {
@@ -677,7 +764,7 @@ class _FamilyHistoryScreenState extends ConsumerState<FamilyHistoryScreen> {
   Widget _buildDetailRow(String label, String value) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     return Padding(
-      padding: const EdgeInsets.only(bottom: 12),
+      padding: const EdgeInsets.only(bottom: AppSpacing.md),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -686,7 +773,7 @@ class _FamilyHistoryScreenState extends ConsumerState<FamilyHistoryScreen> {
             child: Text(
               label,
               style: TextStyle(
-                fontSize: 14,
+                fontSize: AppFontSize.lg,
                 color: isDark ? AppColors.darkTextSecondary : AppColors.textSecondary,
               ),
             ),
@@ -695,7 +782,7 @@ class _FamilyHistoryScreenState extends ConsumerState<FamilyHistoryScreen> {
             child: Text(
               value,
               style: TextStyle(
-                fontSize: 14,
+                fontSize: AppFontSize.lg,
                 fontWeight: FontWeight.w500,
                 color: isDark ? AppColors.darkTextPrimary : AppColors.textPrimary,
               ),
@@ -783,19 +870,19 @@ class _FamilyHistoryScreenState extends ConsumerState<FamilyHistoryScreen> {
                           height: 4,
                           decoration: BoxDecoration(
                             color: Colors.grey[300],
-                            borderRadius: BorderRadius.circular(2),
+                            borderRadius: BorderRadius.circular(AppRadius.xs),
                           ),
                         ),
                       ),
-                      const SizedBox(height: 16),
+                      const SizedBox(height: AppSpacing.lg),
                       Text(
                         editEntry != null ? 'Edit Family History' : 'Add Family History',
                         style: const TextStyle(
-                          fontSize: 20,
+                          fontSize: AppFontSize.xxxl,
                           fontWeight: FontWeight.bold,
                         ),
                       ),
-                      const SizedBox(height: 20),
+                      const SizedBox(height: AppSpacing.xl),
                       DropdownButtonFormField<String>(
                         value: selectedRelationship,
                         decoration: const InputDecoration(
@@ -810,7 +897,7 @@ class _FamilyHistoryScreenState extends ConsumerState<FamilyHistoryScreen> {
                           setModalState(() => selectedRelationship = value!);
                         },
                       ),
-                      const SizedBox(height: 16),
+                      const SizedBox(height: AppSpacing.lg),
                       TextField(
                         controller: conditionController,
                         decoration: const InputDecoration(
@@ -819,7 +906,7 @@ class _FamilyHistoryScreenState extends ConsumerState<FamilyHistoryScreen> {
                           border: OutlineInputBorder(),
                         ),
                       ),
-                      const SizedBox(height: 16),
+                      const SizedBox(height: AppSpacing.lg),
                       Row(
                         children: [
                           Expanded(
@@ -832,7 +919,7 @@ class _FamilyHistoryScreenState extends ConsumerState<FamilyHistoryScreen> {
                               ),
                             ),
                           ),
-                          const SizedBox(width: 16),
+                          const SizedBox(width: AppSpacing.lg),
                           Expanded(
                             child: TextField(
                               controller: relativeAgeController,
@@ -845,7 +932,7 @@ class _FamilyHistoryScreenState extends ConsumerState<FamilyHistoryScreen> {
                           ),
                         ],
                       ),
-                      const SizedBox(height: 16),
+                      const SizedBox(height: AppSpacing.lg),
                       SwitchListTile(
                         title: const Text('Deceased'),
                         value: isDeceased,
@@ -854,7 +941,7 @@ class _FamilyHistoryScreenState extends ConsumerState<FamilyHistoryScreen> {
                         },
                         contentPadding: EdgeInsets.zero,
                       ),
-                      const SizedBox(height: 8),
+                      const SizedBox(height: AppSpacing.sm),
                       TextField(
                         controller: notesController,
                         maxLines: 2,
@@ -863,7 +950,7 @@ class _FamilyHistoryScreenState extends ConsumerState<FamilyHistoryScreen> {
                           border: OutlineInputBorder(),
                         ),
                       ),
-                      const SizedBox(height: 24),
+                      const SizedBox(height: AppSpacing.xxl),
                       SizedBox(
                         width: double.infinity,
                         child: ElevatedButton(
@@ -918,7 +1005,7 @@ class _FamilyHistoryScreenState extends ConsumerState<FamilyHistoryScreen> {
                           },
                           style: ElevatedButton.styleFrom(
                             backgroundColor: const Color(0xFFF59E0B),
-                            padding: const EdgeInsets.symmetric(vertical: 16),
+                            padding: const EdgeInsets.symmetric(vertical: AppSpacing.lg),
                           ),
                           child: Text(editEntry != null ? 'Update Entry' : 'Add Entry'),
                         ),

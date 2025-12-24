@@ -233,7 +233,13 @@ class AppButton extends StatelessWidget {
         children: [
           Icon(icon, size: AppIconSize.button, color: fgColor),
           SizedBox(width: AppSpacing.sm),
-          Text(label!),
+          Flexible(
+            child: Text(
+              label!,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+            ),
+          ),
         ],
       );
     } else if (icon != null) {
@@ -241,7 +247,11 @@ class AppButton extends StatelessWidget {
     } else if (child != null) {
       buttonChild = child!;
     } else {
-      buttonChild = Text(label ?? 'Button');
+      buttonChild = Text(
+        label ?? 'Button',
+        maxLines: 1,
+        overflow: TextOverflow.ellipsis,
+      );
     }
 
     // Build actual button based on variant

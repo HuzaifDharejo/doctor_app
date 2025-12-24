@@ -1,13 +1,17 @@
 import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
+
+import '../../core/components/app_button.dart';
 import '../../core/mixins/responsive_mixin.dart';
+import '../../core/theme/design_tokens.dart';
+import '../../core/utils/pagination.dart';
+import '../../core/widgets/skeleton_loading.dart';
 import '../../db/doctor_db.dart';
 import '../../providers/db_provider.dart';
 import '../../theme/app_theme.dart';
-import '../../core/theme/design_tokens.dart';
-import '../../core/components/app_button.dart';
 import '../widgets/medical_record_widgets.dart';
 import 'medical_record_detail_screen.dart';
 import 'records/records.dart';
@@ -42,6 +46,7 @@ class _MedicalRecordsListScreenState extends ConsumerState<MedicalRecordsListScr
   // Controllers
   final _searchController = TextEditingController();
   final _scrollController = ScrollController();
+  late PaginationController<MedicalRecordWithPatient> _paginationController;
   
   // Debounce timer for search
   Timer? _debounceTimer;
@@ -53,14 +58,56 @@ class _MedicalRecordsListScreenState extends ConsumerState<MedicalRecordsListScr
   void initState() {
     super.initState();
     _selectedRecordType = widget.filterRecordType;
+    _scrollController.addListener(_onScroll);
+    _initPaginationController();
+  }
+
+  void _initPaginationController() {
+    _paginationController = PaginationController<MedicalRecordWithPatient>(
+      fetchPage: _fetchPage,
+    );
+    _paginationController.addListener(_onPaginationUpdate);
+    _paginationController.loadInitial();
+  }
+
+  void _onPaginationUpdate() {
+    if (mounted) {
+      setState(() {});
+    }
+  }
+
+  Future<(List<MedicalRecordWithPatient>, int)> _fetchPage(int pageIndex, int pageSize) async {
+    final db = await ref.read(doctorDbProvider.future);
+    final enabledTypes = ref.read(appSettingsProvider).settings.enabledMedicalRecordTypes;
+    return db.getMedicalRecordsPaginated(
+      offset: pageIndex * pageSize,
+      limit: pageSize,
+      recordType: _selectedRecordType,
+      searchQuery: _searchQuery.isNotEmpty ? _searchQuery : null,
+      enabledTypes: enabledTypes,
+    );
   }
 
   @override
   void dispose() {
     _searchController.dispose();
-    _scrollController.dispose();
+    _scrollController
+      ..removeListener(_onScroll)
+      ..dispose();
+    _paginationController
+      ..removeListener(_onPaginationUpdate)
+      ..dispose();
     _debounceTimer?.cancel();
     super.dispose();
+  }
+
+  void _onScroll() {
+    if (!mounted || !_scrollController.hasClients) return;
+    _paginationController.onScroll(
+      scrollPosition: _scrollController.position.pixels,
+      maxScrollExtent: _scrollController.position.maxScrollExtent,
+      threshold: 200,
+    );
   }
 
   /// Handle search with debouncing for performance
@@ -68,7 +115,10 @@ class _MedicalRecordsListScreenState extends ConsumerState<MedicalRecordsListScr
     _debounceTimer?.cancel();
     _debounceTimer = Timer(const Duration(milliseconds: 300), () {
       if (mounted) {
-        setState(() => _searchQuery = value.toLowerCase());
+        setState(() {
+          _searchQuery = value.toLowerCase();
+        });
+        _paginationController.refresh();
       }
     });
   }
@@ -77,59 +127,56 @@ class _MedicalRecordsListScreenState extends ConsumerState<MedicalRecordsListScr
   void _clearSearch() {
     _searchController.clear();
     _debounceTimer?.cancel();
-    setState(() => _searchQuery = '');
+    setState(() {
+      _searchQuery = '';
+    });
+    _paginationController.refresh();
+  }
+
+  void _onTypeSelected(String? type) {
+    setState(() {
+      _selectedRecordType = type;
+    });
+    _paginationController.refresh();
   }
 
   @override
   Widget build(BuildContext context) {
-    final dbAsync = ref.watch(doctorDbProvider);
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
     return Scaffold(
       backgroundColor: isDark ? AppColors.darkBackground : AppColors.background,
-      body: dbAsync.when(
-        data: (db) => RefreshIndicator(
-          onRefresh: () async {
-            ref.invalidate(doctorDbProvider);
-            await Future<void>.delayed(const Duration(milliseconds: 300));
-          },
-          color: AppColors.primary,
-          child: CustomScrollView(
-            controller: _scrollController,
-            physics: const AlwaysScrollableScrollPhysics(),
-            slivers: [
-              SliverToBoxAdapter(child: _Header(
-                searchController: _searchController,
-                searchQuery: _searchQuery,
-                onSearchChanged: _onSearchChanged,
-                onClearSearch: _clearSearch,
-              ),),
-              SliverToBoxAdapter(child: _FilterChipsRow(
-                selectedRecordType: _selectedRecordType,
-                enabledRecordTypes: ref.watch(appSettingsProvider).settings.enabledMedicalRecordTypes,
-                onTypeSelected: (type) => setState(() => _selectedRecordType = type),
+      body: RefreshIndicator(
+        onRefresh: () {
+          _paginationController.refresh();
+          return Future<void>.delayed(const Duration(milliseconds: 300));
+        },
+        color: AppColors.primary,
+        child: CustomScrollView(
+          controller: _scrollController,
+          physics: const AlwaysScrollableScrollPhysics(),
+          slivers: [
+            SliverToBoxAdapter(child: _Header(
+              searchController: _searchController,
+              searchQuery: _searchQuery,
+              onSearchChanged: _onSearchChanged,
+              onClearSearch: _clearSearch,
+            ),),
+            SliverToBoxAdapter(child: _FilterChipsRow(
+              selectedRecordType: _selectedRecordType,
+              enabledRecordTypes: ref.watch(appSettingsProvider).settings.enabledMedicalRecordTypes,
+              onTypeSelected: _onTypeSelected,
+              isDark: isDark,
+            ),),
+            SliverPadding(
+              padding: const EdgeInsets.all(MedicalRecordConstants.paddingLarge),
+              sliver: _RecordsList(
+                paginationController: _paginationController,
                 isDark: isDark,
-              ),),
-              SliverPadding(
-                padding: const EdgeInsets.all(MedicalRecordConstants.paddingLarge),
-                sliver: _RecordsList(
-                  db: db,
-                  searchQuery: _searchQuery,
-                  selectedRecordType: _selectedRecordType,
-                  enabledRecordTypes: ref.watch(appSettingsProvider).settings.enabledMedicalRecordTypes,
-                  isDark: isDark,
-                  dateFormat: _dateFormat,
-                ),
+                dateFormat: _dateFormat,
               ),
-            ],
-          ),
-        ),
-        loading: () => const Center(
-          child: CircularProgressIndicator(color: AppColors.primary),
-        ),
-        error: (err, stack) => _ErrorState(
-          error: err.toString(),
-          onRetry: () => ref.invalidate(doctorDbProvider),
+            ),
+          ],
         ),
       ),
       floatingActionButton: _AddRecordFAB(selectedRecordType: _selectedRecordType),
@@ -375,102 +422,69 @@ class _FilterChipsRow extends StatelessWidget {
 class _RecordsList extends StatelessWidget {
 
   const _RecordsList({
-    required this.db,
-    required this.searchQuery,
-    required this.selectedRecordType,
-    required this.enabledRecordTypes,
+    required this.paginationController,
     required this.isDark,
     required this.dateFormat,
   });
-  final DoctorDatabase db;
-  final String searchQuery;
-  final String? selectedRecordType;
-  final List<String> enabledRecordTypes;
+  final PaginationController<MedicalRecordWithPatient> paginationController;
   final bool isDark;
   final DateFormat dateFormat;
 
   @override
   Widget build(BuildContext context) {
-    return FutureBuilder<List<MedicalRecordWithPatient>>(
-      // Key forces rebuild when filters change
-      key: ValueKey('records_${enabledRecordTypes.join('_')}_${selectedRecordType ?? 'all'}_$searchQuery'),
-      future: _getFilteredRecords(),
-      builder: (context, snapshot) {
-        if (snapshot.connectionState == ConnectionState.waiting) {
-          return const SliverFillRemaining(
-            child: Center(child: CircularProgressIndicator(color: AppColors.primary)),
-          );
-        }
+    if (!paginationController.hasInitialized) {
+      return const SliverToBoxAdapter(
+        child: MedicalRecordListSkeleton(itemCount: 5),
+      );
+    }
 
-        if (snapshot.hasError) {
-          return SliverFillRemaining(
-            child: _ErrorState(
-              error: snapshot.error.toString(),
-              onRetry: () {}, // Will be handled by parent RefreshIndicator
-            ),
-          );
-        }
+    if (paginationController.error != null) {
+      return SliverFillRemaining(
+        child: _ErrorState(
+          error: paginationController.error!,
+          onRetry: () => paginationController.loadInitial(),
+        ),
+      );
+    }
 
-        final records = snapshot.data ?? [];
-        if (records.isEmpty) {
-          return SliverFillRemaining(
-            child: _EmptyState(
-              selectedRecordType: selectedRecordType,
-              hasSearchQuery: searchQuery.isNotEmpty,
-            ),
-          );
-        }
+    final records = paginationController.items;
+    if (records.isEmpty && !paginationController.isLoading) {
+      return const SliverFillRemaining(
+        child: _EmptyState(
+          selectedRecordType: null,
+          hasSearchQuery: false,
+        ),
+      );
+    }
 
-        // Group records by date
-        final groupedRecords = _groupByDate(records);
-        final dateKeys = groupedRecords.keys.toList();
+    // Group records by date
+    final groupedRecords = _groupByDate(records);
+    final dateKeys = groupedRecords.keys.toList();
 
-        return SliverList(
-          delegate: SliverChildBuilderDelegate(
-            (context, index) => _DateGroupSection(
+    return SliverList(
+      delegate: SliverChildBuilderDelegate(
+        (context, index) {
+          if (index >= dateKeys.length) {
+            // Loading indicator at the end
+            if (paginationController.hasMore && paginationController.isLoading) {
+              return const Padding(
+                padding: EdgeInsets.all(MedicalRecordConstants.paddingXLarge),
+                child: Center(child: CircularProgressIndicator()),
+              );
+            }
+            return const SizedBox.shrink();
+          }
+            return _DateGroupSection(
               dateKey: dateKeys[index],
               records: groupedRecords[dateKeys[index]]!,
               isFirst: index == 0,
               isDark: isDark,
               dateFormat: dateFormat,
-            ),
-            childCount: dateKeys.length,
-          ),
-        );
-      },
+            );
+        },
+        childCount: dateKeys.length + (paginationController.hasMore ? 1 : 0),
+      ),
     );
-  }
-
-  Future<List<MedicalRecordWithPatient>> _getFilteredRecords() async {
-    final records = await db.getAllMedicalRecordsWithPatients();
-    
-    return records.where((r) {
-      // Filter by enabled record types from settings
-      if (!enabledRecordTypes.contains(r.record.recordType)) {
-        return false;
-      }
-      
-      // Filter by selected record type (user filter)
-      if (selectedRecordType != null && r.record.recordType != selectedRecordType) {
-        return false;
-      }
-      
-      // Filter by search query
-      if (searchQuery.isNotEmpty) {
-        final searchableText = [
-          r.record.title,
-          r.record.diagnosis,
-          r.record.treatment,
-          r.patient.firstName,
-          r.patient.lastName,
-        ].join(' ').toLowerCase();
-        
-        return searchableText.contains(searchQuery);
-      }
-      
-      return true;
-    }).toList()
-      ..sort((a, b) => b.record.recordDate.compareTo(a.record.recordDate));
   }
 
   Map<String, List<MedicalRecordWithPatient>> _groupByDate(List<MedicalRecordWithPatient> records) {

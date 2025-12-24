@@ -9,18 +9,22 @@ import 'package:url_launcher/url_launcher.dart';
 import '../../core/theme/design_tokens.dart';
 import '../../core/extensions/context_extensions.dart';
 import '../../core/widgets/date_time_picker.dart';
-import '../../core/widgets/loading_state.dart';
 import '../../core/widgets/error_state.dart';
+import '../../core/widgets/skeleton_loading.dart';
 import '../../core/widgets/app_card.dart';
 import '../../core/components/app_button.dart';
 import '../../db/doctor_db.dart';
 import '../../providers/db_provider.dart';
 import '../../theme/app_theme.dart';
+import '../../services/patient_status_service.dart';
 import '../widgets/calendar_widget.dart';
 import '../widgets/quick_checkin_dialog.dart';
+import '../widgets/patient_status_badge.dart';
+import '../widgets/confirmation_dialog.dart';
 import 'add_appointment_screen.dart';
 import 'edit_appointment_screen.dart';
 import 'workflow_wizard_screen.dart';
+import 'patient_view/patient_view_screen.dart';
 
 class AppointmentsScreen extends ConsumerStatefulWidget {
   const AppointmentsScreen({super.key});
@@ -45,7 +49,7 @@ class _AppointmentsScreenState extends ConsumerState<AppointmentsScreen> {
     final isDark = context.isDarkMode;
     
     return Scaffold(
-      backgroundColor: isDark ? const Color(0xFF0F0F0F) : const Color(0xFFF8FAFC),
+      backgroundColor: isDark ? AppColors.darkBackground : AppColors.background,
       body: CustomScrollView(
         physics: const AlwaysScrollableScrollPhysics(
           parent: BouncingScrollPhysics(),
@@ -77,8 +81,8 @@ class _AppointmentsScreenState extends ConsumerState<AppointmentsScreen> {
           ),
           dbAsync.when(
             data: (db) => _buildAppointmentsSliverList(context, db),
-            loading: () => const SliverFillRemaining(
-              child: LoadingState(),
+            loading: () => const SliverToBoxAdapter(
+              child: AppointmentListSkeleton(itemCount: 5),
             ),
             error: (err, stack) => SliverFillRemaining(
               child: ErrorState.generic(
@@ -91,31 +95,18 @@ class _AppointmentsScreenState extends ConsumerState<AppointmentsScreen> {
       ),
       floatingActionButton: Container(
         decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(20),
-          gradient: const LinearGradient(
-            colors: [Color(0xFF10B981), Color(0xFF059669)],
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-          ),
-          boxShadow: [
-            BoxShadow(
-              color: const Color(0xFF10B981).withValues(alpha: 0.4),
-              blurRadius: 20,
-              offset: const Offset(0, 8),
-            ),
-          ],
+          borderRadius: BorderRadius.circular(AppRadius.xl),
+          gradient: AppColors.successGradient,
+          boxShadow: AppShadow.large,
         ),
         child: FloatingActionButton.extended(
           onPressed: () => _navigateToAddAppointment(context),
           backgroundColor: Colors.transparent,
           elevation: 0,
-          icon: const Icon(Icons.add_rounded, color: Colors.white),
-          label: const Text(
+          icon: Icon(Icons.add_rounded, color: AppColors.surface),
+          label: Text(
             'New Appointment',
-            style: TextStyle(
-              color: Colors.white,
-              fontWeight: FontWeight.w600,
-            ),
+            style: TextStyle(color: AppColors.surface, fontWeight: FontWeight.w600),
           ),
         ),
       ),
@@ -128,40 +119,55 @@ class _AppointmentsScreenState extends ConsumerState<AppointmentsScreen> {
       floating: false,
       pinned: true,
       elevation: 0,
-      backgroundColor: isDark ? const Color(0xFF1A1A1A) : Colors.white,
+      backgroundColor: isDark ? AppColors.darkSurface : AppColors.surface,
       surfaceTintColor: Colors.transparent,
       automaticallyImplyLeading: false,
       actions: [
         Padding(
-          padding: const EdgeInsets.only(right: 16),
+          padding: EdgeInsets.only(right: AppSpacing.lg),
           child: GestureDetector(
             onTap: () => setState(() => _showCalendar = !_showCalendar),
             child: Container(
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+              padding: EdgeInsets.symmetric(
+                horizontal: AppSpacing.lg,
+                vertical: AppSpacing.sm + 2,
+              ),
               decoration: BoxDecoration(
-                gradient: _showCalendar 
-                    ? const LinearGradient(
-                        colors: [Color(0xFF10B981), Color(0xFF059669)],
-                      )
+                gradient: _showCalendar
+                    ? AppColors.successGradient
                     : null,
-                color: _showCalendar ? null : (isDark ? Colors.white.withValues(alpha: 0.1) : Colors.grey.shade100),
-                borderRadius: BorderRadius.circular(12),
+                color: _showCalendar
+                    ? null
+                    : (isDark
+                        ? AppColors.darkTextPrimary.withValues(alpha: 0.1)
+                        : AppColors.textSecondary.withValues(alpha: 0.1)),
+                borderRadius: BorderRadius.circular(AppRadius.md),
               ),
               child: Row(
                 mainAxisSize: MainAxisSize.min,
                 children: [
                   Icon(
-                    _showCalendar ? Icons.view_week_rounded : Icons.calendar_month_rounded,
-                    color: _showCalendar ? Colors.white : (isDark ? Colors.white70 : Colors.black87),
-                    size: 18,
+                    _showCalendar
+                        ? Icons.view_week_rounded
+                        : Icons.calendar_month_rounded,
+                    color: _showCalendar
+                        ? AppColors.surface
+                        : (isDark
+                            ? AppColors.darkTextSecondary
+                            : AppColors.textPrimary),
+                    size: AppIconSize.smCompact,
                   ),
-                  const SizedBox(width: 6),
+                  SizedBox(width: AppSpacing.xs + 2),
                   Text(
                     _showCalendar ? 'Week' : 'Month',
                     style: TextStyle(
-                      color: _showCalendar ? Colors.white : (isDark ? Colors.white70 : Colors.black87),
+                      color: _showCalendar
+                          ? AppColors.surface
+                          : (isDark
+                              ? AppColors.darkTextSecondary
+                              : AppColors.textPrimary),
                       fontWeight: FontWeight.w600,
-                      fontSize: 13,
+                      fontSize: AppFontSize.bodyMedium,
                     ),
                   ),
                 ],
@@ -190,14 +196,14 @@ class _AppointmentsScreenState extends ConsumerState<AppointmentsScreen> {
                     padding: const EdgeInsets.all(14),
                     decoration: BoxDecoration(
                       gradient: const LinearGradient(
-                        colors: [Color(0xFF10B981), Color(0xFF059669)],
+                        colors: [AppColors.success, AppColors.success],
                         begin: Alignment.topLeft,
                         end: Alignment.bottomRight,
                       ),
                       borderRadius: BorderRadius.circular(18),
                       boxShadow: [
                         BoxShadow(
-                          color: const Color(0xFF10B981).withValues(alpha: 0.4),
+                          color: AppColors.success.withValues(alpha: 0.4),
                           blurRadius: 16,
                           offset: const Offset(0, 6),
                         ),
@@ -205,7 +211,7 @@ class _AppointmentsScreenState extends ConsumerState<AppointmentsScreen> {
                     ),
                     child: const Icon(
                       Icons.calendar_today_rounded,
-                      color: Colors.white,
+                      color: AppColors.surface,
                       size: 28,
                     ),
                   ),
@@ -220,7 +226,9 @@ class _AppointmentsScreenState extends ConsumerState<AppointmentsScreen> {
                           style: TextStyle(
                             fontSize: 24,
                             fontWeight: FontWeight.w800,
-                            color: isDark ? Colors.white : const Color(0xFF1E293B),
+                            color: isDark
+                                ? AppColors.darkTextPrimary
+                                : AppColors.textPrimary,
                             letterSpacing: -0.5,
                           ),
                         ),
@@ -230,8 +238,8 @@ class _AppointmentsScreenState extends ConsumerState<AppointmentsScreen> {
                           style: TextStyle(
                             fontSize: 14,
                             color: isDark 
-                                ? Colors.white.withValues(alpha: 0.6) 
-                                : const Color(0xFF64748B),
+                                ? AppColors.darkTextPrimary.withValues(alpha: 0.6)
+                                : AppColors.textSecondary,
                           ),
                         ),
                       ],
@@ -285,25 +293,27 @@ class _AppointmentsScreenState extends ConsumerState<AppointmentsScreen> {
               decoration: BoxDecoration(
                 gradient: isSelected 
                     ? const LinearGradient(
-                        colors: [Color(0xFF10B981), Color(0xFF059669)],
+                        colors: [AppColors.success, AppColors.success],
                         begin: Alignment.topCenter,
                         end: Alignment.bottomCenter,
                       )
                     : null,
-                color: isSelected ? null : (isDark ? const Color(0xFF1A1A1A) : Colors.white),
+                color: isSelected
+                    ? null
+                    : (isDark ? AppColors.darkSurface : AppColors.surface),
                 borderRadius: BorderRadius.circular(AppRadius.lg),
                 border: isSelected
                     ? null
                     : Border.all(
                         color: isToday 
-                            ? const Color(0xFF10B981)
+                            ? AppColors.success
                             : (isDark ? AppColors.darkDivider : AppColors.divider),
                         width: isToday ? 2 : 1,
                       ),
                 boxShadow: isSelected
                     ? [
                         BoxShadow(
-                          color: const Color(0xFF10B981).withValues(alpha: 0.4),
+                          color: AppColors.success.withValues(alpha: 0.4),
                           blurRadius: 12,
                           offset: const Offset(0, 6),
                         ),
@@ -320,7 +330,7 @@ class _AppointmentsScreenState extends ConsumerState<AppointmentsScreen> {
                       fontWeight: FontWeight.w700,
                       letterSpacing: 0.5,
                       color: isSelected 
-                          ? Colors.white.withValues(alpha: 0.85) 
+                          ? AppColors.surface.withValues(alpha: 0.85) 
                           : (isDark ? AppColors.darkTextSecondary : AppColors.textSecondary),
                     ),
                   ),
@@ -331,8 +341,10 @@ class _AppointmentsScreenState extends ConsumerState<AppointmentsScreen> {
                       fontSize: isCompact ? AppFontSize.xl : AppFontSize.xxl,
                       fontWeight: FontWeight.w800,
                       color: isSelected 
-                          ? Colors.white 
-                          : (isDark ? Colors.white : Colors.black87),
+                          ? AppColors.surface
+                          : (isDark
+                              ? AppColors.darkTextPrimary
+                              : AppColors.textPrimary),
                     ),
                   ),
                   const SizedBox(height: AppSpacing.xs),
@@ -341,7 +353,7 @@ class _AppointmentsScreenState extends ConsumerState<AppointmentsScreen> {
                       width: isSelected ? 20 : 6,
                       height: 6,
                       decoration: BoxDecoration(
-                        color: isSelected ? Colors.white : const Color(0xFF10B981),
+                        color: isSelected ? AppColors.surface : AppColors.success,
                         borderRadius: BorderRadius.circular(3),
                       ),
                     ),
@@ -356,11 +368,25 @@ class _AppointmentsScreenState extends ConsumerState<AppointmentsScreen> {
 
   Widget _buildAppointmentsSliverList(BuildContext context, DoctorDatabase db) {
     return FutureBuilder<List<Appointment>>(
-      future: db.getAppointmentsForDay(_selectedDate),
+      future: db.getAppointmentsForDay(_selectedDate)
+          .timeout(const Duration(seconds: 10), onTimeout: () => <Appointment>[]),
       builder: (context, snapshot) {
-        if (!snapshot.hasData) {
-          return const SliverFillRemaining(
-            child: LoadingState(),
+        // Handle error state
+        if (snapshot.hasError) {
+          return SliverFillRemaining(
+            child: ErrorState.generic(
+              message: 'Failed to load appointments. ${snapshot.error}',
+              onRetry: () {
+                setState(() {}); // Trigger rebuild to retry
+              },
+            ),
+          );
+        }
+        
+        // Handle loading state
+        if (snapshot.connectionState == ConnectionState.waiting || !snapshot.hasData) {
+          return const SliverToBoxAdapter(
+            child: AppointmentListSkeleton(itemCount: 5),
           );
         }
         
@@ -411,9 +437,9 @@ class _AppointmentsScreenState extends ConsumerState<AppointmentsScreen> {
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
             Container(
-              padding: const EdgeInsets.all(24),
+              padding: EdgeInsets.all(context.responsivePadding),
               decoration: BoxDecoration(
-                color: const Color(0xFF10B981).withValues(alpha: 0.1),
+                color: AppColors.success.withValues(alpha: 0.1),
                 borderRadius: BorderRadius.circular(24),
               ),
               child: Icon(
@@ -466,7 +492,7 @@ class _AppointmentsScreenState extends ConsumerState<AppointmentsScreen> {
                     Text(
                       'Schedule Appointment',
                       style: TextStyle(
-                        color: Colors.white,
+                        color: AppColors.surface,
                         fontWeight: FontWeight.w600,
                       ),
                     ),
@@ -497,24 +523,29 @@ class _AppointmentsScreenState extends ConsumerState<AppointmentsScreen> {
     
         return Dismissible(
           key: Key('appt_${appt.id}'),
-          direction: isUpcoming ? DismissDirection.horizontal : DismissDirection.none,
+          direction: DismissDirection.horizontal,
           background: Container(
             margin: EdgeInsets.only(bottom: isCompact ? AppSpacing.sm : AppSpacing.lg),
             decoration: BoxDecoration(
-              color: AppColors.success.withValues(alpha: 0.2),
+              gradient: const LinearGradient(
+                colors: [Color(0xFF10B981), Color(0xFF059669)],
+                begin: Alignment.centerLeft,
+                end: Alignment.centerRight,
+              ),
               borderRadius: BorderRadius.circular(AppRadius.xl),
             ),
             alignment: Alignment.centerLeft,
             padding: const EdgeInsets.only(left: 20),
             child: const Row(
               children: [
-                Icon(Icons.check_circle, color: AppColors.success, size: 28),
-                SizedBox(width: 8),
+                Icon(Icons.play_arrow_rounded, color: Colors.white, size: 28),
+                SizedBox(width: 12),
                 Text(
-                  'Confirm',
+                  'Start Consultation',
                   style: TextStyle(
-                    color: AppColors.success,
-                    fontWeight: FontWeight.w600,
+                    color: Colors.white,
+                    fontWeight: FontWeight.w700,
+                    fontSize: 16,
                   ),
                 ),
               ],
@@ -523,7 +554,14 @@ class _AppointmentsScreenState extends ConsumerState<AppointmentsScreen> {
           secondaryBackground: Container(
             margin: EdgeInsets.only(bottom: isCompact ? AppSpacing.sm : AppSpacing.lg),
             decoration: BoxDecoration(
-              color: AppColors.error.withValues(alpha: 0.2),
+              gradient: LinearGradient(
+                colors: [
+                  AppColors.primary,
+                  AppColors.primary.withValues(alpha: 0.8),
+                ],
+                begin: Alignment.centerRight,
+                end: Alignment.centerLeft,
+              ),
               borderRadius: BorderRadius.circular(AppRadius.xl),
             ),
             alignment: Alignment.centerRight,
@@ -532,41 +570,44 @@ class _AppointmentsScreenState extends ConsumerState<AppointmentsScreen> {
               mainAxisAlignment: MainAxisAlignment.end,
               children: [
                 Text(
-                  'Cancel',
+                  'View History',
                   style: TextStyle(
-                    color: AppColors.error,
-                    fontWeight: FontWeight.w600,
+                    color: Colors.white,
+                    fontWeight: FontWeight.w700,
+                    fontSize: 16,
                   ),
                 ),
-                SizedBox(width: 8),
-                Icon(Icons.cancel, color: AppColors.error, size: 28),
+                SizedBox(width: 12),
+                Icon(Icons.history_rounded, color: Colors.white, size: 28),
               ],
             ),
           ),
           confirmDismiss: (direction) async {
             unawaited(HapticFeedback.mediumImpact());
             if (direction == DismissDirection.startToEnd) {
-              // Confirm appointment
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(
-                  content: Text('Appointment confirmed'),
-                  backgroundColor: AppColors.success,
-                  behavior: SnackBarBehavior.floating,
-                ),
-              );
+              // Swipe right → Start consultation
+              if (patient != null) {
+                _startConsultation(context, db, appt, patient);
+              }
             } else {
-              // Cancel appointment
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(
-                  content: Text('Appointment cancelled'),
-                  backgroundColor: AppColors.error,
-                  behavior: SnackBarBehavior.floating,
-                ),
-              );
+              // Swipe left → View patient history
+              if (patient != null) {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (_) => PatientViewScreen(patient: patient),
+                  ),
+                );
+              }
             }
-            return false; // Don't actually dismiss
+            return false; // Don't actually dismiss the card
           },
-          child: AppCard(
+          child: GestureDetector(
+            onLongPress: () {
+              unawaited(HapticFeedback.mediumImpact());
+              _showAppointmentQuickActions(context, db, appt, patient);
+            },
+            child: AppCard(
             margin: EdgeInsets.only(bottom: isCompact ? AppSpacing.sm : AppSpacing.lg),
             color: context.colorScheme.surface,
             borderRadius: BorderRadius.circular(AppRadius.xl),
@@ -609,7 +650,7 @@ class _AppointmentsScreenState extends ConsumerState<AppointmentsScreen> {
                                 style: TextStyle(
                                   fontSize: isCompact ? AppFontSize.lg : AppFontSize.xl,
                                   fontWeight: FontWeight.w800,
-                                  color: Colors.white,
+                                  color: AppColors.surface,
                                 ),
                               ),
                               Text(
@@ -713,6 +754,27 @@ class _AppointmentsScreenState extends ConsumerState<AppointmentsScreen> {
                                     ),
                                   ],
                                 ),
+                                // Patient Status Badges
+                                if (patient != null) ...[
+                                  const SizedBox(height: AppSpacing.xs),
+                                  FutureBuilder<List<PatientStatus>>(
+                                    future: PatientStatusService(db: db).getPatientStatuses(
+                                      patient: patient,
+                                      appointment: appt,
+                                    ),
+                                    builder: (context, statusSnapshot) {
+                                      if (!statusSnapshot.hasData) {
+                                        return const SizedBox.shrink();
+                                      }
+                                      final statuses = statusSnapshot.data!;
+                                      return PatientStatusBadges(
+                                        statuses: statuses,
+                                        size: BadgeSize.small,
+                                        maxBadges: 2,
+                                      );
+                                    },
+                                  ),
+                                ],
                               ],
                             ),
                           ),
@@ -792,6 +854,7 @@ class _AppointmentsScreenState extends ConsumerState<AppointmentsScreen> {
                       ),
                   ],
                 ),
+            ),
           ),
         );
       },
@@ -818,6 +881,117 @@ class _AppointmentsScreenState extends ConsumerState<AppointmentsScreen> {
         ),
       );
     }
+  }
+  
+  /// Show quick actions menu on long press
+  void _showAppointmentQuickActions(BuildContext context, DoctorDatabase db, Appointment appt, Patient? patient) {
+    final isDark = context.isDarkMode;
+    
+    showModalBottomSheet<void>(
+      context: context,
+      backgroundColor: Colors.transparent,
+      builder: (context) => Container(
+        decoration: BoxDecoration(
+          color: isDark ? AppColors.darkSurface : Colors.white,
+          borderRadius: const BorderRadius.vertical(top: Radius.circular(28)),
+        ),
+        child: SafeArea(
+          child: Padding(
+            padding: const EdgeInsets.all(20),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Container(
+                  width: 40,
+                  height: 4,
+                  decoration: BoxDecoration(
+                    color: isDark ? AppColors.darkDivider : const Color(0xFFE2E8F0),
+                    borderRadius: BorderRadius.circular(2),
+                  ),
+                ),
+                const SizedBox(height: 20),
+                Text(
+                  'Quick Actions',
+                  style: TextStyle(
+                    fontSize: 20,
+                    fontWeight: FontWeight.w800,
+                    color: isDark ? Colors.white : AppColors.textPrimary,
+                  ),
+                ),
+                const SizedBox(height: 20),
+                if (patient != null) ...[
+                  ListTile(
+                    leading: Container(
+                      padding: const EdgeInsets.all(10),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFF10B981).withValues(alpha: 0.1),
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: const Icon(Icons.play_arrow_rounded, color: Color(0xFF10B981)),
+                    ),
+                    title: const Text('Start Consultation', style: TextStyle(fontWeight: FontWeight.w600)),
+                    onTap: () {
+                      Navigator.pop(context);
+                      _startConsultation(context, db, appt, patient);
+                    },
+                  ),
+                  ListTile(
+                    leading: Container(
+                      padding: const EdgeInsets.all(10),
+                      decoration: BoxDecoration(
+                        color: AppColors.primary.withValues(alpha: 0.1),
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: const Icon(Icons.person_rounded, color: AppColors.primary),
+                    ),
+                    title: const Text('View Patient', style: TextStyle(fontWeight: FontWeight.w600)),
+                    onTap: () {
+                      Navigator.pop(context);
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (_) => PatientViewScreen(patient: patient),
+                        ),
+                      );
+                    },
+                  ),
+                  ListTile(
+                    leading: Container(
+                      padding: const EdgeInsets.all(10),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFF10B981).withValues(alpha: 0.1),
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: const Icon(Icons.how_to_reg_rounded, color: Color(0xFF10B981)),
+                    ),
+                    title: const Text('Check In', style: TextStyle(fontWeight: FontWeight.w600)),
+                    onTap: () {
+                      Navigator.pop(context);
+                      _quickCheckIn(context, db, appt, patient);
+                    },
+                  ),
+                ],
+                ListTile(
+                  leading: Container(
+                    padding: const EdgeInsets.all(10),
+                    decoration: BoxDecoration(
+                      color: AppColors.warning.withValues(alpha: 0.1),
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: const Icon(Icons.edit_rounded, color: AppColors.warning),
+                  ),
+                  title: const Text('Edit Appointment', style: TextStyle(fontWeight: FontWeight.w600)),
+                  onTap: () {
+                    Navigator.pop(context);
+                    _showAppointmentDetails(context, appt, patient);
+                  },
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
   }
   
   /// Quick check-in for appointment with auto-encounter option
@@ -1644,29 +1818,10 @@ class _AppointmentsScreenState extends ConsumerState<AppointmentsScreen> {
 
   Future<void> _showDeleteAppointmentConfirmation(BuildContext parentContext, Appointment appointment, Patient? patient) async {
     final patientName = patient != null ? '${patient.firstName} ${patient.lastName}' : 'this patient';
-    final confirmed = await showDialog<bool>(
-      context: parentContext,
-      builder: (dialogContext) => AlertDialog(
-        title: const Row(
-          children: [
-            Icon(Icons.warning_amber_rounded, color: AppColors.error),
-            SizedBox(width: 12),
-            Text('Delete Appointment'),
-          ],
-        ),
-        content: Text('Are you sure you want to permanently delete the appointment with $patientName? This action cannot be undone.'),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(dialogContext, false),
-            child: const Text('Cancel'),
-          ),
-          TextButton(
-            onPressed: () => Navigator.pop(dialogContext, true),
-            style: TextButton.styleFrom(foregroundColor: AppColors.error),
-            child: const Text('Delete'),
-          ),
-        ],
-      ),
+    final confirmed = await ConfirmationDialog.showDelete(
+      parentContext,
+      itemName: 'Appointment',
+      message: 'Are you sure you want to permanently delete the appointment with $patientName? This action cannot be undone.',
     );
 
     if (confirmed == true && mounted) {

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../../../core/extensions/context_extensions.dart';
 import '../../../../theme/app_theme.dart';
 import 'medication_theme.dart';
 
@@ -241,7 +242,7 @@ class _MedicineSelectorGridState extends State<MedicineSelectorGrid> {
 
   Widget _buildSearchAndFilters(bool isDark, List<String> categories) {
     return Padding(
-      padding: const EdgeInsets.all(16),
+      padding: EdgeInsets.all(context.responsivePadding),
       child: Column(
         children: [
           // Search bar
@@ -327,7 +328,7 @@ class _MedicineSelectorGridState extends State<MedicineSelectorGrid> {
 
   Widget _buildAddCustomButton(bool isDark) {
     return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 16),
+      padding: EdgeInsets.symmetric(horizontal: context.responsivePadding),
       child: Container(
         decoration: BoxDecoration(
           gradient: LinearGradient(
@@ -348,7 +349,7 @@ class _MedicineSelectorGridState extends State<MedicineSelectorGrid> {
             onTap: widget.onAddCustom,
             borderRadius: BorderRadius.circular(16),
             child: Padding(
-              padding: const EdgeInsets.all(16),
+              padding: EdgeInsets.all(context.responsivePadding),
               child: Row(
                 children: [
                   Container(
@@ -418,7 +419,7 @@ class _MedicineSelectorGridState extends State<MedicineSelectorGrid> {
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
             Container(
-              padding: const EdgeInsets.all(20),
+              padding: EdgeInsets.all(context.responsivePadding),
               decoration: BoxDecoration(
                 color: MedColors.primary.withValues(alpha: 0.1),
                 shape: BoxShape.circle,
@@ -442,16 +443,26 @@ class _MedicineSelectorGridState extends State<MedicineSelectorGrid> {
       );
     }
 
-    return GridView.builder(
-      padding: const EdgeInsets.all(16),
-      gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-        crossAxisCount: 2,
-        childAspectRatio: 2.3,
-        crossAxisSpacing: 10,
-        mainAxisSpacing: 10,
-      ),
-      itemCount: _filteredMedicines.length,
-      itemBuilder: (context, index) {
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        return GridView.builder(
+          padding: EdgeInsets.all(context.responsivePadding),
+          gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+            crossAxisCount: context.responsive(
+              compact: 2,
+              medium: 3,
+              expanded: 4,
+            ),
+            childAspectRatio: context.responsive(
+              compact: 2.1,
+              medium: 2.3,
+              expanded: 2.5,
+            ),
+            crossAxisSpacing: context.responsiveItemSpacing,
+            mainAxisSpacing: context.responsiveItemSpacing,
+          ),
+          itemCount: _filteredMedicines.length,
+          itemBuilder: (context, index) {
         final medicine = _filteredMedicines[index];
         final name = medicine['name'] ?? '';
         final dosage = medicine['dosage'] ?? '';
@@ -470,6 +481,8 @@ class _MedicineSelectorGridState extends State<MedicineSelectorGrid> {
               widget.onSelect(displayName, '1 tablet');
             }
           },
+        );
+      },
         );
       },
     );

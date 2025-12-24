@@ -5,6 +5,7 @@
 import 'package:flutter/material.dart';
 import 'lab_theme.dart';
 import 'lab_models.dart';
+import '../../../../core/extensions/context_extensions.dart';
 
 /// A row displaying a label and value pair for lab details
 class LabDetailRow extends StatelessWidget {
@@ -325,13 +326,13 @@ class LabConfirmationDialog extends StatelessWidget {
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
       backgroundColor: isDark ? LabColors.darkSurface : Colors.white,
       child: Padding(
-        padding: const EdgeInsets.all(24),
+        padding: EdgeInsets.all(context.responsivePadding),
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
             if (icon != null)
               Container(
-                padding: const EdgeInsets.all(16),
+                padding: EdgeInsets.all(context.responsivePadding),
                 decoration: BoxDecoration(
                   color: actionColor.withValues(alpha: 0.1),
                   shape: BoxShape.circle,

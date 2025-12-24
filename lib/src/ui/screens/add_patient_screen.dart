@@ -15,6 +15,7 @@ import '../../core/theme/design_tokens.dart';
 import '../../theme/app_theme.dart';
 import '../widgets/suggestion_text_field.dart';
 import '../../core/widgets/keyboard_aware_scaffold.dart';
+import '../../core/widgets/toast.dart';
 
 class AddPatientScreen extends ConsumerStatefulWidget {
   const AddPatientScreen({super.key, this.patient});
@@ -145,20 +146,24 @@ class _AddPatientScreenState extends ConsumerState<AddPatientScreen> {
           floating: false,
           pinned: true,
           elevation: 0,
-          backgroundColor: isDark ? const Color(0xFF1A1A1A) : Colors.white,
+          backgroundColor: isDark ? AppColors.darkSurface : AppColors.surface,
           surfaceTintColor: Colors.transparent,
           leading: Padding(
             padding: const EdgeInsets.all(8.0),
             child: Container(
               decoration: BoxDecoration(
-                color: isDark ? Colors.white.withValues(alpha: 0.1) : Colors.grey.shade100,
-                borderRadius: BorderRadius.circular(12),
+                color: isDark
+                    ? AppColors.darkTextPrimary.withValues(alpha: 0.1)
+                    : AppColors.textSecondary.withValues(alpha: 0.1),
+                borderRadius: BorderRadius.circular(AppRadius.md),
               ),
               child: IconButton(
                 icon: Icon(
                   Icons.arrow_back_ios_new_rounded,
                   size: 18,
-                  color: isDark ? Colors.white : Colors.black87,
+                  color: isDark
+                      ? AppColors.darkTextPrimary
+                      : AppColors.textPrimary,
                 ),
                 onPressed: () => Navigator.of(context).pop(),
               ),
@@ -171,8 +176,8 @@ class _AddPatientScreenState extends ConsumerState<AddPatientScreen> {
                   begin: Alignment.topLeft,
                   end: Alignment.bottomRight,
                   colors: isDark
-                      ? [const Color(0xFF1A1A1A), const Color(0xFF0F0F0F)]
-                      : [Colors.white, const Color(0xFFF8FAFC)],
+                      ? [AppColors.darkSurface, AppColors.darkBackground]
+                      : [AppColors.surface, AppColors.background],
                 ),
               ),
               child: SafeArea(
@@ -193,7 +198,10 @@ class _AddPatientScreenState extends ConsumerState<AddPatientScreen> {
                               decoration: BoxDecoration(
                                 gradient: _selectedPhotoBytes == null
                                     ? const LinearGradient(
-                                        colors: [Color(0xFF6366F1), Color(0xFF8B5CF6)],
+                                        colors: [
+                                          AppColors.primary,
+                                          AppColors.billing
+                                        ],
                                         begin: Alignment.topLeft,
                                         end: Alignment.bottomRight,
                                       )
@@ -201,7 +209,7 @@ class _AddPatientScreenState extends ConsumerState<AddPatientScreen> {
                                 shape: BoxShape.circle,
                                 boxShadow: [
                                   BoxShadow(
-                                    color: const Color(0xFF6366F1).withValues(alpha: 0.4),
+                                    color: AppColors.primary.withValues(alpha: 0.4),
                                     blurRadius: 20,
                                     offset: const Offset(0, 8),
                                   ),
@@ -219,36 +227,9 @@ class _AddPatientScreenState extends ConsumerState<AddPatientScreen> {
                                         child: Icon(
                                           Icons.person_outline,
                                           size: isCompact ? 28 : 32,
-                                          color: Colors.white,
+                                          color: AppColors.surface,
                                         ),
                                       ),
-                              ),
-                            ),
-                            Positioned(
-                              right: 0,
-                              bottom: 0,
-                              child: Container(
-                                padding: EdgeInsets.all(isCompact ? 4 : 6),
-                                decoration: BoxDecoration(
-                                  color: const Color(0xFF10B981),
-                                  shape: BoxShape.circle,
-                                  border: Border.all(
-                                    color: isDark ? const Color(0xFF1A1A1A) : Colors.white,
-                                    width: 2,
-                                  ),
-                                  boxShadow: [
-                                    BoxShadow(
-                                      color: const Color(0xFF10B981).withValues(alpha: 0.4),
-                                      blurRadius: 8,
-                                      offset: const Offset(0, 2),
-                                    ),
-                                  ],
-                                ),
-                                child: Icon(
-                                  _selectedPhotoBytes != null ? Icons.edit : Icons.camera_alt,
-                                  size: isCompact ? 10 : 12,
-                                  color: Colors.white,
-                                ),
                               ),
                             ),
                           ],
@@ -260,7 +241,9 @@ class _AddPatientScreenState extends ConsumerState<AddPatientScreen> {
                         style: TextStyle(
                           fontSize: 18,
                           fontWeight: FontWeight.w800,
-                          color: isDark ? Colors.white : const Color(0xFF1E293B),
+                          color: isDark
+                              ? AppColors.darkTextPrimary
+                              : AppColors.textPrimary,
                           letterSpacing: -0.5,
                         ),
                       ),
@@ -270,7 +253,7 @@ class _AddPatientScreenState extends ConsumerState<AddPatientScreen> {
                         style: TextStyle(
                           fontSize: 11,
                           color: isDark 
-                              ? Colors.white.withValues(alpha: 0.5) 
+                              ? AppColors.surface.withValues(alpha: 0.5) 
                               : const Color(0xFF64748B),
                         ),
                       ),
@@ -812,29 +795,13 @@ class _AddPatientScreenState extends ConsumerState<AddPatientScreen> {
       
       if (!mounted) return;
       
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Row(
-            children: [
-              const Icon(Icons.check_circle, color: Colors.white),
-              const SizedBox(width: 12),
-              Text(widget.isEditMode ? 'Patient updated successfully' : 'Patient added successfully'),
-            ],
-          ),
-          backgroundColor: AppColors.success,
-          behavior: SnackBarBehavior.floating,
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-        ),
+      context.showSuccessToast(
+        widget.isEditMode ? 'Patient updated successfully' : 'Patient added successfully',
       );
       Navigator.of(context).pop(savedPatient);
     } catch (e) {
       setState(() => _isSaving = false);
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Error: $e'),
-          backgroundColor: AppColors.error,
-        ),
-      );
+      context.showErrorToast('Error: $e');
     }
   }
 

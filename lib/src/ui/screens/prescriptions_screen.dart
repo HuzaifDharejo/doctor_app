@@ -1,13 +1,18 @@
+import 'dart:async';
 import 'dart:convert';
+
 import 'package:drift/drift.dart' show Value;
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
-import '../../core/theme/design_tokens.dart';
-import '../../core/widgets/app_card.dart';
-import '../../core/widgets/loading_state.dart';
-import '../../core/widgets/error_state.dart';
+
 import '../../core/components/app_button.dart';
+import '../../core/extensions/context_extensions.dart';
+import '../../core/theme/design_tokens.dart';
+import '../../core/utils/pagination.dart';
+import '../../core/widgets/app_card.dart';
+import '../../core/widgets/error_state.dart';
+import '../../core/widgets/skeleton_loading.dart';
 import '../../db/doctor_db.dart';
 import '../../providers/db_provider.dart';
 import '../../services/pdf_service.dart';
@@ -15,34 +20,78 @@ import '../../services/whatsapp_service.dart';
 import '../../theme/app_theme.dart';
 import 'edit_prescription_screen.dart';
 
-class PrescriptionsScreen extends ConsumerWidget {
+class PrescriptionsScreen extends ConsumerStatefulWidget {
   const PrescriptionsScreen({super.key});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final dbAsync = ref.watch(doctorDbProvider);
+  ConsumerState<PrescriptionsScreen> createState() => _PrescriptionsScreenState();
+}
+
+class _PrescriptionsScreenState extends ConsumerState<PrescriptionsScreen> {
+  late PaginationController<Prescription> _paginationController;
+  final ScrollController _scrollController = ScrollController();
+
+  @override
+  void initState() {
+    super.initState();
+    _scrollController.addListener(_onScroll);
+    _initPaginationController();
+  }
+
+  void _initPaginationController() {
+    _paginationController = PaginationController<Prescription>(
+      fetchPage: _fetchPage,
+    );
+    _paginationController.addListener(_onPaginationUpdate);
+    _paginationController.loadInitial();
+  }
+
+  void _onPaginationUpdate() {
+    if (mounted) {
+      setState(() {});
+    }
+  }
+
+  Future<(List<Prescription>, int)> _fetchPage(int pageIndex, int pageSize) async {
+    final db = await ref.read(doctorDbProvider.future);
+    return db.getPrescriptionsPaginated(
+      offset: pageIndex * pageSize,
+      limit: pageSize,
+    );
+  }
+
+  @override
+  void dispose() {
+    _scrollController.removeListener(_onScroll);
+    _scrollController.dispose();
+    _paginationController.removeListener(_onPaginationUpdate);
+    _paginationController.dispose();
+    super.dispose();
+  }
+
+  void _onScroll() {
+    if (!mounted || !_scrollController.hasClients) return;
+    _paginationController.onScroll(
+      scrollPosition: _scrollController.position.pixels,
+      maxScrollExtent: _scrollController.position.maxScrollExtent,
+      threshold: 200,
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
     final theme = Theme.of(context);
     
     return Scaffold(
       backgroundColor: theme.scaffoldBackgroundColor,
       body: CustomScrollView(
+        controller: _scrollController,
         physics: const AlwaysScrollableScrollPhysics(
           parent: BouncingScrollPhysics(),
         ),
         slivers: [
           _buildModernSliverAppBar(context),
-          dbAsync.when(
-            data: (db) => _buildPrescriptionsSliverList(context, ref, db),
-            loading: () => const SliverFillRemaining(
-              child: LoadingState(),
-            ),
-            error: (err, stack) => SliverFillRemaining(
-              child: ErrorState.generic(
-                message: err.toString(),
-                onRetry: () => ref.invalidate(doctorDbProvider),
-              ),
-            ),
-          ),
+          _buildPrescriptionsSliverList(context, ref),
         ],
       ),
     );
@@ -60,16 +109,16 @@ class PrescriptionsScreen extends ConsumerWidget {
       backgroundColor: colorScheme.surface,
       surfaceTintColor: Colors.transparent,
       leading: Padding(
-        padding: const EdgeInsets.all(8.0),
+        padding: const EdgeInsets.all(AppSpacing.sm),
         child: Container(
           decoration: BoxDecoration(
             color: theme.dividerColor.withValues(alpha: 0.3),
-            borderRadius: BorderRadius.circular(12),
+            borderRadius: BorderRadius.circular(AppRadius.md),
           ),
           child: IconButton(
             icon: Icon(
               Icons.arrow_back_ios_new_rounded,
-              size: 18,
+              size: AppIconSize.sm,
               color: theme.textTheme.bodyLarge?.color,
             ),
             onPressed: () => Navigator.of(context).pop(),
@@ -87,18 +136,18 @@ class PrescriptionsScreen extends ConsumerWidget {
           ),
           child: SafeArea(
             child: Padding(
-              padding: const EdgeInsets.fromLTRB(20, 60, 20, 20),
+              padding: const EdgeInsets.fromLTRB(AppSpacing.xl, AppSpacing.xxxxl, AppSpacing.xl, AppSpacing.xl),
               child: Row(
                 children: [
                   Container(
-                    padding: const EdgeInsets.all(16),
+                    padding: EdgeInsets.all(context.responsivePadding),
                     decoration: BoxDecoration(
                       gradient: const LinearGradient(
                         colors: [Color(0xFFF59E0B), Color(0xFFD97706)],
                         begin: Alignment.topLeft,
                         end: Alignment.bottomRight,
                       ),
-                      borderRadius: BorderRadius.circular(20),
+                      borderRadius: BorderRadius.circular(AppRadius.xl),
                       boxShadow: [
                         BoxShadow(
                           color: const Color(0xFFF59E0B).withValues(alpha: 0.4),
@@ -110,10 +159,10 @@ class PrescriptionsScreen extends ConsumerWidget {
                     child: const Icon(
                       Icons.medication_rounded,
                       color: Colors.white,
-                      size: 32,
+                      size: AppIconSize.xl,
                     ),
                   ),
-                  const SizedBox(width: 16),
+                  const SizedBox(width: AppSpacing.lg),
                   Expanded(
                     child: Column(
                       mainAxisSize: MainAxisSize.min,
@@ -122,17 +171,17 @@ class PrescriptionsScreen extends ConsumerWidget {
                         Text(
                           'Prescriptions',
                           style: TextStyle(
-                            fontSize: 28,
+                            fontSize: AppFontSize.display,
                             fontWeight: FontWeight.w800,
                             color: theme.textTheme.displayLarge?.color,
                             letterSpacing: -0.5,
                           ),
                         ),
-                        const SizedBox(height: 4),
+                        const SizedBox(height: AppSpacing.xs),
                         Text(
                           'Manage medications & prescriptions',
                           style: TextStyle(
-                            fontSize: 14,
+                            fontSize: AppFontSize.lg,
                             color: theme.textTheme.bodySmall?.color,
                           ),
                         ),
@@ -148,52 +197,79 @@ class PrescriptionsScreen extends ConsumerWidget {
     );
   }
 
-  Widget _buildPrescriptionsSliverList(BuildContext context, WidgetRef ref, DoctorDatabase db) {
+  Widget _buildPrescriptionsSliverList(BuildContext context, WidgetRef ref) {
     final isCompact = AppBreakpoint.isCompact(MediaQuery.of(context).size.width);
+    final dbAsync = ref.watch(doctorDbProvider);
     
-    return FutureBuilder<List<Prescription>>(
-      future: db.select(db.prescriptions).get(),
-      builder: (context, snapshot) {
-        if (!snapshot.hasData) {
-          return const SliverFillRemaining(
-            child: LoadingState(),
-          );
-        }
-        
-        final prescriptions = snapshot.data!;
-        
-        if (prescriptions.isEmpty) {
-          return SliverFillRemaining(
-            child: _buildModernEmptyState(context),
-          );
-        }
-        
-        return SliverPadding(
-          padding: EdgeInsets.symmetric(horizontal: isCompact ? AppSpacing.md : AppSpacing.xl),
-          sliver: SliverList(
-            delegate: SliverChildBuilderDelegate(
-              (context, index) {
-                return TweenAnimationBuilder<double>(
-                  tween: Tween(begin: 0, end: 1),
-                  duration: Duration(milliseconds: 300 + (index * 50)),
-                  curve: Curves.easeOutCubic,
-                  builder: (context, value, child) {
-                    return Opacity(
-                      opacity: value,
-                      child: Transform.translate(
-                        offset: Offset(0, 20 * (1 - value)),
-                        child: child,
-                      ),
-                    );
-                  },
-                  child: _buildPrescriptionCard(context, ref, db, prescriptions[index]),
-                );
-              },
-              childCount: prescriptions.length,
-            ),
+    if (!_paginationController.hasInitialized) {
+      return const SliverToBoxAdapter(
+        child: PrescriptionListSkeleton(itemCount: 5),
+      );
+    }
+    
+    if (_paginationController.error != null) {
+      return SliverFillRemaining(
+        child: ErrorState.generic(
+          message: _paginationController.error!,
+          onRetry: () => _paginationController.loadInitial(),
+        ),
+      );
+    }
+    
+    final prescriptions = _paginationController.items;
+    
+    if (prescriptions.isEmpty && !_paginationController.isLoading) {
+      return SliverFillRemaining(
+        child: _buildModernEmptyState(context),
+      );
+    }
+    
+    return dbAsync.when(
+      data: (db) => SliverPadding(
+        padding: EdgeInsets.symmetric(horizontal: isCompact ? AppSpacing.md : AppSpacing.xl),
+        sliver: SliverList(
+          delegate: SliverChildBuilderDelegate(
+            (context, index) {
+              if (index >= prescriptions.length) {
+                // Loading indicator at the end
+                if (_paginationController.hasMore && _paginationController.isLoading) {
+                  return const Padding(
+                    padding: EdgeInsets.all(AppSpacing.xl),
+                    child: Center(child: CircularProgressIndicator()),
+                  );
+                }
+                return const SizedBox.shrink();
+              }
+              
+              return TweenAnimationBuilder<double>(
+                tween: Tween(begin: 0, end: 1),
+                duration: Duration(milliseconds: 300 + (index * 50)),
+                curve: Curves.easeOutCubic,
+                builder: (context, value, child) {
+                  return Opacity(
+                    opacity: value,
+                    child: Transform.translate(
+                      offset: Offset(0, 20 * (1 - value)),
+                      child: child,
+                    ),
+                  );
+                },
+                child: _buildPrescriptionCard(context, ref, db, prescriptions[index]),
+              );
+            },
+            childCount: prescriptions.length + (_paginationController.hasMore ? 1 : 0),
           ),
-        );
-      },
+        ),
+      ),
+      loading: () => const SliverToBoxAdapter(
+        child: PrescriptionListSkeleton(itemCount: 5),
+      ),
+      error: (err, stack) => SliverFillRemaining(
+        child: ErrorState.generic(
+          message: err.toString(),
+          onRetry: () => ref.invalidate(doctorDbProvider),
+        ),
+      ),
     );
   }
 
@@ -202,36 +278,36 @@ class PrescriptionsScreen extends ConsumerWidget {
     
     return Center(
       child: Padding(
-        padding: const EdgeInsets.all(40),
+        padding: const EdgeInsets.all(AppSpacing.xxxxl),
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
             Container(
-              padding: const EdgeInsets.all(24),
+              padding: EdgeInsets.all(context.responsivePadding),
               decoration: BoxDecoration(
                 color: const Color(0xFFF59E0B).withValues(alpha: 0.1),
-                borderRadius: BorderRadius.circular(24),
+                borderRadius: BorderRadius.circular(AppRadius.xxl),
               ),
               child: Icon(
                 Icons.medication_outlined,
-                size: 64,
+                size: AppIconSize.xxl,
                 color: const Color(0xFFF59E0B).withValues(alpha: 0.7),
               ),
             ),
-            const SizedBox(height: 24),
+            const SizedBox(height: AppSpacing.xxl),
             Text(
               'No Prescriptions Yet',
               style: TextStyle(
-                fontSize: 22,
+                fontSize: AppFontSize.xxxl,
                 fontWeight: FontWeight.w700,
                 color: theme.textTheme.displayLarge?.color,
               ),
             ),
-            const SizedBox(height: 8),
+            const SizedBox(height: AppSpacing.sm),
             Text(
               'Prescriptions will appear here when created from patient details',
               style: TextStyle(
-                fontSize: 14,
+                fontSize: AppFontSize.lg,
                 color: theme.textTheme.bodySmall?.color,
               ),
               textAlign: TextAlign.center,
@@ -276,9 +352,9 @@ class PrescriptionsScreen extends ConsumerWidget {
             final isCompact = screenWidth < 400;
             
             return AppCard(
-              margin: EdgeInsets.only(bottom: isCompact ? 12 : 16),
+              margin: EdgeInsets.only(bottom: isCompact ? AppSpacing.md : AppSpacing.lg),
               color: theme.colorScheme.surface,
-          borderRadius: BorderRadius.circular(24),
+          borderRadius: BorderRadius.circular(AppRadius.xxl),
           borderColor: theme.dividerColor.withValues(alpha: 0.5),
           borderWidth: 1,
           boxShadow: [
@@ -303,7 +379,7 @@ class PrescriptionsScreen extends ConsumerWidget {
                 children: [
                   // Header with gradient
                   Container(
-                    padding: EdgeInsets.all(isCompact ? 14 : 18),
+                    padding: EdgeInsets.all(isCompact ? AppSpacing.md : AppSpacing.lg),
                     decoration: BoxDecoration(
                       gradient: LinearGradient(
                         colors: [
@@ -314,8 +390,8 @@ class PrescriptionsScreen extends ConsumerWidget {
                         end: Alignment.bottomRight,
                       ),
                       borderRadius: const BorderRadius.only(
-                        topLeft: Radius.circular(24),
-                        topRight: Radius.circular(24),
+                        topLeft: Radius.circular(AppRadius.xxl),
+                        topRight: Radius.circular(AppRadius.xxl),
                       ),
                     ),
                     child: Row(
@@ -324,7 +400,7 @@ class PrescriptionsScreen extends ConsumerWidget {
                         Row(
                           children: [
                             Container(
-                              padding: EdgeInsets.all(isCompact ? 10 : 12),
+                              padding: EdgeInsets.all(isCompact ? AppSpacing.sm : AppSpacing.md),
                               decoration: BoxDecoration(
                                 gradient: LinearGradient(
                                   colors: [
@@ -332,7 +408,7 @@ class PrescriptionsScreen extends ConsumerWidget {
                                     AppColors.prescriptions.withValues(alpha: 0.8),
                                   ],
                                 ),
-                                borderRadius: BorderRadius.circular(14),
+                                borderRadius: BorderRadius.circular(AppRadius.md),
                                 boxShadow: [
                                   BoxShadow(
                                     color: AppColors.prescriptions.withValues(alpha: 0.3),
@@ -344,17 +420,17 @@ class PrescriptionsScreen extends ConsumerWidget {
                               child: Icon(
                                 Icons.medication_rounded,
                                 color: Colors.white,
-                                size: isCompact ? 20 : 22,
+                                size: isCompact ? AppIconSize.sm : AppIconSize.md,
                               ),
                             ),
-                            SizedBox(width: isCompact ? 10 : 14),
+                            SizedBox(width: isCompact ? AppSpacing.sm : AppSpacing.md),
                             Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
                                 Text(
                                   'Rx #${prescription.id}',
                                   style: TextStyle(
-                                    fontSize: isCompact ? 13 : 15,
+                                    fontSize: isCompact ? AppFontSize.md : AppFontSize.titleLarge,
                                     fontWeight: FontWeight.w800,
                                     color: theme.colorScheme.onSurface,
                                     letterSpacing: -0.3,
@@ -362,13 +438,13 @@ class PrescriptionsScreen extends ConsumerWidget {
                                   maxLines: 1,
                                   overflow: TextOverflow.ellipsis,
                                 ),
-                                const SizedBox(height: 2),
+                                const SizedBox(height: AppSpacing.xxs),
                                 SizedBox(
                                   width: isCompact ? 100 : 140,
                                   child: Text(
                                     patientName,
                                     style: TextStyle(
-                                      fontSize: isCompact ? 10 : 11,
+                                      fontSize: isCompact ? AppFontSize.xs : AppFontSize.xs,
                                       fontWeight: FontWeight.w500,
                                       color: theme.textTheme.bodySmall?.color,
                                     ),
@@ -386,12 +462,12 @@ class PrescriptionsScreen extends ConsumerWidget {
                             Text(
                               DateFormat('MMM d').format(prescription.createdAt),
                               style: TextStyle(
-                                fontSize: isCompact ? 11 : 12,
+                                fontSize: isCompact ? AppFontSize.xs : AppFontSize.sm,
                                 fontWeight: FontWeight.w600,
                                 color: theme.textTheme.bodySmall?.color,
                               ),
                             ),
-                            const SizedBox(height: 4),
+                            const SizedBox(height: AppSpacing.xs),
                             Container(
                               padding: const EdgeInsets.symmetric(horizontal: AppSpacing.md, vertical: AppSpacing.xs),
                               decoration: BoxDecoration(
@@ -406,7 +482,7 @@ class PrescriptionsScreen extends ConsumerWidget {
                                 color: prescription.isRefillable 
                                     ? null 
                                     : theme.dividerColor.withValues(alpha: 0.5),
-                                borderRadius: BorderRadius.circular(10),
+                                borderRadius: BorderRadius.circular(AppRadius.md),
                               ),
                               child: Row(
                                 mainAxisSize: MainAxisSize.min,
@@ -415,16 +491,16 @@ class PrescriptionsScreen extends ConsumerWidget {
                                     prescription.isRefillable 
                                         ? Icons.autorenew_rounded 
                                         : Icons.do_not_disturb_rounded,
-                                    size: 12,
+                                    size: AppIconSize.xs,
                                     color: prescription.isRefillable
                                         ? AppColors.success
                                         : theme.textTheme.bodySmall?.color,
                                   ),
-                                  const SizedBox(width: 4),
+                                  const SizedBox(width: AppSpacing.xs),
                                   Text(
                                     prescription.isRefillable ? 'Refill' : 'Once',
                                     style: TextStyle(
-                                      fontSize: 10,
+                                      fontSize: AppFontSize.xs,
                                       fontWeight: FontWeight.w700,
                                       color: prescription.isRefillable
                                           ? AppColors.success
@@ -443,7 +519,7 @@ class PrescriptionsScreen extends ConsumerWidget {
                   // Medications
                   if (medications.isNotEmpty)
                     Padding(
-                      padding: EdgeInsets.all(isCompact ? 14 : 18),
+                      padding: EdgeInsets.all(isCompact ? AppSpacing.md : AppSpacing.lg),
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
@@ -453,16 +529,16 @@ class PrescriptionsScreen extends ConsumerWidget {
                                 padding: const EdgeInsets.symmetric(horizontal: AppSpacing.md, vertical: AppSpacing.xs),
                                 decoration: BoxDecoration(
                                   color: AppColors.primary.withValues(alpha: 0.1),
-                                  borderRadius: BorderRadius.circular(8),
+                                  borderRadius: BorderRadius.circular(AppRadius.sm),
                                 ),
                                 child: Row(
                                   children: [
-                                    const Icon(Icons.local_pharmacy_rounded, size: 12, color: AppColors.primary),
-                                    const SizedBox(width: 4),
+                                    const Icon(Icons.local_pharmacy_rounded, size: AppIconSize.xs, color: AppColors.primary),
+                                    const SizedBox(width: AppSpacing.xs),
                                     Text(
                                       '${medications.length} medications',
                                       style: const TextStyle(
-                                        fontSize: 10,
+                                        fontSize: AppFontSize.xs,
                                         fontWeight: FontWeight.w600,
                                         color: AppColors.primary,
                                       ),
@@ -472,13 +548,13 @@ class PrescriptionsScreen extends ConsumerWidget {
                               ),
                             ],
                           ),
-                          const SizedBox(height: 12),
+                          const SizedBox(height: AppSpacing.md),
                           ...medications.take(3).map((med) {
                             final medMap = med as Map<String, dynamic>;
                             final name = medMap['name'] as String? ?? 'Unknown';
                             final dosage = medMap['dosage'] as String? ?? '';
                             return Padding(
-                              padding: const EdgeInsets.only(bottom: 8),
+                              padding: const EdgeInsets.only(bottom: AppSpacing.sm),
                               child: Row(
                                 children: [
                                   Container(
@@ -491,12 +567,12 @@ class PrescriptionsScreen extends ConsumerWidget {
                                       borderRadius: BorderRadius.circular(3),
                                     ),
                                   ),
-                                  const SizedBox(width: 12),
+                                  const SizedBox(width: AppSpacing.md),
                                   Expanded(
                                     child: Text(
                                       '$name${dosage.isNotEmpty ? " • $dosage" : ""}',
                                       style: TextStyle(
-                                        fontSize: isCompact ? 11 : 12,
+                                        fontSize: isCompact ? AppFontSize.xs : AppFontSize.sm,
                                         fontWeight: FontWeight.w500,
                                         color: Theme.of(context).colorScheme.onSurface,
                                       ),
@@ -510,20 +586,20 @@ class PrescriptionsScreen extends ConsumerWidget {
                           }),
                           if (medications.length > 3)
                             Padding(
-                              padding: const EdgeInsets.only(top: 4),
+                              padding: const EdgeInsets.only(top: AppSpacing.xs),
                               child: Row(
                                 children: [
-                                  const SizedBox(width: 18),
+                                  const SizedBox(width: AppSpacing.lg),
                                   Text(
                                     '+${medications.length - 3} more',
                                     style: const TextStyle(
-                                      fontSize: 11,
+                                      fontSize: AppFontSize.xs,
                                       color: AppColors.primary,
                                       fontWeight: FontWeight.w600,
                                     ),
                                   ),
-                                  const SizedBox(width: 4),
-                                  const Icon(Icons.arrow_forward_rounded, size: 12, color: AppColors.primary),
+                                  const SizedBox(width: AppSpacing.xs),
+                                  const Icon(Icons.arrow_forward_rounded, size: AppIconSize.xs, color: AppColors.primary),
                                 ],
                               ),
                             ),
@@ -535,12 +611,12 @@ class PrescriptionsScreen extends ConsumerWidget {
                   if (prescription.instructions.isNotEmpty)
                     Container(
                       width: double.infinity,
-                      padding: EdgeInsets.all(isCompact ? 12 : 14),
+                      padding: EdgeInsets.all(isCompact ? AppSpacing.md : AppSpacing.md),
                       decoration: BoxDecoration(
                         color: theme.scaffoldBackgroundColor,
                         borderRadius: const BorderRadius.only(
-                          bottomLeft: Radius.circular(24),
-                          bottomRight: Radius.circular(24),
+                          bottomLeft: Radius.circular(AppRadius.xxl),
+                          bottomRight: Radius.circular(AppRadius.xxl),
                         ),
                       ),
                       child: Row(
@@ -549,20 +625,20 @@ class PrescriptionsScreen extends ConsumerWidget {
                             padding: const EdgeInsets.all(AppSpacing.xs),
                             decoration: BoxDecoration(
                               color: AppColors.info.withValues(alpha: 0.12),
-                              borderRadius: BorderRadius.circular(8),
+                              borderRadius: BorderRadius.circular(AppRadius.sm),
                             ),
                             child: const Icon(
                               Icons.info_outline_rounded,
-                              size: 14,
+                              size: AppIconSize.xs,
                               color: AppColors.info,
                             ),
                           ),
-                          const SizedBox(width: 10),
+                          const SizedBox(width: AppSpacing.sm),
                           Expanded(
                             child: Text(
                               prescription.instructions,
                               style: TextStyle(
-                                fontSize: isCompact ? 11 : 12,
+                                fontSize: isCompact ? AppFontSize.xs : AppFontSize.sm,
                                 color: theme.textTheme.bodySmall?.color,
                                 fontStyle: FontStyle.italic,
                               ),
@@ -620,11 +696,11 @@ class PrescriptionsScreen extends ConsumerWidget {
                   height: 4,
                   decoration: BoxDecoration(
                     color: theme.dividerColor,
-                    borderRadius: BorderRadius.circular(2),
+                    borderRadius: BorderRadius.circular(AppRadius.xs),
                   ),
                 ),
               ),
-              const SizedBox(height: 20),
+              const SizedBox(height: AppSpacing.xl),
               // Header with back button
               Row(
                 children: [
@@ -643,20 +719,20 @@ class PrescriptionsScreen extends ConsumerWidget {
                       ),
                     ),
                   ),
-                  const SizedBox(width: 12),
+                  const SizedBox(width: AppSpacing.md),
                   Container(
                     padding: const EdgeInsets.all(AppSpacing.md),
                     decoration: BoxDecoration(
                       color: AppColors.warning.withValues(alpha: 0.1),
-                      borderRadius: BorderRadius.circular(12),
+                      borderRadius: BorderRadius.circular(AppRadius.md),
                     ),
                     child: const Icon(
                       Icons.medication_rounded,
                       color: AppColors.warning,
-                      size: 28,
+                      size: AppIconSize.lg,
                     ),
                   ),
-                  const SizedBox(width: 16),
+                  const SizedBox(width: AppSpacing.lg),
                   Expanded(
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
@@ -665,10 +741,10 @@ class PrescriptionsScreen extends ConsumerWidget {
                           'Prescription #${prescription.id}',
                           style: theme.textTheme.titleLarge,
                         ),
-                        const SizedBox(height: 4),
+                        const SizedBox(height: AppSpacing.xs),
                         Wrap(
-                          spacing: 8,
-                          runSpacing: 4,
+                          spacing: AppSpacing.sm,
+                          runSpacing: AppSpacing.xs,
                           crossAxisAlignment: WrapCrossAlignment.center,
                           children: [
                             Row(
@@ -676,15 +752,15 @@ class PrescriptionsScreen extends ConsumerWidget {
                               children: [
                                 Icon(
                                   Icons.calendar_today,
-                                  size: 14,
+                                  size: AppIconSize.xs,
                                   color: theme.textTheme.bodySmall?.color,
                                 ),
-                                const SizedBox(width: 4),
+                                const SizedBox(width: AppSpacing.xs),
                                 Text(
                                   dateFormat.format(prescription.createdAt),
                                   style: TextStyle(
                                     color: theme.textTheme.bodySmall?.color,
-                                    fontSize: 13,
+                                    fontSize: AppFontSize.md,
                                   ),
                                 ),
                               ],
@@ -694,18 +770,18 @@ class PrescriptionsScreen extends ConsumerWidget {
                                 padding: const EdgeInsets.symmetric(horizontal: AppSpacing.sm, vertical: AppSpacing.xxs),
                                 decoration: BoxDecoration(
                                   color: AppColors.success.withValues(alpha: 0.1),
-                                  borderRadius: BorderRadius.circular(8),
+                                  borderRadius: BorderRadius.circular(AppRadius.sm),
                                 ),
                                 child: const Row(
                                   mainAxisSize: MainAxisSize.min,
                                   children: [
-                                    Icon(Icons.refresh, size: 12, color: AppColors.success),
-                                    SizedBox(width: 4),
+                                    Icon(Icons.refresh, size: AppIconSize.xs, color: AppColors.success),
+                                    SizedBox(width: AppSpacing.xs),
                                     Text(
                                       'Refillable',
                                       style: TextStyle(
                                         color: AppColors.success,
-                                        fontSize: 11,
+                                        fontSize: AppFontSize.xs,
                                         fontWeight: FontWeight.w500,
                                       ),
                                     ),
@@ -719,26 +795,26 @@ class PrescriptionsScreen extends ConsumerWidget {
                   ),
                 ],
               ),
-              const SizedBox(height: 24),
+              const SizedBox(height: AppSpacing.xxl),
               // Patient info
               if (patient != null)
                 Container(
                   padding: const EdgeInsets.all(AppSpacing.lg),
                   decoration: BoxDecoration(
                     color: theme.scaffoldBackgroundColor,
-                    borderRadius: BorderRadius.circular(12),
-                    border: Border.all(color: theme.dividerColor),
-                  ),
-                  child: Row(
-                    children: [
-                      CircleAvatar(
-                        backgroundColor: colorScheme.primary,
-                        child: Text(
-                          patient.firstName[0].toUpperCase(),
-                          style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
-                        ),
+                  borderRadius: BorderRadius.circular(AppRadius.md),
+                  border: Border.all(color: theme.dividerColor),
+                ),
+                child: Row(
+                  children: [
+                    CircleAvatar(
+                      backgroundColor: colorScheme.primary,
+                      child: Text(
+                        patient.firstName[0].toUpperCase(),
+                        style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
                       ),
-                      const SizedBox(width: 12),
+                    ),
+                    const SizedBox(width: AppSpacing.md),
                       Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
@@ -749,20 +825,20 @@ class PrescriptionsScreen extends ConsumerWidget {
                               color: theme.textTheme.bodyLarge?.color,
                             ),
                           ),
-                          if (patient.phone.isNotEmpty)
-                            Text(
-                              patient.phone,
-                              style: TextStyle(
-                                color: theme.textTheme.bodySmall?.color,
-                                fontSize: 13,
+                            if (patient.phone.isNotEmpty)
+                              Text(
+                                patient.phone,
+                                style: TextStyle(
+                                  color: theme.textTheme.bodySmall?.color,
+                                  fontSize: AppFontSize.md,
+                                ),
                               ),
-                            ),
                         ],
                       ),
                     ],
                   ),
                 ),
-              const SizedBox(height: 16),
+              const SizedBox(height: AppSpacing.lg),
               // Summary card
               Container(
                 padding: const EdgeInsets.all(AppSpacing.lg),
@@ -772,7 +848,7 @@ class PrescriptionsScreen extends ConsumerWidget {
                     begin: Alignment.topLeft,
                     end: Alignment.bottomRight,
                   ),
-                  borderRadius: BorderRadius.circular(12),
+                  borderRadius: BorderRadius.circular(AppRadius.md),
                   border: Border.all(color: AppColors.warning.withValues(alpha: 0.2)),
                 ),
                 child: Row(
@@ -780,20 +856,20 @@ class PrescriptionsScreen extends ConsumerWidget {
                   children: [
                     Column(
                       children: [
-                        const Icon(Icons.medication, color: AppColors.warning, size: 24),
-                        const SizedBox(height: 4),
+                        const Icon(Icons.medication, color: AppColors.warning, size: AppIconSize.md),
+                        const SizedBox(height: AppSpacing.xs),
                         Text(
                           '${medications.length}',
                           style: const TextStyle(
                             fontWeight: FontWeight.bold,
-                            fontSize: 18,
+                            fontSize: AppFontSize.xxl,
                             color: AppColors.warning,
                           ),
                         ),
                         Text(
                           'Medications',
                           style: TextStyle(
-                            fontSize: 12,
+                            fontSize: AppFontSize.sm,
                             color: theme.textTheme.bodySmall?.color,
                           ),
                         ),
@@ -805,21 +881,21 @@ class PrescriptionsScreen extends ConsumerWidget {
                         Icon(
                           Icons.refresh,
                           color: prescription.isRefillable ? AppColors.success : theme.textTheme.bodySmall?.color,
-                          size: 24,
+                          size: AppIconSize.md,
                         ),
-                        const SizedBox(height: 4),
+                        const SizedBox(height: AppSpacing.xs),
                         Text(
                           prescription.isRefillable ? 'Yes' : 'No',
                           style: TextStyle(
                             fontWeight: FontWeight.bold,
-                            fontSize: 18,
+                            fontSize: AppFontSize.xxl,
                             color: prescription.isRefillable ? AppColors.success : theme.textTheme.bodySmall?.color,
                           ),
                         ),
                         Text(
                           'Refillable',
                           style: TextStyle(
-                            fontSize: 12,
+                            fontSize: AppFontSize.sm,
                             color: theme.textTheme.bodySmall?.color,
                           ),
                         ),
@@ -828,12 +904,12 @@ class PrescriptionsScreen extends ConsumerWidget {
                   ],
                 ),
               ),
-              const SizedBox(height: 20),
+              const SizedBox(height: AppSpacing.xl),
               // Medications title
               Row(
                 children: [
-                  const Icon(Icons.medication_outlined, color: AppColors.warning, size: 20),
-                  const SizedBox(width: 8),
+                  const Icon(Icons.medication_outlined, color: AppColors.warning, size: AppIconSize.sm),
+                  const SizedBox(width: AppSpacing.sm),
                   Text(
                     'Medications (${medications.length})',
                     style: theme.textTheme.titleMedium?.copyWith(
@@ -842,7 +918,7 @@ class PrescriptionsScreen extends ConsumerWidget {
                   ),
                 ],
               ),
-              const SizedBox(height: 12),
+              const SizedBox(height: AppSpacing.md),
               // Medications list
               Expanded(
                 child: ScrollConfiguration(
@@ -854,11 +930,11 @@ class PrescriptionsScreen extends ConsumerWidget {
                       final index = entry.key;
                       final med = entry.value as Map<String, dynamic>;
                       return Container(
-                        margin: const EdgeInsets.only(bottom: 12),
+                        margin: const EdgeInsets.only(bottom: AppSpacing.md),
                         padding: const EdgeInsets.all(AppSpacing.lg),
                         decoration: BoxDecoration(
                           color: theme.scaffoldBackgroundColor,
-                          borderRadius: BorderRadius.circular(12),
+                          borderRadius: BorderRadius.circular(AppRadius.md),
                           border: Border.all(color: theme.dividerColor),
                         ),
                         child: Column(
@@ -870,7 +946,7 @@ class PrescriptionsScreen extends ConsumerWidget {
                                   padding: const EdgeInsets.all(AppSpacing.sm),
                                   decoration: BoxDecoration(
                                     color: AppColors.warning.withValues(alpha: 0.1),
-                                    borderRadius: BorderRadius.circular(8),
+                                    borderRadius: BorderRadius.circular(AppRadius.sm),
                                   ),
                                   child: Text(
                                     '${index + 1}',
@@ -880,25 +956,25 @@ class PrescriptionsScreen extends ConsumerWidget {
                                     ),
                                   ),
                                 ),
-                                const SizedBox(width: 12),
+                                const SizedBox(width: AppSpacing.md),
                                 Expanded(
                                   child: Text(
                                     med['name'] as String? ?? 'Unknown',
                                     style: TextStyle(
                                       fontWeight: FontWeight.w600,
-                                      fontSize: 16,
+                                      fontSize: AppFontSize.xl,
                                       color: theme.textTheme.bodyLarge?.color,
                                     ),
                                   ),
                                 ),
                               ],
                             ),
-                            const SizedBox(height: 12),
+                            const SizedBox(height: AppSpacing.md),
                             const Divider(),
-                            const SizedBox(height: 12),
+                            const SizedBox(height: AppSpacing.md),
                             Wrap(
-                              spacing: 16,
-                              runSpacing: 12,
+                              spacing: AppSpacing.lg,
+                              runSpacing: AppSpacing.md,
                               children: [
                                 if (med['dosage'] != null && med['dosage'].toString().isNotEmpty)
                                   _buildMedChip(context, Icons.medical_services_outlined, 'Dosage', med['dosage'].toString()),
@@ -916,11 +992,11 @@ class PrescriptionsScreen extends ConsumerWidget {
                     }),
                     // Doctor's instructions
                     if (prescription.instructions.isNotEmpty) ...[
-                      const SizedBox(height: 8),
+                      const SizedBox(height: AppSpacing.sm),
                       Row(
                         children: [
-                          const Icon(Icons.assignment_outlined, color: AppColors.info, size: 20),
-                          const SizedBox(width: 8),
+                          const Icon(Icons.assignment_outlined, color: AppColors.info, size: AppIconSize.sm),
+                          const SizedBox(width: AppSpacing.sm),
                           Text(
                             "Doctor's Instructions",
                             style: theme.textTheme.titleMedium?.copyWith(
@@ -929,19 +1005,19 @@ class PrescriptionsScreen extends ConsumerWidget {
                           ),
                         ],
                       ),
-                      const SizedBox(height: 12),
+                      const SizedBox(height: AppSpacing.md),
                       Container(
                         padding: const EdgeInsets.all(AppSpacing.lg),
                         decoration: BoxDecoration(
                           color: AppColors.info.withValues(alpha: 0.1),
-                          borderRadius: BorderRadius.circular(12),
+                          borderRadius: BorderRadius.circular(AppRadius.md),
                           border: Border.all(color: AppColors.info.withValues(alpha: 0.3)),
                         ),
                         child: Row(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             const Icon(Icons.info_outline, color: AppColors.info),
-                            const SizedBox(width: 12),
+                            const SizedBox(width: AppSpacing.md),
                             Expanded(
                               child: Text(
                                 prescription.instructions,
@@ -958,11 +1034,11 @@ class PrescriptionsScreen extends ConsumerWidget {
                     
                     // Chief Complaint / Symptoms
                     if (prescription.chiefComplaint.isNotEmpty) ...[
-                      const SizedBox(height: 16),
+                      const SizedBox(height: AppSpacing.lg),
                       Row(
                         children: [
-                          Icon(Icons.sick_outlined, color: Colors.orange[700], size: 20),
-                          const SizedBox(width: 8),
+                          Icon(Icons.sick_outlined, color: Colors.orange[700], size: AppIconSize.sm),
+                          const SizedBox(width: AppSpacing.sm),
                           Text(
                             'Chief Complaint',
                             style: theme.textTheme.titleMedium?.copyWith(
@@ -971,12 +1047,12 @@ class PrescriptionsScreen extends ConsumerWidget {
                           ),
                         ],
                       ),
-                      const SizedBox(height: 12),
+                      const SizedBox(height: AppSpacing.md),
                       Container(
                         padding: const EdgeInsets.all(AppSpacing.lg),
                         decoration: BoxDecoration(
                           color: Colors.orange.withValues(alpha: 0.1),
-                          borderRadius: BorderRadius.circular(12),
+                          borderRadius: BorderRadius.circular(AppRadius.md),
                           border: Border.all(color: Colors.orange.withValues(alpha: 0.3)),
                         ),
                         child: Text(
@@ -991,11 +1067,11 @@ class PrescriptionsScreen extends ConsumerWidget {
                     
                     // Diagnosis
                     if (prescription.diagnosis.isNotEmpty) ...[
-                      const SizedBox(height: 16),
+                      const SizedBox(height: AppSpacing.lg),
                       Row(
                         children: [
-                          Icon(Icons.medical_information_outlined, color: Colors.purple[700], size: 20),
-                          const SizedBox(width: 8),
+                          Icon(Icons.medical_information_outlined, color: Colors.purple[700], size: AppIconSize.sm),
+                          const SizedBox(width: AppSpacing.sm),
                           Text(
                             'Diagnosis',
                             style: theme.textTheme.titleMedium?.copyWith(
@@ -1004,12 +1080,12 @@ class PrescriptionsScreen extends ConsumerWidget {
                           ),
                         ],
                       ),
-                      const SizedBox(height: 12),
+                      const SizedBox(height: AppSpacing.md),
                       Container(
                         padding: const EdgeInsets.all(AppSpacing.lg),
                         decoration: BoxDecoration(
                           color: Colors.purple.withValues(alpha: 0.1),
-                          borderRadius: BorderRadius.circular(12),
+                          borderRadius: BorderRadius.circular(AppRadius.md),
                           border: Border.all(color: Colors.purple.withValues(alpha: 0.3)),
                         ),
                         child: Text(
@@ -1024,11 +1100,11 @@ class PrescriptionsScreen extends ConsumerWidget {
                     
                     // Lab Tests / Investigations
                     if (labTests.isNotEmpty) ...[
-                      const SizedBox(height: 16),
+                      const SizedBox(height: AppSpacing.lg),
                       Row(
                         children: [
-                          Icon(Icons.science_outlined, color: Colors.teal[700], size: 20),
-                          const SizedBox(width: 8),
+                          Icon(Icons.science_outlined, color: Colors.teal[700], size: AppIconSize.sm),
+                          const SizedBox(width: AppSpacing.sm),
                           Text(
                             'Investigations (${labTests.length})',
                             style: theme.textTheme.titleMedium?.copyWith(
@@ -1037,35 +1113,35 @@ class PrescriptionsScreen extends ConsumerWidget {
                           ),
                         ],
                       ),
-                      const SizedBox(height: 12),
+                      const SizedBox(height: AppSpacing.md),
                       Container(
                         padding: const EdgeInsets.all(AppSpacing.lg),
                         decoration: BoxDecoration(
                           color: Colors.teal.withValues(alpha: 0.1),
-                          borderRadius: BorderRadius.circular(12),
+                          borderRadius: BorderRadius.circular(AppRadius.md),
                           border: Border.all(color: Colors.teal.withValues(alpha: 0.3)),
                         ),
                         child: Wrap(
-                          spacing: 8,
-                          runSpacing: 8,
+                          spacing: AppSpacing.sm,
+                          runSpacing: AppSpacing.sm,
                           children: labTests.map((test) {
                             final testName = test is Map ? (test['name'] as String? ?? test.toString()) : test.toString();
                             return Container(
-                              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                              padding: const EdgeInsets.symmetric(horizontal: AppSpacing.md, vertical: AppSpacing.xs),
                               decoration: BoxDecoration(
                                 color: Colors.teal.withValues(alpha: 0.1),
-                                borderRadius: BorderRadius.circular(20),
+                                borderRadius: BorderRadius.circular(AppRadius.xl),
                                 border: Border.all(color: Colors.teal.withValues(alpha: 0.3)),
                               ),
                               child: Row(
                                 mainAxisSize: MainAxisSize.min,
                                 children: [
-                                  Icon(Icons.check_circle_outline, size: 14, color: Colors.teal[700]),
-                                  const SizedBox(width: 6),
+                                  Icon(Icons.check_circle_outline, size: AppIconSize.xs, color: Colors.teal[700]),
+                                  const SizedBox(width: AppSpacing.xs),
                                   Text(
                                     testName,
                                     style: TextStyle(
-                                      fontSize: 12,
+                                      fontSize: AppFontSize.sm,
                                       color: Colors.teal[800],
                                       fontWeight: FontWeight.w500,
                                     ),
@@ -1080,11 +1156,11 @@ class PrescriptionsScreen extends ConsumerWidget {
                     
                     // Follow-up
                     if (followUp.isNotEmpty && followUp['date'] != null) ...[
-                      const SizedBox(height: 16),
+                      const SizedBox(height: AppSpacing.lg),
                       Row(
                         children: [
-                          Icon(Icons.event_outlined, color: Colors.green[700], size: 20),
-                          const SizedBox(width: 8),
+                          Icon(Icons.event_outlined, color: Colors.green[700], size: AppIconSize.sm),
+                          const SizedBox(width: AppSpacing.sm),
                           Text(
                             'Follow-up',
                             style: theme.textTheme.titleMedium?.copyWith(
@@ -1093,18 +1169,18 @@ class PrescriptionsScreen extends ConsumerWidget {
                           ),
                         ],
                       ),
-                      const SizedBox(height: 12),
+                      const SizedBox(height: AppSpacing.md),
                       Container(
                         padding: const EdgeInsets.all(AppSpacing.lg),
                         decoration: BoxDecoration(
                           color: Colors.green.withValues(alpha: 0.1),
-                          borderRadius: BorderRadius.circular(12),
+                          borderRadius: BorderRadius.circular(AppRadius.md),
                           border: Border.all(color: Colors.green.withValues(alpha: 0.3)),
                         ),
                         child: Row(
                           children: [
-                            Icon(Icons.calendar_today, size: 18, color: Colors.green[700]),
-                            const SizedBox(width: 12),
+                            Icon(Icons.calendar_today, size: AppIconSize.sm, color: Colors.green[700]),
+                            const SizedBox(width: AppSpacing.md),
                             Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
@@ -1119,7 +1195,7 @@ class PrescriptionsScreen extends ConsumerWidget {
                                   Text(
                                     followUp['notes'] as String,
                                     style: TextStyle(
-                                      fontSize: 13,
+                                      fontSize: AppFontSize.md,
                                       color: theme.textTheme.bodySmall?.color,
                                     ),
                                   ),
@@ -1132,11 +1208,11 @@ class PrescriptionsScreen extends ConsumerWidget {
                     
                     // Clinical Notes
                     if (notes.isNotEmpty) ...[
-                      const SizedBox(height: 16),
+                      const SizedBox(height: AppSpacing.lg),
                       Row(
                         children: [
-                          Icon(Icons.note_alt_outlined, color: Colors.grey[700], size: 20),
-                          const SizedBox(width: 8),
+                          Icon(Icons.note_alt_outlined, color: Colors.grey[700], size: AppIconSize.sm),
+                          const SizedBox(width: AppSpacing.sm),
                           Text(
                             'Clinical Notes',
                             style: theme.textTheme.titleMedium?.copyWith(
@@ -1145,12 +1221,12 @@ class PrescriptionsScreen extends ConsumerWidget {
                           ),
                         ],
                       ),
-                      const SizedBox(height: 12),
+                      const SizedBox(height: AppSpacing.md),
                       Container(
                         padding: const EdgeInsets.all(AppSpacing.lg),
                         decoration: BoxDecoration(
                           color: Colors.grey.withValues(alpha: 0.1),
-                          borderRadius: BorderRadius.circular(12),
+                          borderRadius: BorderRadius.circular(AppRadius.md),
                           border: Border.all(color: Colors.grey.withValues(alpha: 0.3)),
                         ),
                         child: Text(
@@ -1164,32 +1240,10 @@ class PrescriptionsScreen extends ConsumerWidget {
                       ),
                     ],
                     
-                    const SizedBox(height: 16),
+                    const SizedBox(height: AppSpacing.lg),
                     // Action buttons - Row 1
                     Row(
                       children: [
-                        Expanded(
-                          child: AppButton.tertiary(
-                            label: 'Edit',
-                            icon: Icons.edit,
-                            onPressed: () async {
-                              Navigator.pop(context);
-                              final result = await Navigator.push<bool>(
-                                context,
-                                MaterialPageRoute(
-                                  builder: (context) => EditPrescriptionScreen(
-                                    prescription: prescription,
-                                    patient: patient,
-                                  ),
-                                ),
-                              );
-                              if (result == true) {
-                                ref.invalidate(doctorDbProvider);
-                              }
-                            },
-                          ),
-                        ),
-                        const SizedBox(width: 8),
                         Expanded(
                           child: AppButton.tertiary(
                             label: 'Refill',
@@ -1202,7 +1256,7 @@ class PrescriptionsScreen extends ConsumerWidget {
                         ),
                       ],
                     ),
-                    const SizedBox(height: 8),
+                    const SizedBox(height: AppSpacing.sm),
                     // Action buttons - Row 2
                     Row(
                       children: [
@@ -1236,7 +1290,7 @@ class PrescriptionsScreen extends ConsumerWidget {
                             },
                           ),
                         ),
-                        const SizedBox(width: 8),
+                        const SizedBox(width: AppSpacing.sm),
                         Expanded(
                           child: AppButton.primary(
                             label: 'PDF',
@@ -1244,24 +1298,41 @@ class PrescriptionsScreen extends ConsumerWidget {
                             onPressed: () async {
                               Navigator.pop(context);
                               if (patient != null) {
-                                final doctorSettings = ref.read(doctorSettingsProvider);
-                                final profile = doctorSettings.profile;
-                                await PdfService.sharePrescriptionPdf(
-                                  patient: patient,
-                                  prescription: prescription,
-                                  doctorName: profile.displayName,
-                                  clinicName: profile.clinicName.isNotEmpty ? profile.clinicName : 'Medical Clinic',
-                                  clinicPhone: profile.clinicPhone,
-                                  clinicAddress: profile.clinicAddress,
-                                  signatureData: (profile.signatureData?.isNotEmpty ?? false) ? profile.signatureData : null,
-                                );
+                                try {
+                                  final db = await ref.read(doctorDbProvider.future);
+                                  final medications = await db.getMedicationsForPrescriptionCompat(prescription.id);
+                                  
+                                  final doctorSettings = ref.read(doctorSettingsProvider);
+                                  final profile = doctorSettings.profile;
+                                  await PdfService.sharePrescriptionPdf(
+                                    patient: patient,
+                                    prescription: prescription,
+                                    doctorName: profile.displayName,
+                                    clinicName: profile.clinicName.isNotEmpty ? profile.clinicName : 'Medical Clinic',
+                                    clinicPhone: profile.clinicPhone,
+                                    clinicAddress: profile.clinicAddress,
+                                    signatureData: (profile.signatureData?.isNotEmpty ?? false) ? profile.signatureData : null,
+                                    medicationsList: medications,
+                                    templateConfig: profile.pdfTemplateConfig,
+                                  );
+                                } catch (e) {
+                                  if (context.mounted) {
+                                    ScaffoldMessenger.of(context).showSnackBar(
+                                      SnackBar(
+                                        content: Text('Error generating PDF: $e'),
+                                        backgroundColor: AppColors.error,
+                                        behavior: SnackBarBehavior.floating,
+                                      ),
+                                    );
+                                  }
+                                }
                               }
                             },
                           ),
                         ),
                       ],
                     ),
-                    const SizedBox(height: 8),
+                    const SizedBox(height: AppSpacing.sm),
                     // Delete button
                     AppButton.danger(
                       label: 'Delete Prescription',
@@ -1272,7 +1343,7 @@ class PrescriptionsScreen extends ConsumerWidget {
                         _showDeleteConfirmation(context, ref, prescription);
                       },
                     ),
-                    const SizedBox(height: 24),
+                    const SizedBox(height: AppSpacing.xxl),
                   ],
                   ),
                 ),
@@ -1291,7 +1362,7 @@ class PrescriptionsScreen extends ConsumerWidget {
         title: const Row(
           children: [
             Icon(Icons.warning_amber_rounded, color: AppColors.error),
-            SizedBox(width: 12),
+            SizedBox(width: AppSpacing.md),
             Text('Delete Prescription'),
           ],
         ),
@@ -1345,28 +1416,28 @@ class PrescriptionsScreen extends ConsumerWidget {
       padding: const EdgeInsets.symmetric(horizontal: AppSpacing.md, vertical: AppSpacing.sm),
       decoration: BoxDecoration(
         color: colorScheme.surfaceContainerHighest.withValues(alpha: 0.5),
-        borderRadius: BorderRadius.circular(8),
+        borderRadius: BorderRadius.circular(AppRadius.sm),
         border: Border.all(color: theme.dividerColor.withValues(alpha: 0.5)),
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Icon(icon, size: 16, color: colorScheme.primary),
-          const SizedBox(width: 6),
+          Icon(icon, size: AppIconSize.xs, color: colorScheme.primary),
+          const SizedBox(width: AppSpacing.xs),
           Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(
                 label,
                 style: TextStyle(
-                  fontSize: 10,
+                  fontSize: AppFontSize.xs,
                   color: theme.textTheme.bodySmall?.color,
                 ),
               ),
               Text(
                 value,
                 style: TextStyle(
-                  fontSize: 13,
+                  fontSize: AppFontSize.md,
                   fontWeight: FontWeight.w500,
                   color: theme.textTheme.bodyLarge?.color,
                 ),
@@ -1396,7 +1467,7 @@ class PrescriptionsScreen extends ConsumerWidget {
         title: const Row(
           children: [
             Icon(Icons.refresh, color: AppColors.primary),
-            SizedBox(width: 12),
+            SizedBox(width: AppSpacing.md),
             Text('Refill Prescription'),
           ],
         ),
@@ -1405,21 +1476,21 @@ class PrescriptionsScreen extends ConsumerWidget {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text('Create a new prescription with the same medications for ${patient.firstName} ${patient.lastName}?'),
-            const SizedBox(height: 12),
+            const SizedBox(height: AppSpacing.md),
             Container(
               padding: const EdgeInsets.all(AppSpacing.md),
               decoration: BoxDecoration(
                 color: AppColors.info.withValues(alpha: 0.1),
-                borderRadius: BorderRadius.circular(8),
+                borderRadius: BorderRadius.circular(AppRadius.sm),
               ),
               child: const Row(
                 children: [
-                  Icon(Icons.info_outline, color: AppColors.info, size: 20),
-                  SizedBox(width: 8),
+                  Icon(Icons.info_outline, color: AppColors.info, size: AppIconSize.sm),
+                  SizedBox(width: AppSpacing.sm),
                   Expanded(
                     child: Text(
                       'A new prescription will be created with today\'s date.',
-                      style: TextStyle(fontSize: 13, color: AppColors.info),
+                      style: TextStyle(fontSize: AppFontSize.md, color: AppColors.info),
                     ),
                   ),
                 ],

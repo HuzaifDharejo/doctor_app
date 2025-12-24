@@ -3,6 +3,7 @@ import '../../../../theme/app_theme.dart';
 import 'medication_models.dart';
 import 'medication_selectors.dart';
 import 'medication_theme.dart';
+import '../../../../core/extensions/context_extensions.dart';
 
 /// Bottom sheet for editing medication details
 class EditMedicationSheet extends StatefulWidget {
@@ -83,7 +84,7 @@ class _EditMedicationSheetState extends State<EditMedicationSheet> {
         borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
       ),
       child: SingleChildScrollView(
-        padding: const EdgeInsets.all(20),
+        padding: EdgeInsets.all(context.responsivePadding),
         child: Column(
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,

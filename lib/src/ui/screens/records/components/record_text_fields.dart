@@ -223,20 +223,28 @@ class _RecordTextFieldState extends State<RecordTextField> {
       
       await _voiceService.startListening(
         onResult: (text) {
+          if (!mounted) return;
           if (text.isNotEmpty) {
-            final current = widget.controller.text;
-            if (current.isEmpty) {
-              widget.controller.text = text;
-            } else {
-              widget.controller.text = '$current $text';
+            try {
+              final current = widget.controller.text;
+              if (current.isEmpty) {
+                widget.controller.text = text;
+              } else {
+                widget.controller.text = '$current $text';
+              }
+              widget.controller.selection = TextSelection.fromPosition(
+                TextPosition(offset: widget.controller.text.length),
+              );
+            } catch (e) {
+              // Controller may be disposed
+              debugPrint('Voice dictation: Controller disposed or invalid: $e');
             }
-            widget.controller.selection = TextSelection.fromPosition(
-              TextPosition(offset: widget.controller.text.length),
-            );
           }
         },
         onError: (error) {
-          setState(() => _isListening = false);
+          if (mounted) {
+            setState(() => _isListening = false);
+          }
         },
         onStatusChange: (isListening) {
           if (mounted) {
@@ -345,7 +353,7 @@ class _RecordTextFieldState extends State<RecordTextField> {
             ),
           ),
 
-        // Text field with suggestions
+        // Text field with suggestions - wrapped to prevent overflow
         CompositedTransformTarget(
           link: _layerLink,
           child: TextFormField(
@@ -389,7 +397,7 @@ class _RecordTextFieldState extends State<RecordTextField> {
               ),
               contentPadding: EdgeInsets.symmetric(
                 horizontal: 16,
-                vertical: widget.maxLines == 1 ? 14 : 12,
+                vertical: (widget.maxLines ?? 1) == 1 ? 14 : 12,
               ),
               hintStyle: TextStyle(
                 color: isDark ? Colors.white38 : Colors.grey.shade500,
@@ -399,8 +407,8 @@ class _RecordTextFieldState extends State<RecordTextField> {
               fontSize: 14,
               color: isDark ? Colors.white : AppColors.textPrimary,
             ),
-            maxLines: widget.maxLines,
-            minLines: widget.minLines,
+            maxLines: widget.maxLines ?? 1,
+            minLines: widget.minLines ?? ((widget.maxLines ?? 1) > 1 ? widget.maxLines : 1),
             maxLength: widget.maxLength,
             keyboardType: widget.keyboardType,
             textCapitalization: widget.textCapitalization,
@@ -411,8 +419,10 @@ class _RecordTextFieldState extends State<RecordTextField> {
             obscureText: widget.obscureText,
             autofocus: widget.autofocus,
             onTap: widget.onTap,
-            textInputAction: widget.textInputAction,
+            textInputAction: widget.textInputAction ?? ((widget.maxLines ?? 1) > 1 ? TextInputAction.newline : TextInputAction.done),
             onFieldSubmitted: widget.onSubmitted,
+            // Ensure text can scroll when it exceeds bounds
+            textAlignVertical: (widget.maxLines ?? 1) > 1 ? TextAlignVertical.top : null,
           ),
         ),
       ],

@@ -9,6 +9,7 @@ import '../../services/suggestions_service.dart';
 import '../../theme/app_theme.dart';
 import '../widgets/suggestion_text_field.dart';
 import '../../core/widgets/keyboard_aware_scaffold.dart';
+import '../../core/extensions/context_extensions.dart';
 
 class EditPrescriptionScreen extends ConsumerStatefulWidget {
   const EditPrescriptionScreen({
@@ -165,18 +166,22 @@ class _EditPrescriptionScreenState extends ConsumerState<EditPrescriptionScreen>
                     isDark: isDark,
                     child: Column(
                       children: [
-                        SuggestionTextField(
-                          controller: _symptomsController,
-                          label: 'Chief Complaint',
-                          hint: 'Enter symptoms...',
-                          suggestions: MedicalSuggestions.chiefComplaints,
+                        AbsorbPointer(
+                          child: SuggestionTextField(
+                            controller: _symptomsController,
+                            label: 'Chief Complaint',
+                            hint: 'Enter symptoms...',
+                            suggestions: MedicalSuggestions.chiefComplaints,
+                          ),
                         ),
                         const SizedBox(height: 16),
-                        SuggestionTextField(
-                          controller: _diagnosisController,
-                          label: 'Diagnosis',
-                          hint: 'Enter diagnosis...',
-                          suggestions: MedicalSuggestions.diagnoses,
+                        AbsorbPointer(
+                          child: SuggestionTextField(
+                            controller: _diagnosisController,
+                            label: 'Diagnosis',
+                            hint: 'Enter diagnosis...',
+                            suggestions: MedicalSuggestions.diagnoses,
+                          ),
                         ),
                       ],
                     ),
@@ -189,7 +194,6 @@ class _EditPrescriptionScreenState extends ConsumerState<EditPrescriptionScreen>
                     icon: Icons.medication_rounded,
                     iconColor: const Color(0xFF10B981),
                     isDark: isDark,
-                    trailing: _buildAddMedicationButton(context),
                     child: _buildMedicationsList(context, isDark),
                   ),
                   const SizedBox(height: 16),
@@ -205,6 +209,7 @@ class _EditPrescriptionScreenState extends ConsumerState<EditPrescriptionScreen>
                         TextFormField(
                           controller: _instructionsController,
                           maxLines: 3,
+                          readOnly: true,
                           decoration: InputDecoration(
                             hintText: 'Additional instructions for the patient...',
                             hintStyle: TextStyle(color: isDark ? Colors.grey[600] : Colors.grey[400]),
@@ -214,19 +219,17 @@ class _EditPrescriptionScreenState extends ConsumerState<EditPrescriptionScreen>
                               borderRadius: BorderRadius.circular(12),
                               borderSide: BorderSide.none,
                             ),
-                            contentPadding: const EdgeInsets.all(16),
+                            contentPadding: EdgeInsets.all(context.responsivePadding),
                           ),
                           style: TextStyle(color: isDark ? Colors.white : Colors.black87),
                         ),
                         const SizedBox(height: 16),
-                        _buildRefillableToggle(context, isDark),
+                        AbsorbPointer(
+                          child: _buildRefillableToggle(context, isDark),
+                        ),
                       ],
                     ),
                   ),
-                  const SizedBox(height: 24),
-
-                  // Save Button
-                  _buildModernSaveButton(context, isDark),
                   const SizedBox(height: 40),
                 ]),
               ),
@@ -263,22 +266,7 @@ class _EditPrescriptionScreenState extends ConsumerState<EditPrescriptionScreen>
           ),
         ),
       ),
-      actions: [
-        Padding(
-          padding: const EdgeInsets.only(right: 16),
-          child: IconButton(
-            onPressed: () => _confirmDelete(context),
-            icon: Container(
-              padding: const EdgeInsets.all(8),
-              decoration: BoxDecoration(
-                color: AppColors.error.withValues(alpha: 0.1),
-                borderRadius: BorderRadius.circular(10),
-              ),
-              child: const Icon(Icons.delete_outline_rounded, color: AppColors.error, size: 20),
-            ),
-          ),
-        ),
-      ],
+      actions: const [],
       flexibleSpace: FlexibleSpaceBar(
         background: Container(
           decoration: BoxDecoration(
@@ -312,7 +300,7 @@ class _EditPrescriptionScreenState extends ConsumerState<EditPrescriptionScreen>
                         ),
                       ],
                     ),
-                    child: const Icon(Icons.edit_note_rounded, color: Colors.white, size: 28),
+                    child: const Icon(Icons.medication_rounded, color: Colors.white, size: 28),
                   ),
                   const SizedBox(width: 16),
                   Expanded(
@@ -321,7 +309,7 @@ class _EditPrescriptionScreenState extends ConsumerState<EditPrescriptionScreen>
                       mainAxisSize: MainAxisSize.min,
                       children: [
                         Text(
-                          'Edit Prescription',
+                          'View Prescription',
                           style: TextStyle(
                             fontSize: 22,
                             fontWeight: FontWeight.w800,
@@ -351,7 +339,7 @@ class _EditPrescriptionScreenState extends ConsumerState<EditPrescriptionScreen>
 
   Widget _buildPatientCard(BuildContext context, bool isDark) {
     return Container(
-      padding: const EdgeInsets.all(16),
+      padding: EdgeInsets.all(context.responsivePadding),
       decoration: BoxDecoration(
         gradient: LinearGradient(
           colors: [const Color(0xFF6366F1), const Color(0xFF8B5CF6)],
@@ -510,7 +498,7 @@ class _EditPrescriptionScreenState extends ConsumerState<EditPrescriptionScreen>
     final med = _medications[index];
     return Container(
       margin: EdgeInsets.only(bottom: index < _medications.length - 1 ? 12 : 0),
-      padding: const EdgeInsets.all(16),
+      padding: EdgeInsets.all(context.responsivePadding),
       decoration: BoxDecoration(
         color: isDark ? Colors.white.withValues(alpha: 0.05) : Colors.grey.withValues(alpha: 0.05),
         borderRadius: BorderRadius.circular(16),
@@ -540,33 +528,18 @@ class _EditPrescriptionScreenState extends ConsumerState<EditPrescriptionScreen>
                 ),
               ),
               const Spacer(),
-              if (_medications.length > 1)
-                GestureDetector(
-                  onTap: () {
-                    setState(() {
-                      _medications[index].dispose();
-                      _medications.removeAt(index);
-                    });
-                  },
-                  child: Container(
-                    padding: const EdgeInsets.all(6),
-                    decoration: BoxDecoration(
-                      color: AppColors.error.withValues(alpha: 0.1),
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                    child: Icon(Icons.close_rounded, color: AppColors.error, size: 16),
-                  ),
-                ),
             ],
           ),
           const SizedBox(height: 12),
 
           // Medicine Name
-          SuggestionTextField(
-            controller: med.nameController,
-            label: 'Medicine Name',
-            hint: 'e.g., Paracetamol',
-            suggestions: PrescriptionSuggestions.medications,
+          AbsorbPointer(
+            child: SuggestionTextField(
+              controller: med.nameController,
+              label: 'Medicine Name',
+              hint: 'e.g., Paracetamol',
+              suggestions: PrescriptionSuggestions.medications,
+            ),
           ),
           const SizedBox(height: 12),
 
@@ -576,6 +549,7 @@ class _EditPrescriptionScreenState extends ConsumerState<EditPrescriptionScreen>
               Expanded(
                 child: TextFormField(
                   controller: med.dosageController,
+                  readOnly: true,
                   decoration: InputDecoration(
                     labelText: 'Dosage',
                     hintText: 'e.g., 500mg',
@@ -596,6 +570,7 @@ class _EditPrescriptionScreenState extends ConsumerState<EditPrescriptionScreen>
               Expanded(
                 child: TextFormField(
                   controller: med.durationController,
+                  readOnly: true,
                   decoration: InputDecoration(
                     labelText: 'Duration',
                     hintText: 'e.g., 5 days',
@@ -631,26 +606,28 @@ class _EditPrescriptionScreenState extends ConsumerState<EditPrescriptionScreen>
             runSpacing: 8,
             children: ['OD', 'BD', 'TDS', 'QID', 'SOS', 'HS'].map((freq) {
               final isSelected = med.frequency == freq;
-              return GestureDetector(
-                onTap: () => setState(() => med.frequency = freq),
-                child: Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                  decoration: BoxDecoration(
-                    color: isSelected
-                        ? const Color(0xFF10B981).withValues(alpha: 0.15)
-                        : (isDark ? Colors.white.withValues(alpha: 0.05) : Colors.grey.withValues(alpha: 0.1)),
-                    borderRadius: BorderRadius.circular(10),
-                    border: Border.all(
-                      color: isSelected ? const Color(0xFF10B981) : Colors.transparent,
-                      width: 1.5,
+              return AbsorbPointer(
+                child: GestureDetector(
+                  onTap: () => setState(() => med.frequency = freq),
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                    decoration: BoxDecoration(
+                      color: isSelected
+                          ? const Color(0xFF10B981).withValues(alpha: 0.15)
+                          : (isDark ? Colors.white.withValues(alpha: 0.05) : Colors.grey.withValues(alpha: 0.1)),
+                      borderRadius: BorderRadius.circular(10),
+                      border: Border.all(
+                        color: isSelected ? const Color(0xFF10B981) : Colors.transparent,
+                        width: 1.5,
+                      ),
                     ),
-                  ),
-                  child: Text(
-                    freq,
-                    style: TextStyle(
-                      color: isSelected ? const Color(0xFF10B981) : (isDark ? Colors.grey : Colors.grey[600]),
-                      fontWeight: isSelected ? FontWeight.w600 : FontWeight.w500,
-                      fontSize: 12,
+                    child: Text(
+                      freq,
+                      style: TextStyle(
+                        color: isSelected ? const Color(0xFF10B981) : (isDark ? Colors.grey : Colors.grey[600]),
+                        fontWeight: isSelected ? FontWeight.w600 : FontWeight.w500,
+                        fontSize: 12,
+                      ),
                     ),
                   ),
                 ),
@@ -674,26 +651,28 @@ class _EditPrescriptionScreenState extends ConsumerState<EditPrescriptionScreen>
             runSpacing: 8,
             children: ['Before Food', 'After Food', 'With Food', 'Empty Stomach'].map((timing) {
               final isSelected = med.timing == timing;
-              return GestureDetector(
-                onTap: () => setState(() => med.timing = timing),
-                child: Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                  decoration: BoxDecoration(
-                    color: isSelected
-                        ? const Color(0xFF6366F1).withValues(alpha: 0.15)
-                        : (isDark ? Colors.white.withValues(alpha: 0.05) : Colors.grey.withValues(alpha: 0.1)),
-                    borderRadius: BorderRadius.circular(10),
-                    border: Border.all(
-                      color: isSelected ? const Color(0xFF6366F1) : Colors.transparent,
-                      width: 1.5,
+              return AbsorbPointer(
+                child: GestureDetector(
+                  onTap: () => setState(() => med.timing = timing),
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                    decoration: BoxDecoration(
+                      color: isSelected
+                          ? const Color(0xFF6366F1).withValues(alpha: 0.15)
+                          : (isDark ? Colors.white.withValues(alpha: 0.05) : Colors.grey.withValues(alpha: 0.1)),
+                      borderRadius: BorderRadius.circular(10),
+                      border: Border.all(
+                        color: isSelected ? const Color(0xFF6366F1) : Colors.transparent,
+                        width: 1.5,
+                      ),
                     ),
-                  ),
-                  child: Text(
-                    timing,
-                    style: TextStyle(
-                      color: isSelected ? const Color(0xFF6366F1) : (isDark ? Colors.grey : Colors.grey[600]),
-                      fontWeight: isSelected ? FontWeight.w600 : FontWeight.w500,
-                      fontSize: 12,
+                    child: Text(
+                      timing,
+                      style: TextStyle(
+                        color: isSelected ? const Color(0xFF6366F1) : (isDark ? Colors.grey : Colors.grey[600]),
+                        fontWeight: isSelected ? FontWeight.w600 : FontWeight.w500,
+                        fontSize: 12,
+                      ),
                     ),
                   ),
                 ),

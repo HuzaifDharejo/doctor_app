@@ -16,6 +16,7 @@ import '../add_prescription_screen.dart';
 import '../edit_appointment_screen.dart';
 import '../workflow_wizard_screen.dart';
 import '../../widgets/quick_checkin_dialog.dart';
+import '../../../core/extensions/context_extensions.dart';
 
 /// Unified Visit model that combines Appointment + Encounter + Records + Prescriptions
 class PatientVisit {
@@ -154,7 +155,7 @@ class _PatientVisitsTabState extends ConsumerState<PatientVisitsTab> {
                 ? _buildEmptyState(context, isDark)
                 : ListView.builder(
                     primary: false,
-                    padding: const EdgeInsets.all(16),
+                    padding: EdgeInsets.all(context.responsivePadding),
                     itemCount: visits.length,
                     itemBuilder: (context, index) => _VisitCard(
                       visit: visits[index],
@@ -440,7 +441,7 @@ class _VisitCard extends StatelessWidget {
       onTap: onTap,
       child: Container(
         margin: const EdgeInsets.only(bottom: 12),
-        padding: const EdgeInsets.all(16),
+        padding: EdgeInsets.all(context.responsivePadding),
         decoration: BoxDecoration(
           color: isDark ? AppColors.darkSurface : Colors.white,
           borderRadius: BorderRadius.circular(12),
@@ -686,7 +687,7 @@ class _VisitDetailSheetState extends ConsumerState<_VisitDetailSheet> {
             Expanded(
               child: ListView(
                 controller: scrollController,
-                padding: const EdgeInsets.all(20),
+                padding: EdgeInsets.all(context.responsivePadding),
                 children: [
                   // Header with status
                   Row(
@@ -751,7 +752,7 @@ class _VisitDetailSheetState extends ConsumerState<_VisitDetailSheet> {
                   
                   // Date & Time Card
                   Container(
-                    padding: const EdgeInsets.all(16),
+                    padding: EdgeInsets.all(context.responsivePadding),
                     decoration: BoxDecoration(
                       gradient: LinearGradient(
                         colors: [

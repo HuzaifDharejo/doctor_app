@@ -7,6 +7,7 @@ import '../../providers/db_provider.dart';
 import '../../services/clinical_letter_service.dart';
 import '../../theme/app_theme.dart';
 import '../../core/theme/design_tokens.dart';
+import '../../core/extensions/context_extensions.dart';
 
 /// Screen for managing clinical letters and documents
 class ClinicalLettersScreen extends ConsumerStatefulWidget {
@@ -704,7 +705,7 @@ class _ClinicalLettersScreenState extends ConsumerState<ClinicalLettersScreen>
                     const SizedBox(height: 8),
                     Container(
                       width: double.infinity,
-                      padding: const EdgeInsets.all(16),
+                      padding: EdgeInsets.all(context.responsivePadding),
                       decoration: BoxDecoration(
                         color: isDark ? Colors.grey[800] : Colors.grey[100],
                         borderRadius: BorderRadius.circular(12),

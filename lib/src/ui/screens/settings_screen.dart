@@ -19,7 +19,6 @@ import '../../services/doctor_settings_service.dart';
 import '../../services/local_notification_service.dart';
 import '../../services/localization_service.dart';
 import '../../services/logger_service.dart';
-import '../../services/seed_data_service.dart';
 import '../../core/utils/date_time_formatter.dart';
 import '../../theme/app_theme.dart';
 import '../widgets/debug_console.dart';
@@ -843,15 +842,6 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> with SingleTick
               },
             ),
             const Divider(),
-            ListTile(
-              leading: const Icon(Icons.dataset, color: AppColors.warning),
-              title: const Text('Load Demo Data'),
-              subtitle: const Text('Add sample patients & appointments'),
-              onTap: () async {
-                Navigator.pop(context);
-                _showLoadDemoDataDialog(context, ref);
-              },
-            ),
           ],
         ),
         actions: [
@@ -1110,71 +1100,6 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> with SingleTick
     }
   }
 
-  void _showLoadDemoDataDialog(BuildContext context, WidgetRef ref) {
-    showDialog<void>(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: const Row(
-          children: [
-            Icon(Icons.dataset, color: AppColors.warning),
-            SizedBox(width: 12),
-            Text('Load Demo Data'),
-          ],
-        ),
-        content: const Text(
-          'This will add sample patients, appointments, and prescriptions to your database. This is useful for testing or demonstration purposes.\n\nExisting data will NOT be affected.',
-        ),
-        actions: [
-          AppButton.tertiary(
-            label: 'Cancel',
-            onPressed: () => Navigator.pop(context),
-          ),
-          AppButton.primary(
-            label: 'Load Data',
-            icon: Icons.add,
-            onPressed: () async {
-              Navigator.pop(context);
-              try {
-                final dbAsync = ref.read(doctorDbProvider);
-                final db = dbAsync.when(
-                  data: (db) => db,
-                  loading: () => throw Exception('Database loading'),
-                  error: (e, _) => throw e,
-                );
-                await seedSampleDataForce(db);
-                if (context.mounted) {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(
-                      content: const Row(
-                        children: [
-                          Icon(Icons.check_circle, color: Colors.white),
-                          SizedBox(width: 12),
-                          Text('Demo data loaded successfully!'),
-                        ],
-                      ),
-                      backgroundColor: Colors.green,
-                      behavior: SnackBarBehavior.floating,
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-                    ),
-                  );
-                }
-              } catch (e) {
-                if (context.mounted) {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(
-                      content: Text('Failed to load demo data: $e'),
-                      backgroundColor: Colors.red,
-                      behavior: SnackBarBehavior.floating,
-                    ),
-                  );
-                }
-              }
-            },
-          ),
-        ],
-      ),
-    );
-  }
 
   void _showClearDataDialog(BuildContext context, WidgetRef ref) {
     showDialog<void>(

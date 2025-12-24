@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import '../../../../theme/app_theme.dart';
 import 'medication_models.dart';
 import 'medication_theme.dart';
+import '../../../../core/extensions/context_extensions.dart';
 
 /// Reusable card widget for displaying a medication entry
 class MedicationCard extends StatelessWidget {
@@ -33,7 +34,7 @@ class MedicationCard extends StatelessWidget {
         onTap: onEdit,
         borderRadius: BorderRadius.circular(16),
         child: Padding(
-          padding: const EdgeInsets.all(16),
+          padding: EdgeInsets.all(context.responsivePadding),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
@@ -340,7 +341,7 @@ class EmptyMedicationsState extends StatelessWidget {
       onTap: onTap,
       borderRadius: BorderRadius.circular(12),
       child: Container(
-        padding: const EdgeInsets.all(24),
+        padding: EdgeInsets.all(context.responsivePadding),
         decoration: BoxDecoration(
           color: isDark ? Colors.white.withValues(alpha: 0.03) : Colors.grey.withValues(alpha: 0.05),
           borderRadius: BorderRadius.circular(12),
@@ -351,7 +352,7 @@ class EmptyMedicationsState extends StatelessWidget {
         child: Column(
           children: [
             Container(
-              padding: const EdgeInsets.all(16),
+              padding: EdgeInsets.all(context.responsivePadding),
               decoration: BoxDecoration(
                 gradient: LinearGradient(
                   colors: [

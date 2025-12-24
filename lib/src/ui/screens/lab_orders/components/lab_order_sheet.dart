@@ -7,6 +7,7 @@ import 'lab_models.dart';
 import 'lab_theme.dart';
 import 'lab_selectors.dart';
 import 'lab_database.dart';
+import '../../../../core/extensions/context_extensions.dart';
 
 /// Show create lab order sheet
 Future<LabTestData?> showCreateLabOrderSheet(
@@ -92,7 +93,7 @@ class _CreateLabOrderSheetState extends State<CreateLabOrderSheet> {
       ),
       child: Container(
         decoration: LabContainerStyle.bottomSheet(isDark: isDark),
-        padding: const EdgeInsets.all(20),
+        padding: EdgeInsets.all(context.responsivePadding),
         constraints: BoxConstraints(
           maxHeight: MediaQuery.of(context).size.height * 0.85,
         ),
@@ -189,7 +190,7 @@ class _CreateLabOrderSheetState extends State<CreateLabOrderSheet> {
 
   Widget _buildTemplatesSection(List<String> categories, bool isDark) {
     return Container(
-      padding: const EdgeInsets.all(16),
+      padding: EdgeInsets.all(context.responsivePadding),
       decoration: LabContainerStyle.section(isDark: isDark, color: LabColors.primary),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -289,7 +290,7 @@ class _CreateLabOrderSheetState extends State<CreateLabOrderSheet> {
     if (tests.isEmpty) {
       return Center(
         child: Padding(
-          padding: const EdgeInsets.all(16),
+          padding: EdgeInsets.all(context.responsivePadding),
           child: Text(
             'Select a category to see tests',
             style: TextStyle(
@@ -439,7 +440,7 @@ class _CreateLabOrderSheetState extends State<CreateLabOrderSheet> {
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
         backgroundColor: isDark ? LabColors.darkSurface : Colors.white,
         child: Padding(
-          padding: const EdgeInsets.all(20),
+          padding: EdgeInsets.all(context.responsivePadding),
           child: Column(
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -678,7 +679,7 @@ class _EnterResultsSheetState extends State<EnterResultsSheet> {
       ),
       child: Container(
         decoration: LabContainerStyle.bottomSheet(isDark: isDark),
-        padding: const EdgeInsets.all(20),
+        padding: EdgeInsets.all(context.responsivePadding),
         child: Column(
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,

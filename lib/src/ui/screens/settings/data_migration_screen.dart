@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../providers/migration_provider.dart';
 import '../../../services/data_migration_service.dart';
 import '../../../theme/app_theme.dart';
+import '../../../core/extensions/context_extensions.dart';
 
 /// Screen for running data migration to encounter-based system
 class DataMigrationScreen extends ConsumerWidget {
@@ -21,19 +22,19 @@ class DataMigrationScreen extends ConsumerWidget {
         backgroundColor: isDark ? AppColors.darkSurface : Colors.white,
       ),
       body: SingleChildScrollView(
-        padding: const EdgeInsets.all(24),
+        padding: EdgeInsets.all(context.responsivePadding),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             // Info card
-            _buildInfoCard(isDark),
+            _buildInfoCard(context, isDark),
             const SizedBox(height: 24),
 
             // Preview section
             previewAsync.when(
               loading: () => const Center(child: CircularProgressIndicator()),
-              error: (e, _) => _buildErrorCard(e.toString(), isDark),
-              data: (preview) => _buildPreviewCard(preview, isDark),
+              error: (e, _) => _buildErrorCard(context, e.toString(), isDark),
+              data: (preview) => _buildPreviewCard(context, preview, isDark),
             ),
             const SizedBox(height: 24),
 
@@ -45,9 +46,9 @@ class DataMigrationScreen extends ConsumerWidget {
     );
   }
 
-  Widget _buildInfoCard(bool isDark) {
+  Widget _buildInfoCard(BuildContext context, bool isDark) {
     return Container(
-      padding: const EdgeInsets.all(20),
+      padding: EdgeInsets.all(context.responsivePadding),
       decoration: BoxDecoration(
         color: AppColors.info.withValues(alpha: 0.1),
         borderRadius: BorderRadius.circular(16),
@@ -92,9 +93,9 @@ class DataMigrationScreen extends ConsumerWidget {
     );
   }
 
-  Widget _buildPreviewCard(MigrationPreview preview, bool isDark) {
+  Widget _buildPreviewCard(BuildContext context, MigrationPreview preview, bool isDark) {
     return Container(
-      padding: const EdgeInsets.all(20),
+      padding: EdgeInsets.all(context.responsivePadding),
       decoration: BoxDecoration(
         color: isDark ? AppColors.darkSurface : Colors.white,
         borderRadius: BorderRadius.circular(16),
@@ -241,9 +242,9 @@ class DataMigrationScreen extends ConsumerWidget {
     return switch (state) {
       MigrationInitial() => _buildStartButton(context, ref, isDark),
       MigrationRunning(:final message, :final progress) =>
-        _buildProgressCard(message, progress, isDark),
-      MigrationCompleted(:final stats) => _buildCompletedCard(stats, ref, isDark),
-      MigrationError(:final error) => _buildErrorCard(error, isDark),
+        _buildProgressCard(context, message, progress, isDark),
+      MigrationCompleted(:final stats) => _buildCompletedCard(context, stats, ref, isDark),
+      MigrationError(:final error) => _buildErrorCard(context, error, isDark),
     };
   }
 
@@ -292,9 +293,9 @@ class DataMigrationScreen extends ConsumerWidget {
     }
   }
 
-  Widget _buildProgressCard(String message, double progress, bool isDark) {
+  Widget _buildProgressCard(BuildContext context, String message, double progress, bool isDark) {
     return Container(
-      padding: const EdgeInsets.all(24),
+      padding: EdgeInsets.all(context.responsivePadding),
       decoration: BoxDecoration(
         color: isDark ? AppColors.darkSurface : Colors.white,
         borderRadius: BorderRadius.circular(16),
@@ -340,9 +341,9 @@ class DataMigrationScreen extends ConsumerWidget {
     );
   }
 
-  Widget _buildCompletedCard(MigrationStats stats, WidgetRef ref, bool isDark) {
+  Widget _buildCompletedCard(BuildContext context, MigrationStats stats, WidgetRef ref, bool isDark) {
     return Container(
-      padding: const EdgeInsets.all(24),
+      padding: EdgeInsets.all(context.responsivePadding),
       decoration: BoxDecoration(
         color: isDark ? AppColors.darkSurface : Colors.white,
         borderRadius: BorderRadius.circular(16),
@@ -357,7 +358,7 @@ class DataMigrationScreen extends ConsumerWidget {
       child: Column(
         children: [
           Container(
-            padding: const EdgeInsets.all(16),
+            padding: EdgeInsets.all(context.responsivePadding),
             decoration: BoxDecoration(
               color: stats.hasErrors
                   ? AppColors.warning.withValues(alpha: 0.1)
@@ -477,9 +478,9 @@ class DataMigrationScreen extends ConsumerWidget {
     );
   }
 
-  Widget _buildErrorCard(String error, bool isDark) {
+  Widget _buildErrorCard(BuildContext context, String error, bool isDark) {
     return Container(
-      padding: const EdgeInsets.all(20),
+      padding: EdgeInsets.all(context.responsivePadding),
       decoration: BoxDecoration(
         color: AppColors.error.withValues(alpha: 0.1),
         borderRadius: BorderRadius.circular(16),

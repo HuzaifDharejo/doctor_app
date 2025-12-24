@@ -9,6 +9,7 @@ import 'dart:convert';
 import 'dart:io';
 import 'package:drift/drift.dart';
 import 'package:flutter/foundation.dart';
+import 'package:path/path.dart' as p;
 import 'package:path_provider/path_provider.dart';
 import 'package:share_plus/share_plus.dart';
 import '../db/doctor_db.dart';
@@ -125,6 +126,7 @@ class CloudBackupService {
   Future<BackupResult> createBackup({
     required DoctorDatabase db,
     bool encrypt = true,
+    String? customSavePath,
   }) async {
     // Check if running on web - file system backup not supported
     if (kIsWeb) {
@@ -183,14 +185,22 @@ class CloudBackupService {
       }
 
       // Save to file
-      final directory = await getApplicationDocumentsDirectory();
-      final timestamp = DateTime.now().toIso8601String().replaceAll(':', '-').split('.').first;
-      final fileName = '$_backupFilePrefix$timestamp$_backupFileExtension';
-      final filePath = '${directory.path}/$fileName';
+      String filePath;
+      if (customSavePath != null && customSavePath.isNotEmpty) {
+        // Use custom save path provided by user
+        filePath = customSavePath;
+      } else {
+        // Use default location
+        final directory = await getApplicationDocumentsDirectory();
+        final timestamp = DateTime.now().toIso8601String().replaceAll(':', '-').split('.').first;
+        final fileName = '$_backupFilePrefix$timestamp$_backupFileExtension';
+        filePath = '${directory.path}/$fileName';
+      }
 
       final file = File(filePath);
       await file.writeAsString(jsonString);
 
+      final fileName = filePath.split(Platform.pathSeparator).last;
       log.i('BACKUP', 'Backup created successfully: $fileName');
 
       return BackupResult(

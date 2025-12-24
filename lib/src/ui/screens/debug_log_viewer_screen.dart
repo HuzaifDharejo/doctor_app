@@ -4,6 +4,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 import '../../services/logger_service.dart';
+import '../../core/extensions/context_extensions.dart';
 
 /// Debug Log Viewer Screen - View and filter app logs in real-time
 class DebugLogViewerScreen extends ConsumerStatefulWidget {
@@ -45,9 +46,9 @@ class _DebugLogViewerScreenState extends ConsumerState<DebugLogViewerScreen>
           _updateFilteredLogs();
           _updateAvailableTags();
         });
-        if (_autoScroll && _scrollController.hasClients) {
+        if (_autoScroll && _scrollController.hasClients && mounted) {
           Future.delayed(const Duration(milliseconds: 100), () {
-            if (_scrollController.hasClients) {
+            if (mounted && _scrollController.hasClients) {
               _scrollController.animateTo(
                 _scrollController.position.maxScrollExtent,
                 duration: const Duration(milliseconds: 200),
@@ -629,7 +630,7 @@ class _DebugLogViewerScreenState extends ConsumerState<DebugLogViewerScreen>
         Card(
           color: Colors.red.shade50,
           child: Padding(
-            padding: const EdgeInsets.all(16),
+            padding: EdgeInsets.all(context.responsivePadding),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
@@ -700,7 +701,7 @@ class _DebugLogViewerScreenState extends ConsumerState<DebugLogViewerScreen>
         Card(
           color: isDark ? const Color(0xFF1E1E2E) : Colors.blue.shade50,
           child: Padding(
-            padding: const EdgeInsets.all(16),
+            padding: EdgeInsets.all(context.responsivePadding),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
@@ -811,7 +812,7 @@ class _DebugLogViewerScreenState extends ConsumerState<DebugLogViewerScreen>
         Card(
           color: isDark ? const Color(0xFF1E1E2E) : Colors.purple.shade50,
           child: Padding(
-            padding: const EdgeInsets.all(16),
+            padding: EdgeInsets.all(context.responsivePadding),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
@@ -983,7 +984,7 @@ class _LogDetailsSheet extends StatelessWidget {
           // Content
           Flexible(
             child: SingleChildScrollView(
-              padding: const EdgeInsets.all(20),
+              padding: EdgeInsets.all(context.responsivePadding),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [

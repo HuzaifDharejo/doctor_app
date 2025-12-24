@@ -3,12 +3,21 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../../core/routing/app_router.dart';
 import '../../db/doctor_db.dart';
 import '../../providers/db_provider.dart';
 import '../../core/widgets/loading_state.dart';
 import '../../core/widgets/error_state.dart';
 import '../../core/widgets/skeleton_loading.dart';
 import '../../core/utils/pagination.dart';
+import '../../core/theme/design_tokens.dart';
+import '../../theme/app_theme.dart';
+import '../../core/extensions/context_extensions.dart';
+import '../../core/widgets/empty_state.dart';
+import '../../services/patient_status_service.dart';
+import '../widgets/patient_status_badge.dart';
+import '../widgets/batch_operations_bar.dart';
+import '../widgets/selectable_item_wrapper.dart';
 import 'add_patient_screen.dart';
 import 'patient_view/patient_view.dart';
 
@@ -28,8 +37,11 @@ class _PatientsScreenState extends ConsumerState<PatientsScreen> {
   final ScrollController _scrollController = ScrollController();
   Timer? _debounceTimer;
   String? _error;
-  bool _isRefreshing = false;
   final TextEditingController _searchController = TextEditingController();
+  
+  // Batch operations
+  bool _isSelectionMode = false;
+  final Set<int> _selectedPatientIds = <int>{};
 
   @override
   void initState() {
@@ -55,10 +67,7 @@ class _PatientsScreenState extends ConsumerState<PatientsScreen> {
   }
 
   Future<(List<Patient>, int)> _fetchPage(int pageIndex, int pageSize) async {
-    final db = ref.read(doctorDbProvider).value;
-    if (db == null) {
-      throw Exception('Database not available');
-    }
+    final db = await ref.read(doctorDbProvider.future);
 
     // Convert filter to risk level
     int? riskLevel;
@@ -91,6 +100,7 @@ class _PatientsScreenState extends ConsumerState<PatientsScreen> {
   }
 
   void _onScroll() {
+    if (!mounted || !_scrollController.hasClients) return;
     _paginationController.onScroll(
       scrollPosition: _scrollController.position.pixels,
       maxScrollExtent: _scrollController.position.maxScrollExtent,
@@ -128,10 +138,9 @@ class _PatientsScreenState extends ConsumerState<PatientsScreen> {
   }
 
   Future<void> _handleRefresh() async {
-    setState(() => _isRefreshing = true);
     HapticFeedback.mediumImpact();
+    // Refresh the pagination controller - this will reload from page 0
     await _paginationController.refresh();
-    setState(() => _isRefreshing = false);
   }
 
   void _clearSearch() {
@@ -148,13 +157,13 @@ class _PatientsScreenState extends ConsumerState<PatientsScreen> {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final screenWidth = MediaQuery.of(context).size.width;
     final isCompact = screenWidth < 400;
-    final padding = isCompact ? 16.0 : 20.0;
+    final padding = isCompact ? AppSpacing.lg : AppSpacing.xl;
     
     return Scaffold(
-      backgroundColor: isDark ? const Color(0xFF0F0F0F) : const Color(0xFFF8F9FA),
+      backgroundColor: isDark ? AppColors.darkBackground : AppColors.background,
       body: RefreshIndicator(
         onRefresh: _handleRefresh,
-        color: const Color(0xFF6366F1),
+        color: AppColors.primary,
         child: CustomScrollView(
           controller: _scrollController,
           physics: const AlwaysScrollableScrollPhysics(),
@@ -165,44 +174,43 @@ class _PatientsScreenState extends ConsumerState<PatientsScreen> {
               pinned: true,
               elevation: 0,
               scrolledUnderElevation: 1,
-              backgroundColor: isDark ? const Color(0xFF1A1A1A) : Colors.white,
+              backgroundColor: isDark ? AppColors.darkSurface : AppColors.surface,
               automaticallyImplyLeading: false,
               flexibleSpace: FlexibleSpaceBar(
                 background: Container(
                   decoration: BoxDecoration(
                     gradient: LinearGradient(
                       colors: isDark 
-                          ? [const Color(0xFF1A1A1A), const Color(0xFF0F0F0F)]
-                          : [Colors.white, const Color(0xFFF8F9FA)],
+                          ? [AppColors.darkSurface, AppColors.darkBackground]
+                          : [AppColors.surface, AppColors.background],
                       begin: Alignment.topCenter,
                       end: Alignment.bottomCenter,
                     ),
                   ),
                   child: SafeArea(
                     child: Padding(
-                      padding: const EdgeInsets.fromLTRB(20, 50, 20, 0),
+                      padding: EdgeInsets.fromLTRB(
+                        AppSpacing.xl,
+                        AppSpacing.xxxxxl + 2,
+                        AppSpacing.xl,
+                        0,
+                      ),
                       child: Row(
                         children: [
                           Container(
-                            padding: const EdgeInsets.all(14),
+                            padding: EdgeInsets.all(AppSpacing.md + 2),
                             decoration: BoxDecoration(
-                              gradient: const LinearGradient(
-                                colors: [Color(0xFF6366F1), Color(0xFF8B5CF6)],
-                                begin: Alignment.topLeft,
-                                end: Alignment.bottomRight,
-                              ),
-                              borderRadius: BorderRadius.circular(16),
-                              boxShadow: [
-                                BoxShadow(
-                                  color: const Color(0xFF6366F1).withValues(alpha: 0.3),
-                                  blurRadius: 12,
-                                  offset: const Offset(0, 4),
-                                ),
-                              ],
+                              gradient: AppColors.primaryGradient,
+                              borderRadius: BorderRadius.circular(AppRadius.card),
+                              boxShadow: AppShadow.medium,
                             ),
-                            child: const Icon(Icons.people_rounded, color: Colors.white, size: 28),
+                            child: Icon(
+                              Icons.people_rounded,
+                              color: AppColors.surface,
+                              size: AppIconSize.lg,
+                            ),
                           ),
-                          const SizedBox(width: 16),
+                          SizedBox(width: AppSpacing.lg),
                           Expanded(
                             child: Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
@@ -211,21 +219,25 @@ class _PatientsScreenState extends ConsumerState<PatientsScreen> {
                                 Text(
                                   'Patients',
                                   style: TextStyle(
-                                    fontSize: 22,
+                                    fontSize: AppFontSize.displayMedium,
                                     fontWeight: FontWeight.w800,
-                                    color: isDark ? Colors.white : Colors.black87,
+                                    color: isDark
+                                        ? AppColors.darkTextPrimary
+                                        : AppColors.textPrimary,
                                     letterSpacing: -0.5,
                                   ),
                                 ),
-                                const SizedBox(height: 4),
+                                SizedBox(height: AppSpacing.xs),
                                 // Show patient count in header
                                 Text(
-                                  _paginationController.hasInitialized 
+                                  _paginationController.hasInitialized
                                       ? '${_paginationController.totalItems} patients'
                                       : 'Manage your patients',
                                   style: TextStyle(
-                                    fontSize: 13,
-                                    color: isDark ? Colors.grey[400] : Colors.grey[600],
+                                    fontSize: AppFontSize.bodyMedium,
+                                    color: isDark
+                                        ? AppColors.darkTextSecondary
+                                        : AppColors.textSecondary,
                                   ),
                                 ),
                               ],
@@ -256,7 +268,42 @@ class _PatientsScreenState extends ConsumerState<PatientsScreen> {
           ],
         ),
       ),
-      floatingActionButton: Container(
+      bottomNavigationBar: _isSelectionMode && _selectedPatientIds.isNotEmpty
+          ? BatchOperationsBar<Patient>(
+              selectedCount: _selectedPatientIds.length,
+              totalCount: _paginationController.totalItems,
+              onSelectAll: () {
+                setState(() {
+                  _selectedPatientIds.addAll(
+                    _paginationController.items.map((p) => p.id),
+                  );
+                });
+              },
+              onDeselectAll: () {
+                setState(() {
+                  _selectedPatientIds.clear();
+                });
+              },
+              actions: [
+                BatchAction<Patient>(
+                  label: 'Send Reminder',
+                  icon: Icons.notifications_rounded,
+                  onAction: () => _handleBatchSendReminder(),
+                ),
+                BatchAction<Patient>(
+                  label: 'Generate Invoices',
+                  icon: Icons.receipt_long_rounded,
+                  onAction: () => _handleBatchGenerateInvoices(),
+                ),
+                BatchAction<Patient>(
+                  label: 'Export',
+                  icon: Icons.file_download_rounded,
+                  onAction: () => _handleBatchExport(),
+                ),
+              ],
+            )
+          : null,
+      floatingActionButton: !_isSelectionMode ? Container(
         decoration: BoxDecoration(
           gradient: const LinearGradient(
             colors: [Color(0xFF6366F1), Color(0xFF8B5CF6)],
@@ -278,25 +325,98 @@ class _PatientsScreenState extends ConsumerState<PatientsScreen> {
                 context,
                 MaterialPageRoute<Patient?>(builder: (_) => const AddPatientScreen()),
               );
-              // Refresh list if a patient was added
+              // Refresh list if a patient was added - use full refresh to reset pagination
               if (result != null && mounted) {
-                _handleRefresh();
+                _refreshList();
               }
             },
             borderRadius: BorderRadius.circular(16),
-            child: const Padding(
-              padding: EdgeInsets.all(16),
-              child: Icon(Icons.add_rounded, color: Colors.white, size: 28),
+            child: Padding(
+              padding: EdgeInsets.all(context.responsivePadding),
+              child: const Icon(Icons.add_rounded, color: Colors.white, size: 28),
             ),
           ),
         ),
-      ),
+      ) : null,
     );
+  }
+
+  // Batch operation handlers
+  Future<void> _handleBatchSendReminder() async {
+    if (_selectedPatientIds.isEmpty) return;
+    
+    final selectedPatients = _paginationController.items
+        .where((p) => _selectedPatientIds.contains(p.id))
+        .toList();
+    
+    // TODO: Implement batch reminder sending
+    if (mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Sending reminders to ${selectedPatients.length} patients...'),
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
+      
+      // Clear selection after action
+      setState(() {
+        _selectedPatientIds.clear();
+        _isSelectionMode = false;
+      });
+    }
+  }
+
+  Future<void> _handleBatchGenerateInvoices() async {
+    if (_selectedPatientIds.isEmpty) return;
+    
+    final selectedPatients = _paginationController.items
+        .where((p) => _selectedPatientIds.contains(p.id))
+        .toList();
+    
+    // TODO: Implement batch invoice generation
+    if (mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Generating invoices for ${selectedPatients.length} patients...'),
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
+      
+      // Clear selection after action
+      setState(() {
+        _selectedPatientIds.clear();
+        _isSelectionMode = false;
+      });
+    }
+  }
+
+  Future<void> _handleBatchExport() async {
+    if (_selectedPatientIds.isEmpty) return;
+    
+    final selectedPatients = _paginationController.items
+        .where((p) => _selectedPatientIds.contains(p.id))
+        .toList();
+    
+    // TODO: Implement batch export (CSV, PDF, etc.)
+    if (mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Exporting ${selectedPatients.length} patients...'),
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
+      
+      // Clear selection after action
+      setState(() {
+        _selectedPatientIds.clear();
+        _isSelectionMode = false;
+      });
+    }
   }
   
   Widget _buildModernSearchAndFilter(BuildContext context, bool isDark) {
     return Padding(
-      padding: const EdgeInsets.all(20),
+      padding: EdgeInsets.all(context.responsivePadding),
       child: Column(
         children: [
           // Modern Search Bar
@@ -327,7 +447,10 @@ class _PatientsScreenState extends ConsumerState<PatientsScreen> {
                       )
                     : null,
                 border: InputBorder.none,
-                contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+                contentPadding: EdgeInsets.symmetric(
+                  horizontal: AppSpacing.xl,
+                  vertical: AppSpacing.lg,
+                ),
               ),
             ),
           ),
@@ -350,12 +473,15 @@ class _PatientsScreenState extends ConsumerState<PatientsScreen> {
                 }
                 
                 return Padding(
-                  padding: const EdgeInsets.only(right: 8),
+                  padding: EdgeInsets.only(right: AppSpacing.sm),
                   child: GestureDetector(
                     onTap: () => _onFilterChanged(filter),
                     child: AnimatedContainer(
                       duration: const Duration(milliseconds: 200),
-                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+                      padding: EdgeInsets.symmetric(
+                        horizontal: AppSpacing.lg,
+                        vertical: AppSpacing.sm + 2,
+                      ),
                       decoration: BoxDecoration(
                         gradient: isSelected ? LinearGradient(colors: [chipColor, chipColor.withValues(alpha: 0.8)]) : null,
                         color: isSelected ? null : (isDark ? Colors.white.withValues(alpha: 0.05) : Colors.white),
@@ -454,7 +580,14 @@ class _PatientsScreenState extends ConsumerState<PatientsScreen> {
 
     // Show empty state
     if (controller.isEmpty) {
-      return SliverToBoxAdapter(child: _buildModernEmptyState(isDark));
+      return SliverFillRemaining(
+        child: EmptyPatientList(
+          onAddPatient: () => Navigator.push(
+            context,
+            MaterialPageRoute(builder: (_) => const AddPatientScreen()),
+          ),
+        ),
+      );
     }
 
     final patients = controller.items;
@@ -481,7 +614,12 @@ class _PatientsScreenState extends ConsumerState<PatientsScreen> {
             }
 
             final patient = patients[index];
-            return _buildModernPatientCard(context, patient, isDark);
+            final dbAsync = ref.watch(doctorDbProvider);
+            return dbAsync.when(
+              data: (db) => _buildModernPatientCard(context, patient, isDark, db),
+              loading: () => const SizedBox.shrink(),
+              error: (_, __) => _buildModernPatientCard(context, patient, isDark, null),
+            );
           },
           childCount: patients.length + 1, // +1 for pagination footer
         ),
@@ -498,7 +636,7 @@ class _PatientsScreenState extends ConsumerState<PatientsScreen> {
     required VoidCallback onLoadMore,
   }) {
     return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 16),
+      padding: EdgeInsets.symmetric(vertical: AppSpacing.lg),
       child: Column(
         children: [
           // Progress indicator
@@ -517,7 +655,10 @@ class _PatientsScreenState extends ConsumerState<PatientsScreen> {
           
           // Pagination info
           Container(
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+            padding: EdgeInsets.symmetric(
+              horizontal: AppSpacing.lg,
+              vertical: AppSpacing.sm,
+            ),
             decoration: BoxDecoration(
               color: isDark 
                   ? Colors.white.withValues(alpha: 0.05) 
@@ -543,7 +684,10 @@ class _PatientsScreenState extends ConsumerState<PatientsScreen> {
               onPressed: onLoadMore,
               style: TextButton.styleFrom(
                 foregroundColor: const Color(0xFF6366F1),
-                padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+                padding: EdgeInsets.symmetric(
+                  horizontal: AppSpacing.xxl,
+                  vertical: AppSpacing.md,
+                ),
               ),
               child: const Row(
                 mainAxisSize: MainAxisSize.min,
@@ -563,7 +707,7 @@ class _PatientsScreenState extends ConsumerState<PatientsScreen> {
     );
   }
   
-  Widget _buildModernPatientCard(BuildContext context, Patient patient, bool isDark) {
+  Widget _buildModernPatientCard(BuildContext context, Patient patient, bool isDark, DoctorDatabase? db) {
     Color riskColor;
     String riskLabel;
     if (patient.riskLevel <= 2) {
@@ -578,7 +722,7 @@ class _PatientsScreenState extends ConsumerState<PatientsScreen> {
     }
     
     return Container(
-      margin: const EdgeInsets.only(bottom: 12),
+      margin: EdgeInsets.only(bottom: AppSpacing.md),
       decoration: BoxDecoration(
         color: isDark ? const Color(0xFF1A1A1A) : Colors.white,
         borderRadius: BorderRadius.circular(20),
@@ -597,12 +741,12 @@ class _PatientsScreenState extends ConsumerState<PatientsScreen> {
             context,
             MaterialPageRoute<void>(
               builder: (_) => PatientViewScreenModern(patient: patient),
-              settings: const RouteSettings(name: '/patient-view'),
+              settings: const RouteSettings(name: AppRoutes.patientView),
             ),
           ),
           borderRadius: BorderRadius.circular(20),
           child: Padding(
-            padding: const EdgeInsets.all(16),
+            padding: EdgeInsets.all(context.responsivePadding),
             child: Row(
               children: [
                 // Avatar
@@ -655,12 +799,37 @@ class _PatientsScreenState extends ConsumerState<PatientsScreen> {
                             ),
                           ],
                         ),
+                      // Patient Status Badges
+                      if (db != null)
+                        FutureBuilder<List<PatientStatus>>(
+                          future: PatientStatusService(db: db).getPatientStatuses(
+                            patient: patient,
+                            appointment: null,
+                          ),
+                          builder: (context, statusSnapshot) {
+                            if (!statusSnapshot.hasData) {
+                              return const SizedBox.shrink();
+                            }
+                            final statuses = statusSnapshot.data!;
+                            return Padding(
+                              padding: const EdgeInsets.only(top: 6),
+                              child: PatientStatusBadges(
+                                statuses: statuses,
+                                size: BadgeSize.small,
+                                maxBadges: 2,
+                              ),
+                            );
+                          },
+                        ),
                     ],
                   ),
                 ),
                 // Risk Badge
                 Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                  padding: EdgeInsets.symmetric(
+                    horizontal: AppSpacing.sm + 2,
+                    vertical: AppSpacing.xs + 2,
+                  ),
                   decoration: BoxDecoration(
                     color: riskColor.withValues(alpha: 0.1),
                     borderRadius: BorderRadius.circular(8),
@@ -703,12 +872,12 @@ class _PatientsScreenState extends ConsumerState<PatientsScreen> {
   
   Widget _buildModernEmptyState(bool isDark) {
     return Padding(
-      padding: const EdgeInsets.all(40),
+      padding: EdgeInsets.all(AppSpacing.xxxxl),
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
           Container(
-            padding: const EdgeInsets.all(24),
+            padding: EdgeInsets.all(context.responsivePadding),
             decoration: BoxDecoration(
               color: isDark ? Colors.white.withValues(alpha: 0.05) : Colors.grey.withValues(alpha: 0.1),
               shape: BoxShape.circle,

@@ -56,9 +56,10 @@ class GoogleCalendarNotifier extends StateNotifier<GoogleCalendarState> {
   final GoogleCalendarService _service;
 
   Future<void> _initialize() async {
-    state = state.copyWith(isLoading: true);
-    
-    final isConnected = await _service.isConnected();
+    try {
+      state = state.copyWith(isLoading: true);
+      
+      final isConnected = await _service.isConnected();
     if (isConnected) {
       final email = await _service.getConnectedEmail();
       final name = await _service.getConnectedName();
@@ -79,6 +80,11 @@ class GoogleCalendarNotifier extends StateNotifier<GoogleCalendarState> {
       );
     } else {
       state = state.copyWith(isLoading: false);
+    }
+    } catch (e) {
+      // Google Calendar service not available (e.g., on web)
+      // Set state to not connected
+      state = const GoogleCalendarState(isLoading: false);
     }
   }
 

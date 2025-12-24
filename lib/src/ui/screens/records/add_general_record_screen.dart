@@ -155,7 +155,9 @@ class _AddGeneralRecordScreenState extends ConsumerState<AddGeneralRecordScreen>
       _loadExistingRecord();
     } else {
       // Check for draft only when creating new record
-      WidgetsBinding.instance.addPostFrameCallback((_) => _checkForDraft());
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) _checkForDraft();
+      });
     }
     
     // Start auto-save timer
@@ -180,6 +182,7 @@ class _AddGeneralRecordScreenState extends ConsumerState<AddGeneralRecordScreen>
         final vitals = data['vitals'] as Map<String, dynamic>?;
         if (vitals != null) {
           WidgetsBinding.instance.addPostFrameCallback((_) {
+            if (!mounted) return;
             final bp = vitals['bp']?.toString() ?? '';
             final bpParts = bp.split('/');
             _vitalsKey.currentState?.setData(VitalsData(
@@ -225,18 +228,18 @@ class _AddGeneralRecordScreenState extends ConsumerState<AddGeneralRecordScreen>
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(AppRadius.lg)),
         title: Row(
           children: [
             Container(
-              padding: const EdgeInsets.all(8),
+              padding: const EdgeInsets.all(AppSpacing.sm),
               decoration: BoxDecoration(
                 color: Colors.amber.shade100,
-                borderRadius: BorderRadius.circular(10),
+                borderRadius: BorderRadius.circular(AppRadius.md),
               ),
               child: Icon(Icons.restore, color: Colors.amber.shade700),
             ),
-            const SizedBox(width: 12),
+            const SizedBox(width: AppSpacing.md),
             const Text('Restore Draft?'),
           ],
         ),
@@ -245,20 +248,20 @@ class _AddGeneralRecordScreenState extends ConsumerState<AddGeneralRecordScreen>
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             const Text('A previous draft was found for this form.'),
-            const SizedBox(height: 8),
+            const SizedBox(height: AppSpacing.sm),
             Container(
-              padding: const EdgeInsets.all(12),
+              padding: const EdgeInsets.all(AppSpacing.md),
               decoration: BoxDecoration(
                 color: Colors.grey.shade100,
-                borderRadius: BorderRadius.circular(8),
+                borderRadius: BorderRadius.circular(AppRadius.sm),
               ),
               child: Row(
                 children: [
-                  Icon(Icons.access_time, size: 16, color: Colors.grey.shade600),
-                  const SizedBox(width: 8),
+                  Icon(Icons.access_time, size: AppIconSize.xs, color: Colors.grey.shade600),
+                  const SizedBox(width: AppSpacing.sm),
                   Text(
                     'Saved ${draft.timeAgo}',
-                    style: TextStyle(color: Colors.grey.shade700),
+                    style: TextStyle(color: Colors.grey.shade700, fontSize: AppFontSize.md),
                   ),
                 ],
               ),
@@ -288,7 +291,7 @@ class _AddGeneralRecordScreenState extends ConsumerState<AddGeneralRecordScreen>
               backgroundColor: Colors.amber.shade600,
               foregroundColor: Colors.white,
               shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(8),
+                borderRadius: BorderRadius.circular(AppRadius.sm),
               ),
             ),
             child: const Text('Restore'),
@@ -313,6 +316,7 @@ class _AddGeneralRecordScreenState extends ConsumerState<AddGeneralRecordScreen>
       final vitals = data['vitals'] as Map<String, dynamic>?;
       if (vitals != null) {
         WidgetsBinding.instance.addPostFrameCallback((_) {
+          if (!mounted) return;
           _vitalsKey.currentState?.setData(VitalsData(
             bpSystolic: vitals['bp_systolic'] as String?,
             bpDiastolic: vitals['bp_diastolic'] as String?,
@@ -331,14 +335,14 @@ class _AddGeneralRecordScreenState extends ConsumerState<AddGeneralRecordScreen>
       SnackBar(
         content: const Row(
           children: [
-            Icon(Icons.check_circle, color: Colors.white, size: 18),
-            SizedBox(width: 8),
+            Icon(Icons.check_circle, color: Colors.white, size: AppIconSize.sm),
+            SizedBox(width: AppSpacing.sm),
             Text('Draft restored'),
           ],
         ),
         backgroundColor: Colors.green.shade600,
         behavior: SnackBarBehavior.floating,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(AppRadius.md)),
         duration: const Duration(seconds: 2),
       ),
     );
@@ -680,6 +684,7 @@ class _AddGeneralRecordScreenState extends ConsumerState<AddGeneralRecordScreen>
       if (data['vitals'] != null) {
         final vitals = data['vitals'] as Map<String, dynamic>;
         WidgetsBinding.instance.addPostFrameCallback((_) {
+          if (!mounted) return;
           _vitalsKey.currentState?.setData(VitalsData(
             bpSystolic: vitals['bp_systolic'] as String?,
             bpDiastolic: vitals['bp_diastolic'] as String?,
@@ -906,7 +911,7 @@ class _AddGeneralRecordScreenState extends ConsumerState<AddGeneralRecordScreen>
               accentColor: Colors.indigo,
             ),
           ),
-          const SizedBox(height: 32),
+          const SizedBox(height: AppSpacing.xxxl),
 
           // Action Buttons - Using new component
           RecordActionButtons(
@@ -916,7 +921,7 @@ class _AddGeneralRecordScreenState extends ConsumerState<AddGeneralRecordScreen>
             isLoading: _isSaving,
             canSave: _selectedPatientId != null,
           ),
-          const SizedBox(height: 40),
+          const SizedBox(height: AppSpacing.xxxxl),
         ],
       ),
     );

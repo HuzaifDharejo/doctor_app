@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'package:flutter/foundation.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'logger_service.dart';
 
 /// Service for handling patient photos
 /// Photos are stored as base64 strings in SharedPreferences for web compatibility
@@ -15,8 +16,8 @@ class PhotoService {
       final base64Image = base64Encode(imageBytes);
       await prefs.setString('$_photoPrefix$patientId', base64Image);
       return base64Image;
-    } catch (e) {
-      debugPrint('Error saving photo: $e');
+    } catch (e, stackTrace) {
+      log.e('PHOTO', 'Error saving patient photo', error: e, stackTrace: stackTrace, extra: {'patientId': patientId});
       return null;
     }
   }
@@ -26,8 +27,8 @@ class PhotoService {
     try {
       final prefs = await SharedPreferences.getInstance();
       return prefs.getString('$_photoPrefix$patientId');
-    } catch (e) {
-      debugPrint('Error getting photo: $e');
+    } catch (e, stackTrace) {
+      log.e('PHOTO', 'Error getting patient photo', error: e, stackTrace: stackTrace, extra: {'patientId': patientId});
       return null;
     }
   }
@@ -38,8 +39,8 @@ class PhotoService {
     if (base64 != null) {
       try {
         return base64Decode(base64);
-      } catch (e) {
-        debugPrint('Error decoding photo: $e');
+      } catch (e, stackTrace) {
+        log.e('PHOTO', 'Error decoding patient photo', error: e, stackTrace: stackTrace, extra: {'patientId': patientId});
         return null;
       }
     }
@@ -51,8 +52,8 @@ class PhotoService {
     try {
       final prefs = await SharedPreferences.getInstance();
       return prefs.remove('$_photoPrefix$patientId');
-    } catch (e) {
-      debugPrint('Error deleting photo: $e');
+    } catch (e, stackTrace) {
+      log.e('PHOTO', 'Error deleting patient photo', error: e, stackTrace: stackTrace, extra: {'patientId': patientId});
       return false;
     }
   }

@@ -7,6 +7,7 @@ import '../../../db/doctor_db.dart';
 import '../../../providers/db_provider.dart';
 import 'components/patient_selector_card.dart';
 import 'components/record_components.dart';
+import '../../../core/extensions/context_extensions.dart';
 
 /// Common referral specialties
 final _referralSpecialties = [
@@ -301,7 +302,7 @@ class _AddReferralScreenState extends ConsumerState<AddReferralScreen> {
       body: Form(
         key: _formKey,
         child: ListView(
-          padding: const EdgeInsets.all(16),
+          padding: EdgeInsets.all(context.responsivePadding),
           children: [
             // Patient Selection
             if (widget.preselectedPatient != null)
@@ -523,7 +524,7 @@ class _AddReferralScreenState extends ConsumerState<AddReferralScreen> {
     final initials = '${patient.firstName.isNotEmpty ? patient.firstName[0] : ''}${patient.lastName.isNotEmpty ? patient.lastName[0] : ''}'.toUpperCase();
     
     return Container(
-      padding: const EdgeInsets.all(16),
+      padding: EdgeInsets.all(context.responsivePadding),
       decoration: BoxDecoration(
         color: isDark ? Colors.white.withValues(alpha: 0.05) : Colors.white,
         borderRadius: BorderRadius.circular(16),
@@ -582,7 +583,7 @@ class _AddReferralScreenState extends ConsumerState<AddReferralScreen> {
 
   Widget _buildSpecialtySelector(bool isDark) {
     return Container(
-      padding: const EdgeInsets.all(16),
+      padding: EdgeInsets.all(context.responsivePadding),
       decoration: BoxDecoration(
         color: isDark ? Colors.white.withValues(alpha: 0.05) : Colors.white,
         borderRadius: BorderRadius.circular(16),
@@ -645,7 +646,7 @@ class _AddReferralScreenState extends ConsumerState<AddReferralScreen> {
 
   Widget _buildUrgencySelector(bool isDark) {
     return Container(
-      padding: const EdgeInsets.all(16),
+      padding: EdgeInsets.all(context.responsivePadding),
       decoration: BoxDecoration(
         color: isDark ? Colors.white.withValues(alpha: 0.05) : Colors.white,
         borderRadius: BorderRadius.circular(16),
@@ -734,7 +735,7 @@ class _AddReferralScreenState extends ConsumerState<AddReferralScreen> {
 
   Widget _buildDateCard(bool isDark) {
     return Container(
-      padding: const EdgeInsets.all(16),
+      padding: EdgeInsets.all(context.responsivePadding),
       decoration: BoxDecoration(
         color: isDark ? Colors.white.withValues(alpha: 0.05) : Colors.white,
         borderRadius: BorderRadius.circular(16),
@@ -802,7 +803,7 @@ class _AddReferralScreenState extends ConsumerState<AddReferralScreen> {
     String? subtitle,
   }) {
     return Container(
-      padding: const EdgeInsets.all(16),
+      padding: EdgeInsets.all(context.responsivePadding),
       decoration: BoxDecoration(
         color: isDark ? Colors.white.withValues(alpha: 0.05) : Colors.white,
         borderRadius: BorderRadius.circular(16),

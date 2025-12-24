@@ -5,6 +5,7 @@ import 'package:flutter/services.dart';
 import '../../db/doctor_db.dart';
 import '../../theme/app_theme.dart';
 import 'quick_phrase_picker.dart';
+import '../../core/extensions/context_extensions.dart';
 
 /// Quick note entry dialog for fast clinical note recording
 /// 
@@ -85,7 +86,7 @@ class _QuickNoteDialogState extends State<_QuickNoteDialog> {
           children: [
             // Header
             Container(
-              padding: const EdgeInsets.all(20),
+              padding: EdgeInsets.all(context.responsivePadding),
               decoration: BoxDecoration(
                 gradient: LinearGradient(
                   colors: [
@@ -143,7 +144,7 @@ class _QuickNoteDialogState extends State<_QuickNoteDialog> {
             // Form
             Flexible(
               child: SingleChildScrollView(
-                padding: const EdgeInsets.all(20),
+                padding: EdgeInsets.all(context.responsivePadding),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
@@ -330,7 +331,7 @@ class _QuickNoteDialogState extends State<_QuickNoteDialog> {
             
             // Actions
             Container(
-              padding: const EdgeInsets.all(16),
+              padding: EdgeInsets.all(context.responsivePadding),
               decoration: BoxDecoration(
                 color: isDark ? Colors.white.withValues(alpha: 0.05) : Colors.grey.withValues(alpha: 0.05),
                 borderRadius: const BorderRadius.vertical(bottom: Radius.circular(20)),

@@ -1,5 +1,4 @@
 /// BuildContext extensions for cleaner access to theme and media query
-library;
 
 import 'package:flutter/material.dart';
 import '../theme/design_tokens.dart';

@@ -5,6 +5,7 @@ import '../../extensions/drift_extensions.dart';
 import '../../services/growth_chart_service.dart';
 import '../../theme/app_theme.dart';
 import '../../core/theme/design_tokens.dart';
+import '../../core/extensions/context_extensions.dart';
 
 /// Screen for pediatric growth charts and measurements
 class GrowthChartScreen extends ConsumerStatefulWidget {
@@ -394,7 +395,7 @@ class _GrowthChartScreenState extends ConsumerState<GrowthChartScreen>
             ),
             color: isDark ? AppColors.darkSurface : Colors.white,
             child: Padding(
-              padding: const EdgeInsets.all(16),
+              padding: EdgeInsets.all(context.responsivePadding),
               child: Column(
                 children: [
                   Text(
@@ -426,7 +427,7 @@ class _GrowthChartScreenState extends ConsumerState<GrowthChartScreen>
             ),
             color: isDark ? AppColors.darkSurface : Colors.white,
             child: Padding(
-              padding: const EdgeInsets.all(16),
+              padding: EdgeInsets.all(context.responsivePadding),
               child: Column(
                 children: [
                   Text(
@@ -458,7 +459,7 @@ class _GrowthChartScreenState extends ConsumerState<GrowthChartScreen>
             ),
             color: isDark ? AppColors.darkSurface : Colors.white,
             child: Padding(
-              padding: const EdgeInsets.all(16),
+              padding: EdgeInsets.all(context.responsivePadding),
               child: Column(
                 children: [
                   Text(
@@ -1039,7 +1040,7 @@ class _GrowthChartScreenState extends ConsumerState<GrowthChartScreen>
                 ),
                 // Header
                 Padding(
-                  padding: const EdgeInsets.all(16),
+                  padding: EdgeInsets.all(context.responsivePadding),
                   child: Row(
                     children: [
                       Icon(Icons.show_chart, color: AppColors.primary),
@@ -1101,7 +1102,7 @@ class _GrowthChartScreenState extends ConsumerState<GrowthChartScreen>
   Widget _buildFullChart(List<GrowthMeasurementData> measurements, ScrollController scrollController, bool isDark) {
     return ListView(
       controller: scrollController,
-      padding: const EdgeInsets.all(16),
+      padding: EdgeInsets.all(context.responsivePadding),
       children: [
         // Weight Chart
         _buildFullChartCard('Weight (kg)', measurements, 'weight', Colors.blue, isDark),
@@ -1151,7 +1152,7 @@ class _GrowthChartScreenState extends ConsumerState<GrowthChartScreen>
       color: isDark ? AppColors.darkBackground : Colors.grey[50],
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
       child: Padding(
-        padding: const EdgeInsets.all(16),
+        padding: EdgeInsets.all(context.responsivePadding),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -1221,7 +1222,7 @@ class _GrowthChartScreenState extends ConsumerState<GrowthChartScreen>
       color: isDark ? AppColors.darkBackground : Colors.grey[50],
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
       child: Padding(
-        padding: const EdgeInsets.all(16),
+        padding: EdgeInsets.all(context.responsivePadding),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [

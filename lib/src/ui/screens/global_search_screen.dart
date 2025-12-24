@@ -2,12 +2,17 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
+import 'package:drift/drift.dart' as drift;
 import '../../core/theme/design_tokens.dart';
 import '../../db/doctor_db.dart';
 import '../../providers/db_provider.dart';
 import '../../theme/app_theme.dart';
+import '../../services/logger_service.dart';
+import '../../services/search_cache_service.dart';
 import 'patient_view/patient_view_screen.dart';
 import 'invoice_detail_screen.dart';
+import '../../core/extensions/context_extensions.dart';
+import '../../core/widgets/empty_state.dart';
 
 /// Global search screen that searches across patients, appointments, prescriptions, and invoices
 class GlobalSearchScreen extends ConsumerStatefulWidget {
@@ -70,96 +75,236 @@ class _GlobalSearchScreenState extends ConsumerState<GlobalSearchScreen> {
   }
 
   Future<void> _performSearch(String query) async {
-    setState(() => _isLoading = true);
+    final cacheService = SearchCacheService();
+    final cacheParams = {
+      'query': query,
+      'category': _selectedCategory,
+    };
+    
+    // Try to get cached results first for instant feedback
+    final cachedPatients = cacheService.getCached<Patient>(
+      cacheType: 'global_search_patients',
+      params: cacheParams,
+    );
+    
+    if (cachedPatients != null) {
+      setState(() {
+        _patients = cachedPatients;
+        _isLoading = false;
+      });
+    } else {
+      setState(() => _isLoading = true);
+    }
     
     try {
       final db = await ref.read(doctorDbProvider.future);
-      final lowerQuery = query.toLowerCase();
       
-      // Search patients
+      // Search patients using optimized database query
       if (_selectedCategory == 'All' || _selectedCategory == 'Patients') {
-        final allPatients = await db.getAllPatients();
-        _patients = allPatients.where((p) {
-          final fullName = '${p.firstName} ${p.lastName}'.toLowerCase();
-          final phone = p.phone.toLowerCase();
-          final email = p.email.toLowerCase();
-          return fullName.contains(lowerQuery) || 
-                 phone.contains(lowerQuery) || 
-                 email.contains(lowerQuery);
-        }).take(10).toList();
+        final patients = await db.searchPatientsLimited(query, limit: 10);
+        cacheService.setCached<Patient>(
+          cacheType: 'global_search_patients',
+          params: cacheParams,
+          data: patients,
+        );
+        setState(() {
+          _patients = patients;
+        });
       } else {
-        _patients = [];
+        setState(() {
+          _patients = [];
+        });
       }
       
-      // Search appointments
+      // Search appointments using optimized database query
       if (_selectedCategory == 'All' || _selectedCategory == 'Appointments') {
-        final allAppointments = await db.getAllAppointments();
+        final appointments = await db.searchAppointmentsLimited(query, limit: 10);
         final appointmentsWithPatients = <_AppointmentWithPatient>[];
-        for (final appt in allAppointments) {
-          final patient = await db.getPatientById(appt.patientId);
+        
+        // Batch load patients to avoid N+1 queries
+        final patientIds = appointments.map((a) => a.patientId).toSet();
+        final patientsMap = <int, Patient>{};
+        for (final id in patientIds) {
+          final patient = await db.getPatientById(id);
           if (patient != null) {
-            final fullName = '${patient.firstName} ${patient.lastName}'.toLowerCase();
-            final reason = appt.reason.toLowerCase();
-            final notes = appt.notes.toLowerCase();
-            if (fullName.contains(lowerQuery) || 
-                reason.contains(lowerQuery) || 
-                notes.contains(lowerQuery)) {
-              appointmentsWithPatients.add(_AppointmentWithPatient(appt, patient));
+            patientsMap[id] = patient;
+          }
+        }
+        
+        // Also search by patient name if query matches
+        if (query.length >= 2) {
+          final matchingPatients = await db.searchPatientsLimited(query, limit: 5);
+          for (final patient in matchingPatients) {
+            patientsMap[patient.id] = patient;
+          }
+          
+          // Get appointments for matching patients
+          final patientIdsList = matchingPatients.map((p) => p.id).toList();
+          if (patientIdsList.isNotEmpty) {
+            final patientAppointments = await (db.select(db.appointments)
+              ..where((a) => a.patientId.isIn(patientIdsList))
+              ..orderBy([(a) => drift.OrderingTerm.desc(a.appointmentDateTime)])
+              ..limit(10))
+              .get();
+            
+            for (final appt in patientAppointments) {
               if (appointmentsWithPatients.length >= 10) break;
+              final patient = patientsMap[appt.patientId];
+              if (patient != null && !appointments.any((a) => a.id == appt.id)) {
+                appointments.add(appt);
+              }
             }
           }
         }
+        
+        // Combine results
+        for (final appt in appointments) {
+          final patient = patientsMap[appt.patientId];
+          if (patient != null) {
+            appointmentsWithPatients.add(_AppointmentWithPatient(appt, patient));
+            if (appointmentsWithPatients.length >= 10) break;
+          }
+        }
+        
         _appointments = appointmentsWithPatients;
       } else {
         _appointments = [];
       }
       
-      // Search prescriptions
+      // Search prescriptions using optimized database query
       if (_selectedCategory == 'All' || _selectedCategory == 'Prescriptions') {
-        final allPrescriptions = await db.getAllPrescriptions();
+        final prescriptions = await db.searchPrescriptionsLimited(query, limit: 10);
         final prescriptionsWithPatients = <_PrescriptionWithPatient>[];
-        for (final rx in allPrescriptions) {
-          final patient = await db.getPatientById(rx.patientId);
+        
+        // Batch load patients
+        final patientIds = prescriptions.map((rx) => rx.patientId).toSet();
+        final patientsMap = <int, Patient>{};
+        for (final id in patientIds) {
+          final patient = await db.getPatientById(id);
           if (patient != null) {
-            final fullName = '${patient.firstName} ${patient.lastName}'.toLowerCase();
-            final diagnosis = rx.diagnosis.toLowerCase();
-            final items = rx.itemsJson.toLowerCase();
-            if (fullName.contains(lowerQuery) || 
-                diagnosis.contains(lowerQuery) || 
-                items.contains(lowerQuery)) {
-              prescriptionsWithPatients.add(_PrescriptionWithPatient(rx, patient));
+            patientsMap[id] = patient;
+          }
+        }
+        
+        // Also search by patient name
+        if (query.length >= 2) {
+          final matchingPatients = await db.searchPatientsLimited(query, limit: 5);
+          for (final patient in matchingPatients) {
+            patientsMap[patient.id] = patient;
+          }
+          
+          // Get prescriptions for matching patients
+          final patientIdsList = matchingPatients.map((p) => p.id).toList();
+          if (patientIdsList.isNotEmpty) {
+            final patientPrescriptions = await (db.select(db.prescriptions)
+              ..where((p) => p.patientId.isIn(patientIdsList))
+              ..orderBy([(p) => drift.OrderingTerm.desc(p.createdAt)])
+              ..limit(10))
+              .get();
+            
+            for (final rx in patientPrescriptions) {
               if (prescriptionsWithPatients.length >= 10) break;
+              final patient = patientsMap[rx.patientId];
+              if (patient != null && !prescriptions.any((p) => p.id == rx.id)) {
+                prescriptions.add(rx);
+              }
             }
           }
         }
+        
+        // Combine results
+        for (final rx in prescriptions) {
+          final patient = patientsMap[rx.patientId];
+          if (patient != null) {
+            prescriptionsWithPatients.add(_PrescriptionWithPatient(rx, patient));
+            if (prescriptionsWithPatients.length >= 10) break;
+          }
+        }
+        
         _prescriptions = prescriptionsWithPatients;
       } else {
         _prescriptions = [];
       }
       
-      // Search invoices
+      // Search invoices using optimized database query
       if (_selectedCategory == 'All' || _selectedCategory == 'Invoices') {
-        final allInvoices = await db.getAllInvoices();
+        // Check cache first
+        final cachedInvoices = cacheService.getCached<_InvoiceWithPatient>(
+          cacheType: 'global_search_invoices',
+          params: cacheParams,
+        );
+        
+        if (cachedInvoices != null) {
+          setState(() {
+            _invoices = cachedInvoices;
+          });
+        }
+        final invoiceList = await db.searchInvoicesLimited(query, limit: 10);
         final invoicesWithPatients = <_InvoiceWithPatient>[];
-        for (final inv in allInvoices) {
-          final patient = await db.getPatientById(inv.patientId);
+        final invoiceListMutable = List<Invoice>.from(invoiceList);
+        
+        // Batch load patients
+        final patientIds = invoiceListMutable.map((inv) => inv.patientId).toSet();
+        final patientsMap = <int, Patient>{};
+        for (final id in patientIds) {
+          final patient = await db.getPatientById(id);
           if (patient != null) {
-            final fullName = '${patient.firstName} ${patient.lastName}'.toLowerCase();
-            final invoiceNum = inv.invoiceNumber.toLowerCase();
-            if (fullName.contains(lowerQuery) || 
-                invoiceNum.contains(lowerQuery)) {
-              invoicesWithPatients.add(_InvoiceWithPatient(inv, patient));
+            patientsMap[id] = patient;
+          }
+        }
+        
+        // Also search by patient name
+        if (query.length >= 2) {
+          final matchingPatients = await db.searchPatientsLimited(query, limit: 5);
+          for (final patient in matchingPatients) {
+            patientsMap[patient.id] = patient;
+          }
+          
+          // Get invoices for matching patients
+          final patientIdsList = matchingPatients.map((p) => p.id).toList();
+          if (patientIdsList.isNotEmpty) {
+            final patientInvoices = await (db.select(db.invoices)
+              ..where((i) => i.patientId.isIn(patientIdsList))
+              ..orderBy([(i) => drift.OrderingTerm.desc(i.invoiceDate)])
+              ..limit(10))
+              .get();
+            
+            for (final inv in patientInvoices) {
               if (invoicesWithPatients.length >= 10) break;
+              final patient = patientsMap[inv.patientId];
+              if (patient != null && !invoiceListMutable.any((i) => i.id == inv.id)) {
+                invoiceListMutable.add(inv);
+              }
             }
           }
         }
-        _invoices = invoicesWithPatients;
+        
+        // Combine results
+        for (final inv in invoiceListMutable) {
+          final patient = patientsMap[inv.patientId];
+          if (patient != null) {
+            invoicesWithPatients.add(_InvoiceWithPatient(inv, patient));
+            if (invoicesWithPatients.length >= 10) break;
+          }
+        }
+        
+        cacheService.setCached<_InvoiceWithPatient>(
+          cacheType: 'global_search_invoices',
+          params: cacheParams,
+          data: invoicesWithPatients,
+        );
+        
+        setState(() {
+          _invoices = invoicesWithPatients;
+        });
       } else {
-        _invoices = [];
+        setState(() {
+          _invoices = [];
+        });
       }
       
-    } catch (e) {
-      debugPrint('Search error: $e');
+    } catch (e, stackTrace) {
+      log.e('SEARCH', 'Global search failed', error: e, stackTrace: stackTrace);
     }
     
     if (mounted) {
@@ -190,13 +335,17 @@ class _GlobalSearchScreenState extends ConsumerState<GlobalSearchScreen> {
               padding: const EdgeInsets.all(8.0),
               child: Container(
                 decoration: BoxDecoration(
-                  color: isDark ? Colors.white.withValues(alpha: 0.1) : Colors.black.withValues(alpha: 0.05),
-                  borderRadius: BorderRadius.circular(12),
+                  color: isDark
+                      ? AppColors.darkTextPrimary.withValues(alpha: 0.1)
+                      : AppColors.textPrimary.withValues(alpha: 0.05),
+                  borderRadius: BorderRadius.circular(AppRadius.md),
                 ),
                 child: IconButton(
                   icon: Icon(
                     Icons.arrow_back,
-                    color: isDark ? Colors.white : const Color(0xFF1A1A2E),
+                    color: isDark
+                        ? AppColors.darkTextPrimary
+                        : AppColors.textPrimary,
                   ),
                   onPressed: () => Navigator.pop(context),
                 ),
@@ -209,39 +358,34 @@ class _GlobalSearchScreenState extends ConsumerState<GlobalSearchScreen> {
                     begin: Alignment.topLeft,
                     end: Alignment.bottomRight,
                     colors: isDark
-                        ? [const Color(0xFF1A1A2E), const Color(0xFF16213E)]
-                        : [const Color(0xFFF8FAFC), surfaceColor],
+                        ? [AppColors.darkSurfaceMid, AppColors.darkSurfaceAccent]
+                        : [AppColors.background, surfaceColor],
                   ),
                 ),
                 child: SafeArea(
                   child: Padding(
-                    padding: const EdgeInsets.fromLTRB(20, 50, 20, 16),
+                    padding: EdgeInsets.fromLTRB(
+                      AppSpacing.xl,
+                      AppSpacing.xxxxxl + 2,
+                      AppSpacing.xl,
+                      AppSpacing.lg,
+                    ),
                     child: Row(
                       children: [
                         Container(
-                          padding: const EdgeInsets.all(14),
+                          padding: EdgeInsets.all(AppSpacing.md + 2),
                           decoration: BoxDecoration(
-                            gradient: const LinearGradient(
-                              colors: [Color(0xFF6366F1), Color(0xFF8B5CF6)],
-                              begin: Alignment.topLeft,
-                              end: Alignment.bottomRight,
-                            ),
-                            borderRadius: BorderRadius.circular(16),
-                            boxShadow: [
-                              BoxShadow(
-                                color: const Color(0xFF6366F1).withValues(alpha: 0.3),
-                                blurRadius: 12,
-                                offset: const Offset(0, 4),
-                              ),
-                            ],
+                            gradient: AppColors.primaryGradient,
+                            borderRadius: BorderRadius.circular(AppRadius.card),
+                            boxShadow: AppShadow.medium,
                           ),
-                          child: const Icon(
+                          child: Icon(
                             Icons.search_rounded,
-                            color: Colors.white,
-                            size: 28,
+                            color: AppColors.surface,
+                            size: AppIconSize.lg,
                           ),
                         ),
-                        const SizedBox(width: 16),
+                        SizedBox(width: AppSpacing.lg),
                         Expanded(
                           child: Column(
                             mainAxisAlignment: MainAxisAlignment.center,
@@ -250,16 +394,16 @@ class _GlobalSearchScreenState extends ConsumerState<GlobalSearchScreen> {
                               Text(
                                 'Global Search',
                                 style: TextStyle(
-                                  fontSize: 22,
+                                  fontSize: AppFontSize.displayMedium,
                                   fontWeight: FontWeight.bold,
-                                  color: isDark ? Colors.white : const Color(0xFF1A1A2E),
+                                  color: isDark ? AppColors.darkTextPrimary : AppColors.textPrimary,
                                 ),
                               ),
                               const SizedBox(height: 4),
                               Text(
                                 'Find anything in your clinic',
                                 style: TextStyle(
-                                  fontSize: 14,
+                                  fontSize: AppFontSize.bodyLarge,
                                   color: isDark ? AppColors.darkTextSecondary : AppColors.textSecondary,
                                 ),
                               ),
@@ -332,7 +476,7 @@ class _GlobalSearchScreenState extends ConsumerState<GlobalSearchScreen> {
           // Category filter chips
           SliverToBoxAdapter(
             child: Container(
-              padding: const EdgeInsets.symmetric(horizontal: 16),
+              padding: EdgeInsets.symmetric(horizontal: context.responsivePadding),
               child: SingleChildScrollView(
                 scrollDirection: Axis.horizontal,
                 child: Row(
@@ -382,9 +526,17 @@ class _GlobalSearchScreenState extends ConsumerState<GlobalSearchScreen> {
                   child: Center(child: CircularProgressIndicator(color: AppColors.primary)),
                 )
               : _searchQuery.length < 2
-                  ? SliverFillRemaining(child: _buildEmptyState(isDark, 'Type at least 2 characters to search'))
+                  ? SliverFillRemaining(
+                      child: EmptySearchResults(
+                        query: null,
+                      ),
+                    )
                   : _totalResults == 0
-                      ? SliverFillRemaining(child: _buildEmptyState(isDark, 'No results found for "$_searchQuery"'))
+                      ? SliverFillRemaining(
+                          child: EmptySearchResults(
+                            query: _searchQuery,
+                          ),
+                        )
                       : SliverToBoxAdapter(child: _buildResults(isDark)),
                       
           const SliverToBoxAdapter(child: SizedBox(height: 100)),
@@ -401,7 +553,7 @@ class _GlobalSearchScreenState extends ConsumerState<GlobalSearchScreen> {
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
             Container(
-              padding: const EdgeInsets.all(24),
+              padding: EdgeInsets.all(context.responsivePadding),
               decoration: BoxDecoration(
                 gradient: LinearGradient(
                   colors: [

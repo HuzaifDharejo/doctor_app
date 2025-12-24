@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:url_launcher/url_launcher.dart';
 import '../../../../theme/app_theme.dart';
+import '../../../../core/extensions/context_extensions.dart';
 
 /// Emergency info quick access floating button
 class EmergencyInfoButton extends StatefulWidget {
@@ -142,7 +143,7 @@ class _EmergencyInfoButtonState extends State<EmergencyInfoButton>
     
     return Container(
       width: 280,
-      padding: const EdgeInsets.all(16),
+      padding: EdgeInsets.all(context.responsivePadding),
       decoration: BoxDecoration(
         color: isDark ? AppColors.darkSurface : Colors.white,
         borderRadius: BorderRadius.circular(20),

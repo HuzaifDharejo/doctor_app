@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 import '../../core/theme/design_tokens.dart';
+import '../../core/widgets/skeleton_loading.dart';
 import '../../db/doctor_db.dart';
 import '../../providers/db_provider.dart';
 import '../../services/allergy_checking_service.dart';
@@ -22,8 +23,10 @@ import '../../theme/app_theme.dart';
 import '../widgets/suggestion_text_field.dart';
 import '../widgets/allergy_check_dialog.dart';
 import '../widgets/drug_interaction_dialog.dart';
+import '../widgets/prominent_drug_interaction_banner.dart';
 import 'add_prescription/add_prescription.dart';
 import '../../core/widgets/keyboard_aware_scaffold.dart';
+import '../../core/extensions/context_extensions.dart';
 
 class AddPrescriptionScreen extends ConsumerStatefulWidget {
 
@@ -77,6 +80,7 @@ class _AddPrescriptionScreenState extends ConsumerState<AddPrescriptionScreen> {
   List<DrugInteraction> _drugInteractions = [];
   List<AllergyCheckResult> _allergyAlerts = [];
   String _patientAllergies = '';
+  bool _safetyAcknowledged = false;
 
   // Additional Notes
   final _notesController = TextEditingController();
@@ -531,6 +535,7 @@ class _AddPrescriptionScreenState extends ConsumerState<AddPrescriptionScreen> {
       setState(() {
         _drugInteractions = [];
         _allergyAlerts = [];
+        _safetyAcknowledged = false; // Reset acknowledgment when no medications
       });
       return;
     }
@@ -544,6 +549,7 @@ class _AddPrescriptionScreenState extends ConsumerState<AddPrescriptionScreen> {
       setState(() {
         _drugInteractions = [];
         _allergyAlerts = [];
+        _safetyAcknowledged = false; // Reset acknowledgment when no medications
       });
       return;
     }
@@ -565,9 +571,23 @@ class _AddPrescriptionScreenState extends ConsumerState<AddPrescriptionScreen> {
       }
     }
 
+    // Check if the new interactions are different from previous ones
+    final previousCritical = _drugInteractions.any((i) => i.severity == InteractionSeverity.severe) ||
+                             _allergyAlerts.any((a) => a.severity == AllergySeverity.severe);
+    final newCritical = interactions.any((i) => i.severity == InteractionSeverity.severe) ||
+                        allergyAlerts.any((a) => a.severity == AllergySeverity.severe);
+    
+    // Reset acknowledgment if interactions changed
+    final shouldResetAcknowledgment = interactions.length != _drugInteractions.length ||
+                                      allergyAlerts.length != _allergyAlerts.length ||
+                                      previousCritical != newCritical;
+
     setState(() {
       _drugInteractions = interactions;
       _allergyAlerts = allergyAlerts;
+      if (shouldResetAcknowledgment) {
+        _safetyAcknowledged = false;
+      }
     });
   }
 
@@ -632,7 +652,33 @@ class _AddPrescriptionScreenState extends ConsumerState<AddPrescriptionScreen> {
     }
 
     // Check safety before saving
-    _checkSafetyAlerts();
+    _runSafetyCheck();
+    
+    // Prevent saving if critical interactions aren't acknowledged
+    final hasCritical = _drugInteractions.any((i) => i.severity == InteractionSeverity.severe) ||
+                       _allergyAlerts.any((a) => a.severity == AllergySeverity.severe);
+    if (hasCritical && !_safetyAcknowledged) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: const Row(
+            children: [
+              Icon(Icons.error_outline, color: Colors.white),
+              SizedBox(width: 12),
+              Expanded(
+                child: Text(
+                  'Please acknowledge the critical safety alert before saving',
+                ),
+              ),
+            ],
+          ),
+          backgroundColor: AppColors.error,
+          behavior: SnackBarBehavior.floating,
+          duration: const Duration(seconds: 4),
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+        ),
+      );
+      return;
+    }
 
     if (_formKey.currentState!.validate()) {
       final jsonData = _buildPrescriptionJson();
@@ -856,6 +902,7 @@ class _AddPrescriptionScreenState extends ConsumerState<AddPrescriptionScreen> {
         clinicPhone: profile.clinicPhone,
         clinicAddress: profile.clinicAddress,
         signatureData: (profile.signatureData?.isNotEmpty ?? false) ? profile.signatureData : null,
+        templateConfig: profile.pdfTemplateConfig,
       );
     } catch (e) {
       if (mounted) {
@@ -882,12 +929,10 @@ class _AddPrescriptionScreenState extends ConsumerState<AddPrescriptionScreen> {
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    final screenWidth = MediaQuery.of(context).size.width;
-    final screenHeight = MediaQuery.of(context).size.height;
-    final isCompact = screenWidth < 600;
-    final isShort = screenHeight <= 600;
-    final isLarge = screenWidth >= 1200;
-    final padding = isCompact ? (isShort ? 12.0 : 16.0) : (isLarge ? 24.0 : 20.0);
+    final isCompact = context.isCompact;
+    final isShort = context.isShortScreen;
+    final isLarge = context.isLarge;
+    final padding = context.responsivePadding;
 
     return Scaffold(
       backgroundColor: isDark ? const Color(0xFF0F0F0F) : const Color(0xFFF8F9FA),
@@ -1137,10 +1182,26 @@ class _AddPrescriptionScreenState extends ConsumerState<AddPrescriptionScreen> {
                       onSelect: (template) => _applyPrescriptionTemplate(template),
                     ),
                     const SizedBox(height: 12),
-                    // Safety Alerts Banner
+                    // Prominent Safety Alerts Banner
                     if (_drugInteractions.isNotEmpty || _allergyAlerts.isNotEmpty)
-                      _buildSafetyAlertsBanner(colorScheme),
-                    // Patient Allergies Display
+                      ProminentDrugInteractionBanner(
+                        drugInteractions: _drugInteractions,
+                        allergyAlerts: _allergyAlerts,
+                        medicationNames: _medications
+                            .map((m) => m.nameController.text)
+                            .where((name) => name.isNotEmpty)
+                            .toList(),
+                        patientAllergies: _patientAllergies,
+                        acknowledged: _safetyAcknowledged,
+                        onViewDetails: () => _checkSafetyAlerts(),
+                        onAcknowledge: () {
+                          setState(() {
+                            _safetyAcknowledged = true;
+                          });
+                        },
+                      ),
+                    // Patient Allergies Display (if no alerts shown)
+                    if ((_drugInteractions.isEmpty && _allergyAlerts.isEmpty) && _patientAllergies.isNotEmpty)
                     if (_patientAllergies.isNotEmpty)
                       _buildPatientAllergiesChip(colorScheme),
                     // Medications summary - tap to open full popup
@@ -1203,7 +1264,7 @@ class _AddPrescriptionScreenState extends ConsumerState<AddPrescriptionScreen> {
 
               // Action Buttons
               Container(
-                padding: const EdgeInsets.all(16),
+                padding: EdgeInsets.all(context.responsivePadding),
                 decoration: BoxDecoration(
                   color: isDark ? const Color(0xFF1A1A1A) : Colors.white,
                   borderRadius: BorderRadius.circular(20),
@@ -1517,19 +1578,13 @@ class _AddPrescriptionScreenState extends ConsumerState<AddPrescriptionScreen> {
         ),
         const SizedBox(height: 12),
         if (_patients.isEmpty)
-          Container(
-            padding: const EdgeInsets.all(24),
-            child: Column(
-              children: [
-                CircularProgressIndicator(strokeWidth: 2, color: isDark ? Colors.white54 : Colors.grey),
-                const SizedBox(height: 12),
-                Text('Loading patients...', style: TextStyle(color: isDark ? Colors.grey[400] : Colors.grey[600])),
-              ],
-            ),
+          const Padding(
+            padding: EdgeInsets.all(20.0),
+            child: PatientListSkeleton(itemCount: 3),
           )
         else if (filteredPatients.isEmpty)
           Container(
-            padding: const EdgeInsets.all(24),
+            padding: EdgeInsets.all(context.responsivePadding),
             child: Column(
               children: [
                 Icon(Icons.person_search_rounded, size: 48, color: isDark ? Colors.grey[600] : Colors.grey[400]),
@@ -2780,7 +2835,7 @@ class _QuickMedicineSelectorSheetState extends State<_QuickMedicineSelectorSheet
           
           // Header
           Padding(
-            padding: const EdgeInsets.all(16),
+            padding: EdgeInsets.all(context.responsivePadding),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
@@ -2887,7 +2942,7 @@ class _QuickMedicineSelectorSheetState extends State<_QuickMedicineSelectorSheet
           
           // Add Custom button
           Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 16),
+            padding: EdgeInsets.symmetric(horizontal: context.responsivePadding),
             child: Row(
               children: [
                 Expanded(
@@ -2999,7 +3054,7 @@ class _QuickMedicineSelectorSheetState extends State<_QuickMedicineSelectorSheet
                     ),
                   )
                 : ListView.builder(
-                    padding: const EdgeInsets.symmetric(horizontal: 16),
+                    padding: EdgeInsets.symmetric(horizontal: context.responsivePadding),
                     itemCount: _filteredMedicines.length,
                     itemBuilder: (context, index) {
                       final medicine = _filteredMedicines[index];

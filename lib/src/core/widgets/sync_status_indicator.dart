@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../utils/connectivity.dart';
+import '../extensions/context_extensions.dart';
 
 /// A widget that displays the current sync/connectivity status.
 class SyncStatusIndicator extends StatelessWidget {
@@ -98,7 +99,7 @@ class SyncProgressIndicator extends StatelessWidget {
     final theme = Theme.of(context);
 
     return Container(
-      padding: const EdgeInsets.all(16),
+      padding: EdgeInsets.all(context.responsivePadding),
       decoration: BoxDecoration(
         color: theme.colorScheme.primaryContainer.withValues(alpha: 0.3),
         borderRadius: BorderRadius.circular(12),

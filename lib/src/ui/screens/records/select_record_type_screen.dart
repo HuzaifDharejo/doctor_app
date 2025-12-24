@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../../../core/extensions/context_extensions.dart';
 import '../../../core/routing/app_router.dart';
 import '../../../db/doctor_db.dart';
 import '../../../theme/app_theme.dart';
@@ -16,7 +17,7 @@ import 'add_pulmonary_screen.dart';
 import 'add_vitals_record_screen.dart';
 import 'add_certificate_screen.dart';
 import 'add_referral_screen.dart';
-import '../psychiatric_assessment_screen_modern.dart';
+import '../psychiatric_assessment_screen.dart';
 import '../add_prescription_screen.dart';
 import 'add_cardiac_exam_screen.dart';
 import 'add_pediatric_checkup_screen.dart';
@@ -177,10 +178,18 @@ class _SelectRecordTypeScreenState extends ConsumerState<SelectRecordTypeScreen>
               padding: EdgeInsets.fromLTRB(padding, AppSpacing.md, padding, AppSpacing.lg),
               sliver: SliverGrid(
                 gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-                  crossAxisCount: screenWidth > 600 ? 4 : 3,
-                  mainAxisSpacing: AppSpacing.md,
-                  crossAxisSpacing: AppSpacing.md,
-                  childAspectRatio: screenWidth > 600 ? 1.0 : 0.85,
+                  crossAxisCount: context.responsive(
+                    compact: 3,
+                    medium: 4,
+                    expanded: 5,
+                  ),
+                  mainAxisSpacing: context.responsiveItemSpacing,
+                  crossAxisSpacing: context.responsiveItemSpacing,
+                  childAspectRatio: context.responsive(
+                    compact: context.isShortScreen ? 0.82 : 0.85,
+                    medium: 0.95,
+                    expanded: 1.0,
+                  ),
                 ),
                 delegate: SliverChildBuilderDelegate(
                   (context, index) {
@@ -213,10 +222,19 @@ class _SelectRecordTypeScreenState extends ConsumerState<SelectRecordTypeScreen>
             padding: EdgeInsets.all(padding),
             sliver: SliverGrid(
               gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-                crossAxisCount: screenWidth > 600 ? 3 : 2,
-                mainAxisSpacing: AppSpacing.lg,
-                crossAxisSpacing: AppSpacing.lg,
-                childAspectRatio: screenWidth > 600 ? 1.0 : 0.8,
+                crossAxisCount: context.responsive(
+                  compact: 2,
+                  medium: 3,
+                  expanded: 4,
+                  large: 5,
+                ),
+                mainAxisSpacing: context.responsiveSectionSpacing,
+                crossAxisSpacing: context.responsiveSectionSpacing,
+                childAspectRatio: context.responsive(
+                  compact: context.isShortScreen ? 0.76 : 0.78,
+                  medium: 0.9,
+                  expanded: 1.0,
+                ),
               ),
               delegate: SliverChildBuilderDelegate(
                 (context, index) {
@@ -753,7 +771,7 @@ class _SelectRecordTypeScreenState extends ConsumerState<SelectRecordTypeScreen>
         gradientColors: [const Color(0xFFA855F7), const Color(0xFF9333EA)],
         onTap: () => _navigateToScreen(
           context,
-          PsychiatricAssessmentScreenModern(
+          PsychiatricAssessmentScreen(
             preselectedPatient: widget.preselectedPatient,
             encounterId: widget.encounterId,
             appointmentId: widget.appointmentId,
@@ -770,7 +788,7 @@ class _SelectRecordTypeScreenState extends ConsumerState<SelectRecordTypeScreen>
         gradientColors: [const Color(0xFFA78BFA), const Color(0xFF8B5CF6)],
         onTap: () => _navigateToScreen(
           context,
-          PsychiatricAssessmentScreenModern(
+          PsychiatricAssessmentScreen(
             preselectedPatient: widget.preselectedPatient,
             encounterId: widget.encounterId,
             appointmentId: widget.appointmentId,
@@ -946,21 +964,21 @@ class _SelectRecordTypeScreenState extends ConsumerState<SelectRecordTypeScreen>
             ),
             // Content
             Padding(
-              padding: EdgeInsets.all(isCompact ? AppSpacing.sm : AppSpacing.md),
+              padding: EdgeInsets.all(isCompact ? 10 : AppSpacing.md),
               child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                crossAxisAlignment: CrossAxisAlignment.center,
+                mainAxisAlignment: MainAxisAlignment.center,
                 children: [
                   // Icon with gradient background
                   Container(
-                    padding: EdgeInsets.all(isCompact ? 8 : 10),
+                    padding: EdgeInsets.all(isCompact ? 14 : 18),
                     decoration: BoxDecoration(
                       gradient: LinearGradient(
                         colors: info.gradientColors,
                         begin: Alignment.topLeft,
                         end: Alignment.bottomRight,
                       ),
-                      borderRadius: BorderRadius.circular(12),
+                      borderRadius: BorderRadius.circular(16),
                       boxShadow: [
                         BoxShadow(
                           color: info.gradientColors[0].withValues(alpha: 0.3),
@@ -972,38 +990,35 @@ class _SelectRecordTypeScreenState extends ConsumerState<SelectRecordTypeScreen>
                     child: Icon(
                       info.icon,
                       color: Colors.white,
-                      size: isCompact ? 20 : 22,
+                      size: isCompact ? 36 : 42,
                     ),
                   ),
-                  // Bottom content group
-                  Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      // Title
-                      Text(
-                        info.title,
-                        style: TextStyle(
-                          color: isDark ? Colors.white : AppColors.textPrimary,
-                          fontSize: isCompact ? 13 : 14,
-                          fontWeight: FontWeight.w700,
-                          height: 1.2,
-                        ),
-                        maxLines: 2,
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                      const SizedBox(height: 2),
-                      // Description
-                      Text(
-                        info.description,
-                        style: TextStyle(
-                          color: isDark ? AppColors.darkTextSecondary : AppColors.textSecondary,
-                          fontSize: isCompact ? 10 : 11,
-                        ),
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                    ],
+                  SizedBox(height: isCompact ? 10 : 12),
+                  // Title
+                  Text(
+                    info.title,
+                    style: TextStyle(
+                      color: isDark ? Colors.white : AppColors.textPrimary,
+                      fontSize: isCompact ? 12.5 : 14,
+                      fontWeight: FontWeight.w700,
+                      height: 1.15,
+                    ),
+                    maxLines: 2,
+                    textAlign: TextAlign.center,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                  SizedBox(height: isCompact ? 4 : 6),
+                  // Description
+                  Text(
+                    info.description,
+                    style: TextStyle(
+                      color: isDark ? AppColors.darkTextSecondary : AppColors.textSecondary,
+                      fontSize: isCompact ? 9.5 : 11,
+                      height: 1.2,
+                    ),
+                    maxLines: 1,
+                    textAlign: TextAlign.center,
+                    overflow: TextOverflow.ellipsis,
                   ),
                 ],
               ),

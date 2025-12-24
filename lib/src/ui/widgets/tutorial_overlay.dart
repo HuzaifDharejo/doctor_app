@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../../core/components/app_button.dart';
 import '../../core/theme/design_tokens.dart';
+import '../../core/extensions/context_extensions.dart';
 
 /// Tutorial step definition
 class TutorialStep {
@@ -122,25 +123,33 @@ class _TutorialOverlayState extends State<TutorialOverlay>
   void _nextStep() {
     if (_currentStep < widget.steps.length - 1) {
       _fadeController.reverse().then((_) {
+        if (!mounted) return;
         setState(() => _currentStep++);
         widget.steps[_currentStep].onComplete?.call();
         // Auto-scroll to make the target visible
         _scrollToTarget(widget.steps[_currentStep].targetKey);
-        _fadeController.forward();
+        if (mounted) {
+          _fadeController.forward();
+        }
       });
     } else {
       widget.onComplete();
-      Navigator.pop(context);
+      if (mounted) {
+        Navigator.pop(context);
+      }
     }
   }
 
   void _previousStep() {
     if (_currentStep > 0) {
       _fadeController.reverse().then((_) {
+        if (!mounted) return;
         setState(() => _currentStep--);
         // Auto-scroll to make the target visible
         _scrollToTarget(widget.steps[_currentStep].targetKey);
-        _fadeController.forward();
+        if (mounted) {
+          _fadeController.forward();
+        }
       });
     }
   }
@@ -148,8 +157,9 @@ class _TutorialOverlayState extends State<TutorialOverlay>
   void _scrollToTarget(GlobalKey targetKey) {
     // Wait a frame for state to update, then scroll
     WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
       final context = targetKey.currentContext;
-      if (context != null) {
+      if (context != null && mounted) {
         Scrollable.ensureVisible(
           context,
           duration: const Duration(milliseconds: 300),
@@ -166,7 +176,9 @@ class _TutorialOverlayState extends State<TutorialOverlay>
 
   void _skip() {
     widget.onComplete();
-    Navigator.pop(context);
+    if (mounted) {
+      Navigator.pop(context);
+    }
   }
 
   @override
@@ -230,7 +242,7 @@ class _TutorialOverlayState extends State<TutorialOverlay>
     return SafeArea(
       child: Center(
         child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 24),
+          padding: EdgeInsets.symmetric(horizontal: context.responsivePadding),
           child: _buildTutorialCard(step),
         ),
       ),

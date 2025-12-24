@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import '../../../../db/doctor_db.dart';
 import '../../../../core/theme/design_tokens.dart';
 import '../../../../theme/app_theme.dart';
+import '../../../../core/extensions/context_extensions.dart';
 
 /// A reusable patient selector widget for medical record forms
 /// Shows a dropdown of patients with basic info
@@ -272,7 +273,7 @@ class PatientInfoCard extends StatelessWidget {
     final colors = gradientColors ?? [const Color(0xFF6366F1), const Color(0xFF8B5CF6)];
     
     return Container(
-      padding: const EdgeInsets.all(20),
+      padding: EdgeInsets.all(context.responsivePadding),
       decoration: BoxDecoration(
         gradient: LinearGradient(
           colors: colors,

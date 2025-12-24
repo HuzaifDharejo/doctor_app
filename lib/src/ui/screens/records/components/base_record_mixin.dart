@@ -82,8 +82,9 @@ mixin BaseRecordMixin<T extends ConsumerStatefulWidget> on ConsumerState<T> {
   
   /// Scroll to a specific section
   void scrollToSection(String key) {
+    if (!mounted) return;
     final sectionKey = sectionKeys[key];
-    if (sectionKey?.currentContext != null) {
+    if (sectionKey?.currentContext != null && mounted) {
       Scrollable.ensureVisible(
         sectionKey!.currentContext!,
         duration: const Duration(milliseconds: 400),

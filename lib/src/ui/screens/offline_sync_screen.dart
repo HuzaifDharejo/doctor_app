@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../core/components/app_button.dart';
+import '../../core/extensions/context_extensions.dart';
 import '../../core/theme/design_tokens.dart';
 import '../../theme/app_theme.dart';
 import '../../services/offline_sync_service.dart';
@@ -239,14 +240,24 @@ class _OfflineSyncScreenState extends ConsumerState<OfflineSyncScreen>
             const SizedBox(height: 12),
 
             // Statistics grid
-            GridView.count(
-              crossAxisCount: 2,
-              childAspectRatio: 1.5,
-              shrinkWrap: true,
-              crossAxisSpacing: 12,
-              mainAxisSpacing: 12,
-              physics: const NeverScrollableScrollPhysics(),
-              children: [
+            LayoutBuilder(
+              builder: (context, constraints) {
+                return GridView.count(
+                  crossAxisCount: context.responsive(
+                    compact: 2,
+                    medium: 3,
+                    expanded: 4,
+                  ),
+                  childAspectRatio: context.responsive(
+                    compact: 1.4,
+                    medium: 1.5,
+                    expanded: 1.6,
+                  ),
+                  shrinkWrap: true,
+                  crossAxisSpacing: context.responsiveItemSpacing,
+                  mainAxisSpacing: context.responsiveItemSpacing,
+                  physics: const NeverScrollableScrollPhysics(),
+                  children: [
                 _buildStatCard(
                   'Cached Items',
                   stats.totalCachedItems.toString(),
@@ -268,6 +279,8 @@ class _OfflineSyncScreenState extends ConsumerState<OfflineSyncScreen>
                   Colors.purple,
                 ),
               ],
+                );
+              },
             ),
             const SizedBox(height: 24),
             
@@ -402,7 +415,7 @@ class _OfflineSyncScreenState extends ConsumerState<OfflineSyncScreen>
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
               Container(
-                padding: const EdgeInsets.all(24),
+                padding: EdgeInsets.all(context.responsivePadding),
                 decoration: BoxDecoration(
                   color: Colors.green.withValues(alpha: 0.1),
                   shape: BoxShape.circle,
@@ -467,7 +480,7 @@ class _OfflineSyncScreenState extends ConsumerState<OfflineSyncScreen>
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
               Container(
-                padding: const EdgeInsets.all(24),
+                padding: EdgeInsets.all(context.responsivePadding),
                 decoration: BoxDecoration(
                   color: Colors.green.withValues(alpha: 0.1),
                   shape: BoxShape.circle,
@@ -513,7 +526,7 @@ class _OfflineSyncScreenState extends ConsumerState<OfflineSyncScreen>
   Widget _buildConflictCard(SyncConflict conflict, bool isDark) {
     return Container(
       margin: const EdgeInsets.only(bottom: 12),
-      padding: const EdgeInsets.all(16),
+      padding: EdgeInsets.all(context.responsivePadding),
       decoration: BoxDecoration(
         color: isDark ? Colors.grey[900] : Colors.white,
         borderRadius: BorderRadius.circular(16),
@@ -611,7 +624,7 @@ class _OfflineSyncScreenState extends ConsumerState<OfflineSyncScreen>
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
               Container(
-                padding: const EdgeInsets.all(24),
+                padding: EdgeInsets.all(context.responsivePadding),
                 decoration: BoxDecoration(
                   color: Colors.grey.withValues(alpha: 0.1),
                   shape: BoxShape.circle,
@@ -765,7 +778,7 @@ class _OfflineSyncScreenState extends ConsumerState<OfflineSyncScreen>
     final isDark = Theme.of(context).brightness == Brightness.dark;
     
     return Container(
-      padding: const EdgeInsets.all(16),
+      padding: EdgeInsets.all(context.responsivePadding),
       decoration: BoxDecoration(
         color: isDark ? Colors.grey[900] : Colors.white,
         borderRadius: BorderRadius.circular(16),
@@ -818,7 +831,7 @@ class _OfflineSyncScreenState extends ConsumerState<OfflineSyncScreen>
     final isDark = Theme.of(context).brightness == Brightness.dark;
     
     return Container(
-      padding: const EdgeInsets.all(16),
+      padding: EdgeInsets.all(context.responsivePadding),
       decoration: BoxDecoration(
         color: isDark ? Colors.grey[900] : Colors.white,
         borderRadius: BorderRadius.circular(16),

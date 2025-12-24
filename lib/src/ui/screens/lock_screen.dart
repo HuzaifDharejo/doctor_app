@@ -8,6 +8,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:local_auth/local_auth.dart';
 import '../../services/app_lock_service.dart';
+import '../../core/extensions/context_extensions.dart';
 
 class LockScreen extends StatefulWidget {
   const LockScreen({
@@ -155,7 +156,7 @@ class _LockScreenState extends State<LockScreen> with SingleTickerProviderStateM
               
               // App Icon
               Container(
-                padding: const EdgeInsets.all(24),
+                padding: EdgeInsets.all(context.responsivePadding),
                 decoration: BoxDecoration(
                   color: Colors.white.withValues(alpha: 0.15),
                   shape: BoxShape.circle,
@@ -254,7 +255,7 @@ class _LockScreenState extends State<LockScreen> with SingleTickerProviderStateM
                 GestureDetector(
                   onTap: _isAuthenticating ? null : _authenticateWithBiometrics,
                   child: Container(
-                    padding: const EdgeInsets.all(16),
+                    padding: EdgeInsets.all(context.responsivePadding),
                     decoration: BoxDecoration(
                       color: Colors.white.withValues(alpha: 0.15),
                       shape: BoxShape.circle,

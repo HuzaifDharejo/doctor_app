@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 
+import '../../core/extensions/context_extensions.dart';
 import '../../db/doctor_db.dart';
 import '../../providers/db_provider.dart';
 import '../../providers/encounter_provider.dart';
@@ -186,7 +187,7 @@ class _SOAPNoteEditorState extends ConsumerState<SOAPNoteEditor> {
           : Form(
               key: _formKey,
               child: ListView(
-                padding: const EdgeInsets.all(16),
+                padding: EdgeInsets.all(context.responsivePadding),
                 children: [
                   _buildNoteTypeSelector(),
                   const SizedBox(height: 16),
@@ -227,10 +228,10 @@ class _SOAPNoteEditorState extends ConsumerState<SOAPNoteEditor> {
   Widget _buildLockedView() {
     final note = widget.existingNote!;
     return ListView(
-      padding: const EdgeInsets.all(16),
+      padding: EdgeInsets.all(context.responsivePadding),
       children: [
         Container(
-          padding: const EdgeInsets.all(16),
+          padding: EdgeInsets.all(context.responsivePadding),
           decoration: BoxDecoration(
             color: AppColors.success.withValues(alpha: 0.1),
             borderRadius: BorderRadius.circular(12),
@@ -278,7 +279,7 @@ class _SOAPNoteEditorState extends ConsumerState<SOAPNoteEditor> {
     
     return Container(
       margin: const EdgeInsets.only(bottom: 16),
-      padding: const EdgeInsets.all(16),
+      padding: EdgeInsets.all(context.responsivePadding),
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(12),
@@ -311,7 +312,7 @@ class _SOAPNoteEditorState extends ConsumerState<SOAPNoteEditor> {
 
   Widget _buildNoteTypeSelector() {
     return Container(
-      padding: const EdgeInsets.all(16),
+      padding: EdgeInsets.all(context.responsivePadding),
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(12),
@@ -395,7 +396,7 @@ class _SOAPNoteEditorState extends ConsumerState<SOAPNoteEditor> {
             },
             borderRadius: const BorderRadius.vertical(top: Radius.circular(12)),
             child: Container(
-              padding: const EdgeInsets.all(16),
+              padding: EdgeInsets.all(context.responsivePadding),
               child: Row(
                 children: [
                   Container(
@@ -469,7 +470,7 @@ class _SOAPNoteEditorState extends ConsumerState<SOAPNoteEditor> {
           if (isExpanded) ...[
             const Divider(height: 1),
             Padding(
-              padding: const EdgeInsets.all(16),
+              padding: EdgeInsets.all(context.responsivePadding),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
@@ -507,7 +508,7 @@ class _SOAPNoteEditorState extends ConsumerState<SOAPNoteEditor> {
                         borderRadius: BorderRadius.circular(12),
                         borderSide: BorderSide.none,
                       ),
-                      contentPadding: const EdgeInsets.all(16),
+                      contentPadding: EdgeInsets.all(context.responsivePadding),
                     ),
                   ),
                 ],
@@ -521,7 +522,7 @@ class _SOAPNoteEditorState extends ConsumerState<SOAPNoteEditor> {
 
   Widget _buildRiskAssessment() {
     return Container(
-      padding: const EdgeInsets.all(16),
+      padding: EdgeInsets.all(context.responsivePadding),
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(12),

@@ -1,336 +1,250 @@
-/// Empty state widget for lists and content areas
+/// Empty State Widgets
+/// Beautiful empty states for when lists are empty
 library;
 
 import 'package:flutter/material.dart';
-import '../../theme/app_theme.dart';
 import '../theme/design_tokens.dart';
-import '../components/app_button.dart';
+import '../../theme/app_theme.dart';
 
-class EmptyState extends StatefulWidget {
-
+/// Generic empty state widget
+class EmptyState extends StatelessWidget {
   const EmptyState({
-    required this.title, super.key,
-    this.message,
-    this.icon = Icons.inbox_rounded,
-    this.action,
-    this.onAction,
+    required this.message,
+    super.key,
+    this.icon,
+    this.title,
     this.actionLabel,
-    this.iconColor,
-    this.animate = true,
+    this.onAction,
+    this.illustration,
   });
 
-  /// Creates an empty state for patients list
-  const EmptyState.patients({
-    super.key,
-    this.onAction,
-    this.animate = true,
-  })  : title = 'No patients yet',
-        message = 'Add your first patient to get started',
-        icon = Icons.people_outline_rounded,
-        action = null,
-        actionLabel = 'Add Patient',
-        iconColor = AppColors.patients;
-
-  /// Creates an empty state for appointments list
-  const EmptyState.appointments({
-    super.key,
-    this.onAction,
-    this.animate = true,
-  })  : title = 'No appointments',
-        message = 'Schedule an appointment to get started',
-        icon = Icons.calendar_today_rounded,
-        action = null,
-        actionLabel = 'Add Appointment',
-        iconColor = AppColors.appointments;
-
-  /// Creates an empty state for prescriptions list
-  const EmptyState.prescriptions({
-    super.key,
-    this.onAction,
-    this.animate = true,
-  })  : title = 'No prescriptions',
-        message = 'Create a prescription to get started',
-        icon = Icons.medication_outlined,
-        action = null,
-        actionLabel = 'Add Prescription',
-        iconColor = AppColors.prescriptions;
-
-  /// Creates an empty state for invoices list
-  const EmptyState.invoices({
-    super.key,
-    this.onAction,
-    this.animate = true,
-  })  : title = 'No invoices',
-        message = 'Create an invoice to get started',
-        icon = Icons.receipt_long_outlined,
-        action = null,
-        actionLabel = 'Create Invoice',
-        iconColor = AppColors.billing;
-
-  /// Creates an empty state for search results
-  const EmptyState.searchResults({
-    super.key,
-    String? query,
-  })  : title = 'No results found',
-        message = query != null ? 'Try searching for something else' : null,
-        icon = Icons.search_off_rounded,
-        action = null,
-        onAction = null,
-        actionLabel = null,
-        iconColor = null,
-        animate = true;
-  final String title;
-  final String? message;
-  final IconData icon;
-  final Widget? action;
-  final VoidCallback? onAction;
+  final String message;
+  final IconData? icon;
+  final String? title;
   final String? actionLabel;
-  final Color? iconColor;
-  final bool animate;
-
-  @override
-  State<EmptyState> createState() => _EmptyStateState();
-}
-
-class _EmptyStateState extends State<EmptyState> with TickerProviderStateMixin {
-  late AnimationController _iconController;
-  late AnimationController _contentController;
-  late Animation<double> _iconScale;
-  late Animation<double> _iconBounce;
-  late Animation<double> _fadeIn;
-  late Animation<Offset> _slideUp;
-
-  @override
-  void initState() {
-    super.initState();
-    
-    // Icon breathing animation
-    _iconController = AnimationController(
-      vsync: this,
-      duration: const Duration(milliseconds: 2000),
-    );
-    
-    _iconScale = Tween<double>(begin: 1, end: 1.08).animate(
-      CurvedAnimation(parent: _iconController, curve: Curves.easeInOut),
-    );
-    
-    _iconBounce = Tween<double>(begin: 0, end: 6).animate(
-      CurvedAnimation(parent: _iconController, curve: Curves.easeInOut),
-    );
-    
-    // Content fade and slide animation
-    _contentController = AnimationController(
-      vsync: this,
-      duration: const Duration(milliseconds: 600),
-    );
-    
-    _fadeIn = Tween<double>(begin: 0, end: 1).animate(
-      CurvedAnimation(
-        parent: _contentController,
-        curve: const Interval(0, 0.8, curve: Curves.easeOut),
-      ),
-    );
-    
-    _slideUp = Tween<Offset>(
-      begin: const Offset(0, 0.15),
-      end: Offset.zero,
-    ).animate(
-      CurvedAnimation(
-        parent: _contentController,
-        curve: const Interval(0, 0.8, curve: Curves.easeOutCubic),
-      ),
-    );
-    
-    if (widget.animate) {
-      _iconController.repeat(reverse: true);
-      _contentController.forward();
-    } else {
-      _contentController.value = 1;
-    }
-  }
-
-  @override
-  void dispose() {
-    _iconController.dispose();
-    _contentController.dispose();
-    super.dispose();
-  }
+  final VoidCallback? onAction;
+  final Widget? illustration;
 
   @override
   Widget build(BuildContext context) {
-    final colorScheme = Theme.of(context).colorScheme;
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    final effectiveIconColor = widget.iconColor ?? colorScheme.primary;
 
     return Center(
       child: Padding(
-        padding: const EdgeInsets.all(AppSpacing.xxl),
-        child: FadeTransition(
-          opacity: _fadeIn,
-          child: SlideTransition(
-            position: _slideUp,
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                // Animated Icon
-                AnimatedBuilder(
-                  animation: _iconController,
-                  builder: (context, child) {
-                    return Transform.translate(
-                      offset: Offset(0, -_iconBounce.value),
-                      child: Transform.scale(
-                        scale: _iconScale.value,
-                        child: child,
-                      ),
-                    );
-                  },
-                  child: Container(
-                    padding: const EdgeInsets.all(AppSpacing.xl),
-                    decoration: BoxDecoration(
-                      gradient: RadialGradient(
-                        colors: [
-                          effectiveIconColor.withValues(alpha: 0.15),
-                          effectiveIconColor.withValues(alpha: 0.05),
-                        ],
-                        radius: 0.8,
-                      ),
-                      shape: BoxShape.circle,
-                      boxShadow: [
-                        BoxShadow(
-                          color: effectiveIconColor.withValues(alpha: 0.2),
-                          blurRadius: 20,
-                          spreadRadius: 2,
-                        ),
-                      ],
-                    ),
-                    child: Icon(
-                      widget.icon,
-                      size: AppIconSize.xxl,
-                      color: effectiveIconColor,
-                    ),
-                  ),
+        padding: EdgeInsets.all(AppSpacing.xxxl),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            // Illustration or Icon
+            if (illustration != null)
+              illustration!
+            else if (icon != null)
+              Container(
+                padding: EdgeInsets.all(AppSpacing.xl),
+                decoration: BoxDecoration(
+                  color: AppColors.primary.withValues(alpha: 0.1),
+                  shape: BoxShape.circle,
                 ),
-                const SizedBox(height: AppSpacing.xl),
-                
-                // Title
-                Text(
-                  widget.title,
-                  style: TextStyle(
-                    fontSize: AppFontSize.xxl,
-                    fontWeight: FontWeight.bold,
-                    color: colorScheme.onSurface,
-                  ),
-                  textAlign: TextAlign.center,
+                child: Icon(
+                  icon,
+                  size: AppIconSize.xxl,
+                  color: AppColors.primary,
                 ),
-                
-                // Message
-                if (widget.message != null) ...[
-                  const SizedBox(height: AppSpacing.sm),
-                  Text(
-                    widget.message!,
-                    style: TextStyle(
-                      fontSize: AppFontSize.lg,
-                      color: isDark 
-                          ? AppColors.darkTextSecondary 
-                          : AppColors.textSecondary,
-                    ),
-                    textAlign: TextAlign.center,
-                  ),
-                ],
-                
-                const SizedBox(height: AppSpacing.xl),
-                
-                // Animated Action button or custom action
-                if (widget.action != null)
-                  widget.action!
-                else if (widget.onAction != null && widget.actionLabel != null)
-                  TweenAnimationBuilder<double>(
-                    tween: Tween(begin: 0.9, end: 1),
-                    duration: const Duration(milliseconds: 300),
-                    curve: Curves.elasticOut,
-                    builder: (context, scale, child) {
-                      return Transform.scale(
-                        scale: scale,
-                        child: child,
-                      );
-                    },
-                    child: AppButton(
-                      label: widget.actionLabel!,
-                      icon: Icons.add_rounded,
-                      onPressed: widget.onAction,
-                      backgroundColor: effectiveIconColor,
-                      foregroundColor: Colors.white,
-                    ),
-                  ),
-              ],
+              ),
+            SizedBox(height: AppSpacing.xl),
+            // Title
+            if (title != null)
+              Text(
+                title!,
+                style: TextStyle(
+                  fontSize: AppFontSize.titleLarge,
+                  fontWeight: FontWeight.w700,
+                  color: isDark
+                      ? AppColors.darkTextPrimary
+                      : AppColors.textPrimary,
+                ),
+                textAlign: TextAlign.center,
+              ),
+            if (title != null) SizedBox(height: AppSpacing.sm),
+            // Message
+            Text(
+              message,
+              style: TextStyle(
+                fontSize: AppFontSize.bodyMedium,
+                color: isDark
+                    ? AppColors.darkTextSecondary
+                    : AppColors.textSecondary,
+              ),
+              textAlign: TextAlign.center,
             ),
-          ),
+            // Action button
+            if (actionLabel != null && onAction != null) ...[
+              SizedBox(height: AppSpacing.xl),
+              ElevatedButton.icon(
+                onPressed: onAction,
+                icon: const Icon(Icons.add_rounded, size: AppIconSize.sm),
+                label: Text(actionLabel!),
+                style: ElevatedButton.styleFrom(
+                  padding: EdgeInsets.symmetric(
+                    horizontal: AppSpacing.lg,
+                    vertical: AppSpacing.md,
+                  ),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(AppRadius.md),
+                  ),
+                ),
+              ),
+            ],
+          ],
         ),
       ),
     );
   }
 }
 
-/// Compact empty state for inline use with subtle animation
-class EmptyStateCompact extends StatelessWidget {
-
-  const EmptyStateCompact({
-    required this.message, super.key,
-    this.icon = Icons.inbox_rounded,
-    this.animate = true,
+/// Empty state for patient list
+class EmptyPatientList extends StatelessWidget {
+  const EmptyPatientList({
+    super.key,
+    this.onAddPatient,
   });
-  final String message;
-  final IconData icon;
-  final bool animate;
+
+  final VoidCallback? onAddPatient;
 
   @override
   Widget build(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-
-    Widget content = Row(
-      mainAxisAlignment: MainAxisAlignment.center,
-      children: [
-        Icon(
-          icon,
-          size: AppIconSize.md,
-          color: isDark 
-              ? AppColors.darkTextSecondary 
-              : AppColors.textSecondary,
-        ),
-        const SizedBox(width: AppSpacing.sm),
-        Text(
-          message,
-          style: TextStyle(
-            color: isDark 
-                ? AppColors.darkTextSecondary 
-                : AppColors.textSecondary,
-            fontSize: AppFontSize.lg,
-          ),
-        ),
-      ],
+    return EmptyState(
+      icon: Icons.people_outline_rounded,
+      title: 'No Patients Yet',
+      message: 'Start by adding your first patient to the system.',
+      actionLabel: 'Add Patient',
+      onAction: onAddPatient,
     );
+  }
+}
 
-    if (animate) {
-      content = TweenAnimationBuilder<double>(
-        tween: Tween(begin: 0, end: 1),
-        duration: const Duration(milliseconds: 400),
-        curve: Curves.easeOut,
-        builder: (context, value, child) {
-          return Opacity(
-            opacity: value,
-            child: Transform.translate(
-              offset: Offset(0, 10 * (1 - value)),
-              child: child,
-            ),
-          );
-        },
-        child: content,
-      );
-    }
+/// Empty state for appointment list
+class EmptyAppointmentList extends StatelessWidget {
+  const EmptyAppointmentList({
+    super.key,
+    this.onAddAppointment,
+    this.message,
+  });
 
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: AppSpacing.xl),
-      child: content,
+  final VoidCallback? onAddAppointment;
+  final String? message;
+
+  @override
+  Widget build(BuildContext context) {
+    return EmptyState(
+      icon: Icons.calendar_today_outlined,
+      title: 'No Appointments',
+      message: message ?? 'No appointments scheduled for this period.',
+      actionLabel: onAddAppointment != null ? 'Schedule Appointment' : null,
+      onAction: onAddAppointment,
+    );
+  }
+}
+
+/// Empty state for prescription list
+class EmptyPrescriptionList extends StatelessWidget {
+  const EmptyPrescriptionList({
+    super.key,
+    this.onAddPrescription,
+  });
+
+  final VoidCallback? onAddPrescription;
+
+  @override
+  Widget build(BuildContext context) {
+    return EmptyState(
+      icon: Icons.medication_outlined,
+      title: 'No Prescriptions',
+      message: 'No prescriptions have been created yet.',
+      actionLabel: onAddPrescription != null ? 'Add Prescription' : null,
+      onAction: onAddPrescription,
+    );
+  }
+}
+
+/// Empty state for invoice list
+class EmptyInvoiceList extends StatelessWidget {
+  const EmptyInvoiceList({
+    super.key,
+    this.onAddInvoice,
+  });
+
+  final VoidCallback? onAddInvoice;
+
+  @override
+  Widget build(BuildContext context) {
+    return EmptyState(
+      icon: Icons.receipt_long_outlined,
+      title: 'No Invoices',
+      message: 'No invoices have been created yet.',
+      actionLabel: onAddInvoice != null ? 'Create Invoice' : null,
+      onAction: onAddInvoice,
+    );
+  }
+}
+
+/// Empty state for search results
+class EmptySearchResults extends StatelessWidget {
+  const EmptySearchResults({
+    super.key,
+    this.query,
+  });
+
+  final String? query;
+
+  @override
+  Widget build(BuildContext context) {
+    return EmptyState(
+      icon: Icons.search_off_rounded,
+      title: 'No Results Found',
+      message: query != null
+          ? 'No results found for "$query". Try a different search term.'
+          : 'No results found. Try adjusting your search criteria.',
+    );
+  }
+}
+
+/// Empty state for follow-ups
+class EmptyFollowUpsList extends StatelessWidget {
+  const EmptyFollowUpsList({
+    super.key,
+    this.message,
+  });
+
+  final String? message;
+
+  @override
+  Widget build(BuildContext context) {
+    return EmptyState(
+      icon: Icons.event_repeat_outlined,
+      title: 'No Follow-ups',
+      message: message ?? 'No follow-ups scheduled.',
+    );
+  }
+}
+
+/// Empty state for medical records
+class EmptyMedicalRecordsList extends StatelessWidget {
+  const EmptyMedicalRecordsList({
+    super.key,
+    this.onAddRecord,
+  });
+
+  final VoidCallback? onAddRecord;
+
+  @override
+  Widget build(BuildContext context) {
+    return EmptyState(
+      icon: Icons.description_outlined,
+      title: 'No Medical Records',
+      message: 'No medical records have been added yet.',
+      actionLabel: onAddRecord != null ? 'Add Record' : null,
+      onAction: onAddRecord,
     );
   }
 }

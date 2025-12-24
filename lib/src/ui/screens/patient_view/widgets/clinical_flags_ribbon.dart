@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../../../theme/app_theme.dart';
+import '../../../../core/extensions/context_extensions.dart';
 
 /// Clinical flag type
 enum ClinicalFlagType {
@@ -162,7 +163,7 @@ class ClinicalFlagsRibbon extends StatelessWidget {
         // Scrollable flags
         SingleChildScrollView(
           scrollDirection: Axis.horizontal,
-          padding: const EdgeInsets.symmetric(horizontal: 16),
+          padding: EdgeInsets.symmetric(horizontal: context.responsivePadding),
           physics: const BouncingScrollPhysics(),
           child: Row(
             children: sortedFlags.map((flag) {

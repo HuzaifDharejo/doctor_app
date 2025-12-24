@@ -20,13 +20,12 @@ import '../../ui/screens/dashboard_screen.dart';
 import '../../ui/screens/data_export_screen.dart';
 import '../../ui/screens/family_history_screen.dart';
 import '../../ui/screens/follow_ups_screen.dart';
+import '../../ui/screens/global_search_screen.dart';
 import '../../ui/screens/growth_chart_screen.dart';
 import '../../ui/screens/immunizations_screen.dart';
 import '../../ui/screens/insurance_screen.dart';
 import '../../ui/screens/invoice_detail_screen.dart';
 import '../../ui/screens/lab_orders_screen.dart';
-import '../../ui/screens/lab_orders/lab_orders.dart';
-import '../../ui/screens/add_prescription/add_prescription.dart';
 import '../../ui/screens/medical_record_detail_screen.dart';
 import '../../ui/screens/medical_records_list_screen.dart';
 import '../../ui/screens/medical_reference_screen.dart';
@@ -38,8 +37,8 @@ import '../../ui/screens/patient_view/patient_view.dart';
 import '../../ui/screens/patients_screen.dart';
 import '../../ui/screens/prescriptions_screen.dart';
 import '../../ui/screens/problem_list_screen.dart';
-import '../../ui/screens/psychiatric_assessment_screen_modern.dart';
-import '../../ui/screens/pulmonary_evaluation_screen_modern.dart';
+import '../../ui/screens/psychiatric_assessment_screen.dart';
+import '../../ui/screens/pulmonary_evaluation_screen.dart';
 import '../../ui/screens/records/records.dart';
 import '../../ui/screens/recurring_appointments_screen.dart';
 import '../../ui/screens/referrals_screen.dart';
@@ -105,6 +104,7 @@ abstract class AppRoutes {
   static const String consents = '/consents';
   static const String insurance = '/insurance';
   static const String growthCharts = '/growth-charts';
+  static const String globalSearch = '/global-search';
 }
 
 /// Route arguments for type-safe navigation
@@ -316,14 +316,14 @@ class AppRouter {
       case AppRoutes.psychiatricAssessment:
         final args = settings.arguments as PsychiatricAssessmentArgs?;
         return _buildRoute(
-          PsychiatricAssessmentScreenModern(preselectedPatient: args?.patient),
+          PsychiatricAssessmentScreen(preselectedPatient: args?.patient),
           settings,
         );
         
       case AppRoutes.pulmonaryEvaluation:
         final args = settings.arguments as PulmonaryEvaluationArgs?;
         return _buildRoute(
-          PulmonaryEvaluationScreenModern(preselectedPatient: args?.patient),
+          PulmonaryEvaluationScreen(preselectedPatient: args?.patient),
           settings,
         );
         
@@ -507,6 +507,9 @@ class AppRouter {
           settings,
         );
         
+      case AppRoutes.globalSearch:
+        return _buildRoute(const GlobalSearchScreen(), settings);
+        
       default:
         return _buildRoute(
           Scaffold(
@@ -591,7 +594,11 @@ extension NavigationHelper on BuildContext {
     );
   }
 
+  /// Navigate to add patient screen
+  Future<void> goToAddPatient() => pushNamed(AppRoutes.addPatient);
+
   /// Navigate to add appointment
+
   Future<void> goToAddAppointment({Patient? patient, DateTime? initialDate}) {
     return pushNamed(
       AppRoutes.addAppointment,
@@ -700,6 +707,9 @@ extension NavigationHelper on BuildContext {
       arguments: FollowUpsArgs(patientId: patientId, patientName: patientName),
     );
   }
+
+  /// Navigate to global search
+  Future<void> goToGlobalSearch() => pushNamed(AppRoutes.globalSearch);
 
   /// Navigate to lab results
   Future<void> goToLabResults(int patientId, String patientName) {

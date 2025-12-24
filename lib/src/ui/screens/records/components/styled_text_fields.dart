@@ -324,14 +324,20 @@ class _StyledTextFieldState extends State<StyledTextField> {
       setState(() => _isListening = true);
       await _dictationService.startListening(
         onResult: (text) {
-          if (mounted && text.isNotEmpty) {
-            final currentText = _internalController.text;
-            final newText = currentText.isEmpty 
-                ? text 
-                : '$currentText $text';
-            _internalController.text = newText;
-            _internalController.selection = TextSelection.collapsed(offset: newText.length);
-            widget.onChanged?.call(newText);
+          if (!mounted) return;
+          if (text.isNotEmpty) {
+            try {
+              final currentText = _internalController.text;
+              final newText = currentText.isEmpty 
+                  ? text 
+                  : '$currentText $text';
+              _internalController.text = newText;
+              _internalController.selection = TextSelection.collapsed(offset: newText.length);
+              widget.onChanged?.call(newText);
+            } catch (e) {
+              // Controller may be disposed
+              debugPrint('Voice dictation: Controller disposed or invalid: $e');
+            }
           }
         },
         onError: (error) {
@@ -470,14 +476,14 @@ class _StyledTextFieldState extends State<StyledTextField> {
               ],
             ),
           ),
-          // Text field
+          // Text field - wrapped to prevent overflow
           TextFormField(
             controller: _internalController,
             onChanged: (value) {
               widget.onChanged?.call(value);
             },
-            maxLines: widget.maxLines,
-            minLines: widget.minLines,
+            maxLines: widget.maxLines > 1 ? widget.maxLines : 1,
+            minLines: widget.minLines ?? (widget.maxLines > 1 ? widget.maxLines : 1),
             maxLength: widget.maxLength,
             validator: widget.validator,
             keyboardType: widget.keyboardType,
@@ -490,6 +496,7 @@ class _StyledTextFieldState extends State<StyledTextField> {
             focusNode: widget.focusNode ?? _internalFocusNode,
             onFieldSubmitted: widget.onSubmitted,
             onEditingComplete: widget.onEditingComplete,
+            textInputAction: widget.maxLines > 1 ? TextInputAction.newline : TextInputAction.done,
             style: TextStyle(
               fontSize: 14,
               color: isDark ? Colors.white : Colors.grey.shade800,
@@ -550,6 +557,8 @@ class _StyledTextFieldState extends State<StyledTextField> {
                 vertical: widget.maxLines > 1 ? 14 : 12,
               ),
             ),
+            // Ensure text can scroll when it exceeds bounds
+            textAlignVertical: TextAlignVertical.top,
           ),
         ],
       ),

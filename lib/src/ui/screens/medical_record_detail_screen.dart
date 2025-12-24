@@ -1,6 +1,10 @@
+import 'dart:io';
+
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
+import '../../core/extensions/context_extensions.dart';
 import '../../core/routing/app_router.dart';
 import '../../db/doctor_db.dart';
 import '../../providers/db_provider.dart';
@@ -10,7 +14,7 @@ import '../../theme/app_theme.dart';
 import '../../core/theme/design_tokens.dart';
 import '../widgets/medical_record_widgets.dart';
 import 'records/records.dart';
-import 'psychiatric_assessment_screen_modern.dart';
+import 'psychiatric_assessment_screen.dart';
 
 /// A modern, accessible medical record detail screen
 /// 
@@ -34,6 +38,7 @@ class MedicalRecordDetailScreen extends ConsumerStatefulWidget {
 class _MedicalRecordDetailScreenState extends ConsumerState<MedicalRecordDetailScreen> {
   Map<String, dynamic> _data = {};
   bool _isLoading = true;
+  List<Attachment> _images = [];
 
   @override
   void initState() {
@@ -45,9 +50,14 @@ class _MedicalRecordDetailScreenState extends ConsumerState<MedicalRecordDetailS
     final db = await ref.read(doctorDbProvider.future);
     // V6: Use compat method to load from normalized table or fallback to dataJson
     final data = await db.getMedicalRecordFieldsCompat(widget.record.id);
+    // Load image attachments
+    final attachments = await db.getAttachmentsForEntity('medical_record', widget.record.id);
+    final images = attachments.where((a) => a.fileType.startsWith('image/')).toList();
+    
     if (mounted) {
       setState(() {
         _data = data;
+        _images = images;
         _isLoading = false;
       });
     }
@@ -107,6 +117,11 @@ class _MedicalRecordDetailScreenState extends ConsumerState<MedicalRecordDetailS
 
   List<Widget> _buildCommonSections(bool isDark) {
     return [
+      // Images Section
+      if (_images.isNotEmpty) ...[
+        const SizedBox(height: MedicalRecordConstants.paddingLarge),
+        _ImagesSection(images: _images, isDark: isDark),
+      ],
       if (widget.record.diagnosis.isNotEmpty) ...[
         const SizedBox(height: MedicalRecordConstants.paddingLarge),
         InfoCard(
@@ -194,7 +209,7 @@ class _Header extends StatelessWidget {
             children: [
               _buildAppBar(context, isDark),
               const SizedBox(height: 24),
-              _buildTitleSection(isDark),
+              _buildTitleSection(context, isDark),
               const SizedBox(height: MedicalRecordConstants.paddingLarge),
             ],
           ),
@@ -256,12 +271,12 @@ class _Header extends StatelessWidget {
     );
   }
 
-  Widget _buildTitleSection(bool isDark) {
+  Widget _buildTitleSection(BuildContext context, bool isDark) {
     return Row(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Container(
-          padding: const EdgeInsets.all(16),
+          padding: EdgeInsets.all(context.responsivePadding),
           decoration: BoxDecoration(
             gradient: LinearGradient(
               colors: [recordInfo.color, recordInfo.color.withValues(alpha: 0.8)],
@@ -2408,6 +2423,127 @@ class _ProcedureVitalsSection extends StatelessWidget {
   }
 }
 
+/// Widget that displays image attachments for the medical record
+class _ImagesSection extends StatelessWidget {
+  const _ImagesSection({required this.images, required this.isDark});
+  final List<Attachment> images;
+  final bool isDark;
+
+  void _viewImage(BuildContext context, Attachment image) {
+    showDialog(
+      context: context,
+      builder: (dialogContext) => Dialog(
+        backgroundColor: Colors.transparent,
+        insetPadding: const EdgeInsets.all(20),
+        child: Stack(
+          children: [
+            Center(
+              child: InteractiveViewer(
+                child: kIsWeb
+                    ? Image.asset(image.filePath, fit: BoxFit.contain, errorBuilder: (context, error, stackTrace) => const Icon(Icons.broken_image, size: 100, color: Colors.white))
+                    : Image.file(File(image.filePath), fit: BoxFit.contain, errorBuilder: (context, error, stackTrace) => const Icon(Icons.broken_image, size: 100, color: Colors.white)),
+              ),
+            ),
+            Positioned(
+              top: 40,
+              right: 20,
+              child: IconButton(
+                icon: const Icon(Icons.close, color: Colors.white, size: 30),
+                onPressed: () => Navigator.pop(dialogContext),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.all(MedicalRecordConstants.paddingLarge),
+      decoration: BoxDecoration(
+        color: isDark ? AppColors.darkCardBg : Colors.white,
+        borderRadius: BorderRadius.circular(AppRadius.lg),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.05),
+            blurRadius: 10,
+            offset: const Offset(0, 2),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.all(8),
+                decoration: BoxDecoration(
+                  color: AppColors.primary.withOpacity(0.1),
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: const Icon(Icons.image, color: AppColors.primary, size: 20),
+              ),
+              const SizedBox(width: 12),
+              Text(
+                'Images (${images.length})',
+                style: TextStyle(
+                  fontSize: AppFontSize.lg,
+                  fontWeight: FontWeight.bold,
+                  color: isDark ? Colors.white : AppColors.textPrimary,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 16),
+          Wrap(
+            spacing: 12,
+            runSpacing: 12,
+            children: images.map((image) {
+              return GestureDetector(
+                onTap: () => _viewImage(context, image),
+                child: Container(
+                  width: 100,
+                  height: 100,
+                  decoration: BoxDecoration(
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(
+                      color: isDark ? Colors.white24 : Colors.grey.shade300,
+                      width: 1,
+                    ),
+                  ),
+                  child: ClipRRect(
+                    borderRadius: BorderRadius.circular(11),
+                    child: kIsWeb
+                        ? Image.asset(
+                            image.filePath,
+                            fit: BoxFit.cover,
+                            errorBuilder: (context, error, stackTrace) => Container(
+                              color: Colors.grey.shade200,
+                              child: const Icon(Icons.broken_image),
+                            ),
+                          )
+                        : Image.file(
+                            File(image.filePath),
+                            fit: BoxFit.cover,
+                            errorBuilder: (context, error, stackTrace) => Container(
+                              color: Colors.grey.shade200,
+                              child: const Icon(Icons.broken_image),
+                            ),
+                          ),
+                  ),
+                ),
+              );
+            }).toList(),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
 /// Widget that displays ALL data stored in the record as a summary
 /// This ensures no data is hidden from the user
 class _AllDataSection extends StatelessWidget {
@@ -3010,22 +3146,34 @@ class _MseSection extends StatelessWidget {
   }
 
   Widget _buildGrid(List<MseItemConfig> items) {
-    return GridView.builder(
-      shrinkWrap: true,
-      physics: const NeverScrollableScrollPhysics(),
-      gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-        crossAxisCount: 2,
-        mainAxisSpacing: MedicalRecordConstants.paddingSmall,
-        crossAxisSpacing: MedicalRecordConstants.paddingSmall,
-        childAspectRatio: 2.5,
-      ),
-      itemCount: items.length,
-      itemBuilder: (context, index) {
-        final item = items[index];
-        return _MseGridItem(
-          config: item,
-          value: mse.getString(item.key),
-          isDark: isDark,
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        return GridView.builder(
+          shrinkWrap: true,
+          physics: const NeverScrollableScrollPhysics(),
+          gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+            crossAxisCount: context.responsive(
+              compact: 2,
+              medium: 3,
+              expanded: 4,
+            ),
+            mainAxisSpacing: MedicalRecordConstants.paddingSmall,
+            crossAxisSpacing: MedicalRecordConstants.paddingSmall,
+            childAspectRatio: context.responsive(
+              compact: 2.3,
+              medium: 2.5,
+              expanded: 2.7,
+            ),
+          ),
+          itemCount: items.length,
+          itemBuilder: (context, index) {
+            final item = items[index];
+            return _MseGridItem(
+              config: item,
+              value: mse.getString(item.key),
+              isDark: isDark,
+            );
+          },
         );
       },
     );
@@ -3449,7 +3597,7 @@ class _ActionButtons extends StatelessWidget {
           existingRecord: record,
         );
       case 'psychiatric_assessment':
-        targetScreen = PsychiatricAssessmentScreenModern(
+        targetScreen = PsychiatricAssessmentScreen(
           preselectedPatient: patient,
           existingRecord: record,
         );

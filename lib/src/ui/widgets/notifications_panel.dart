@@ -6,6 +6,8 @@ import '../../services/notification_service.dart';
 import '../../core/components/app_button.dart';
 import '../../core/components/app_input.dart';
 import '../../core/theme/design_tokens.dart';
+import '../../core/routing/app_router.dart';
+import '../../db/doctor_db.dart';
 
 /// Widget showing pending notifications
 class NotificationsPanel extends ConsumerWidget {
@@ -32,22 +34,45 @@ class NotificationsPanel extends ConsumerWidget {
               return _buildEmptyState(context);
             }
 
-            // Separate overdue and pending
-            final overdue = notifications.where((n) => n.isOverdue).toList();
-            final pending = notifications.where((n) => n.isPending).toList();
+            // Categorize by priority: Critical, Important, Informational
+            final critical = notifications.where((n) => 
+              n.priority == 'critical' || 
+              n.isOverdue ||
+              n.type == 'clinical_alert'
+            ).toList();
+            
+            final important = notifications.where((n) => 
+              n.priority == 'high' || 
+              n.priority == 'important' ||
+              (n.type == 'appointment_reminder' && n.priority != 'critical') ||
+              n.type == 'follow_up_reminder'
+            ).toList();
+            
+            final informational = notifications.where((n) => 
+              !critical.contains(n) && !important.contains(n)
+            ).toList();
 
             return ListView(
               // Use primary: false when inside NestedScrollView to avoid ScrollController conflicts
               primary: false,
+              padding: const EdgeInsets.all(AppSpacing.md),
               children: [
-                if (overdue.isNotEmpty) ...[
-                  _buildSectionHeader(context, 'Overdue (${overdue.length})', Colors.red),
-                  ...overdue.map((n) => _buildNotificationCard(context, n)),
-                  const SizedBox(height: 16),
+                if (critical.isNotEmpty) ...[
+                  _buildSectionHeader(context, 'Critical (${critical.length})', const Color(0xFFDC2626)),
+                  const SizedBox(height: 8),
+                  ...critical.map((n) => _buildNotificationCard(context, ref, n, isActionable: true)),
+                  const SizedBox(height: 24),
                 ],
-                if (pending.isNotEmpty) ...[
-                  _buildSectionHeader(context, 'Upcoming (${pending.length})', Colors.blue),
-                  ...pending.map((n) => _buildNotificationCard(context, n)),
+                if (important.isNotEmpty) ...[
+                  _buildSectionHeader(context, 'Important (${important.length})', const Color(0xFFF59E0B)),
+                  const SizedBox(height: 8),
+                  ...important.map((n) => _buildNotificationCard(context, ref, n, isActionable: true)),
+                  const SizedBox(height: 24),
+                ],
+                if (informational.isNotEmpty) ...[
+                  _buildSectionHeader(context, 'Informational (${informational.length})', const Color(0xFF3B82F6)),
+                  const SizedBox(height: 8),
+                  ...informational.map((n) => _buildNotificationCard(context, ref, n, isActionable: true)),
                 ],
               ],
             );
@@ -111,16 +136,28 @@ class NotificationsPanel extends ConsumerWidget {
     );
   }
 
-  Widget _buildNotificationCard(BuildContext context, NotificationMessage notification) {
+  Widget _buildNotificationCard(BuildContext context, WidgetRef ref, NotificationMessage notification, {bool isActionable = false}) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
     return Card(
-      margin: const EdgeInsets.symmetric(horizontal: AppSpacing.md, vertical: AppSpacing.xs),
-      child: Padding(
-        padding: const EdgeInsets.all(AppSpacing.md),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
+      margin: const EdgeInsets.symmetric(horizontal: 0, vertical: AppSpacing.xs),
+      elevation: notification.priority == 'critical' ? 4 : 1,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(AppRadius.lg),
+        side: notification.priority == 'critical'
+            ? BorderSide(color: notification.priorityColor, width: 2)
+            : BorderSide.none,
+      ),
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          onTap: isActionable ? () => _handleNotificationTap(context, ref, notification) : null,
+          borderRadius: BorderRadius.circular(AppRadius.lg),
+          child: Padding(
+            padding: const EdgeInsets.all(AppSpacing.md),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
             Row(
               children: [
                 Container(
@@ -186,28 +223,131 @@ class NotificationsPanel extends ConsumerWidget {
               maxLines: 2,
               overflow: TextOverflow.ellipsis,
             ),
-            const SizedBox(height: 8),
-            Row(
-              children: [
-                ...notification.channels.map((channel) {
-                  return Padding(
-                    padding: const EdgeInsets.only(right: 6),
-                    child: Chip(
-                      label: Text(
-                        channel.toUpperCase(),
-                        style: const TextStyle(fontSize: 9),
+                const SizedBox(height: 8),
+                Row(
+                  children: [
+                    ...notification.channels.map((channel) {
+                      return Padding(
+                        padding: const EdgeInsets.only(right: 6),
+                        child: Chip(
+                          label: Text(
+                            channel.toUpperCase(),
+                            style: const TextStyle(fontSize: 9),
+                          ),
+                          padding: EdgeInsets.zero,
+                          visualDensity: VisualDensity.compact,
+                        ),
+                      );
+                    }),
+                    const Spacer(),
+                    if (isActionable)
+                      TextButton.icon(
+                        onPressed: () => _handleNotificationTap(context, ref, notification),
+                        icon: const Icon(Icons.open_in_new_rounded, size: 14),
+                        label: const Text('View', style: TextStyle(fontSize: 12)),
+                        style: TextButton.styleFrom(
+                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                          minimumSize: Size.zero,
+                          tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                        ),
                       ),
-                      padding: EdgeInsets.zero,
-                      visualDensity: VisualDensity.compact,
-                    ),
-                  );
-                }),
+                  ],
+                ),
               ],
             ),
-          ],
+          ),
         ),
       ),
     );
+  }
+
+  void _handleNotificationTap(BuildContext context, WidgetRef ref, NotificationMessage notification) async {
+    final db = await ref.read(doctorDbProvider.future);
+    
+    // Navigate based on notification type
+    switch (notification.type) {
+      case 'appointment_reminder':
+        if (notification.metadata.containsKey('appointmentId')) {
+          final appointmentId = int.tryParse(notification.metadata['appointmentId'] ?? '');
+          if (appointmentId != null) {
+            final appointment = await db.getAppointmentById(appointmentId);
+            if (appointment != null) {
+              final patient = await db.getPatientById(appointment.patientId);
+              if (patient != null) {
+                Navigator.pushNamed(
+                  context,
+                  AppRoutes.patientView,
+                  arguments: PatientViewArgs(patient: patient),
+                );
+              }
+            }
+          }
+        }
+        break;
+        
+      case 'follow_up_reminder':
+      case 'overdue_followup':
+        if (notification.metadata.containsKey('patientId')) {
+          final patientId = int.tryParse(notification.metadata['patientId'] ?? '');
+          if (patientId != null) {
+            final patient = await db.getPatientById(patientId);
+            if (patient != null) {
+              Navigator.pushNamed(
+                context,
+                AppRoutes.followUps,
+                arguments: FollowUpsArgs(patientId: patientId, patientName: '${patient.firstName} ${patient.lastName}'),
+              );
+            }
+          }
+        }
+        break;
+        
+      case 'clinical_alert':
+        if (notification.metadata.containsKey('patientId')) {
+          final patientId = int.tryParse(notification.metadata['patientId'] ?? '');
+          if (patientId != null) {
+            final patient = await db.getPatientById(patientId);
+            if (patient != null) {
+              // Navigate to patient view, could also navigate to specific tab based on alertType
+              final alertType = notification.metadata['alertType'] ?? '';
+              if (alertType == 'overdue_lab_result') {
+                Navigator.pushNamed(
+                  context,
+                  AppRoutes.labResults,
+                  arguments: LabResultsArgs(patientId: patientId, patientName: '${patient.firstName} ${patient.lastName}'),
+                );
+              } else {
+                Navigator.pushNamed(
+                  context,
+                  AppRoutes.patientView,
+                  arguments: PatientViewArgs(patient: patient),
+                );
+              }
+            }
+          }
+        }
+        break;
+        
+      case 'prescription_summary':
+        Navigator.pushNamed(context, AppRoutes.prescriptions);
+        break;
+        
+      default:
+        // For other types, try to navigate to patient view if patientId exists
+        if (notification.metadata.containsKey('patientId')) {
+          final patientId = int.tryParse(notification.metadata['patientId'] ?? '');
+          if (patientId != null) {
+            final patient = await db.getPatientById(patientId);
+            if (patient != null) {
+              Navigator.pushNamed(
+                context,
+                AppRoutes.patientView,
+                arguments: PatientViewArgs(patient: patient),
+              );
+            }
+          }
+        }
+    }
   }
 
   IconData _getIconForType(String type) {

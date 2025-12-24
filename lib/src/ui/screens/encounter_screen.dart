@@ -11,9 +11,11 @@ import '../../theme/app_theme.dart';
 import '../widgets/diagnosis_picker.dart';
 import '../widgets/soap_note_editor.dart';
 import '../widgets/vitals_entry_modal.dart';
+import '../widgets/persistent_allergy_warning_banner.dart';
 import 'add_invoice_screen.dart';
 import 'add_prescription_screen.dart';
 import 'records/add_follow_up_screen.dart';
+import '../../core/extensions/context_extensions.dart';
 
 /// Central hub for managing a patient encounter
 /// 
@@ -109,7 +111,7 @@ class _EncounterScreenState extends ConsumerState<EncounterScreen> {
           ),
         ),
         SliverPadding(
-          padding: const EdgeInsets.symmetric(horizontal: 16),
+          padding: EdgeInsets.symmetric(horizontal: context.responsivePadding),
           sliver: SliverToBoxAdapter(
             child: _buildCurrentSection(context, summary),
           ),
@@ -123,17 +125,75 @@ class _EncounterScreenState extends ConsumerState<EncounterScreen> {
 
   Widget _buildAppBar(BuildContext context, EncounterSummary summary) {
     return SliverAppBar(
-      expandedHeight: 120,
+      expandedHeight: 160,
       pinned: true,
       backgroundColor: AppColors.primary,
+      surfaceTintColor: Colors.transparent,
       flexibleSpace: FlexibleSpaceBar(
-        title: Text(
-          'Visit #${summary.encounter.id}',
-          style: const TextStyle(fontWeight: FontWeight.bold),
-        ),
         background: Container(
           decoration: const BoxDecoration(
             gradient: AppColors.primaryGradient,
+          ),
+          child: SafeArea(
+            child: Padding(
+              padding: const EdgeInsets.fromLTRB(20, 50, 20, 16),
+              child: Row(
+                children: [
+                  Container(
+                    padding: const EdgeInsets.all(14),
+                    decoration: BoxDecoration(
+                      gradient: LinearGradient(
+                        colors: [
+                          Colors.white.withValues(alpha: 0.3),
+                          Colors.white.withValues(alpha: 0.2),
+                        ],
+                        begin: Alignment.topLeft,
+                        end: Alignment.bottomRight,
+                      ),
+                      borderRadius: BorderRadius.circular(18),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.white.withValues(alpha: 0.3),
+                          blurRadius: 16,
+                          offset: const Offset(0, 6),
+                        ),
+                      ],
+                    ),
+                    child: const Icon(
+                      Icons.local_hospital_rounded,
+                      color: Colors.white,
+                      size: 28,
+                    ),
+                  ),
+                  const SizedBox(width: 16),
+                  Expanded(
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          'Visit #${summary.encounter.id}',
+                          style: const TextStyle(
+                            fontSize: 24,
+                            fontWeight: FontWeight.bold,
+                            color: Colors.white,
+                            letterSpacing: -0.5,
+                          ),
+                        ),
+                        const SizedBox(height: 4),
+                        Text(
+                          'Clinical Encounter',
+                          style: TextStyle(
+                            fontSize: 14,
+                            color: Colors.white.withValues(alpha: 0.9),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+            ),
           ),
         ),
       ),
@@ -170,7 +230,7 @@ class _EncounterScreenState extends ConsumerState<EncounterScreen> {
 
     return Container(
       margin: const EdgeInsets.all(16),
-      padding: const EdgeInsets.all(16),
+      padding: EdgeInsets.all(context.responsivePadding),
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(16),
@@ -277,32 +337,12 @@ class _EncounterScreenState extends ConsumerState<EncounterScreen> {
             ],
           ),
           
-          // Allergies alert (if any)
+          // Allergies alert (if any) - using persistent banner
           if (hasAllergies) ...[
             const SizedBox(height: 12),
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-              decoration: BoxDecoration(
-                color: AppColors.error.withValues(alpha: 0.1),
-                borderRadius: BorderRadius.circular(8),
-                border: Border.all(color: AppColors.error.withValues(alpha: 0.3)),
-              ),
-              child: Row(
-                children: [
-                  const Icon(Icons.warning_amber_rounded, color: AppColors.error, size: 20),
-                  const SizedBox(width: 8),
-                  Expanded(
-                    child: Text(
-                      'Allergies: ${patient.allergies}',
-                      style: const TextStyle(
-                        fontSize: 13,
-                        fontWeight: FontWeight.w600,
-                        color: AppColors.error,
-                      ),
-                    ),
-                  ),
-                ],
-              ),
+            PersistentAllergyWarningBanner(
+              allergies: patient.allergies,
+              compact: true,
             ),
           ],
           
@@ -485,7 +525,7 @@ class _EncounterScreenState extends ConsumerState<EncounterScreen> {
 
   Widget _buildVitalsCard(VitalSign vitals) {
     return Container(
-      padding: const EdgeInsets.all(16),
+      padding: EdgeInsets.all(context.responsivePadding),
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(12),
@@ -603,7 +643,7 @@ class _EncounterScreenState extends ConsumerState<EncounterScreen> {
   Widget _buildNoteCard(ClinicalNote note) {
     return Container(
       margin: const EdgeInsets.only(bottom: 12),
-      padding: const EdgeInsets.all(16),
+      padding: EdgeInsets.all(context.responsivePadding),
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(12),
@@ -770,7 +810,7 @@ class _EncounterScreenState extends ConsumerState<EncounterScreen> {
     
     return Container(
       margin: const EdgeInsets.only(bottom: 12),
-      padding: const EdgeInsets.all(16),
+      padding: EdgeInsets.all(context.responsivePadding),
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(12),
@@ -926,7 +966,7 @@ class _EncounterScreenState extends ConsumerState<EncounterScreen> {
           onTap: onTap,
           borderRadius: BorderRadius.circular(12),
           child: Container(
-            padding: const EdgeInsets.all(16),
+            padding: EdgeInsets.all(context.responsivePadding),
             decoration: BoxDecoration(
               borderRadius: BorderRadius.circular(12),
               border: Border.all(color: AppColors.divider),

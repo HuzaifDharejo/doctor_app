@@ -12,6 +12,8 @@ import '../../core/components/app_button.dart';
 import '../../core/theme/design_tokens.dart';
 import '../widgets/suggestion_text_field.dart';
 import '../../core/widgets/keyboard_aware_scaffold.dart';
+import '../../core/extensions/context_extensions.dart';
+import '../../theme/app_theme.dart';
 
 class AddInvoiceScreen extends ConsumerStatefulWidget {
 
@@ -337,7 +339,7 @@ class _AddInvoiceScreenState extends ConsumerState<AddInvoiceScreen> {
     final padding = isCompact ? 12.0 : 20.0;
 
     return Scaffold(
-      backgroundColor: isDark ? const Color(0xFF0F0F0F) : const Color(0xFFF8FAFC),
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       body: Form(
         key: _formKey,
         child: CustomScrollView(
@@ -346,63 +348,31 @@ class _AddInvoiceScreenState extends ConsumerState<AddInvoiceScreen> {
           slivers: [
             // Modern SliverAppBar
             SliverAppBar(
-              expandedHeight: 200,
+              expandedHeight: 160,
               floating: false,
               pinned: true,
               elevation: 0,
-              backgroundColor: isDark ? const Color(0xFF1A1A1A) : Colors.white,
+              backgroundColor: colorScheme.surface,
               surfaceTintColor: Colors.transparent,
               leading: Padding(
                 padding: const EdgeInsets.all(8.0),
                 child: Container(
                   decoration: BoxDecoration(
-                    color: isDark ? Colors.white.withValues(alpha: 0.1) : Colors.grey.shade100,
+                    color: isDark 
+                        ? Colors.white.withValues(alpha: 0.1) 
+                        : Colors.black.withValues(alpha: 0.05),
                     borderRadius: BorderRadius.circular(12),
                   ),
                   child: IconButton(
                     icon: Icon(
                       Icons.arrow_back_ios_new_rounded,
                       size: 18,
-                      color: isDark ? Colors.white : Colors.black87,
+                      color: isDark ? Colors.white : AppColors.textPrimary,
                     ),
                     onPressed: () => Navigator.of(context).pop(),
                   ),
                 ),
               ),
-              actions: [
-                Padding(
-                  padding: const EdgeInsets.only(right: 16),
-                  child: GestureDetector(
-                    onTap: _printInvoice,
-                    child: Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
-                      decoration: BoxDecoration(
-                        color: isDark ? Colors.white.withValues(alpha: 0.1) : Colors.grey.shade100,
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                      child: Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Icon(
-                            Icons.print_rounded,
-                            size: 18,
-                            color: isDark ? Colors.white70 : Colors.black87,
-                          ),
-                          const SizedBox(width: 6),
-                          Text(
-                            'Print',
-                            style: TextStyle(
-                              color: isDark ? Colors.white70 : Colors.black87,
-                              fontWeight: FontWeight.w600,
-                              fontSize: 13,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
-                ),
-              ],
               flexibleSpace: FlexibleSpaceBar(
                 background: Container(
                   decoration: BoxDecoration(
@@ -410,111 +380,65 @@ class _AddInvoiceScreenState extends ConsumerState<AddInvoiceScreen> {
                       begin: Alignment.topLeft,
                       end: Alignment.bottomRight,
                       colors: isDark
-                          ? [const Color(0xFF1A1A1A), const Color(0xFF0F0F0F)]
-                          : [Colors.white, const Color(0xFFF8FAFC)],
+                          ? [const Color(0xFF1A1A2E), colorScheme.surface]
+                          : [colorScheme.surface, Theme.of(context).scaffoldBackgroundColor],
                     ),
                   ),
                   child: SafeArea(
                     child: Padding(
-                      padding: const EdgeInsets.fromLTRB(20, 60, 20, 16),
-                      child: SingleChildScrollView(
-                        physics: const NeverScrollableScrollPhysics(),
-                        child: Column(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            // Invoice Icon with Status Badge
-                            Stack(
-                              alignment: Alignment.center,
+                      padding: const EdgeInsets.fromLTRB(20, 60, 20, 20),
+                      child: Row(
+                        children: [
+                          Container(
+                            padding: EdgeInsets.all(context.responsivePadding),
+                            decoration: BoxDecoration(
+                              gradient: const LinearGradient(
+                                colors: [Color(0xFF8B5CF6), Color(0xFF7C3AED)],
+                                begin: Alignment.topLeft,
+                                end: Alignment.bottomRight,
+                              ),
+                              borderRadius: BorderRadius.circular(20),
+                              boxShadow: [
+                                BoxShadow(
+                                  color: AppColors.billing.withValues(alpha: 0.4),
+                                  blurRadius: 20,
+                                  offset: const Offset(0, 8),
+                                ),
+                              ],
+                            ),
+                            child: const Icon(
+                              Icons.receipt_long_rounded,
+                              color: Colors.white,
+                              size: 32,
+                            ),
+                          ),
+                          const SizedBox(width: 16),
+                          Expanded(
+                            child: Column(
+                              mainAxisSize: MainAxisSize.min,
+                              crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
-                                Container(
-                                  padding: const EdgeInsets.all(16),
-                                  decoration: BoxDecoration(
-                                    gradient: const LinearGradient(
-                                      colors: [Color(0xFF6366F1), Color(0xFF8B5CF6)],
-                                      begin: Alignment.topLeft,
-                                      end: Alignment.bottomRight,
-                                    ),
-                                    borderRadius: BorderRadius.circular(20),
-                                    boxShadow: [
-                                      BoxShadow(
-                                        color: const Color(0xFF6366F1).withValues(alpha: 0.4),
-                                        blurRadius: 16,
-                                        offset: const Offset(0, 6),
-                                      ),
-                                    ],
-                                  ),
-                                  child: const Icon(
-                                    Icons.receipt_long_rounded,
-                                    size: 28,
-                                    color: Colors.white,
+                                Text(
+                                  'New Invoice',
+                                  style: TextStyle(
+                                    fontSize: 28,
+                                    fontWeight: FontWeight.w800,
+                                    color: isDark ? AppColors.darkTextPrimary : AppColors.textPrimary,
+                                    letterSpacing: -0.5,
                                   ),
                                 ),
-                                Positioned(
-                                  bottom: -4,
-                                  right: -4,
-                                  child: Container(
-                                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-                                    decoration: BoxDecoration(
-                                      color: _getStatusColor(_paymentStatus),
-                                      borderRadius: BorderRadius.circular(10),
-                                      border: Border.all(
-                                        color: isDark ? const Color(0xFF1A1A1A) : Colors.white,
-                                        width: 2,
-                                      ),
-                                    ),
-                                    child: Text(
-                                      _paymentStatus,
-                                      style: const TextStyle(
-                                        color: Colors.white,
-                                        fontSize: 9,
-                                        fontWeight: FontWeight.bold,
-                                      ),
-                                    ),
+                                const SizedBox(height: 4),
+                                Text(
+                                  'Create invoice for patient',
+                                  style: TextStyle(
+                                    fontSize: 14,
+                                    color: isDark ? AppColors.darkTextSecondary : AppColors.textSecondary,
                                   ),
                                 ),
                               ],
                             ),
-                            const SizedBox(height: 10),
-                            Text(
-                              _invoiceNumber,
-                              style: TextStyle(
-                                fontSize: 16,
-                                fontWeight: FontWeight.w800,
-                                color: isDark ? Colors.white : const Color(0xFF1E293B),
-                                letterSpacing: -0.5,
-                              ),
-                            ),
-                            const SizedBox(height: 2),
-                            Text(
-                              DateFormat('EEE, dd MMM yyyy').format(_invoiceDate),
-                              style: TextStyle(
-                                fontSize: 12,
-                                color: isDark 
-                                    ? Colors.white.withValues(alpha: 0.6) 
-                                    : const Color(0xFF64748B),
-                              ),
-                            ),
-                            if (_dueDate != null) ...[
-                              const SizedBox(height: 4),
-                              Container(
-                                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-                                decoration: BoxDecoration(
-                                  color: const Color(0xFFF59E0B).withValues(alpha: 0.1),
-                                  borderRadius: BorderRadius.circular(6),
-                                ),
-                                child: Text(
-                                  'Due: ${DateFormat('dd MMM').format(_dueDate!)}',
-                                  style: const TextStyle(
-                                    color: Color(0xFFF59E0B),
-                                    fontSize: 10,
-                                    fontWeight: FontWeight.w600,
-                                  ),
-                                ),
-                              ),
-                            ],
-                          ],
-                        ),
+                          ),
+                        ],
                       ),
                     ),
                   ),
@@ -531,7 +455,7 @@ class _AddInvoiceScreenState extends ConsumerState<AddInvoiceScreen> {
                 title: 'Bill To',
                 icon: Icons.person,
                 colorScheme: colorScheme,
-                child: _buildPatientSelector(colorScheme),
+                child: _buildPatientSelector(colorScheme, isDark),
               ),
               const SizedBox(height: 16),
 
@@ -540,7 +464,7 @@ class _AddInvoiceScreenState extends ConsumerState<AddInvoiceScreen> {
                 title: 'Quick Add Services',
                 icon: Icons.flash_on,
                 colorScheme: colorScheme,
-                child: _buildQuickAddSection(colorScheme),
+                child: _buildQuickAddSection(colorScheme, isDark),
               ),
               const SizedBox(height: 16),
 
@@ -557,12 +481,12 @@ class _AddInvoiceScreenState extends ConsumerState<AddInvoiceScreen> {
                     visualDensity: VisualDensity.compact,
                   ),
                 ),
-                child: _buildItemsSection(colorScheme),
+                child: _buildItemsSection(colorScheme, isDark),
               ),
               const SizedBox(height: 16),
 
               // Totals Section
-              _buildTotalsSection(colorScheme),
+              _buildTotalsSection(colorScheme, isDark),
               const SizedBox(height: 16),
 
               // Payment Details
@@ -570,7 +494,7 @@ class _AddInvoiceScreenState extends ConsumerState<AddInvoiceScreen> {
                 title: 'Payment Details',
                 icon: Icons.payment,
                 colorScheme: colorScheme,
-                child: _buildPaymentSection(colorScheme),
+                child: _buildPaymentSection(colorScheme, isDark),
               ),
               const SizedBox(height: 16),
 
@@ -624,23 +548,50 @@ class _AddInvoiceScreenState extends ConsumerState<AddInvoiceScreen> {
     );
   }
 
-  Widget _buildPatientSelector(ColorScheme colorScheme) {
+  Widget _buildPatientSelector(ColorScheme colorScheme, bool isDark) {
     if (_selectedPatient != null) {
       final patient = _selectedPatient!;
       final patientName = _getPatientName(patient);
       return Container(
         padding: const EdgeInsets.all(AppSpacing.md),
         decoration: BoxDecoration(
-          color: colorScheme.primaryContainer,
-          borderRadius: BorderRadius.circular(12),
+          gradient: LinearGradient(
+            colors: [
+              AppColors.billing.withValues(alpha: 0.15),
+              AppColors.billing.withValues(alpha: 0.05),
+            ],
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+          ),
+          borderRadius: BorderRadius.circular(16),
+          boxShadow: [
+            BoxShadow(
+              color: AppColors.billing.withValues(alpha: 0.1),
+              blurRadius: 8,
+              offset: const Offset(0, 3),
+            ),
+          ],
         ),
         child: Row(
           children: [
-            CircleAvatar(
-              backgroundColor: colorScheme.primary,
+            Container(
+              padding: const EdgeInsets.all(10),
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  colors: [AppColors.billing, AppColors.billing.withValues(alpha: 0.8)],
+                ),
+                borderRadius: BorderRadius.circular(14),
+                boxShadow: [
+                  BoxShadow(
+                    color: AppColors.billing.withValues(alpha: 0.3),
+                    blurRadius: 6,
+                    offset: const Offset(0, 2),
+                  ),
+                ],
+              ),
               child: Text(
                 patient.firstName.isNotEmpty ? patient.firstName[0] : '?',
-                style: TextStyle(color: colorScheme.onPrimary, fontWeight: FontWeight.bold),
+                style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 16),
               ),
             ),
             const SizedBox(width: 12),
@@ -702,8 +653,22 @@ class _AddInvoiceScreenState extends ConsumerState<AddInvoiceScreen> {
           Container(
             constraints: const BoxConstraints(maxHeight: 160),
             decoration: BoxDecoration(
-              border: Border.all(color: colorScheme.outlineVariant),
-              borderRadius: BorderRadius.circular(12),
+              gradient: LinearGradient(
+                colors: [
+                  AppColors.billing.withValues(alpha: 0.08),
+                  AppColors.billing.withValues(alpha: 0.03),
+                ],
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+              ),
+              borderRadius: BorderRadius.circular(16),
+              boxShadow: [
+                BoxShadow(
+                  color: AppColors.billing.withValues(alpha: 0.06),
+                  blurRadius: 8,
+                  offset: const Offset(0, 3),
+                ),
+              ],
             ),
             child: ListView.builder(
               shrinkWrap: true,
@@ -731,49 +696,111 @@ class _AddInvoiceScreenState extends ConsumerState<AddInvoiceScreen> {
     );
   }
 
-  Widget _buildQuickAddSection(ColorScheme colorScheme) {
+  Widget _buildQuickAddSection(ColorScheme colorScheme, bool isDark) {
     return Wrap(
       spacing: 8,
       runSpacing: 8,
       children: _commonServices.map((service) {
-        return ActionChip(
-          avatar: Icon(_getServiceIcon(service['type'] as String?), size: 16),
-          label: Text(
-            '${service['name']} - Rs.${(service['amount'] as num).toInt()}',
-            style: const TextStyle(fontSize: 12),
+        return GestureDetector(
+          onTap: () => _addQuickService(service),
+          child: Container(
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                colors: [
+                  AppColors.billing.withValues(alpha: 0.15),
+                  AppColors.billing.withValues(alpha: 0.08),
+                ],
+              ),
+              borderRadius: BorderRadius.circular(20),
+              boxShadow: [
+                BoxShadow(
+                  color: AppColors.billing.withValues(alpha: 0.1),
+                  blurRadius: 4,
+                  offset: const Offset(0, 2),
+                ),
+              ],
+            ),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Icon(
+                  _getServiceIcon(service['type'] as String?),
+                  size: 16,
+                  color: AppColors.billing,
+                ),
+                const SizedBox(width: 6),
+                Text(
+                  '${service['name']} - Rs.${(service['amount'] as num).toInt()}',
+                  style: TextStyle(
+                    fontSize: 12,
+                    fontWeight: FontWeight.w600,
+                    color: isDark ? AppColors.darkTextPrimary : AppColors.textPrimary,
+                  ),
+                ),
+              ],
+            ),
           ),
-          onPressed: () => _addQuickService(service),
         );
       }).toList(),
     );
   }
 
-  Widget _buildItemsSection(ColorScheme colorScheme) {
+  Widget _buildItemsSection(ColorScheme colorScheme, bool isDark) {
     if (_items.isEmpty) {
       return Container(
         padding: const EdgeInsets.all(AppSpacing.xxxl),
         decoration: BoxDecoration(
-          color: colorScheme.surfaceContainerHighest.withValues(alpha: 0.3),
-          borderRadius: BorderRadius.circular(12),
-          border: Border.all(color: colorScheme.outlineVariant),
+          gradient: LinearGradient(
+            colors: [
+              AppColors.billing.withValues(alpha: 0.1),
+              AppColors.billing.withValues(alpha: 0.03),
+            ],
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+          ),
+          borderRadius: BorderRadius.circular(20),
+          boxShadow: [
+            BoxShadow(
+              color: AppColors.billing.withValues(alpha: 0.08),
+              blurRadius: 12,
+              offset: const Offset(0, 4),
+            ),
+          ],
         ),
         child: Column(
           children: [
-            Icon(
-              Icons.receipt_long_outlined,
-              size: 48,
-              color: colorScheme.onSurface.withValues(alpha: 0.3),
+            Container(
+              padding: const EdgeInsets.all(16),
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  colors: [
+                    AppColors.billing.withValues(alpha: 0.2),
+                    AppColors.billing.withValues(alpha: 0.1),
+                  ],
+                ),
+                borderRadius: BorderRadius.circular(16),
+              ),
+              child: Icon(
+                Icons.receipt_long_rounded,
+                size: 48,
+                color: AppColors.billing,
+              ),
             ),
             const SizedBox(height: 12),
+            const SizedBox(height: 16),
             Text(
               'No items added yet',
-              style: TextStyle(color: colorScheme.onSurface.withValues(alpha: 0.5)),
+              style: TextStyle(
+                color: isDark ? AppColors.darkTextSecondary : AppColors.textSecondary,
+                fontWeight: FontWeight.w600,
+              ),
             ),
             const SizedBox(height: 8),
             Text(
               'Use Quick Add or click Add Item',
               style: TextStyle(
-                color: colorScheme.onSurface.withValues(alpha: 0.4),
+                color: isDark ? AppColors.darkTextSecondary : AppColors.textSecondary,
                 fontSize: 12,
               ),
             ),
@@ -808,7 +835,9 @@ class _AddInvoiceScreenState extends ConsumerState<AddInvoiceScreen> {
             margin: const EdgeInsets.only(bottom: 8),
             padding: const EdgeInsets.all(AppSpacing.md),
             decoration: BoxDecoration(
-              border: Border.all(color: colorScheme.outlineVariant),
+              border: Border.all(
+                color: (isDark ? AppColors.darkDivider : AppColors.divider).withValues(alpha: 0.3),
+              ),
               borderRadius: BorderRadius.circular(12),
             ),
             child: Row(
@@ -820,7 +849,12 @@ class _AddInvoiceScreenState extends ConsumerState<AddInvoiceScreen> {
                     controller: _items[i].descriptionController,
                     decoration: InputDecoration(
                       hintText: 'Item description',
-                      border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(8),
+                        borderSide: BorderSide(
+                          color: (isDark ? AppColors.darkDivider : AppColors.divider).withValues(alpha: 0.3),
+                        ),
+                      ),
                       isDense: true,
                       filled: true,
                     ),
@@ -836,7 +870,12 @@ class _AddInvoiceScreenState extends ConsumerState<AddInvoiceScreen> {
                     textAlign: TextAlign.center,
                     decoration: InputDecoration(
                       hintText: 'Qty',
-                      border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(8),
+                        borderSide: BorderSide(
+                          color: (isDark ? AppColors.darkDivider : AppColors.divider).withValues(alpha: 0.3),
+                        ),
+                      ),
                       isDense: true,
                       filled: true,
                     ),
@@ -853,7 +892,12 @@ class _AddInvoiceScreenState extends ConsumerState<AddInvoiceScreen> {
                     decoration: InputDecoration(
                       hintText: 'Rate',
                       prefixText: 'Rs.',
-                      border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(8),
+                        borderSide: BorderSide(
+                          color: (isDark ? AppColors.darkDivider : AppColors.divider).withValues(alpha: 0.3),
+                        ),
+                      ),
                       isDense: true,
                       filled: true,
                     ),
@@ -891,13 +935,26 @@ class _AddInvoiceScreenState extends ConsumerState<AddInvoiceScreen> {
     );
   }
 
-  Widget _buildTotalsSection(ColorScheme colorScheme) {
+  Widget _buildTotalsSection(ColorScheme colorScheme, bool isDark) {
     return Container(
       padding: const EdgeInsets.all(AppSpacing.xl),
       decoration: BoxDecoration(
-        color: colorScheme.surfaceContainerHighest,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: colorScheme.outlineVariant),
+        gradient: LinearGradient(
+          colors: [
+            AppColors.billing.withValues(alpha: 0.12),
+            AppColors.billing.withValues(alpha: 0.04),
+          ],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+        ),
+        borderRadius: BorderRadius.circular(20),
+        boxShadow: [
+          BoxShadow(
+            color: AppColors.billing.withValues(alpha: 0.1),
+            blurRadius: 16,
+            offset: const Offset(0, 6),
+          ),
+        ],
       ),
       child: Column(
         children: [
@@ -1020,7 +1077,7 @@ class _AddInvoiceScreenState extends ConsumerState<AddInvoiceScreen> {
     );
   }
 
-  Widget _buildPaymentSection(ColorScheme colorScheme) {
+  Widget _buildPaymentSection(ColorScheme colorScheme, bool isDark) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -1031,15 +1088,66 @@ class _AddInvoiceScreenState extends ConsumerState<AddInvoiceScreen> {
         const SizedBox(height: 8),
         Wrap(
           spacing: 8,
+          runSpacing: 8,
           children: BillingSuggestions.paymentMethods.map((method) {
             final isSelected = _paymentMethod == method;
-            return ChoiceChip(
-              label: Text(method),
-              selected: isSelected,
-              onSelected: (selected) {
-                if (selected) setState(() => _paymentMethod = method);
-              },
-              avatar: Icon(_getPaymentIcon(method), size: 16),
+            return GestureDetector(
+              onTap: () => setState(() => _paymentMethod = method),
+              child: Container(
+                padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                decoration: BoxDecoration(
+                  gradient: isSelected
+                      ? LinearGradient(
+                          colors: [
+                            AppColors.billing,
+                            AppColors.billing.withValues(alpha: 0.8),
+                          ],
+                        )
+                      : LinearGradient(
+                          colors: [
+                            AppColors.billing.withValues(alpha: 0.12),
+                            AppColors.billing.withValues(alpha: 0.05),
+                          ],
+                        ),
+                  borderRadius: BorderRadius.circular(20),
+                  boxShadow: isSelected
+                      ? [
+                          BoxShadow(
+                            color: AppColors.billing.withValues(alpha: 0.3),
+                            blurRadius: 8,
+                            offset: const Offset(0, 3),
+                          ),
+                        ]
+                      : [
+                          BoxShadow(
+                            color: AppColors.billing.withValues(alpha: 0.08),
+                            blurRadius: 4,
+                            offset: const Offset(0, 2),
+                          ),
+                        ],
+                ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(
+                      _getPaymentIcon(method),
+                      size: 16,
+                      color: isSelected ? Colors.white : AppColors.billing,
+                    ),
+                    const SizedBox(width: 6),
+                    Text(
+                      method,
+                      style: TextStyle(
+                        fontSize: 13,
+                        fontWeight: isSelected ? FontWeight.w700 : FontWeight.w600,
+                        color: isSelected
+                            ? Colors.white
+                            : (isDark ? AppColors.darkTextPrimary : AppColors.textPrimary),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
             );
           }).toList(),
         ),
@@ -1051,15 +1159,53 @@ class _AddInvoiceScreenState extends ConsumerState<AddInvoiceScreen> {
         const SizedBox(height: 8),
         Wrap(
           spacing: 8,
+          runSpacing: 8,
           children: ['Pending', 'Partial', 'Paid'].map((status) {
             final isSelected = _paymentStatus == status;
-            return ChoiceChip(
-              label: Text(status),
-              selected: isSelected,
-              onSelected: (selected) {
-                if (selected) setState(() => _paymentStatus = status);
-              },
-              selectedColor: _getStatusColor(status).withValues(alpha: 0.3),
+            final statusColor = _getStatusColor(status);
+            return GestureDetector(
+              onTap: () => setState(() => _paymentStatus = status),
+              child: Container(
+                padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                decoration: BoxDecoration(
+                  gradient: isSelected
+                      ? LinearGradient(
+                          colors: [statusColor, statusColor.withValues(alpha: 0.8)],
+                        )
+                      : LinearGradient(
+                          colors: [
+                            statusColor.withValues(alpha: 0.15),
+                            statusColor.withValues(alpha: 0.08),
+                          ],
+                        ),
+                  borderRadius: BorderRadius.circular(20),
+                  boxShadow: isSelected
+                      ? [
+                          BoxShadow(
+                            color: statusColor.withValues(alpha: 0.3),
+                            blurRadius: 8,
+                            offset: const Offset(0, 3),
+                          ),
+                        ]
+                      : [
+                          BoxShadow(
+                            color: statusColor.withValues(alpha: 0.1),
+                            blurRadius: 4,
+                            offset: const Offset(0, 2),
+                          ),
+                        ],
+                ),
+                child: Text(
+                  status,
+                  style: TextStyle(
+                    fontSize: 13,
+                    fontWeight: isSelected ? FontWeight.w700 : FontWeight.w600,
+                    color: isSelected
+                        ? Colors.white
+                        : (isDark ? AppColors.darkTextPrimary : AppColors.textPrimary),
+                  ),
+                ),
+              ),
             );
           }).toList(),
         ),
@@ -1074,23 +1220,43 @@ class _AddInvoiceScreenState extends ConsumerState<AddInvoiceScreen> {
     required Widget child,
     Widget? trailing,
   }) {
-    return AppCard(
-      borderRadius: BorderRadius.circular(16),
-      borderColor: colorScheme.outlineVariant,
-      borderWidth: 1,
+    return Container(
       padding: const EdgeInsets.all(AppSpacing.lg),
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          colors: [
+            AppColors.billing.withValues(alpha: 0.1),
+            AppColors.billing.withValues(alpha: 0.03),
+          ],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+        ),
+        borderRadius: BorderRadius.circular(20),
+        boxShadow: [
+          BoxShadow(
+            color: AppColors.billing.withValues(alpha: 0.08),
+            blurRadius: 12,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
       child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Row(
               children: [
                 Container(
-                  padding: const EdgeInsets.all(AppSpacing.sm),
+                  padding: const EdgeInsets.all(10),
                   decoration: BoxDecoration(
-                    color: colorScheme.primaryContainer,
-                    borderRadius: BorderRadius.circular(8),
+                    gradient: LinearGradient(
+                      colors: [
+                        AppColors.billing.withValues(alpha: 0.2),
+                        AppColors.billing.withValues(alpha: 0.1),
+                      ],
+                    ),
+                    borderRadius: BorderRadius.circular(12),
                   ),
-                  child: Icon(icon, color: colorScheme.primary, size: 20),
+                  child: Icon(icon, color: AppColors.billing, size: 20),
                 ),
                 const SizedBox(width: 12),
                 Expanded(

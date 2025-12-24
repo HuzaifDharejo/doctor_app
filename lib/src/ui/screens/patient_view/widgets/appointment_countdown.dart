@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../../../theme/app_theme.dart';
+import '../../../../core/extensions/context_extensions.dart';
 
 /// Countdown widget for upcoming appointments
 class AppointmentCountdown extends StatelessWidget {
@@ -101,7 +102,7 @@ class AppointmentCountdown extends StatelessWidget {
     final countdownText = _getCountdownText();
 
     return Container(
-      padding: const EdgeInsets.all(16),
+      padding: EdgeInsets.all(context.responsivePadding),
       decoration: BoxDecoration(
         gradient: LinearGradient(
           begin: Alignment.topLeft,

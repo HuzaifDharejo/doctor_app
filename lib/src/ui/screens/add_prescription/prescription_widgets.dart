@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../../../core/theme/design_tokens.dart';
 import '../../../theme/app_theme.dart';
+import '../../../core/extensions/context_extensions.dart';
 
 /// Modern section card for prescription screen
 class PrescriptionSectionCard extends StatelessWidget {
@@ -387,7 +388,7 @@ class EmptyMedicationsState extends StatelessWidget {
       onTap: onTap,
       borderRadius: BorderRadius.circular(12),
       child: Container(
-        padding: const EdgeInsets.all(24),
+        padding: EdgeInsets.all(context.responsivePadding),
         decoration: BoxDecoration(
           color: isDark ? Colors.white.withValues(alpha: 0.03) : Colors.grey.withValues(alpha: 0.05),
           borderRadius: BorderRadius.circular(12),

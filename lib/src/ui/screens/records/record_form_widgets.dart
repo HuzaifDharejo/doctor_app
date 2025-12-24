@@ -31,8 +31,8 @@ class RecordFormWidgets {
           end: Alignment.bottomRight,
         ),
         borderRadius: const BorderRadius.only(
-          bottomLeft: Radius.circular(32),
-          bottomRight: Radius.circular(32),
+          bottomLeft: Radius.circular(AppSpacing.xxxl),
+          bottomRight: Radius.circular(AppSpacing.xxxl),
         ),
       ),
       child: SafeArea(
@@ -50,9 +50,9 @@ class RecordFormWidgets {
                       padding: const EdgeInsets.all(AppSpacing.md),
                       decoration: BoxDecoration(
                         color: Colors.white.withValues(alpha: 0.2),
-                        borderRadius: BorderRadius.circular(12),
+                        borderRadius: BorderRadius.circular(AppRadius.md),
                       ),
-                      child: const Icon(Icons.arrow_back, color: Colors.white, size: 20),
+                      child: const Icon(Icons.arrow_back, color: Colors.white, size: AppIconSize.sm),
                     ),
                   ),
                   Expanded(
@@ -61,15 +61,15 @@ class RecordFormWidgets {
                       textAlign: TextAlign.center,
                       style: const TextStyle(
                         color: Colors.white,
-                        fontSize: 20,
+                        fontSize: AppFontSize.xxxl,
                         fontWeight: FontWeight.bold,
                       ),
                     ),
                   ),
-                  const SizedBox(width: 40), // Balance the back button
+                  const SizedBox(width: AppSpacing.xxxxl), // Balance the back button
                 ],
               ),
-              const SizedBox(height: 20),
+              const SizedBox(height: AppSpacing.xl),
               // Record Icon
               Container(
                 padding: const EdgeInsets.all(AppSpacing.lg),
@@ -77,17 +77,17 @@ class RecordFormWidgets {
                   color: Colors.white.withValues(alpha: 0.2),
                   shape: BoxShape.circle,
                 ),
-                child: Icon(icon, size: 48, color: Colors.white),
+                child: Icon(icon, size: AppIconSize.xxl, color: Colors.white),
               ),
-              const SizedBox(height: 12),
+              const SizedBox(height: AppSpacing.md),
               Text(
                 subtitle,
                 style: TextStyle(
                   color: Colors.white.withValues(alpha: 0.9),
-                  fontSize: 14,
+                  fontSize: AppFontSize.lg,
                 ),
               ),
-              const SizedBox(height: 16),
+              const SizedBox(height: AppSpacing.lg),
             ],
           ),
         ),
@@ -107,16 +107,16 @@ class RecordFormWidgets {
           padding: const EdgeInsets.all(AppSpacing.sm),
           decoration: BoxDecoration(
             color: AppColors.primary.withValues(alpha: 0.1),
-            borderRadius: BorderRadius.circular(10),
+            borderRadius: BorderRadius.circular(AppRadius.md),
           ),
-          child: Icon(icon, color: AppColors.primary, size: 18),
+          child: Icon(icon, color: AppColors.primary, size: AppIconSize.sm),
         ),
-        const SizedBox(width: 12),
+        const SizedBox(width: AppSpacing.md),
         Text(
           title,
           style: const TextStyle(
             fontWeight: FontWeight.bold,
-            fontSize: 16,
+            fontSize: AppFontSize.xl,
           ),
         ),
       ],
@@ -138,7 +138,7 @@ class RecordFormWidgets {
       padding: const EdgeInsets.all(AppSpacing.lg),
       decoration: BoxDecoration(
         color: Theme.of(context).colorScheme.surface,
-        borderRadius: BorderRadius.circular(16),
+        borderRadius: BorderRadius.circular(AppRadius.lg),
         border: Border.all(
           color: isDark ? AppColors.darkDivider : AppColors.divider,
         ),
@@ -152,21 +152,21 @@ class RecordFormWidgets {
                 padding: const EdgeInsets.all(AppSpacing.sm),
                 decoration: BoxDecoration(
                   color: color.withValues(alpha: 0.1),
-                  borderRadius: BorderRadius.circular(8),
+                  borderRadius: BorderRadius.circular(AppRadius.sm),
                 ),
-                child: Icon(icon, color: color, size: 18),
+                child: Icon(icon, color: color, size: AppIconSize.sm),
               ),
-              const SizedBox(width: 12),
+              const SizedBox(width: AppSpacing.md),
               Text(
                 title,
                 style: const TextStyle(
                   fontWeight: FontWeight.w600,
-                  fontSize: 15,
+                  fontSize: AppFontSize.titleLarge,
                 ),
               ),
             ],
           ),
-          const SizedBox(height: 16),
+          const SizedBox(height: AppSpacing.lg),
           ...children,
         ],
       ),
@@ -190,7 +190,7 @@ class RecordFormWidgets {
         return DecoratedBox(
           decoration: BoxDecoration(
             color: Theme.of(context).colorScheme.surface,
-            borderRadius: BorderRadius.circular(16),
+            borderRadius: BorderRadius.circular(AppRadius.lg),
             border: Border.all(
               color: isDark ? AppColors.darkDivider : AppColors.divider,
             ),
@@ -316,7 +316,7 @@ class RecordFormWidgets {
         color: isDark 
             ? Colors.white.withValues(alpha: 0.05) 
             : Colors.grey.withValues(alpha: 0.05),
-        borderRadius: BorderRadius.circular(12),
+        borderRadius: BorderRadius.circular(AppRadius.md),
         border: Border.all(
           color: isDark 
               ? Colors.white.withValues(alpha: 0.1) 
@@ -328,12 +328,12 @@ class RecordFormWidgets {
           Text(
             label,
             style: TextStyle(
-              fontSize: 13,
+              fontSize: AppFontSize.md,
               fontWeight: FontWeight.w600,
               color: isDark ? AppColors.darkTextSecondary : AppColors.textSecondary,
             ),
           ),
-          const SizedBox(width: 8),
+          const SizedBox(width: AppSpacing.sm),
           Expanded(
             child: AppInput(
               controller: controller,
@@ -344,7 +344,7 @@ class RecordFormWidgets {
           Text(
             unit,
             style: TextStyle(
-              fontSize: 12,
+              fontSize: AppFontSize.sm,
               color: isDark ? AppColors.darkTextSecondary : AppColors.textSecondary,
             ),
           ),

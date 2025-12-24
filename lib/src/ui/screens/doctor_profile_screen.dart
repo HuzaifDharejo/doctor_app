@@ -10,6 +10,7 @@ import '../../core/theme/design_tokens.dart';
 import '../../providers/db_provider.dart';
 import '../../services/doctor_settings_service.dart';
 import '../../services/specialty_service.dart';
+import '../../services/pdf_template_config.dart';
 import '../../theme/app_theme.dart';
 import '../widgets/signature_pad.dart';
 import '../../core/widgets/keyboard_aware_scaffold.dart';
@@ -59,6 +60,18 @@ class _DoctorProfileScreenState extends ConsumerState<DoctorProfileScreen>
   // Signature
   String? _signatureData;
   String? _photoData;
+  
+  // PDF Template Config
+  PdfTemplateConfig? _pdfTemplateConfig;
+  
+  // PDF Template Config Controllers
+  late TextEditingController _clinicAddressLine1Controller;
+  late TextEditingController _clinicAddressLine2Controller;
+  late TextEditingController _clinicPhone1Controller;
+  late TextEditingController _clinicPhone2Controller;
+  late TextEditingController _clinicHoursController;
+  late TextEditingController _expertInDiseasesController;
+  late TextEditingController _workingExperienceController;
 
   bool _isInitialized = false;
 
@@ -82,6 +95,13 @@ class _DoctorProfileScreenState extends ConsumerState<DoctorProfileScreen>
     _emergencyFeeController = TextEditingController();
     _workingHours = {};
     _languages = [];
+    _clinicAddressLine1Controller = TextEditingController();
+    _clinicAddressLine2Controller = TextEditingController();
+    _clinicPhone1Controller = TextEditingController();
+    _clinicPhone2Controller = TextEditingController();
+    _clinicHoursController = TextEditingController();
+    _expertInDiseasesController = TextEditingController();
+    _workingExperienceController = TextEditingController();
   }
 
   void _initializeFromProfile(DoctorProfile profile) {
@@ -89,6 +109,10 @@ class _DoctorProfileScreenState extends ConsumerState<DoctorProfileScreen>
     _isInitialized = true;
     
     _initialProfile = profile;
+    
+    // Initialize PDF template config FIRST before adding listeners
+    _pdfTemplateConfig = profile.pdfTemplateConfig;
+    
     _nameController.text = profile.name;
     
     // Add listeners to detect changes
@@ -129,6 +153,14 @@ class _DoctorProfileScreenState extends ConsumerState<DoctorProfileScreen>
     }
     _signatureData = profile.signatureData;
     _photoData = profile.photoData;
+    // _pdfTemplateConfig already initialized above
+    _clinicAddressLine1Controller.text = _pdfTemplateConfig!.clinicAddressLine1;
+    _clinicAddressLine2Controller.text = _pdfTemplateConfig!.clinicAddressLine2;
+    _clinicPhone1Controller.text = _pdfTemplateConfig!.clinicPhone1;
+    _clinicPhone2Controller.text = _pdfTemplateConfig!.clinicPhone2;
+    _clinicHoursController.text = _pdfTemplateConfig!.clinicHours;
+    _expertInDiseasesController.text = _pdfTemplateConfig!.expertInDiseases;
+    _workingExperienceController.text = _pdfTemplateConfig!.workingExperience;
   }
   
   void _addChangeListeners() {
@@ -145,6 +177,9 @@ class _DoctorProfileScreenState extends ConsumerState<DoctorProfileScreen>
   }
   
   void _checkForChanges() {
+    // Don't check for changes if not initialized yet
+    if (!_isInitialized || _pdfTemplateConfig == null) return;
+    
     final hasChanges = _nameController.text != _initialProfile.name ||
         _specializationController.text != _initialProfile.specialization ||
         _qualificationsController.text != _initialProfile.qualifications ||
@@ -160,7 +195,8 @@ class _DoctorProfileScreenState extends ConsumerState<DoctorProfileScreen>
         _followUpFeeController.text != (_initialProfile.followUpFee > 0 ? _initialProfile.followUpFee.toStringAsFixed(0) : '') ||
         _emergencyFeeController.text != (_initialProfile.emergencyFee > 0 ? _initialProfile.emergencyFee.toStringAsFixed(0) : '') ||
         _signatureData != _initialProfile.signatureData ||
-        _photoData != _initialProfile.photoData;
+        _photoData != _initialProfile.photoData ||
+        _pdfTemplateConfig!.toJson().toString() != _initialProfile.pdfTemplateConfig.toJson().toString();
     
     if (hasChanges != _hasChanges) {
       setState(() => _hasChanges = hasChanges);
@@ -184,6 +220,13 @@ class _DoctorProfileScreenState extends ConsumerState<DoctorProfileScreen>
     _consultationFeeController.dispose();
     _followUpFeeController.dispose();
     _emergencyFeeController.dispose();
+    _clinicAddressLine1Controller.dispose();
+    _clinicAddressLine2Controller.dispose();
+    _clinicPhone1Controller.dispose();
+    _clinicPhone2Controller.dispose();
+    _clinicHoursController.dispose();
+    _expertInDiseasesController.dispose();
+    _workingExperienceController.dispose();
     super.dispose();
   }
 
@@ -237,6 +280,7 @@ class _DoctorProfileScreenState extends ConsumerState<DoctorProfileScreen>
         workingHours: _workingHours,
         signatureData: _signatureData,
         photoData: _photoData,
+        pdfTemplateConfig: _pdfTemplateConfig ?? _initialProfile.pdfTemplateConfig,
       );
 
       await ref.read(doctorSettingsProvider).saveProfile(newProfile);
@@ -301,6 +345,7 @@ class _DoctorProfileScreenState extends ConsumerState<DoctorProfileScreen>
                     ),
                     child: TabBar(
                       controller: _tabController,
+                      isScrollable: true,
                       labelColor: AppColors.primary,
                       unselectedLabelColor:
                           isDark ? AppColors.darkTextSecondary : AppColors.textSecondary,
@@ -389,11 +434,12 @@ class _DoctorProfileScreenState extends ConsumerState<DoctorProfileScreen>
   Widget _buildTab(IconData icon, String label) {
     return Tab(
       child: Row(
+        mainAxisSize: MainAxisSize.min,
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
           Icon(icon, size: 18),
           const SizedBox(width: 6),
-          Flexible(child: Text(label, overflow: TextOverflow.ellipsis)),
+          Text(label),
         ],
       ),
     );
@@ -807,6 +853,129 @@ class _DoctorProfileScreenState extends ConsumerState<DoctorProfileScreen>
       } catch (_) {}
     }
     return Center(child: Text('No signature', style: TextStyle(color: isDark ? AppColors.darkTextHint : AppColors.textHint, fontStyle: FontStyle.italic)));
+  }
+
+  // PDF Template tab removed - will be redesigned
+  Widget _buildPdfTemplateTab(bool isDark, bool isCompact) {
+    return const SizedBox.shrink();
+  }
+  
+  Widget _buildBackgroundOption(String label, String value, IconData icon, bool isDark) {
+    final isSelected = _pdfTemplateConfig?.backgroundImageType == value;
+    return GestureDetector(
+      onTap: () {
+        setState(() {
+          _pdfTemplateConfig = (_pdfTemplateConfig ?? PdfTemplateConfig()).copyWith(backgroundImageType: value);
+          _checkForChanges();
+        });
+      },
+      child: Container(
+        width: 100,
+        padding: const EdgeInsets.all(12),
+        decoration: BoxDecoration(
+          color: isSelected
+              ? AppColors.primary.withValues(alpha: 0.1)
+              : (isDark ? AppColors.darkBackground : Colors.grey[100]),
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(
+            color: isSelected
+                ? AppColors.primary
+                : (isDark ? AppColors.darkDivider : AppColors.divider),
+            width: isSelected ? 2 : 1,
+          ),
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(
+              icon,
+              size: 32,
+              color: isSelected
+                  ? AppColors.primary
+                  : (isDark ? AppColors.darkTextSecondary : AppColors.textSecondary),
+            ),
+            const SizedBox(height: 8),
+            Text(
+              label,
+              style: TextStyle(
+                fontSize: 12,
+                fontWeight: isSelected ? FontWeight.w600 : FontWeight.normal,
+                color: isSelected
+                    ? AppColors.primary
+                    : (isDark ? AppColors.darkTextPrimary : AppColors.textPrimary),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+  
+  Future<void> _pickLogo() async {
+    try {
+      final result = await FilePicker.platform.pickFiles(
+        type: FileType.image,
+      );
+      if (result != null && result.files.isNotEmpty) {
+        final bytes = result.files.first.bytes;
+        if (bytes != null) {
+          setState(() {
+            _pdfTemplateConfig = (_pdfTemplateConfig ?? PdfTemplateConfig()).copyWith(logoData: base64Encode(bytes));
+            _checkForChanges();
+          });
+        }
+      }
+    } catch (e) {
+      debugPrint('Error picking logo: $e');
+    }
+  }
+  
+  Future<void> _pickCustomBackground() async {
+    try {
+      final result = await FilePicker.platform.pickFiles(
+        type: FileType.image,
+      );
+      if (result != null && result.files.isNotEmpty) {
+        final bytes = result.files.first.bytes;
+        if (bytes != null) {
+          setState(() {
+            _pdfTemplateConfig = (_pdfTemplateConfig ?? PdfTemplateConfig()).copyWith(customBackgroundData: base64Encode(bytes));
+            _checkForChanges();
+          });
+        }
+      }
+    } catch (e) {
+      debugPrint('Error picking background: $e');
+    }
+  }
+  
+  Widget _buildToggleSwitch({
+    required String label,
+    required bool value,
+    required bool isDark,
+    required ValueChanged<bool> onChanged,
+  }) {
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.center,
+      children: [
+        Expanded(
+          child: Text(
+            label,
+            style: TextStyle(
+              fontSize: 14,
+              color: isDark ? AppColors.darkTextPrimary : AppColors.textPrimary,
+            ),
+            overflow: TextOverflow.ellipsis,
+            maxLines: 2,
+          ),
+        ),
+        const SizedBox(width: 12),
+        Switch(
+          value: value,
+          onChanged: onChanged,
+        ),
+      ],
+    );
   }
 
   Widget _buildCard({required bool isDark, required String title, required IconData icon, required Widget child, Widget? trailing}) {

@@ -13,8 +13,12 @@ import 'package:file_picker/file_picker.dart';
 import '../../providers/db_provider.dart';
 import '../../services/cloud_backup_service.dart';
 import '../../services/google_drive_backup_service.dart';
+import 'dart:io';
 import '../../core/theme/design_tokens.dart';
 import '../../core/components/app_button.dart';
+import '../../core/widgets/toast.dart';
+import '../../services/logger_service.dart';
+import '../../theme/app_theme.dart';
 
 class BackupSettingsScreen extends ConsumerStatefulWidget {
   const BackupSettingsScreen({super.key});
@@ -70,44 +74,93 @@ class _BackupSettingsScreenState extends ConsumerState<BackupSettingsScreen> {
   }
 
   Future<void> _createBackup() async {
+    // Show dialog to let user choose save location
+    final savePath = await _showSaveLocationDialog();
+    if (savePath == null) {
+      // User cancelled
+      return;
+    }
+
     setState(() => _isCreatingBackup = true);
     try {
       final dbAsync = ref.read(doctorDbProvider);
       final db = dbAsync.valueOrNull;
       if (db == null) {
         if (!mounted) return;
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Database not ready'),
-            backgroundColor: Colors.red,
-          ),
-        );
+        context.showErrorToast('Database not ready');
         return;
       }
       
-      final result = await _backupService.createBackup(db: db, encrypt: true);
+      final result = await _backupService.createBackup(
+        db: db,
+        encrypt: true,
+        customSavePath: savePath,
+      );
       
       if (!mounted) return;
       
       if (result.success) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Backup created successfully!\n${result.metadata?.patientCount ?? 0} patients backed up'),
-            backgroundColor: Colors.green,
-            duration: const Duration(seconds: 3),
-          ),
+        final patientCount = result.metadata?.patientCount ?? 0;
+        context.showSuccessToast(
+          'Backup created successfully!\n$patientCount patients backed up\nSaved to: ${_getShortPath(savePath)}',
+          duration: const Duration(seconds: 4),
         );
         _loadBackups();
       } else {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Backup failed: ${result.error}'),
-            backgroundColor: Colors.red,
-          ),
-        );
+        context.showErrorToast('Backup failed: ${result.error ?? "Unknown error"}');
       }
+    } catch (e) {
+      if (!mounted) return;
+      context.showErrorToast('Error creating backup: $e');
     } finally {
-      setState(() => _isCreatingBackup = false);
+      if (mounted) {
+        setState(() => _isCreatingBackup = false);
+      }
+    }
+  }
+
+  /// Show dialog to let user choose save location
+  Future<String?> _showSaveLocationDialog() async {
+    if (kIsWeb) {
+      // On web, use default location
+      return null;
+    }
+
+    try {
+      // Generate default filename
+      final timestamp = DateTime.now().toIso8601String().replaceAll(':', '-').split('.').first;
+      final defaultFileName = 'doctor_app_backup_$timestamp.dab';
+
+      // Show file picker to save file
+      final result = await FilePicker.platform.saveFile(
+        dialogTitle: 'Save Backup File',
+        fileName: defaultFileName,
+        type: FileType.custom,
+        allowedExtensions: ['dab'],
+        lockParentWindow: true,
+      );
+
+      return result;
+    } catch (e) {
+      log.e('BACKUP', 'Error showing save dialog: $e');
+      if (mounted) {
+        context.showErrorToast('Error selecting save location: $e');
+      }
+      return null;
+    }
+  }
+
+  /// Get short path for display (just filename if in default location)
+  String _getShortPath(String fullPath) {
+    try {
+      final path = fullPath.split(Platform.pathSeparator);
+      if (path.length > 3) {
+        // Show last 2 parts of path
+        return '...${Platform.pathSeparator}${path.sublist(path.length - 2).join(Platform.pathSeparator)}';
+      }
+      return path.last;
+    } catch (e) {
+      return fullPath;
     }
   }
 
@@ -206,18 +259,37 @@ class _BackupSettingsScreenState extends ConsumerState<BackupSettingsScreen> {
       if (result == null || result.files.isEmpty) return;
 
       final file = result.files.first;
-      if (file.path == null) {
+      
+      // Handle web vs mobile/desktop
+      String? filePath;
+      if (kIsWeb) {
+        // On web, we can't restore from file system
         if (!mounted) return;
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
-            content: Text('Could not access the selected file'),
+            content: Text('Backup restore on web is not supported. Please use mobile/desktop app.'),
             backgroundColor: Colors.red,
           ),
         );
         return;
+      } else {
+        // On mobile/desktop, use path
+        if (file.path == null) {
+          if (!mounted) return;
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Could not access the selected file'),
+              backgroundColor: Colors.red,
+            ),
+          );
+          return;
+        }
+        filePath = file.path;
       }
 
-      await _restoreBackup(file.path!);
+      if (filePath != null) {
+        await _restoreBackup(filePath);
+      }
     } catch (e) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(

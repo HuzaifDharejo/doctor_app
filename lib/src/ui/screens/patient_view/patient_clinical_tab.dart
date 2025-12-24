@@ -1,17 +1,19 @@
 // Patient View - Clinical Tab (Combined: Prescriptions + Records + Documents)
 import 'dart:convert';
 import 'dart:io';
+
 import 'package:file_picker/file_picker.dart';
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
-import 'package:path_provider/path_provider.dart';
 import 'package:path/path.dart' as p;
+import 'package:path_provider/path_provider.dart';
 import 'package:share_plus/share_plus.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 import '../../../core/theme/design_tokens.dart';
+import '../../../core/widgets/skeleton_loading.dart';
 import '../../../db/doctor_db.dart';
 import '../../../providers/db_provider.dart';
 import '../../../services/pdf_service.dart';
@@ -19,6 +21,7 @@ import '../../../theme/app_theme.dart';
 import '../edit_prescription_screen.dart';
 import '../medical_record_detail_screen.dart';
 import '../records/records.dart';
+import '../../../core/extensions/context_extensions.dart';
 
 /// Combined Clinical Tab with sub-tabs for Prescriptions, Records, Documents
 class PatientClinicalTab extends ConsumerStatefulWidget {
@@ -307,7 +310,7 @@ class _PatientClinicalTabState extends ConsumerState<PatientClinicalTab>
               borderRadius: BorderRadius.circular(16),
               onTap: () => _showPrescriptionDetails(rx),
               child: Padding(
-                padding: const EdgeInsets.all(16),
+                padding: EdgeInsets.all(context.responsivePadding),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
@@ -412,24 +415,40 @@ class _PatientClinicalTabState extends ConsumerState<PatientClinicalTab>
 
   Future<void> _handleRxAction(String action, Prescription rx) async {
     switch (action) {
+      // Edit action removed - prescriptions cannot be edited after creation
       case 'edit':
-        _showPrescriptionDetails(rx);
+        // Prescriptions are read-only after creation
         break;
       case 'share':
-        await PdfService.sharePrescriptionPdf(
-          prescription: rx,
-          patient: widget.patient,
-          doctorName: 'Doctor',
-          clinicName: 'Clinic',
-        );
-        break;
       case 'print':
-        await PdfService.sharePrescriptionPdf(
-          prescription: rx,
-          patient: widget.patient,
-          doctorName: 'Doctor',
-          clinicName: 'Clinic',
-        );
+        try {
+          final db = await ref.read(doctorDbProvider.future);
+          final medications = await db.getMedicationsForPrescriptionCompat(rx.id);
+          
+          final doctorSettings = ref.read(doctorSettingsProvider);
+          final profile = doctorSettings.profile;
+          await PdfService.sharePrescriptionPdf(
+            prescription: rx,
+            patient: widget.patient,
+            doctorName: profile.displayName,
+            clinicName: profile.clinicName.isNotEmpty ? profile.clinicName : 'Medical Clinic',
+            clinicPhone: profile.clinicPhone,
+            clinicAddress: profile.clinicAddress,
+            signatureData: (profile.signatureData?.isNotEmpty ?? false) ? profile.signatureData : null,
+            medicationsList: medications,
+            templateConfig: profile.pdfTemplateConfig,
+          );
+        } catch (e) {
+          if (context.mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content: Text('Error generating PDF: $e'),
+                backgroundColor: AppColors.error,
+                behavior: SnackBarBehavior.floating,
+              ),
+            );
+          }
+        }
         break;
     }
   }
@@ -446,7 +465,7 @@ class _PatientClinicalTabState extends ConsumerState<PatientClinicalTab>
         future: db.getMedicalRecordsForPatient(widget.patient.id),
         builder: (context, snapshot) {
           if (snapshot.connectionState == ConnectionState.waiting) {
-            return const Center(child: CircularProgressIndicator(color: AppColors.primary));
+            return const MedicalRecordListSkeleton(itemCount: 3);
           }
 
           // Filter records based on enabled types in settings
@@ -535,7 +554,7 @@ class _PatientClinicalTabState extends ConsumerState<PatientClinicalTab>
             ),
           ),
           child: Padding(
-            padding: const EdgeInsets.all(16),
+            padding: EdgeInsets.all(context.responsivePadding),
             child: Row(
               children: [
                 Container(
@@ -718,7 +737,7 @@ class _PatientClinicalTabState extends ConsumerState<PatientClinicalTab>
           borderRadius: BorderRadius.circular(16),
           onTap: () => _openDocument(doc),
           child: Padding(
-            padding: const EdgeInsets.all(16),
+            padding: EdgeInsets.all(context.responsivePadding),
             child: Row(
               children: [
                 Container(
@@ -778,27 +797,48 @@ class _PatientClinicalTabState extends ConsumerState<PatientClinicalTab>
     final result = await FilePicker.platform.pickFiles(
       type: FileType.custom,
       allowedExtensions: ['pdf', 'jpg', 'jpeg', 'png', 'doc', 'docx'],
+      withData: kIsWeb, // On web, we need bytes
     );
 
-    if (result != null && result.files.single.path != null) {
-      final file = File(result.files.single.path!);
-      final appDir = await getApplicationDocumentsDirectory();
-      final patientDocsDir = Directory(
-        p.join(appDir.path, 'patient_documents', widget.patient.id.toString()),
-      );
-
-      if (!await patientDocsDir.exists()) {
-        await patientDocsDir.create(recursive: true);
-      }
-
-      final newPath = p.join(patientDocsDir.path, result.files.single.name);
-      await file.copy(newPath);
+    if (result != null && result.files.isNotEmpty) {
+      final platformFile = result.files.single;
       
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Document uploaded successfully')),
-        );
-        _loadDocuments();
+      // Handle web vs mobile/desktop
+      if (kIsWeb) {
+        // On web, use bytes - but we can't save to file system
+        if (platformFile.bytes != null) {
+          if (mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(
+                content: Text('File upload on web is not fully supported. Please use mobile/desktop app.'),
+              ),
+            );
+          }
+          return;
+        }
+      } else {
+        // On mobile/desktop, use path
+        if (platformFile.path != null) {
+          final file = File(platformFile.path!);
+          final appDir = await getApplicationDocumentsDirectory();
+          final patientDocsDir = Directory(
+            p.join(appDir.path, 'patient_documents', widget.patient.id.toString()),
+          );
+
+          if (!await patientDocsDir.exists()) {
+            await patientDocsDir.create(recursive: true);
+          }
+
+          final newPath = p.join(patientDocsDir.path, platformFile.name);
+          await file.copy(newPath);
+          
+          if (mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(content: Text('Document uploaded successfully')),
+            );
+            _loadDocuments();
+          }
+        }
       }
     }
   }

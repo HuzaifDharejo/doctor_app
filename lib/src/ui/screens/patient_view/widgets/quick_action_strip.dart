@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import '../../../../core/extensions/context_extensions.dart';
 import '../../../../theme/app_theme.dart';
 
 /// Quick action button data
@@ -263,10 +264,18 @@ class QuickActionGrid extends StatelessWidget {
       shrinkWrap: true,
       physics: const NeverScrollableScrollPhysics(),
       gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-        crossAxisCount: crossAxisCount,
-        mainAxisSpacing: 16,
-        crossAxisSpacing: 16,
-        childAspectRatio: 0.85,
+        crossAxisCount: context.responsive(
+          compact: crossAxisCount.clamp(2, 4),
+          medium: (crossAxisCount + 1).clamp(3, 5),
+          expanded: (crossAxisCount + 2).clamp(4, 6),
+        ),
+        mainAxisSpacing: context.responsiveItemSpacing,
+        crossAxisSpacing: context.responsiveItemSpacing,
+        childAspectRatio: context.responsive(
+          compact: 0.83,
+          medium: 0.85,
+          expanded: 0.9,
+        ),
       ),
       itemCount: actions.length,
       itemBuilder: (context, index) {

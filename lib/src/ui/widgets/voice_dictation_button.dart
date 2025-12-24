@@ -144,10 +144,15 @@ class _VoiceDictationButtonState extends State<VoiceDictationButton>
     _pulseController.stop();
     _pulseController.reset();
     
-    // Send the captured text if not empty
-    if (textToSend.isNotEmpty) {
+    // Send the captured text if not empty and widget is still mounted
+    if (mounted && textToSend.isNotEmpty) {
       final finalText = widget.appendText ? '$textToSend ' : textToSend;
-      widget.onTextReceived(finalText);
+      // Use post-frame callback to ensure widget is still active when callback is invoked
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) {
+          widget.onTextReceived(finalText);
+        }
+      });
     }
     
     if (mounted) {
@@ -156,14 +161,6 @@ class _VoiceDictationButtonState extends State<VoiceDictationButton>
         _currentText = '';
       });
     }
-  }
-
-  void _sendText() {
-    if (_currentText.isEmpty) return;
-    
-    final textToSend = widget.appendText ? '$_currentText ' : _currentText;
-    widget.onTextReceived(textToSend);
-    // Don't clear _currentText here, let the caller handle it
   }
 
   void _showError(String message) {
@@ -209,37 +206,50 @@ class _VoiceDictationButtonState extends State<VoiceDictationButton>
             tooltip: widget.showTooltip 
                 ? (_isListening ? 'Stop dictation' : 'Start voice dictation')
                 : null,
+            padding: EdgeInsets.zero, // Remove default padding to reduce size
+            constraints: BoxConstraints(
+              minWidth: widget.iconSize + 8,
+              minHeight: widget.iconSize + 8,
+            ),
           ),
         );
       },
     );
 
     if (_isListening && _currentText.isNotEmpty) {
-      return Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Flexible(
-            child: Container(
-              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-              margin: const EdgeInsets.only(right: 4),
-              decoration: BoxDecoration(
-                color: activeColor.withValues(alpha: 0.1),
-                borderRadius: BorderRadius.circular(8),
-              ),
-              child: Text(
-                _currentText,
-                style: TextStyle(
-                  fontSize: 12,
-                  color: activeColor,
-                  fontStyle: FontStyle.italic,
+      // Constrain the width to prevent overflow when used as suffix icon
+      // Typical suffix icon area is ~80-100px, so limit to ~95px to fit comfortably
+      return ConstrainedBox(
+        constraints: const BoxConstraints(maxWidth: 95),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Flexible(
+              child: Container(
+                padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 2),
+                margin: const EdgeInsets.only(right: 2),
+                decoration: BoxDecoration(
+                  color: activeColor.withValues(alpha: 0.1),
+                  borderRadius: BorderRadius.circular(4),
                 ),
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
+                constraints: const BoxConstraints(maxWidth: 55),
+                child: Text(
+                  _currentText,
+                  style: TextStyle(
+                    fontSize: 10,
+                    color: activeColor,
+                    fontStyle: FontStyle.italic,
+                  ),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  softWrap: false,
+                ),
               ),
             ),
-          ),
-          button,
-        ],
+            // Button should take remaining space (about 40px for icon + padding)
+            button,
+          ],
+        ),
       );
     }
 
@@ -321,6 +331,7 @@ class _VoiceTextFieldState extends State<VoiceTextField> {
   }
 
   void _appendVoiceText(String text) {
+    if (!mounted) return;
     final currentText = _controller.text;
     final selection = _controller.selection;
     
@@ -344,7 +355,9 @@ class _VoiceTextFieldState extends State<VoiceTextField> {
       );
     }
     
-    widget.onChanged?.call(_controller.text);
+    if (mounted) {
+      widget.onChanged?.call(_controller.text);
+    }
   }
 
   @override
@@ -380,9 +393,9 @@ class _VoiceTextFieldState extends State<VoiceTextField> {
             : widget.decoration?.suffixIcon,
       ) ?? defaultDecoration,
       maxLines: widget.maxLines,
-      minLines: widget.minLines,
+      minLines: widget.minLines ?? ((widget.maxLines ?? 1) > 1 ? widget.maxLines : null),
       keyboardType: widget.keyboardType,
-      textInputAction: widget.textInputAction,
+      textInputAction: widget.textInputAction ?? ((widget.maxLines ?? 1) > 1 ? TextInputAction.newline : TextInputAction.done),
       enabled: widget.enabled,
       readOnly: widget.readOnly,
       obscureText: widget.obscureText,
@@ -391,6 +404,7 @@ class _VoiceTextFieldState extends State<VoiceTextField> {
       onChanged: widget.onChanged,
       onFieldSubmitted: widget.onSubmitted,
       validator: widget.validator,
+      textAlignVertical: (widget.maxLines ?? 1) > 1 ? TextAlignVertical.top : null,
     );
   }
 }

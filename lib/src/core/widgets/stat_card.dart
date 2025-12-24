@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../extensions/context_extensions.dart';
 
 /// A card widget for displaying statistics on a dashboard.
 ///
@@ -75,7 +76,7 @@ class StatCard extends StatelessWidget {
         onTap: onTap,
         borderRadius: BorderRadius.circular(12),
         child: Padding(
-          padding: const EdgeInsets.all(16),
+          padding: EdgeInsets.all(context.responsivePadding),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
@@ -297,7 +298,7 @@ class StatCardHero extends StatelessWidget {
           decoration: BoxDecoration(
             gradient: gradient ?? defaultGradient,
           ),
-          padding: const EdgeInsets.all(20),
+          padding: EdgeInsets.all(context.responsivePadding),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [

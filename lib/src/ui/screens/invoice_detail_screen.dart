@@ -81,7 +81,6 @@ class _InvoiceDetailScreenState extends ConsumerState<InvoiceDetailScreen> {
     final surfaceColor = isDark ? AppColors.darkSurface : Colors.white;
     final textColor = isDark ? AppColors.darkTextPrimary : AppColors.textPrimary;
     final secondaryColor = isDark ? AppColors.darkTextSecondary : AppColors.textSecondary;
-    final borderColor = isDark ? AppColors.darkDivider : AppColors.divider;
     
     Color statusColor;
     IconData statusIcon;
@@ -118,24 +117,26 @@ class _InvoiceDetailScreenState extends ConsumerState<InvoiceDetailScreen> {
               slivers: [
                 // Modern SliverAppBar
                 SliverAppBar(
-                  expandedHeight: 140,
+                  expandedHeight: 160,
                   floating: false,
                   pinned: true,
                   backgroundColor: surfaceColor,
-                  foregroundColor: textColor,
+                  surfaceTintColor: Colors.transparent,
                   elevation: 0,
-                  scrolledUnderElevation: 1,
                   leading: Padding(
                     padding: const EdgeInsets.all(8.0),
                     child: Container(
                       decoration: BoxDecoration(
-                        color: isDark ? Colors.white.withValues(alpha: 0.1) : Colors.black.withValues(alpha: 0.05),
+                        color: isDark 
+                            ? Colors.white.withValues(alpha: 0.1) 
+                            : Colors.black.withValues(alpha: 0.05),
                         borderRadius: BorderRadius.circular(12),
                       ),
                       child: IconButton(
                         icon: Icon(
-                          Icons.arrow_back,
-                          color: isDark ? Colors.white : const Color(0xFF1A1A2E),
+                          Icons.arrow_back_ios_new_rounded,
+                          size: 18,
+                          color: isDark ? Colors.white : AppColors.textPrimary,
                         ),
                         onPressed: () => Navigator.pop(context),
                       ),
@@ -143,10 +144,10 @@ class _InvoiceDetailScreenState extends ConsumerState<InvoiceDetailScreen> {
                   ),
                   actions: [
                     Container(
-                      margin: const EdgeInsets.only(right: 8),
+                      margin: const EdgeInsets.only(right: AppSpacing.sm),
                       decoration: BoxDecoration(
                         color: isDark ? Colors.white.withValues(alpha: 0.1) : Colors.black.withValues(alpha: 0.05),
-                        borderRadius: BorderRadius.circular(12),
+                        borderRadius: BorderRadius.circular(AppRadius.md),
                       ),
                       child: PopupMenuButton<String>(
                         icon: Icon(
@@ -199,33 +200,37 @@ class _InvoiceDetailScreenState extends ConsumerState<InvoiceDetailScreen> {
                           begin: Alignment.topLeft,
                           end: Alignment.bottomRight,
                           colors: isDark
-                              ? [const Color(0xFF1A1A2E), const Color(0xFF16213E)]
-                              : [const Color(0xFFF8FAFC), surfaceColor],
+                              ? [const Color(0xFF1A1A2E), Theme.of(context).colorScheme.surface]
+                              : [Theme.of(context).scaffoldBackgroundColor, surfaceColor],
                         ),
                       ),
                       child: SafeArea(
                         child: Padding(
-                          padding: const EdgeInsets.fromLTRB(20, 60, 20, 16),
+                          padding: const EdgeInsets.fromLTRB(20, 60, 20, 20),
                           child: Row(
                             children: [
                               Container(
                                 padding: const EdgeInsets.all(14),
                                 decoration: BoxDecoration(
-                                  gradient: LinearGradient(
-                                    colors: [statusColor, statusColor.withValues(alpha: 0.8)],
+                                  gradient: const LinearGradient(
+                                    colors: [Color(0xFF8B5CF6), Color(0xFF7C3AED)],
                                     begin: Alignment.topLeft,
                                     end: Alignment.bottomRight,
                                   ),
-                                  borderRadius: BorderRadius.circular(16),
+                                  borderRadius: BorderRadius.circular(20),
                                   boxShadow: [
                                     BoxShadow(
-                                      color: statusColor.withValues(alpha: 0.3),
-                                      blurRadius: 12,
-                                      offset: const Offset(0, 4),
+                                      color: AppColors.billing.withValues(alpha: 0.4),
+                                      blurRadius: 20,
+                                      offset: const Offset(0, 8),
                                     ),
                                   ],
                                 ),
-                                child: Icon(statusIcon, color: Colors.white, size: 28),
+                                child: const Icon(
+                                  Icons.receipt_long_rounded,
+                                  color: Colors.white,
+                                  size: 32,
+                                ),
                               ),
                               const SizedBox(width: 16),
                               Expanded(
@@ -236,27 +241,43 @@ class _InvoiceDetailScreenState extends ConsumerState<InvoiceDetailScreen> {
                                     Text(
                                       _invoice.invoiceNumber,
                                       style: TextStyle(
-                                        fontSize: 22,
-                                        fontWeight: FontWeight.bold,
-                                        color: textColor,
+                                        fontSize: 28,
+                                        fontWeight: FontWeight.w800,
+                                        color: isDark ? AppColors.darkTextPrimary : AppColors.textPrimary,
+                                        letterSpacing: -0.5,
                                       ),
                                     ),
-                                    const SizedBox(height: 4),
-                                    Container(
-                                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                                      decoration: BoxDecoration(
-                                        color: statusColor.withValues(alpha: 0.15),
-                                        borderRadius: BorderRadius.circular(8),
-                                      ),
-                                      child: Text(
-                                        _invoice.paymentStatus.toUpperCase(),
-                                        style: TextStyle(
-                                          fontSize: 11,
-                                          fontWeight: FontWeight.w600,
-                                          color: statusColor,
-                                          letterSpacing: 0.5,
+                                    const SizedBox(height: 8),
+                                    Row(
+                                      children: [
+                                        Container(
+                                          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                                          decoration: BoxDecoration(
+                                            gradient: LinearGradient(
+                                              colors: [
+                                                statusColor.withValues(alpha: 0.2),
+                                                statusColor.withValues(alpha: 0.1),
+                                              ],
+                                            ),
+                                            borderRadius: BorderRadius.circular(12),
+                                          ),
+                                          child: Row(
+                                            mainAxisSize: MainAxisSize.min,
+                                            children: [
+                                              Icon(statusIcon, size: 14, color: statusColor),
+                                              const SizedBox(width: 6),
+                                              Text(
+                                                _invoice.paymentStatus,
+                                                style: TextStyle(
+                                                  fontSize: 12,
+                                                  fontWeight: FontWeight.w700,
+                                                  color: statusColor,
+                                                ),
+                                              ),
+                                            ],
+                                          ),
                                         ),
-                                      ),
+                                      ],
                                     ),
                                   ],
                                 ),
@@ -268,16 +289,16 @@ class _InvoiceDetailScreenState extends ConsumerState<InvoiceDetailScreen> {
                                   Text(
                                     currencyFormat.format(_invoice.grandTotal),
                                     style: TextStyle(
-                                      fontSize: 20,
+                                      fontSize: AppFontSize.xxxl,
                                       fontWeight: FontWeight.bold,
                                       color: textColor,
                                     ),
                                   ),
-                                  const SizedBox(height: 2),
+                                  const SizedBox(height: AppSpacing.xxs),
                                   Text(
                                     dateFormat.format(_invoice.invoiceDate),
                                     style: TextStyle(
-                                      fontSize: 12,
+                                      fontSize: AppFontSize.sm,
                                       color: secondaryColor,
                                     ),
                                   ),
@@ -300,25 +321,52 @@ class _InvoiceDetailScreenState extends ConsumerState<InvoiceDetailScreen> {
                     Container(
                       padding: const EdgeInsets.all(AppSpacing.lg),
                       decoration: BoxDecoration(
-                        color: surfaceColor,
-                        borderRadius: BorderRadius.circular(12),
-                        border: Border.all(color: borderColor),
+                        gradient: LinearGradient(
+                          colors: [
+                            AppColors.billing.withValues(alpha: 0.15),
+                            AppColors.billing.withValues(alpha: 0.05),
+                          ],
+                          begin: Alignment.topLeft,
+                          end: Alignment.bottomRight,
+                        ),
+                        borderRadius: BorderRadius.circular(20),
+                        boxShadow: [
+                          BoxShadow(
+                            color: AppColors.billing.withValues(alpha: 0.1),
+                            blurRadius: 12,
+                            offset: const Offset(0, 4),
+                          ),
+                        ],
                       ),
                       child: Row(
                         children: [
-                          CircleAvatar(
-                            backgroundColor: AppColors.primary.withValues(alpha: 0.1),
+                          Container(
+                            padding: const EdgeInsets.all(12),
+                            decoration: BoxDecoration(
+                              gradient: LinearGradient(
+                                colors: [AppColors.billing, AppColors.billing.withValues(alpha: 0.8)],
+                              ),
+                              borderRadius: BorderRadius.circular(16),
+                              boxShadow: [
+                                BoxShadow(
+                                  color: AppColors.billing.withValues(alpha: 0.3),
+                                  blurRadius: 8,
+                                  offset: const Offset(0, 3),
+                                ),
+                              ],
+                            ),
                             child: Text(
                               _patient!.firstName.isNotEmpty
                                   ? _patient!.firstName[0].toUpperCase()
                                   : '?',
                               style: const TextStyle(
-                                color: AppColors.primary,
+                                color: Colors.white,
                                 fontWeight: FontWeight.bold,
+                                fontSize: 18,
                               ),
                             ),
                           ),
-                          const SizedBox(width: 12),
+                          const SizedBox(width: AppSpacing.md),
                           Expanded(
                             child: Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
@@ -326,43 +374,81 @@ class _InvoiceDetailScreenState extends ConsumerState<InvoiceDetailScreen> {
                                 Text(
                                   '${_patient!.firstName} ${_patient!.lastName}',
                                   style: TextStyle(
-                                    fontWeight: FontWeight.w600,
+                                    fontWeight: FontWeight.w700,
                                     color: textColor,
+                                    fontSize: 16,
                                   ),
                                 ),
                                 if (_patient!.phone.isNotEmpty)
                                   Text(
                                     _patient!.phone,
-                                    style: TextStyle(color: secondaryColor, fontSize: 13),
+                                    style: TextStyle(color: secondaryColor, fontSize: AppFontSize.md),
                                   ),
                               ],
                             ),
                           ),
-                          const Icon(Icons.person_outline, color: AppColors.primary),
+                          Icon(Icons.person_outline, color: AppColors.billing, size: 24),
                         ],
                       ),
                     ),
-                  const SizedBox(height: 16),
+                  const SizedBox(height: AppSpacing.lg),
 
                   // Items List
                   Container(
                     decoration: BoxDecoration(
-                      color: surfaceColor,
-                      borderRadius: BorderRadius.circular(12),
-                      border: Border.all(color: borderColor),
+                      gradient: LinearGradient(
+                        colors: [
+                          surfaceColor,
+                          isDark 
+                              ? AppColors.billing.withValues(alpha: 0.05)
+                              : AppColors.billing.withValues(alpha: 0.02),
+                        ],
+                        begin: Alignment.topLeft,
+                        end: Alignment.bottomRight,
+                      ),
+                      borderRadius: BorderRadius.circular(20),
+                      boxShadow: [
+                        BoxShadow(
+                          color: AppColors.billing.withValues(alpha: 0.08),
+                          blurRadius: 16,
+                          offset: const Offset(0, 6),
+                        ),
+                      ],
                     ),
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.stretch,
                       children: [
                         Padding(
                           padding: const EdgeInsets.all(AppSpacing.lg),
-                          child: Text(
-                            'Items',
-                            style: TextStyle(
-                              fontWeight: FontWeight.bold,
-                              color: textColor,
-                              fontSize: 16,
-                            ),
+                          child: Row(
+                            children: [
+                              Container(
+                                padding: const EdgeInsets.all(8),
+                                decoration: BoxDecoration(
+                                  gradient: LinearGradient(
+                                    colors: [
+                                      AppColors.billing.withValues(alpha: 0.2),
+                                      AppColors.billing.withValues(alpha: 0.1),
+                                    ],
+                                  ),
+                                  borderRadius: BorderRadius.circular(12),
+                                ),
+                                child: Icon(
+                                  Icons.receipt_long_rounded,
+                                  color: AppColors.billing,
+                                  size: 20,
+                                ),
+                              ),
+                              const SizedBox(width: 12),
+                              Text(
+                                'Items',
+                                style: TextStyle(
+                                  fontWeight: FontWeight.w800,
+                                  color: textColor,
+                                  fontSize: AppFontSize.xl,
+                                ),
+                              ),
+                            ],
                           ),
                         ),
                         const Divider(height: 1),
@@ -436,7 +522,7 @@ class _InvoiceDetailScreenState extends ConsumerState<InvoiceDetailScreen> {
                                 style: TextStyle(
                                   fontWeight: FontWeight.bold,
                                   color: textColor,
-                                  fontSize: 16,
+                                  fontSize: AppFontSize.xl,
                                 ),
                               ),
                               Text(
@@ -444,7 +530,7 @@ class _InvoiceDetailScreenState extends ConsumerState<InvoiceDetailScreen> {
                                 style: TextStyle(
                                   fontWeight: FontWeight.bold,
                                   color: AppColors.primary,
-                                  fontSize: 18,
+                                  fontSize: AppFontSize.xxl,
                                 ),
                               ),
                             ],
@@ -453,28 +539,63 @@ class _InvoiceDetailScreenState extends ConsumerState<InvoiceDetailScreen> {
                       ],
                     ),
                   ),
-                  const SizedBox(height: 16),
+                  const SizedBox(height: AppSpacing.lg),
 
                   // Payment Info
                   Container(
                     padding: const EdgeInsets.all(AppSpacing.lg),
                     decoration: BoxDecoration(
-                      color: surfaceColor,
-                      borderRadius: BorderRadius.circular(12),
-                      border: Border.all(color: borderColor),
+                      gradient: LinearGradient(
+                        colors: [
+                          statusColor.withValues(alpha: 0.15),
+                          statusColor.withValues(alpha: 0.05),
+                        ],
+                        begin: Alignment.topLeft,
+                        end: Alignment.bottomRight,
+                      ),
+                      borderRadius: BorderRadius.circular(20),
+                      boxShadow: [
+                        BoxShadow(
+                          color: statusColor.withValues(alpha: 0.1),
+                          blurRadius: 12,
+                          offset: const Offset(0, 4),
+                        ),
+                      ],
                     ),
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Text(
-                          'Payment Details',
-                          style: TextStyle(
-                            fontWeight: FontWeight.bold,
-                            color: textColor,
-                            fontSize: 16,
-                          ),
+                        Row(
+                          children: [
+                            Container(
+                              padding: const EdgeInsets.all(8),
+                              decoration: BoxDecoration(
+                                gradient: LinearGradient(
+                                  colors: [
+                                    statusColor.withValues(alpha: 0.2),
+                                    statusColor.withValues(alpha: 0.1),
+                                  ],
+                                ),
+                                borderRadius: BorderRadius.circular(12),
+                              ),
+                              child: Icon(
+                                statusIcon,
+                                color: statusColor,
+                                size: 20,
+                              ),
+                            ),
+                            const SizedBox(width: 12),
+                            Text(
+                              'Payment Details',
+                              style: TextStyle(
+                                fontWeight: FontWeight.w800,
+                                color: textColor,
+                                fontSize: AppFontSize.xl,
+                              ),
+                            ),
+                          ],
                         ),
-                        const SizedBox(height: 12),
+                        const SizedBox(height: AppSpacing.md),
                         _buildInfoRow('Payment Method', _invoice.paymentMethod, isDark),
                         if (_invoice.dueDate != null)
                           _buildInfoRow('Due Date', dateFormat.format(_invoice.dueDate!), isDark),
@@ -483,7 +604,7 @@ class _InvoiceDetailScreenState extends ConsumerState<InvoiceDetailScreen> {
                       ],
                     ),
                   ),
-                  const SizedBox(height: 24),
+                  const SizedBox(height: AppSpacing.xxl),
 
                       // Action Buttons
                       if (_invoice.paymentStatus.toLowerCase() != 'paid')
@@ -495,7 +616,7 @@ class _InvoiceDetailScreenState extends ConsumerState<InvoiceDetailScreen> {
                           foregroundColor: Colors.white,
                           onPressed: _markAsPaid,
                         ),
-                      const SizedBox(height: 12),
+                      const SizedBox(height: AppSpacing.md),
                       AppButton.tertiary(
                         label: 'Export PDF',
                         icon: Icons.picture_as_pdf,
@@ -546,16 +667,16 @@ class _InvoiceDetailScreenState extends ConsumerState<InvoiceDetailScreen> {
     final secondaryColor = isDark ? AppColors.darkTextSecondary : AppColors.textSecondary;
 
     return Padding(
-      padding: const EdgeInsets.only(bottom: 8),
+      padding: const EdgeInsets.only(bottom: AppSpacing.sm),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           SizedBox(
             width: 120,
-            child: Text(label, style: TextStyle(color: secondaryColor)),
+            child: Text(label, style: TextStyle(color: secondaryColor, fontSize: AppFontSize.md)),
           ),
           Expanded(
-            child: Text(value, style: TextStyle(color: textColor)),
+            child: Text(value, style: TextStyle(color: textColor, fontSize: AppFontSize.md)),
           ),
         ],
       ),
@@ -673,6 +794,9 @@ class _InvoiceDetailScreenState extends ConsumerState<InvoiceDetailScreen> {
     }
 
     try {
+      final db = await ref.read(doctorDbProvider.future);
+      final lineItems = await db.getLineItemsForInvoiceCompat(_invoice.id);
+      
       final doctorSettings = ref.read(doctorSettingsProvider);
       final profile = doctorSettings.profile;
 
@@ -682,6 +806,10 @@ class _InvoiceDetailScreenState extends ConsumerState<InvoiceDetailScreen> {
         clinicName: profile.clinicName.isNotEmpty ? profile.clinicName : 'Medical Clinic',
         clinicPhone: profile.clinicPhone,
         clinicAddress: profile.clinicAddress,
+        signatureData: (profile.signatureData?.isNotEmpty ?? false) ? profile.signatureData : null,
+        doctorName: profile.displayName.isNotEmpty ? profile.displayName : null,
+        lineItemsList: lineItems,
+        templateConfig: profile.pdfTemplateConfig,
       );
     } catch (e) {
       if (mounted) {
@@ -764,7 +892,7 @@ class _InvoiceDetailScreenState extends ConsumerState<InvoiceDetailScreen> {
         title: const Row(
           children: [
             Icon(Icons.warning, color: AppColors.error),
-            SizedBox(width: 8),
+            SizedBox(width: AppSpacing.sm),
             Text('Delete Invoice'),
           ],
         ),

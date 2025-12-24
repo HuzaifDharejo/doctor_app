@@ -7,6 +7,7 @@ import '../../providers/db_provider.dart';
 import '../../services/suggestions_service.dart';
 import '../../theme/app_theme.dart';
 import '../widgets/suggestion_text_field.dart';
+import '../../core/extensions/context_extensions.dart';
 
 class EditAppointmentScreen extends ConsumerStatefulWidget {
   const EditAppointmentScreen({
@@ -320,7 +321,7 @@ class _EditAppointmentScreenState extends ConsumerState<EditAppointmentScreen> {
       child: Column(
         children: [
           Padding(
-            padding: const EdgeInsets.all(20),
+            padding: EdgeInsets.all(context.responsivePadding),
             child: Row(
               children: [
                 Expanded(
@@ -615,7 +616,7 @@ class _EditAppointmentScreenState extends ConsumerState<EditAppointmentScreen> {
           borderRadius: BorderRadius.circular(12),
           borderSide: BorderSide.none,
         ),
-        contentPadding: const EdgeInsets.all(16),
+        contentPadding: EdgeInsets.all(context.responsivePadding),
       ),
       style: TextStyle(color: isDark ? Colors.white : Colors.black87),
     );

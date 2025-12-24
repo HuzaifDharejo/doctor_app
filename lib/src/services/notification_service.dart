@@ -125,7 +125,7 @@ class NotificationService {
     );
   }
 
-  /// Get pending notifications for doctor
+  /// Get pending notifications for doctor with priority-based categorization
   Future<List<NotificationMessage>> getPendingNotifications(
     DoctorDatabase db, {
     int limitDays = 7,
@@ -162,6 +162,87 @@ class NotificationService {
       }
     }
 
+    // Critical: Overdue lab results
+    final overdueLabResults = await _getOverdueLabResults(db);
+    notifications.addAll(overdueLabResults);
+
+    // Critical: Pending prescriptions
+    final pendingPrescriptions = await _getPendingPrescriptions(db);
+    notifications.addAll(pendingPrescriptions);
+
+    return notifications;
+  }
+
+  /// Get critical notifications: Overdue lab results
+  Future<List<NotificationMessage>> _getOverdueLabResults(DoctorDatabase db) async {
+    final notifications = <NotificationMessage>[];
+    
+    try {
+      // Get all lab orders that are pending/ordered and overdue
+      final allLabOrders = await db.select(db.labOrders).get();
+      final now = DateTime.now();
+      
+      for (final order in allLabOrders) {
+        // Check if order is overdue (ordered more than 7 days ago and still pending)
+        if ((order.status == 'pending' || order.status == 'ordered') &&
+            order.orderedDate.isBefore(now.subtract(const Duration(days: 7)))) {
+          final patient = await db.getPatientById(order.patientId);
+          if (patient != null) {
+            final daysOverdue = now.difference(order.orderedDate).inDays;
+            notifications.add(
+              await createClinicalAlert(
+                patient,
+                alertType: 'overdue_lab_result',
+                title: 'Overdue Lab Results',
+                description: 'Lab order #${order.orderNumber} for ${patient.firstName} is $daysOverdue days overdue. Results are pending.',
+                severity: daysOverdue > 14 ? 'critical' : 'high',
+              ),
+            );
+          }
+        }
+      }
+    } catch (e) {
+      // Silently fail - lab orders might not be available
+    }
+    
+    return notifications;
+  }
+
+  /// Get important notifications: Pending prescriptions
+  Future<List<NotificationMessage>> _getPendingPrescriptions(DoctorDatabase db) async {
+    final notifications = <NotificationMessage>[];
+    
+    try {
+      // Get prescriptions created today that might need attention
+      final today = DateTime.now();
+      final startOfDay = DateTime(today.year, today.month, today.day);
+      final prescriptions = await db.getAllPrescriptions();
+      
+      final todayPrescriptions = prescriptions
+          .where((p) => p.createdAt.isAfter(startOfDay))
+          .toList();
+      
+      if (todayPrescriptions.length > 5) {
+        // If more than 5 prescriptions today, create a summary notification
+        notifications.add(
+          NotificationMessage(
+            id: 'pending_prescriptions_summary',
+            type: 'prescription_summary',
+            status: 'pending',
+            createdAt: DateTime.now(),
+            scheduledFor: DateTime.now(),
+            priority: 'normal',
+            channels: ['in_app'],
+            subject: 'Prescription Summary',
+            body: 'You have ${todayPrescriptions.length} prescriptions created today that may need review.',
+            metadata: {'count': todayPrescriptions.length.toString()},
+          ),
+        );
+      }
+    } catch (e) {
+      // Silently fail
+    }
+    
     return notifications;
   }
 
@@ -272,9 +353,26 @@ Doctor''';
   String _calculatePriority(Appointment appointment) {
     final hoursUntil = appointment.appointmentDateTime.difference(DateTime.now()).inHours;
 
-    if (hoursUntil <= 2) return 'urgent';
-    if (hoursUntil <= 24) return 'high';
-    return 'normal';
+    if (hoursUntil <= 2) return 'critical';
+    if (hoursUntil <= 24) return 'important';
+    return 'informational';
+  }
+
+  /// Get notification category for grouping
+  String getNotificationCategory(NotificationMessage notification) {
+    switch (notification.type) {
+      case 'clinical_alert':
+      case 'overdue_followup':
+        return 'Critical';
+      case 'appointment_reminder':
+      case 'follow_up_reminder':
+        return notification.priority == 'critical' ? 'Critical' : 'Important';
+      case 'medication_reminder':
+      case 'prescription_summary':
+        return 'Important';
+      default:
+        return 'Informational';
+    }
   }
 
   List<String> _getPreferredChannels(int minutesBefore) {

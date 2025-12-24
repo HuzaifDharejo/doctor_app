@@ -4,6 +4,7 @@ import 'package:drift/drift.dart' hide Column;
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
+import '../../../core/extensions/context_extensions.dart';
 import '../../../db/doctor_db.dart';
 import '../../../providers/db_provider.dart';
 import '../../../services/suggestions_service.dart';
@@ -850,7 +851,7 @@ class _AddProcedureScreenState extends ConsumerState<AddProcedureScreen> {
             initiallyExpanded: _expandedSections['vitals_pre'] ?? true,
             onToggle: (expanded) => setState(() => _expandedSections['vitals_pre'] = expanded),
             child: RecordFieldGrid(
-              crossAxisCount: 3,
+              crossAxisCount: context.responsive(compact: 2, medium: 3, expanded: 4),
               children: [
                 CompactTextField(
                   controller: _bpPreController,
@@ -953,7 +954,7 @@ class _AddProcedureScreenState extends ConsumerState<AddProcedureScreen> {
             initiallyExpanded: _expandedSections['vitals_post'] ?? true,
             onToggle: (expanded) => setState(() => _expandedSections['vitals_post'] = expanded),
             child: RecordFieldGrid(
-              crossAxisCount: 3,
+              crossAxisCount: context.responsive(compact: 2, medium: 3, expanded: 4),
               children: [
                 CompactTextField(
                   controller: _bpPostController,

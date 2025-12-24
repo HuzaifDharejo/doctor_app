@@ -2,6 +2,7 @@ import 'package:drift/drift.dart' hide Column;
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
+import '../../core/extensions/context_extensions.dart';
 import '../../db/doctor_db.dart';
 import '../../theme/app_theme.dart';
 
@@ -85,7 +86,7 @@ class _QuickVitalsDialogState extends State<_QuickVitalsDialog> {
           children: [
             // Header
             Container(
-              padding: const EdgeInsets.all(20),
+              padding: EdgeInsets.all(context.responsivePadding),
               decoration: BoxDecoration(
                 gradient: LinearGradient(
                   colors: [
@@ -143,7 +144,7 @@ class _QuickVitalsDialogState extends State<_QuickVitalsDialog> {
             // Form
             Flexible(
               child: SingleChildScrollView(
-                padding: const EdgeInsets.all(20),
+                padding: EdgeInsets.all(context.responsivePadding),
                 child: Form(
                   key: _formKey,
                   child: Column(
@@ -261,7 +262,7 @@ class _QuickVitalsDialogState extends State<_QuickVitalsDialog> {
             
             // Actions
             Container(
-              padding: const EdgeInsets.all(16),
+              padding: EdgeInsets.all(context.responsivePadding),
               decoration: BoxDecoration(
                 color: isDark ? Colors.white.withValues(alpha: 0.05) : Colors.grey.withValues(alpha: 0.05),
                 borderRadius: const BorderRadius.vertical(bottom: Radius.circular(20)),

@@ -60,11 +60,11 @@ class _ReferralsScreenState extends ConsumerState<ReferralsScreen>
             elevation: 0,
             scrolledUnderElevation: 1,
             leading: Padding(
-              padding: const EdgeInsets.all(8.0),
+              padding: const EdgeInsets.all(AppSpacing.sm),
               child: Container(
                 decoration: BoxDecoration(
                   color: isDark ? Colors.white.withValues(alpha: 0.1) : Colors.black.withValues(alpha: 0.05),
-                  borderRadius: BorderRadius.circular(12),
+                  borderRadius: BorderRadius.circular(AppRadius.md),
                 ),
                 child: IconButton(
                   icon: Icon(
@@ -77,11 +77,11 @@ class _ReferralsScreenState extends ConsumerState<ReferralsScreen>
             ),
             actions: [
               Padding(
-                padding: const EdgeInsets.all(8.0),
+                padding: const EdgeInsets.all(AppSpacing.sm),
                 child: Container(
                   decoration: BoxDecoration(
                     color: isDark ? Colors.white.withValues(alpha: 0.1) : Colors.black.withValues(alpha: 0.05),
-                    borderRadius: BorderRadius.circular(12),
+                    borderRadius: BorderRadius.circular(AppRadius.md),
                   ),
                   child: IconButton(
                     icon: Icon(
@@ -106,18 +106,18 @@ class _ReferralsScreenState extends ConsumerState<ReferralsScreen>
                 ),
                 child: SafeArea(
                   child: Padding(
-                    padding: const EdgeInsets.fromLTRB(20, 50, 20, 16),
+                    padding: const EdgeInsets.fromLTRB(AppSpacing.xl, AppSpacing.xxxxl, AppSpacing.xl, AppSpacing.lg),
                     child: Row(
                       children: [
                         Container(
-                          padding: const EdgeInsets.all(14),
+                          padding: const EdgeInsets.all(AppSpacing.md),
                           decoration: BoxDecoration(
                             gradient: const LinearGradient(
                               colors: [Color(0xFF8B5CF6), Color(0xFFA78BFA)],
                               begin: Alignment.topLeft,
                               end: Alignment.bottomRight,
                             ),
-                            borderRadius: BorderRadius.circular(16),
+                            borderRadius: BorderRadius.circular(AppRadius.lg),
                             boxShadow: [
                               BoxShadow(
                                 color: const Color(0xFF8B5CF6).withValues(alpha: 0.3),
@@ -129,10 +129,10 @@ class _ReferralsScreenState extends ConsumerState<ReferralsScreen>
                           child: const Icon(
                             Icons.swap_horiz_rounded,
                             color: Colors.white,
-                            size: 28,
+                            size: AppIconSize.lg,
                           ),
                         ),
-                        const SizedBox(width: 16),
+                        const SizedBox(width: AppSpacing.lg),
                         Expanded(
                           child: Column(
                             mainAxisAlignment: MainAxisAlignment.center,
@@ -141,16 +141,16 @@ class _ReferralsScreenState extends ConsumerState<ReferralsScreen>
                               Text(
                                 'Specialist Referrals',
                                 style: TextStyle(
-                                  fontSize: 22,
+                                  fontSize: AppFontSize.xxxl,
                                   fontWeight: FontWeight.bold,
                                   color: textColor,
                                 ),
                               ),
-                              const SizedBox(height: 4),
+                              const SizedBox(height: AppSpacing.xs),
                               Text(
                                 'Refer patients to external specialists',
                                 style: TextStyle(
-                                  fontSize: 14,
+                                  fontSize: AppFontSize.lg,
                                   color: isDark ? AppColors.darkTextSecondary : AppColors.textSecondary,
                                 ),
                               ),
@@ -163,39 +163,49 @@ class _ReferralsScreenState extends ConsumerState<ReferralsScreen>
                 ),
               ),
             ),
-            bottom: TabBar(
-              controller: _tabController,
-              labelColor: AppColors.primary,
-              unselectedLabelColor: isDark ? AppColors.darkTextSecondary : AppColors.textSecondary,
-              indicatorColor: AppColors.primary,
-              indicatorWeight: 3,
-              isScrollable: true,
-              tabs: const [
-                Tab(text: 'All'),
-                Tab(text: 'Pending'),
-                Tab(text: 'Scheduled'),
-                Tab(text: 'Completed'),
-              ],
-            ),
           ),
         ],
         body: Column(
           children: [
+            // Search Bar
             Padding(
-              padding: const EdgeInsets.all(AppSpacing.lg),
-              child: TextField(
-                controller: _searchController,
-                decoration: InputDecoration(
-                  hintText: 'Search referrals...',
-                  prefixIcon: const Icon(Icons.search),
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  contentPadding: const EdgeInsets.symmetric(horizontal: AppSpacing.lg),
+              padding: const EdgeInsets.fromLTRB(AppSpacing.lg, AppSpacing.md, AppSpacing.lg, AppSpacing.sm),
+              child: Container(
+                decoration: BoxDecoration(
+                  color: isDark ? AppColors.darkSurface : Colors.white,
+                  borderRadius: BorderRadius.circular(AppRadius.card),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withValues(alpha: isDark ? 0.2 : 0.05),
+                      blurRadius: 10,
+                      offset: const Offset(0, 2),
+                    ),
+                  ],
                 ),
-                onChanged: (value) => setState(() => _searchQuery = value),
+                child: TextField(
+                  controller: _searchController,
+                  style: TextStyle(
+                    color: isDark ? AppColors.darkTextPrimary : AppColors.textPrimary,
+                  ),
+                  decoration: InputDecoration(
+                    hintText: 'Search referrals...',
+                    hintStyle: TextStyle(
+                      color: isDark ? AppColors.darkTextSecondary : AppColors.textSecondary,
+                    ),
+                    prefixIcon: Icon(
+                      Icons.search_rounded,
+                      color: isDark ? AppColors.darkTextSecondary : AppColors.textSecondary,
+                    ),
+                    border: InputBorder.none,
+                    contentPadding: const EdgeInsets.symmetric(horizontal: AppSpacing.lg, vertical: AppSpacing.md),
+                  ),
+                  onChanged: (value) => setState(() => _searchQuery = value),
+                ),
               ),
             ),
+            // Tab Bar
+            _buildTabBar(isDark),
+            // Content
             Expanded(
               child: TabBarView(
                 controller: _tabController,
@@ -210,11 +220,84 @@ class _ReferralsScreenState extends ConsumerState<ReferralsScreen>
           ],
         ),
       ),
-      floatingActionButton: FloatingActionButton.extended(
-        onPressed: () => _showAddReferralDialog(context),
-        icon: const Icon(Icons.add),
-        label: const Text('New Referral'),
-        backgroundColor: const Color(0xFF8B5CF6),
+      floatingActionButton: Container(
+        decoration: BoxDecoration(
+          gradient: const LinearGradient(
+            colors: [Color(0xFF8B5CF6), Color(0xFF7C3AED)],
+          ),
+          borderRadius: BorderRadius.circular(16),
+          boxShadow: [
+            BoxShadow(
+              color: const Color(0xFF8B5CF6).withValues(alpha: 0.4),
+              blurRadius: 12,
+              offset: const Offset(0, 4),
+            ),
+          ],
+        ),
+        child: FloatingActionButton.extended(
+          onPressed: () => _showAddReferralDialog(context),
+          backgroundColor: Colors.transparent,
+          elevation: 0,
+          icon: const Icon(Icons.add_rounded, color: Colors.white),
+          label: const Text(
+            'New Referral',
+            style: TextStyle(color: Colors.white, fontWeight: FontWeight.w600),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildTabBar(bool isDark) {
+    return Container(
+      margin: const EdgeInsets.symmetric(horizontal: AppSpacing.lg, vertical: AppSpacing.sm),
+      decoration: BoxDecoration(
+        color: isDark ? AppColors.darkSurface : Colors.white,
+        borderRadius: BorderRadius.circular(AppRadius.card),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: isDark ? 0.2 : 0.05),
+            blurRadius: 10,
+            offset: const Offset(0, 2),
+          ),
+        ],
+      ),
+      child: TabBar(
+        controller: _tabController,
+        isScrollable: true,
+        tabAlignment: TabAlignment.start,
+        padding: const EdgeInsets.symmetric(horizontal: AppSpacing.sm),
+        labelColor: const Color(0xFF8B5CF6),
+        unselectedLabelColor: isDark ? AppColors.darkTextSecondary : AppColors.textSecondary,
+        indicator: BoxDecoration(
+          color: const Color(0xFF8B5CF6).withValues(alpha: 0.15),
+          borderRadius: BorderRadius.circular(AppRadius.md),
+        ),
+        indicatorPadding: const EdgeInsets.symmetric(vertical: AppSpacing.sm, horizontal: -AppSpacing.sm),
+        dividerColor: Colors.transparent,
+        labelStyle: const TextStyle(fontWeight: FontWeight.w700, fontSize: 13),
+        unselectedLabelStyle: const TextStyle(fontWeight: FontWeight.w500, fontSize: 13),
+        splashBorderRadius: BorderRadius.circular(AppRadius.md),
+        tabs: [
+          _buildReferralTab('All', Icons.list_alt_rounded),
+          _buildReferralTab('Pending', Icons.pending_actions_rounded),
+          _buildReferralTab('Scheduled', Icons.event_rounded),
+          _buildReferralTab('Completed', Icons.check_circle_rounded),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildReferralTab(String label, IconData icon) {
+    return Tab(
+      height: 48,
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(icon, size: 18),
+          const SizedBox(width: 6),
+          Text(label),
+        ],
       ),
     );
   }
@@ -291,23 +374,23 @@ class _ReferralsScreenState extends ConsumerState<ReferralsScreen>
         children: [
           Icon(
             Icons.swap_horiz_rounded,
-            size: 64,
+            size: AppIconSize.xxl,
             color: isDark ? Colors.grey[600] : Colors.grey[400],
           ),
-          const SizedBox(height: 16),
+          const SizedBox(height: AppSpacing.lg),
           Text(
             message,
             style: TextStyle(
-              fontSize: 18,
+              fontSize: AppFontSize.xxl,
               fontWeight: FontWeight.w500,
               color: isDark ? AppColors.darkTextSecondary : AppColors.textSecondary,
             ),
           ),
-          const SizedBox(height: 8),
+          const SizedBox(height: AppSpacing.sm),
           Text(
             'Create a new referral to get started',
             style: TextStyle(
-              fontSize: 14,
+              fontSize: AppFontSize.lg,
               color: isDark ? AppColors.darkTextSecondary : AppColors.textSecondary,
             ),
           ),
@@ -338,18 +421,18 @@ class _ReferralsScreenState extends ConsumerState<ReferralsScreen>
               Row(
                 children: [
                   Container(
-                    padding: const EdgeInsets.all(10),
+                    padding: const EdgeInsets.all(AppSpacing.sm),
                     decoration: BoxDecoration(
                       color: statusColor.withValues(alpha: 0.1),
-                      borderRadius: BorderRadius.circular(12),
+                      borderRadius: BorderRadius.circular(AppRadius.md),
                     ),
                     child: Icon(
                       _getSpecialtyIcon(referral.specialty),
                       color: statusColor,
-                      size: 24,
+                      size: AppIconSize.md,
                     ),
                   ),
-                  const SizedBox(width: 12),
+                  const SizedBox(width: AppSpacing.md),
                   Expanded(
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
@@ -357,7 +440,7 @@ class _ReferralsScreenState extends ConsumerState<ReferralsScreen>
                         Text(
                           referral.specialty,
                           style: TextStyle(
-                            fontSize: 16,
+                            fontSize: AppFontSize.xl,
                             fontWeight: FontWeight.bold,
                             color: isDark ? AppColors.darkTextPrimary : AppColors.textPrimary,
                           ),
@@ -366,7 +449,7 @@ class _ReferralsScreenState extends ConsumerState<ReferralsScreen>
                           Text(
                             'To: ${referral.referredToName}',
                             style: TextStyle(
-                              fontSize: 14,
+                              fontSize: AppFontSize.lg,
                               color: isDark ? AppColors.darkTextSecondary : AppColors.textSecondary,
                             ),
                           ),
@@ -376,17 +459,17 @@ class _ReferralsScreenState extends ConsumerState<ReferralsScreen>
                   _buildStatusChip(referral.status, statusColor),
                 ],
               ),
-              const SizedBox(height: 12),
+              const SizedBox(height: AppSpacing.md),
               Text(
                 referral.reasonForReferral,
                 style: TextStyle(
-                  fontSize: 14,
+                  fontSize: AppFontSize.lg,
                   color: isDark ? AppColors.darkTextSecondary : AppColors.textSecondary,
                 ),
                 maxLines: 2,
                 overflow: TextOverflow.ellipsis,
               ),
-              const SizedBox(height: 12),
+              const SizedBox(height: AppSpacing.md),
               Row(
                 children: [
                   _buildInfoChip(
@@ -394,7 +477,7 @@ class _ReferralsScreenState extends ConsumerState<ReferralsScreen>
                     _formatUrgency(referral.urgency),
                     urgencyColor,
                   ),
-                  const SizedBox(width: 8),
+                  const SizedBox(width: AppSpacing.sm),
                   if (referral.appointmentDate != null)
                     _buildInfoChip(
                       Icons.calendar_today,
@@ -405,7 +488,7 @@ class _ReferralsScreenState extends ConsumerState<ReferralsScreen>
                   Text(
                     _formatDate(referral.referralDate),
                     style: TextStyle(
-                      fontSize: 12,
+                      fontSize: AppFontSize.sm,
                       color: isDark ? AppColors.darkTextSecondary : AppColors.textSecondary,
                     ),
                   ),
@@ -420,15 +503,15 @@ class _ReferralsScreenState extends ConsumerState<ReferralsScreen>
 
   Widget _buildStatusChip(String status, Color color) {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+      padding: const EdgeInsets.symmetric(horizontal: AppSpacing.sm, vertical: AppSpacing.xs),
       decoration: BoxDecoration(
         color: color.withValues(alpha: 0.1),
-        borderRadius: BorderRadius.circular(12),
+        borderRadius: BorderRadius.circular(AppRadius.md),
       ),
       child: Text(
         status.toUpperCase(),
         style: TextStyle(
-          fontSize: 11,
+          fontSize: AppFontSize.xs,
           fontWeight: FontWeight.bold,
           color: color,
         ),
@@ -438,20 +521,20 @@ class _ReferralsScreenState extends ConsumerState<ReferralsScreen>
 
   Widget _buildInfoChip(IconData icon, String label, Color color) {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+      padding: const EdgeInsets.symmetric(horizontal: AppSpacing.sm, vertical: AppSpacing.xs),
       decoration: BoxDecoration(
         color: color.withValues(alpha: 0.1),
-        borderRadius: BorderRadius.circular(8),
+        borderRadius: BorderRadius.circular(AppRadius.sm),
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Icon(icon, size: 14, color: color),
-          const SizedBox(width: 4),
+          Icon(icon, size: AppIconSize.xs, color: color),
+          const SizedBox(width: AppSpacing.xs),
           Text(
             label,
             style: TextStyle(
-              fontSize: 12,
+              fontSize: AppFontSize.sm,
               color: color,
               fontWeight: FontWeight.w500,
             ),
@@ -529,13 +612,13 @@ class _ReferralsScreenState extends ConsumerState<ReferralsScreen>
               const Text(
                 'Filter Referrals',
                 style: TextStyle(
-                  fontSize: 18,
+                  fontSize: AppFontSize.xxl,
                   fontWeight: FontWeight.bold,
                 ),
               ),
-              const SizedBox(height: 16),
+              const SizedBox(height: AppSpacing.lg),
               Wrap(
-                spacing: 8,
+                spacing: AppSpacing.sm,
                 children: [
                   FilterChip(
                     label: const Text('All'),
@@ -597,26 +680,26 @@ class _ReferralsScreenState extends ConsumerState<ReferralsScreen>
                       height: 4,
                       decoration: BoxDecoration(
                         color: Colors.grey[300],
-                        borderRadius: BorderRadius.circular(2),
+                        borderRadius: BorderRadius.circular(AppRadius.xs),
                       ),
                     ),
                   ),
-                  const SizedBox(height: 16),
+                  const SizedBox(height: AppSpacing.lg),
                   Row(
                     children: [
                       Container(
-                        padding: const EdgeInsets.all(12),
+                        padding: const EdgeInsets.all(AppSpacing.md),
                         decoration: BoxDecoration(
                           color: _getStatusColor(referral.status).withValues(alpha: 0.1),
-                          borderRadius: BorderRadius.circular(12),
+                          borderRadius: BorderRadius.circular(AppRadius.md),
                         ),
                         child: Icon(
                           _getSpecialtyIcon(referral.specialty),
                           color: _getStatusColor(referral.status),
-                          size: 28,
+                          size: AppIconSize.lg,
                         ),
                       ),
-                      const SizedBox(width: 12),
+                      const SizedBox(width: AppSpacing.md),
                       Expanded(
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
@@ -624,14 +707,14 @@ class _ReferralsScreenState extends ConsumerState<ReferralsScreen>
                             Text(
                               referral.specialty,
                               style: const TextStyle(
-                                fontSize: 20,
+                                fontSize: AppFontSize.xxxl,
                                 fontWeight: FontWeight.bold,
                               ),
                             ),
                             Text(
                               'Referral #${referral.id}',
                               style: TextStyle(
-                                fontSize: 14,
+                                fontSize: AppFontSize.lg,
                                 color: isDark ? AppColors.darkTextSecondary : AppColors.textSecondary,
                               ),
                             ),
@@ -641,7 +724,7 @@ class _ReferralsScreenState extends ConsumerState<ReferralsScreen>
                       _buildStatusChip(referral.status, _getStatusColor(referral.status)),
                     ],
                   ),
-                  const SizedBox(height: 24),
+                  const SizedBox(height: AppSpacing.xxl),
                   _buildDetailSection('Referred To', referral.referredToName.isEmpty ? 'Not specified' : referral.referredToName),
                   _buildDetailSection('Reason', referral.reasonForReferral),
                   _buildDetailSection('Urgency', _formatUrgency(referral.urgency)),
@@ -650,7 +733,7 @@ class _ReferralsScreenState extends ConsumerState<ReferralsScreen>
                     _buildDetailSection('Appointment Date', _formatDate(referral.appointmentDate!)),
                   if (referral.clinicalHistory.isNotEmpty)
                     _buildDetailSection('Clinical History', referral.clinicalHistory),
-                  const SizedBox(height: 24),
+                  const SizedBox(height: AppSpacing.xxl),
                   Row(
                     children: [
                       Expanded(
@@ -663,7 +746,7 @@ class _ReferralsScreenState extends ConsumerState<ReferralsScreen>
                           ),
                         ),
                       ),
-                      const SizedBox(width: 12),
+                      const SizedBox(width: AppSpacing.md),
                       Expanded(
                         child: ElevatedButton.icon(
                           onPressed: () => _updateReferralStatus(referral.id, 'completed'),
@@ -688,23 +771,23 @@ class _ReferralsScreenState extends ConsumerState<ReferralsScreen>
   Widget _buildDetailSection(String label, String value) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     return Padding(
-      padding: const EdgeInsets.only(bottom: 16),
+      padding: const EdgeInsets.only(bottom: AppSpacing.lg),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
             label,
             style: TextStyle(
-              fontSize: 12,
+              fontSize: AppFontSize.sm,
               fontWeight: FontWeight.w500,
               color: isDark ? AppColors.darkTextSecondary : AppColors.textSecondary,
             ),
           ),
-          const SizedBox(height: 4),
+          const SizedBox(height: AppSpacing.xs),
           Text(
             value,
             style: TextStyle(
-              fontSize: 16,
+              fontSize: AppFontSize.xl,
               color: isDark ? AppColors.darkTextPrimary : AppColors.textPrimary,
             ),
           ),
@@ -757,19 +840,19 @@ class _ReferralsScreenState extends ConsumerState<ReferralsScreen>
                           height: 4,
                           decoration: BoxDecoration(
                             color: Colors.grey[300],
-                            borderRadius: BorderRadius.circular(2),
+                            borderRadius: BorderRadius.circular(AppRadius.xs),
                           ),
                         ),
                       ),
-                      const SizedBox(height: 16),
+                      const SizedBox(height: AppSpacing.lg),
                       const Text(
                         'New Referral',
                         style: TextStyle(
-                          fontSize: 20,
+                          fontSize: AppFontSize.xxxl,
                           fontWeight: FontWeight.bold,
                         ),
                       ),
-                      const SizedBox(height: 20),
+                      const SizedBox(height: AppSpacing.xl),
                       TextField(
                         controller: specialtyController,
                         decoration: const InputDecoration(
@@ -778,7 +861,7 @@ class _ReferralsScreenState extends ConsumerState<ReferralsScreen>
                           border: OutlineInputBorder(),
                         ),
                       ),
-                      const SizedBox(height: 16),
+                      const SizedBox(height: AppSpacing.lg),
                       TextField(
                         controller: referredToController,
                         decoration: const InputDecoration(
@@ -786,7 +869,7 @@ class _ReferralsScreenState extends ConsumerState<ReferralsScreen>
                           border: OutlineInputBorder(),
                         ),
                       ),
-                      const SizedBox(height: 16),
+                      const SizedBox(height: AppSpacing.lg),
                       TextField(
                         controller: reasonController,
                         maxLines: 3,
@@ -795,11 +878,11 @@ class _ReferralsScreenState extends ConsumerState<ReferralsScreen>
                           border: OutlineInputBorder(),
                         ),
                       ),
-                      const SizedBox(height: 16),
+                      const SizedBox(height: AppSpacing.lg),
                       const Text('Urgency'),
-                      const SizedBox(height: 8),
+                      const SizedBox(height: AppSpacing.sm),
                       Wrap(
-                        spacing: 8,
+                        spacing: AppSpacing.sm,
                         children: ['routine', 'urgent', 'stat'].map((urgency) {
                           return ChoiceChip(
                             label: Text(urgency.toUpperCase()),
@@ -811,7 +894,7 @@ class _ReferralsScreenState extends ConsumerState<ReferralsScreen>
                           );
                         }).toList(),
                       ),
-                      const SizedBox(height: 16),
+                      const SizedBox(height: AppSpacing.lg),
                       TextField(
                         controller: notesController,
                         maxLines: 2,
@@ -820,7 +903,7 @@ class _ReferralsScreenState extends ConsumerState<ReferralsScreen>
                           border: OutlineInputBorder(),
                         ),
                       ),
-                      const SizedBox(height: 24),
+                      const SizedBox(height: AppSpacing.xxl),
                       SizedBox(
                         width: double.infinity,
                         child: ElevatedButton(
@@ -870,7 +953,7 @@ class _ReferralsScreenState extends ConsumerState<ReferralsScreen>
                           },
                           style: ElevatedButton.styleFrom(
                             backgroundColor: const Color(0xFF8B5CF6),
-                            padding: const EdgeInsets.symmetric(vertical: 16),
+                            padding: const EdgeInsets.symmetric(vertical: AppSpacing.lg),
                           ),
                           child: const Text('Create Referral'),
                         ),

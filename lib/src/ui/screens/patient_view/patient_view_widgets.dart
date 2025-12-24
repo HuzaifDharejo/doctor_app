@@ -2,6 +2,7 @@
 import 'package:flutter/material.dart';
 import '../../../theme/app_theme.dart';
 import '../../../core/theme/design_tokens.dart';
+import '../../../core/extensions/context_extensions.dart';
 
 /// Empty state widget for tabs with no data
 class PatientTabEmptyState extends StatelessWidget {
@@ -68,7 +69,7 @@ class PatientTabEmptyState extends StatelessWidget {
                     ),
                   ),
                   Container(
-                    padding: const EdgeInsets.all(16),
+                    padding: EdgeInsets.all(context.responsivePadding),
                     decoration: BoxDecoration(
                       gradient: LinearGradient(
                         colors: [AppColors.primary, AppColors.primary.withValues(alpha: 0.8)],
@@ -366,7 +367,7 @@ class QuickActionCard extends StatelessWidget {
           borderRadius: BorderRadius.circular(20),
           onTap: onTap,
           child: Padding(
-            padding: const EdgeInsets.all(16),
+            padding: EdgeInsets.all(context.responsivePadding),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [

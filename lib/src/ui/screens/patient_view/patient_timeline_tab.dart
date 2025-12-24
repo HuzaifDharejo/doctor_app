@@ -9,6 +9,7 @@ import '../encounter_screen.dart';
 import '../prescriptions_screen.dart';
 import '../medical_record_detail_screen.dart';
 import '../invoice_detail_screen.dart';
+import '../../../core/extensions/context_extensions.dart';
 
 /// Unified timeline view showing all patient activities
 class PatientTimelineTab extends ConsumerStatefulWidget {
@@ -66,7 +67,7 @@ class _PatientTimelineTabState extends ConsumerState<PatientTimelineTab> {
             Expanded(
               child: ListView.builder(
                 primary: false,
-                padding: const EdgeInsets.all(16),
+                padding: EdgeInsets.all(context.responsivePadding),
                 itemCount: events.length,
                 itemBuilder: (context, index) {
                   final event = events[index];
@@ -609,7 +610,7 @@ class _PatientTimelineTabState extends ConsumerState<PatientTimelineTab> {
         borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
       ),
       builder: (context) => Padding(
-        padding: const EdgeInsets.all(20),
+        padding: EdgeInsets.all(context.responsivePadding),
         child: Column(
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,

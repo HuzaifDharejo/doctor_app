@@ -52,11 +52,11 @@ class _ImmunizationsScreenState extends ConsumerState<ImmunizationsScreen>
             elevation: 0,
             scrolledUnderElevation: 1,
             leading: Padding(
-              padding: const EdgeInsets.all(8.0),
+              padding: const EdgeInsets.all(AppSpacing.sm),
               child: Container(
                 decoration: BoxDecoration(
                   color: isDark ? Colors.white.withValues(alpha: 0.1) : Colors.black.withValues(alpha: 0.05),
-                  borderRadius: BorderRadius.circular(12),
+                  borderRadius: BorderRadius.circular(AppRadius.md),
                 ),
                 child: IconButton(
                   icon: Icon(
@@ -80,18 +80,18 @@ class _ImmunizationsScreenState extends ConsumerState<ImmunizationsScreen>
                 ),
                 child: SafeArea(
                   child: Padding(
-                    padding: const EdgeInsets.fromLTRB(20, 50, 20, 16),
+                    padding: const EdgeInsets.fromLTRB(AppSpacing.xl, AppSpacing.xxxxl, AppSpacing.xl, AppSpacing.lg),
                     child: Row(
                       children: [
                         Container(
-                          padding: const EdgeInsets.all(14),
+                          padding: const EdgeInsets.all(AppSpacing.md),
                           decoration: BoxDecoration(
                             gradient: const LinearGradient(
                               colors: [Color(0xFF10B981), Color(0xFF34D399)],
                               begin: Alignment.topLeft,
                               end: Alignment.bottomRight,
                             ),
-                            borderRadius: BorderRadius.circular(16),
+                            borderRadius: BorderRadius.circular(AppRadius.lg),
                             boxShadow: [
                               BoxShadow(
                                 color: const Color(0xFF10B981).withValues(alpha: 0.3),
@@ -103,10 +103,10 @@ class _ImmunizationsScreenState extends ConsumerState<ImmunizationsScreen>
                           child: const Icon(
                             Icons.vaccines,
                             color: Colors.white,
-                            size: 28,
+                            size: AppIconSize.lg,
                           ),
                         ),
-                        const SizedBox(width: 16),
+                        const SizedBox(width: AppSpacing.lg),
                         Expanded(
                           child: Column(
                             mainAxisAlignment: MainAxisAlignment.center,
@@ -115,16 +115,16 @@ class _ImmunizationsScreenState extends ConsumerState<ImmunizationsScreen>
                               Text(
                                 'Immunizations',
                                 style: TextStyle(
-                                  fontSize: 22,
+                                  fontSize: AppFontSize.xxxl,
                                   fontWeight: FontWeight.bold,
                                   color: textColor,
                                 ),
                               ),
-                              const SizedBox(height: 4),
+                              const SizedBox(height: AppSpacing.xs),
                               Text(
                                 'Vaccine records & schedule',
                                 style: TextStyle(
-                                  fontSize: 14,
+                                  fontSize: AppFontSize.lg,
                                   color: isDark ? AppColors.darkTextSecondary : AppColors.textSecondary,
                                 ),
                               ),
@@ -137,37 +137,106 @@ class _ImmunizationsScreenState extends ConsumerState<ImmunizationsScreen>
                 ),
               ),
             ),
-            bottom: TabBar(
-              controller: _tabController,
-              labelColor: AppColors.primary,
-              unselectedLabelColor: isDark ? AppColors.darkTextSecondary : AppColors.textSecondary,
-              indicatorColor: AppColors.primary,
-              indicatorWeight: 3,
-              tabs: const [
-                Tab(text: 'All Vaccines'),
-                Tab(text: 'Due'),
-                Tab(text: 'Schedule'),
-              ],
-            ),
           ),
         ],
-        body: TabBarView(
-          controller: _tabController,
+        body: Column(
           children: [
-            _buildAllVaccinesTab(),
-            _buildDueVaccinesTab(),
-            _buildScheduleTab(),
+            // Tab Bar
+            _buildTabBar(isDark),
+            // Content
+            Expanded(
+              child: TabBarView(
+                controller: _tabController,
+                children: [
+                  _buildAllVaccinesTab(),
+                  _buildDueVaccinesTab(),
+                  _buildScheduleTab(),
+                ],
+              ),
+            ),
           ],
         ),
       ),
       floatingActionButton: widget.patientId != null
-          ? FloatingActionButton.extended(
-              onPressed: () => _showAddImmunizationDialog(context),
-              icon: const Icon(Icons.add),
-              label: const Text('Record Vaccine'),
-              backgroundColor: const Color(0xFF10B981),
+          ? Container(
+              decoration: BoxDecoration(
+                gradient: const LinearGradient(
+                  colors: [Color(0xFF10B981), Color(0xFF059669)],
+                ),
+                borderRadius: BorderRadius.circular(16),
+                boxShadow: [
+                  BoxShadow(
+                    color: const Color(0xFF10B981).withValues(alpha: 0.4),
+                    blurRadius: 12,
+                    offset: const Offset(0, 4),
+                  ),
+                ],
+              ),
+              child: FloatingActionButton.extended(
+                onPressed: () => _showAddImmunizationDialog(context),
+                backgroundColor: Colors.transparent,
+                elevation: 0,
+                icon: const Icon(Icons.add_rounded, color: Colors.white),
+                label: const Text(
+                  'Record Vaccine',
+                  style: TextStyle(color: Colors.white, fontWeight: FontWeight.w600),
+                ),
+              ),
             )
           : null,
+    );
+  }
+
+  Widget _buildTabBar(bool isDark) {
+    return Container(
+      margin: const EdgeInsets.symmetric(horizontal: AppSpacing.lg, vertical: AppSpacing.md),
+      decoration: BoxDecoration(
+        color: isDark ? AppColors.darkSurface : Colors.white,
+        borderRadius: BorderRadius.circular(AppRadius.card),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: isDark ? 0.2 : 0.05),
+            blurRadius: 10,
+            offset: const Offset(0, 2),
+          ),
+        ],
+      ),
+      child: TabBar(
+        controller: _tabController,
+        isScrollable: true,
+        tabAlignment: TabAlignment.start,
+        padding: const EdgeInsets.symmetric(horizontal: AppSpacing.sm),
+        labelColor: const Color(0xFF10B981),
+        unselectedLabelColor: isDark ? AppColors.darkTextSecondary : AppColors.textSecondary,
+        indicator: BoxDecoration(
+          color: const Color(0xFF10B981).withValues(alpha: 0.15),
+          borderRadius: BorderRadius.circular(AppRadius.md),
+        ),
+        indicatorPadding: const EdgeInsets.symmetric(vertical: AppSpacing.sm, horizontal: -AppSpacing.sm),
+        dividerColor: Colors.transparent,
+        labelStyle: const TextStyle(fontWeight: FontWeight.w700, fontSize: 13),
+        unselectedLabelStyle: const TextStyle(fontWeight: FontWeight.w500, fontSize: 13),
+        splashBorderRadius: BorderRadius.circular(AppRadius.md),
+        tabs: [
+          _buildImmunizationTab('All Vaccines', Icons.vaccines_rounded),
+          _buildImmunizationTab('Due', Icons.notifications_active_rounded),
+          _buildImmunizationTab('Schedule', Icons.calendar_today_rounded),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildImmunizationTab(String label, IconData icon) {
+    return Tab(
+      height: 48,
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(icon, size: 18),
+          const SizedBox(width: 6),
+          Text(label),
+        ],
+      ),
     );
   }
 
@@ -284,37 +353,61 @@ class _ImmunizationsScreenState extends ConsumerState<ImmunizationsScreen>
                 Row(
                   children: [
                     Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                      padding: const EdgeInsets.all(AppSpacing.sm),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFF10B981).withValues(alpha: 0.15),
+                        borderRadius: BorderRadius.circular(AppRadius.md),
+                      ),
+                      child: const Icon(
+                        Icons.calendar_today_rounded,
+                        color: Color(0xFF10B981),
+                        size: 18,
+                      ),
+                    ),
+                    const SizedBox(width: AppSpacing.sm),
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: AppSpacing.md, vertical: AppSpacing.xs),
                       decoration: BoxDecoration(
                         color: const Color(0xFF10B981).withValues(alpha: 0.1),
-                        borderRadius: BorderRadius.circular(8),
+                        borderRadius: BorderRadius.circular(AppRadius.sm),
                       ),
                       child: Text(
                         schedule['age'] as String,
                         style: const TextStyle(
                           fontWeight: FontWeight.bold,
+                          fontSize: AppFontSize.md,
                           color: Color(0xFF10B981),
                         ),
                       ),
                     ),
                   ],
                 ),
-                const SizedBox(height: 12),
+                const SizedBox(height: AppSpacing.md),
                 Wrap(
-                  spacing: 8,
-                  runSpacing: 8,
+                  spacing: AppSpacing.sm,
+                  runSpacing: AppSpacing.sm,
                   children: (schedule['vaccines'] as List<String>).map((vaccine) {
+                    final icon = _getVaccineIcon(vaccine);
                     return Chip(
+                      avatar: Icon(
+                        icon,
+                        size: 16,
+                        color: const Color(0xFF10B981),
+                      ),
                       label: Text(
                         vaccine,
                         style: TextStyle(
-                          fontSize: 12,
+                          fontSize: AppFontSize.sm,
                           color: isDark ? AppColors.darkTextPrimary : AppColors.textPrimary,
                         ),
                       ),
                       backgroundColor: isDark 
                           ? Colors.white.withValues(alpha: 0.1) 
-                          : Colors.grey.withValues(alpha: 0.1),
+                          : const Color(0xFF10B981).withValues(alpha: 0.1),
+                      side: BorderSide(
+                        color: const Color(0xFF10B981).withValues(alpha: 0.3),
+                        width: 1,
+                      ),
                     );
                   }).toList(),
                 ),
@@ -324,6 +417,48 @@ class _ImmunizationsScreenState extends ConsumerState<ImmunizationsScreen>
         );
       },
     );
+  }
+
+  IconData _getVaccineIcon(String vaccineName) {
+    final lower = vaccineName.toLowerCase();
+    if (lower.contains('hepatitis') || lower.contains('hepb') || lower.contains('hepa')) {
+      return Icons.bloodtype_rounded;
+    }
+    if (lower.contains('dtap') || lower.contains('tdap')) {
+      return Icons.shield_rounded;
+    }
+    if (lower.contains('mmr')) {
+      return Icons.healing_rounded;
+    }
+    if (lower.contains('varicella') || lower.contains('chickenpox')) {
+      return Icons.bug_report_rounded;
+    }
+    if (lower.contains('hib')) {
+      return Icons.coronavirus_rounded;
+    }
+    if (lower.contains('ipv') || lower.contains('polio')) {
+      return Icons.accessibility_new_rounded;
+    }
+    if (lower.contains('pcv') || lower.contains('pneumococcal')) {
+      return Icons.air_rounded;
+    }
+    if (lower.contains('rv') || lower.contains('rotavirus')) {
+      return Icons.favorite_rounded;
+    }
+    if (lower.contains('flu') || lower.contains('influenza')) {
+      return Icons.ac_unit_rounded;
+    }
+    if (lower.contains('hpv')) {
+      return Icons.female_rounded;
+    }
+    if (lower.contains('menacwy') || lower.contains('meningococcal')) {
+      return Icons.psychology_rounded;
+    }
+    if (lower.contains('shingles') || lower.contains('zoster')) {
+      return Icons.warning_rounded;
+    }
+    // Default icon for vaccines
+    return Icons.vaccines_rounded;
   }
 
   Widget _buildVaccineGroupCard(String vaccineName, List<ImmunizationData> records) {
@@ -339,15 +474,15 @@ class _ImmunizationsScreenState extends ConsumerState<ImmunizationsScreen>
       color: isDark ? AppColors.darkSurface : Colors.white,
       child: ExpansionTile(
         leading: Container(
-          padding: const EdgeInsets.all(10),
+          padding: const EdgeInsets.all(AppSpacing.sm),
           decoration: BoxDecoration(
             color: const Color(0xFF10B981).withValues(alpha: 0.1),
-            borderRadius: BorderRadius.circular(12),
+            borderRadius: BorderRadius.circular(AppRadius.md),
           ),
           child: const Icon(
             Icons.vaccines,
             color: Color(0xFF10B981),
-            size: 24,
+            size: AppIconSize.md,
           ),
         ),
         title: Text(
@@ -360,7 +495,7 @@ class _ImmunizationsScreenState extends ConsumerState<ImmunizationsScreen>
         subtitle: Text(
           '${records.length} dose(s) recorded',
           style: TextStyle(
-            fontSize: 12,
+            fontSize: AppFontSize.sm,
             color: isDark ? AppColors.darkTextSecondary : AppColors.textSecondary,
           ),
         ),
@@ -374,14 +509,14 @@ class _ImmunizationsScreenState extends ConsumerState<ImmunizationsScreen>
     
     return ListTile(
       leading: CircleAvatar(
-        radius: 16,
+        radius: AppSpacing.lg,
         backgroundColor: const Color(0xFF10B981).withValues(alpha: 0.1),
         child: Text(
           '${record.doseNumber ?? 1}',
           style: const TextStyle(
             color: Color(0xFF10B981),
             fontWeight: FontWeight.bold,
-            fontSize: 12,
+            fontSize: AppFontSize.sm,
           ),
         ),
       ),
@@ -395,7 +530,7 @@ class _ImmunizationsScreenState extends ConsumerState<ImmunizationsScreen>
           ? Text(
               'Lot: ${record.lotNumber}',
               style: TextStyle(
-                fontSize: 12,
+                fontSize: AppFontSize.sm,
                 color: isDark ? AppColors.darkTextSecondary : AppColors.textSecondary,
               ),
             )
@@ -404,7 +539,7 @@ class _ImmunizationsScreenState extends ConsumerState<ImmunizationsScreen>
           ? Chip(
               label: Text(
                 'Next: ${_formatDate(record.nextDueDate!)}',
-                style: const TextStyle(fontSize: 10),
+                style: const TextStyle(fontSize: AppFontSize.xs),
               ),
               backgroundColor: Colors.orange.withValues(alpha: 0.1),
             )
@@ -431,15 +566,15 @@ class _ImmunizationsScreenState extends ConsumerState<ImmunizationsScreen>
       child: ListTile(
         contentPadding: const EdgeInsets.all(AppSpacing.lg),
         leading: Container(
-          padding: const EdgeInsets.all(10),
+          padding: const EdgeInsets.all(AppSpacing.sm),
           decoration: BoxDecoration(
             color: (isOverdue ? Colors.red : Colors.orange).withValues(alpha: 0.1),
-            borderRadius: BorderRadius.circular(12),
+            borderRadius: BorderRadius.circular(AppRadius.md),
           ),
           child: Icon(
             isOverdue ? Icons.warning : Icons.schedule,
             color: isOverdue ? Colors.red : Colors.orange,
-            size: 24,
+            size: AppIconSize.md,
           ),
         ),
         title: Text(
@@ -452,7 +587,7 @@ class _ImmunizationsScreenState extends ConsumerState<ImmunizationsScreen>
         subtitle: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const SizedBox(height: 4),
+            const SizedBox(height: AppSpacing.xs),
             Text(
               isOverdue 
                   ? 'Overdue since ${_formatDate(immunization.nextDueDate!)}'
@@ -466,7 +601,7 @@ class _ImmunizationsScreenState extends ConsumerState<ImmunizationsScreen>
               Text(
                 'Dose ${(immunization.doseNumber ?? 0) + 1}',
                 style: TextStyle(
-                  fontSize: 12,
+                  fontSize: AppFontSize.sm,
                   color: isDark ? AppColors.darkTextSecondary : AppColors.textSecondary,
                 ),
               ),
@@ -492,23 +627,23 @@ class _ImmunizationsScreenState extends ConsumerState<ImmunizationsScreen>
         children: [
           Icon(
             icon ?? Icons.vaccines,
-            size: 64,
+            size: AppIconSize.xxl,
             color: iconColor ?? (isDark ? Colors.grey[600] : Colors.grey[400]),
           ),
-          const SizedBox(height: 16),
+          const SizedBox(height: AppSpacing.lg),
           Text(
             title,
             style: TextStyle(
-              fontSize: 18,
+              fontSize: AppFontSize.xxl,
               fontWeight: FontWeight.w500,
               color: isDark ? AppColors.darkTextSecondary : AppColors.textSecondary,
             ),
           ),
-          const SizedBox(height: 8),
+          const SizedBox(height: AppSpacing.sm),
           Text(
             subtitle,
             style: TextStyle(
-              fontSize: 14,
+              fontSize: AppFontSize.lg,
               color: isDark ? AppColors.darkTextSecondary : AppColors.textSecondary,
             ),
           ),
@@ -545,57 +680,57 @@ class _ImmunizationsScreenState extends ConsumerState<ImmunizationsScreen>
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Center(
-                child: Container(
-                  width: 40,
-                  height: 4,
-                  decoration: BoxDecoration(
-                    color: Colors.grey[300],
-                    borderRadius: BorderRadius.circular(2),
-                  ),
-                ),
-              ),
-              const SizedBox(height: 16),
-              Row(
-                children: [
-                  Container(
-                    padding: const EdgeInsets.all(12),
-                    decoration: BoxDecoration(
-                      color: const Color(0xFF10B981).withValues(alpha: 0.1),
-                      borderRadius: BorderRadius.circular(12),
+                  Center(
+                    child: Container(
+                      width: 40,
+                      height: 4,
+                      decoration: BoxDecoration(
+                        color: Colors.grey[300],
+                        borderRadius: BorderRadius.circular(AppRadius.xs),
+                      ),
                     ),
+                  ),
+                  const SizedBox(height: AppSpacing.lg),
+                  Row(
+                    children: [
+                      Container(
+                        padding: const EdgeInsets.all(AppSpacing.md),
+                        decoration: BoxDecoration(
+                          color: const Color(0xFF10B981).withValues(alpha: 0.1),
+                          borderRadius: BorderRadius.circular(AppRadius.md),
+                        ),
                     child: const Icon(
                       Icons.vaccines,
                       color: Color(0xFF10B981),
-                      size: 28,
+                      size: AppIconSize.lg,
                     ),
                   ),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          immunization.vaccineName,
-                          style: const TextStyle(
-                            fontSize: 20,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                        if (immunization.doseNumber != null)
-                          Text(
-                            'Dose ${immunization.doseNumber}',
-                            style: TextStyle(
-                              fontSize: 14,
-                              color: isDark ? AppColors.darkTextSecondary : AppColors.textSecondary,
+                      const SizedBox(width: AppSpacing.md),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              immunization.vaccineName,
+                              style: const TextStyle(
+                                fontSize: AppFontSize.xxxl,
+                                fontWeight: FontWeight.bold,
+                              ),
                             ),
-                          ),
-                      ],
-                    ),
+                            if (immunization.doseNumber != null)
+                              Text(
+                                'Dose ${immunization.doseNumber}',
+                                style: TextStyle(
+                                  fontSize: AppFontSize.lg,
+                                  color: isDark ? AppColors.darkTextSecondary : AppColors.textSecondary,
+                                ),
+                              ),
+                          ],
+                        ),
+                      ),
+                    ],
                   ),
-                ],
-              ),
-              const SizedBox(height: 24),
+                  const SizedBox(height: AppSpacing.xxl),
               _buildDetailRow('Date Administered', _formatDate(immunization.dateAdministered)),
               if (immunization.lotNumber != null)
                 _buildDetailRow('Lot Number', immunization.lotNumber!),
@@ -607,7 +742,7 @@ class _ImmunizationsScreenState extends ConsumerState<ImmunizationsScreen>
                 _buildDetailRow('Administered By', immunization.administeredBy!),
               if (immunization.nextDueDate != null)
                 _buildDetailRow('Next Due', _formatDate(immunization.nextDueDate!)),
-              const SizedBox(height: 16),
+              const SizedBox(height: AppSpacing.lg),
             ],
           ),
         );
@@ -618,7 +753,7 @@ class _ImmunizationsScreenState extends ConsumerState<ImmunizationsScreen>
   Widget _buildDetailRow(String label, String value) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     return Padding(
-      padding: const EdgeInsets.only(bottom: 12),
+      padding: const EdgeInsets.only(bottom: AppSpacing.md),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -627,7 +762,7 @@ class _ImmunizationsScreenState extends ConsumerState<ImmunizationsScreen>
             child: Text(
               label,
               style: TextStyle(
-                fontSize: 14,
+                fontSize: AppFontSize.lg,
                 color: isDark ? AppColors.darkTextSecondary : AppColors.textSecondary,
               ),
             ),
@@ -636,7 +771,7 @@ class _ImmunizationsScreenState extends ConsumerState<ImmunizationsScreen>
             child: Text(
               value,
               style: TextStyle(
-                fontSize: 14,
+                fontSize: AppFontSize.lg,
                 fontWeight: FontWeight.w500,
                 color: isDark ? AppColors.darkTextPrimary : AppColors.textPrimary,
               ),
@@ -685,19 +820,19 @@ class _ImmunizationsScreenState extends ConsumerState<ImmunizationsScreen>
                           height: 4,
                           decoration: BoxDecoration(
                             color: Colors.grey[300],
-                            borderRadius: BorderRadius.circular(2),
+                            borderRadius: BorderRadius.circular(AppRadius.xs),
                           ),
                         ),
                       ),
-                      const SizedBox(height: 16),
+                      const SizedBox(height: AppSpacing.lg),
                       const Text(
                         'Record Immunization',
                         style: TextStyle(
-                          fontSize: 20,
+                          fontSize: AppFontSize.xxxl,
                           fontWeight: FontWeight.bold,
                         ),
                       ),
-                      const SizedBox(height: 20),
+                      const SizedBox(height: AppSpacing.xl),
                       TextField(
                         controller: vaccineController,
                         decoration: const InputDecoration(
@@ -706,7 +841,7 @@ class _ImmunizationsScreenState extends ConsumerState<ImmunizationsScreen>
                           border: OutlineInputBorder(),
                         ),
                       ),
-                      const SizedBox(height: 16),
+                      const SizedBox(height: AppSpacing.lg),
                       Row(
                         children: [
                           Expanded(
@@ -719,7 +854,7 @@ class _ImmunizationsScreenState extends ConsumerState<ImmunizationsScreen>
                               ),
                             ),
                           ),
-                          const SizedBox(width: 16),
+                          const SizedBox(width: AppSpacing.lg),
                           Expanded(
                             child: InkWell(
                               onTap: () async {
@@ -744,7 +879,7 @@ class _ImmunizationsScreenState extends ConsumerState<ImmunizationsScreen>
                           ),
                         ],
                       ),
-                      const SizedBox(height: 16),
+                      const SizedBox(height: AppSpacing.lg),
                       TextField(
                         controller: lotController,
                         decoration: const InputDecoration(
@@ -752,7 +887,7 @@ class _ImmunizationsScreenState extends ConsumerState<ImmunizationsScreen>
                           border: OutlineInputBorder(),
                         ),
                       ),
-                      const SizedBox(height: 16),
+                      const SizedBox(height: AppSpacing.lg),
                       TextField(
                         controller: manufacturerController,
                         decoration: const InputDecoration(
@@ -760,7 +895,7 @@ class _ImmunizationsScreenState extends ConsumerState<ImmunizationsScreen>
                           border: OutlineInputBorder(),
                         ),
                       ),
-                      const SizedBox(height: 16),
+                      const SizedBox(height: AppSpacing.lg),
                       TextField(
                         controller: siteController,
                         decoration: const InputDecoration(
@@ -769,7 +904,7 @@ class _ImmunizationsScreenState extends ConsumerState<ImmunizationsScreen>
                           border: OutlineInputBorder(),
                         ),
                       ),
-                      const SizedBox(height: 24),
+                      const SizedBox(height: AppSpacing.xxl),
                       SizedBox(
                         width: double.infinity,
                         child: ElevatedButton(
@@ -808,7 +943,7 @@ class _ImmunizationsScreenState extends ConsumerState<ImmunizationsScreen>
                           },
                           style: ElevatedButton.styleFrom(
                             backgroundColor: const Color(0xFF10B981),
-                            padding: const EdgeInsets.symmetric(vertical: 16),
+                            padding: const EdgeInsets.symmetric(vertical: AppSpacing.lg),
                           ),
                           child: const Text('Record Immunization'),
                         ),

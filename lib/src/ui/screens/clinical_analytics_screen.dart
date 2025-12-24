@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../../core/extensions/context_extensions.dart';
 import '../../core/theme/design_tokens.dart';
 import '../../core/widgets/app_card.dart';
 import '../../services/clinical_analytics_service.dart';
@@ -370,12 +371,22 @@ class _ClinicalAnalyticsScreenState extends ConsumerState<ClinicalAnalyticsScree
                         ),
                         const SizedBox(height: 12),
                         // Metrics grid
-                        GridView.count(
-                          crossAxisCount: 2,
-                          childAspectRatio: 2,
-                          shrinkWrap: true,
-                          physics: const NeverScrollableScrollPhysics(),
-                          children: [
+                        LayoutBuilder(
+                          builder: (context, constraints) {
+                            return GridView.count(
+                              crossAxisCount: context.responsive(
+                                compact: 2,
+                                medium: 3,
+                                expanded: 4,
+                              ),
+                              childAspectRatio: context.responsive(
+                                compact: 1.8,
+                                medium: 2.0,
+                                expanded: 2.2,
+                              ),
+                              shrinkWrap: true,
+                              physics: const NeverScrollableScrollPhysics(),
+                              children: [
                             _buildMetricItem(
                               'Success Rate',
                               '${specialty.successRate.toStringAsFixed(1)}%',
@@ -396,7 +407,9 @@ class _ClinicalAnalyticsScreenState extends ConsumerState<ClinicalAnalyticsScree
                               '${specialty.totalPatients}',
                               Colors.purple,
                             ),
-                          ],
+                              ],
+                            );
+                          },
                         ),
                       ],
                     ),
@@ -482,25 +495,37 @@ class _ClinicalAnalyticsScreenState extends ConsumerState<ClinicalAnalyticsScree
           style: Theme.of(context).textTheme.titleLarge,
         ),
         const SizedBox(height: 16),
-        GridView.count(
-          crossAxisCount: 2,
-          childAspectRatio: 1.5,
-          shrinkWrap: true,
-          physics: const NeverScrollableScrollPhysics(),
-          children: [
-            SuccessRateCard(
-              title: 'Success Rate',
-              successRate: outcomes.successRate,
-              totalCases: outcomes.totalCases,
-              accentColor: Colors.green,
-            ),
-            SuccessRateCard(
-              title: 'Improvement Rate',
-              successRate: outcomes.improvementRate,
-              totalCases: outcomes.successfulCases,
-              accentColor: Colors.blue,
-            ),
-          ],
+        LayoutBuilder(
+          builder: (context, constraints) {
+            return GridView.count(
+              crossAxisCount: context.responsive(
+                compact: 2,
+                medium: 3,
+                expanded: 4,
+              ),
+              childAspectRatio: context.responsive(
+                compact: 1.4,
+                medium: 1.5,
+                expanded: 1.6,
+              ),
+              shrinkWrap: true,
+              physics: const NeverScrollableScrollPhysics(),
+              children: [
+                SuccessRateCard(
+                  title: 'Success Rate',
+                  successRate: outcomes.successRate,
+                  totalCases: outcomes.totalCases,
+                  accentColor: Colors.green,
+                ),
+                SuccessRateCard(
+                  title: 'Improvement Rate',
+                  successRate: outcomes.improvementRate,
+                  totalCases: outcomes.successfulCases,
+                  accentColor: Colors.blue,
+                ),
+              ],
+            );
+          },
         ),
         const SizedBox(height: 24),
         AppCard(

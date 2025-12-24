@@ -4,6 +4,7 @@ library;
 import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import '../extensions/context_extensions.dart';
 
 /// A floating action button that expands into a radial menu
 class ExpandableFab extends StatefulWidget {
@@ -175,7 +176,7 @@ class _ExpandableFabState extends State<ExpandableFab>
           onTap: _toggle,
           borderRadius: BorderRadius.circular(16),
           child: Padding(
-            padding: const EdgeInsets.all(16),
+            padding: EdgeInsets.all(context.responsivePadding),
             child: AnimatedBuilder(
               animation: _expandAnimation,
               builder: (context, child) {
@@ -384,7 +385,7 @@ class _ExpandableFabVerticalState extends State<ExpandableFabVertical>
               onTap: _toggle,
               borderRadius: BorderRadius.circular(16),
               child: Padding(
-                padding: const EdgeInsets.all(16),
+                padding: EdgeInsets.all(context.responsivePadding),
                 child: AnimatedBuilder(
                   animation: _animation,
                   builder: (context, child) {

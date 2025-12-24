@@ -69,20 +69,127 @@ class DynamicSuggestionsService {
   /// Get suggestions for a category, combining built-in and user-added
   /// User-added suggestions appear first (sorted by usage), then built-in
   Future<List<String>> getSuggestions(SuggestionCategory category) async {
+    return getSuggestionsForPatient(category, null);
+  }
+
+  /// Get suggestions for a category, optionally for a specific patient
+  /// Includes patient-specific recent diagnoses/history at the top
+  /// User-added suggestions appear first (sorted by usage), then patient-specific, then built-in
+  Future<List<String>> getSuggestionsForPatient(
+    SuggestionCategory category,
+    int? patientId,
+  ) async {
     if (!_initialized) await initialize();
     
     final userSuggestions = _cache[category] ?? [];
     final builtInSuggestions = _getBuiltInSuggestions(category);
     
-    // Combine: user suggestions first, then built-in (excluding duplicates)
-    final combined = <String>[...userSuggestions];
-    for (final suggestion in builtInSuggestions) {
-      if (!combined.any((s) => s.toLowerCase() == suggestion.toLowerCase())) {
+    // Get patient-specific suggestions if patient ID provided
+    final patientSuggestions = <String>[];
+    if (patientId != null) {
+      patientSuggestions.addAll(await _getPatientSpecificSuggestions(category, patientId));
+    }
+    
+    // Combine: patient-specific first, then user suggestions, then built-in (excluding duplicates)
+    final combined = <String>[];
+    final seen = <String>{};
+    
+    // Add patient-specific suggestions first (highest priority)
+    for (final suggestion in patientSuggestions) {
+      final lower = suggestion.toLowerCase();
+      if (!seen.contains(lower)) {
         combined.add(suggestion);
+        seen.add(lower);
+      }
+    }
+    
+    // Add user suggestions
+    for (final suggestion in userSuggestions) {
+      final lower = suggestion.toLowerCase();
+      if (!seen.contains(lower)) {
+        combined.add(suggestion);
+        seen.add(lower);
+      }
+    }
+    
+    // Add built-in suggestions last
+    for (final suggestion in builtInSuggestions) {
+      final lower = suggestion.toLowerCase();
+      if (!seen.contains(lower)) {
+        combined.add(suggestion);
+        seen.add(lower);
       }
     }
     
     return combined;
+  }
+
+  /// Get patient-specific suggestions (recent diagnoses, treatments, etc.)
+  Future<List<String>> _getPatientSpecificSuggestions(
+    SuggestionCategory category,
+    int patientId,
+  ) async {
+    try {
+      switch (category) {
+        case SuggestionCategory.diagnosis:
+          // Get recent diagnoses for this patient
+          final diagnoses = await _db.getDiagnosesForPatient(patientId);
+          final records = await _db.getMedicalRecordsForPatient(patientId);
+          
+          final recentDiagnoses = <String>[];
+          
+          // Add from normalized diagnoses (last 5, most recent first)
+          for (final diagnosis in diagnoses.take(5)) {
+            if (diagnosis.description.isNotEmpty) {
+              recentDiagnoses.add(diagnosis.description);
+            }
+          }
+          
+          // Add from medical records (last 5)
+          for (final record in records.take(5)) {
+            if (record.diagnosis != null && record.diagnosis!.isNotEmpty) {
+              recentDiagnoses.add(record.diagnosis!);
+            }
+          }
+          
+          return recentDiagnoses.toSet().toList(); // Remove duplicates
+          
+        case SuggestionCategory.treatment:
+          // Get recent treatments for this patient
+          final records = await _db.getMedicalRecordsForPatient(patientId);
+          final recentTreatments = <String>[];
+          
+          for (final record in records.take(5)) {
+            if (record.treatment != null && record.treatment!.isNotEmpty) {
+              recentTreatments.add(record.treatment!);
+            }
+          }
+          
+          return recentTreatments.toSet().toList();
+          
+        case SuggestionCategory.clinicalNotes:
+          // Get recent clinical notes patterns (last 3)
+          final records = await _db.getMedicalRecordsForPatient(patientId);
+          final recentNotes = <String>[];
+          
+          for (final record in records.take(3)) {
+            if (record.doctorNotes != null && record.doctorNotes!.isNotEmpty) {
+              final note = record.doctorNotes!;
+              // Only add if it's a reasonable length (not too long)
+              if (note.length < 200) {
+                recentNotes.add(note);
+              }
+            }
+          }
+          
+          return recentNotes;
+          
+        default:
+          return [];
+      }
+    } catch (e) {
+      return [];
+    }
   }
 
   /// Get built-in suggestions for a category
