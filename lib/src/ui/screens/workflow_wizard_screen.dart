@@ -2601,7 +2601,7 @@ class _WorkflowWizardScreenState extends ConsumerState<WorkflowWizardScreen> {
           
           for (final diagnosisName in diagnoses) {
             // Find or create diagnosis
-            dynamic diagnosis = existingDiagnosisMap[diagnosisName.toLowerCase()];
+            Diagnose? diagnosis = existingDiagnosisMap[diagnosisName.toLowerCase()];
             
             if (diagnosis == null) {
               // Create new diagnosis if it doesn't exist
@@ -2627,12 +2627,12 @@ class _WorkflowWizardScreenState extends ConsumerState<WorkflowWizardScreen> {
               await db.into(db.encounterDiagnoses).insert(
                 EncounterDiagnosesCompanion.insert(
                   encounterId: _encounter!.id,
-                  diagnosisId: diagnosis.id,
+                  diagnosisId: diagnosis.id!,
                   isNewDiagnosis: Value(!existingDiagnosisMap.containsKey(diagnosisName.toLowerCase())),
                   encounterStatus: const Value('addressed'),
                 ),
               );
-              linkedDiagnosisIds.add(diagnosis.id); // Track as linked
+              linkedDiagnosisIds.add(diagnosis.id!); // Track as linked
               log.d('WORKFLOW', 'Linked diagnosis ${diagnosis.id} to encounter ${_encounter!.id}');
             } else if (diagnosis != null && diagnosis.id != null) {
               log.d('WORKFLOW', 'Diagnosis ${diagnosis.id} already linked to encounter ${_encounter!.id}, skipping');

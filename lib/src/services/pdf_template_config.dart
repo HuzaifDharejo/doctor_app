@@ -28,6 +28,7 @@ class PdfTemplateConfig {
     this.logoData,
     this.backgroundImageType = 'none',
     this.customBackgroundData,
+    this.sectionLabels, // Maps section type to label text (e.g., {'lab_tests': 'Labs/Investigations:'})
   });
 
   final String templateType;
@@ -57,6 +58,7 @@ class PdfTemplateConfig {
   final String? logoData; // Base64 encoded logo image
   final String backgroundImageType; // 'none', 'lungs', 'heart', 'brain', 'xray', 'custom'
   final String? customBackgroundData; // Base64 encoded custom background image
+  final Map<String, String>? sectionLabels; // Maps section type to label text (e.g., {'lab_tests': 'Labs/Investigations:'})
 
   /// Default template matching Dr. Farzand Ali's format
   factory PdfTemplateConfig.defaultFarzandAliTemplate() {
@@ -125,6 +127,9 @@ class PdfTemplateConfig {
       logoData: json['logoData'] as String?,
       backgroundImageType: (json['backgroundImageType'] as String?) ?? 'none',
       customBackgroundData: json['customBackgroundData'] as String?,
+      sectionLabels: json['sectionLabels'] != null 
+          ? Map<String, String>.from(json['sectionLabels'] as Map)
+          : null,
     );
   }
 
@@ -157,6 +162,7 @@ class PdfTemplateConfig {
       'logoData': logoData,
       'backgroundImageType': backgroundImageType,
       'customBackgroundData': customBackgroundData,
+      'sectionLabels': sectionLabels,
     };
   }
 
@@ -188,6 +194,7 @@ class PdfTemplateConfig {
     String? logoData,
     String? backgroundImageType,
     String? customBackgroundData,
+    Map<String, String>? sectionLabels,
   }) {
     return PdfTemplateConfig(
       templateType: templateType ?? this.templateType,
@@ -217,6 +224,7 @@ class PdfTemplateConfig {
       logoData: logoData ?? this.logoData,
       backgroundImageType: backgroundImageType ?? this.backgroundImageType,
       customBackgroundData: customBackgroundData ?? this.customBackgroundData,
+      sectionLabels: sectionLabels ?? this.sectionLabels,
     );
   }
 }

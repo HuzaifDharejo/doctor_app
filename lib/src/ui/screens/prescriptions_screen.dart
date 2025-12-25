@@ -564,7 +564,7 @@ class _PrescriptionsScreenState extends ConsumerState<PrescriptionsScreen> {
                                       gradient: const LinearGradient(
                                         colors: [AppColors.prescriptions, AppColors.primary],
                                       ),
-                                      borderRadius: BorderRadius.circular(3),
+                                      borderRadius: BorderRadius.circular(AppRadius.xs),
                                     ),
                                   ),
                                   const SizedBox(width: AppSpacing.md),
@@ -710,11 +710,11 @@ class _PrescriptionsScreenState extends ConsumerState<PrescriptionsScreen> {
                       padding: const EdgeInsets.all(AppSpacing.sm),
                       decoration: BoxDecoration(
                         color: theme.dividerColor.withValues(alpha: 0.5),
-                        borderRadius: BorderRadius.circular(8),
+                        borderRadius: BorderRadius.circular(AppRadius.sm),
                       ),
                       child: Icon(
                         Icons.arrow_back,
-                        size: 20,
+                        size: AppIconSize.sm,
                         color: theme.textTheme.bodyLarge?.color,
                       ),
                     ),

@@ -7,7 +7,24 @@ import 'src/services/logger_service.dart';
 void main() {
   // Catch Flutter framework errors
   FlutterError.onError = (FlutterErrorDetails details) {
-    log.e('FLUTTER', details.exceptionAsString(),
+    // Filter out known harmless Flutter Web warnings
+    final errorString = details.exceptionAsString();
+    
+    // Ignore AssetManifest.json errors on web - this is a known Flutter Web limitation
+    // when importing services.dart, even if rootBundle is never used
+    if (kIsWeb && errorString.contains('AssetManifest.json')) {
+      // Silently ignore - this is expected behavior on Flutter Web
+      return;
+    }
+    
+    // Ignore disposed EngineFlutterView errors on web - known Flutter Web issue
+    // that occurs during navigation transitions (fixed in Flutter 3.27.0+)
+    if (kIsWeb && errorString.contains('disposed EngineFlutterView')) {
+      // Silently ignore - this is a known Flutter Web framework issue
+      return;
+    }
+    
+    log.e('FLUTTER', errorString,
       error: details.exception,
       stackTrace: details.stack,
       extra: {

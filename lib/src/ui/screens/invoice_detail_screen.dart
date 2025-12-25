@@ -113,7 +113,9 @@ class _InvoiceDetailScreenState extends ConsumerState<InvoiceDetailScreen> {
       backgroundColor: isDark ? AppColors.darkBackground : AppColors.background,
       body: _isLoading
           ? const Center(child: CircularProgressIndicator())
-          : CustomScrollView(
+          : _patient == null
+              ? const Center(child: CircularProgressIndicator())
+              : CustomScrollView(
               slivers: [
                 // Modern SliverAppBar
                 SliverAppBar(
@@ -124,18 +126,18 @@ class _InvoiceDetailScreenState extends ConsumerState<InvoiceDetailScreen> {
                   surfaceTintColor: Colors.transparent,
                   elevation: 0,
                   leading: Padding(
-                    padding: const EdgeInsets.all(8.0),
+                    padding: const EdgeInsets.all(AppSpacing.sm),
                     child: Container(
                       decoration: BoxDecoration(
                         color: isDark 
                             ? Colors.white.withValues(alpha: 0.1) 
                             : Colors.black.withValues(alpha: 0.05),
-                        borderRadius: BorderRadius.circular(12),
+                        borderRadius: BorderRadius.circular(AppRadius.md),
                       ),
                       child: IconButton(
                         icon: Icon(
                           Icons.arrow_back_ios_new_rounded,
-                          size: 18,
+                          size: AppIconSize.sm,
                           color: isDark ? Colors.white : AppColors.textPrimary,
                         ),
                         onPressed: () => Navigator.pop(context),
@@ -206,18 +208,18 @@ class _InvoiceDetailScreenState extends ConsumerState<InvoiceDetailScreen> {
                       ),
                       child: SafeArea(
                         child: Padding(
-                          padding: const EdgeInsets.fromLTRB(20, 60, 20, 20),
+                          padding: const EdgeInsets.fromLTRB(AppSpacing.xl, AppSpacing.xxxxl, AppSpacing.xl, AppSpacing.xl),
                           child: Row(
                             children: [
                               Container(
-                                padding: const EdgeInsets.all(14),
+                                padding: const EdgeInsets.all(AppSpacing.md),
                                 decoration: BoxDecoration(
                                   gradient: const LinearGradient(
                                     colors: [Color(0xFF8B5CF6), Color(0xFF7C3AED)],
                                     begin: Alignment.topLeft,
                                     end: Alignment.bottomRight,
                                   ),
-                                  borderRadius: BorderRadius.circular(20),
+                                  borderRadius: BorderRadius.circular(AppRadius.xl),
                                   boxShadow: [
                                     BoxShadow(
                                       color: AppColors.billing.withValues(alpha: 0.4),
@@ -229,10 +231,10 @@ class _InvoiceDetailScreenState extends ConsumerState<InvoiceDetailScreen> {
                                 child: const Icon(
                                   Icons.receipt_long_rounded,
                                   color: Colors.white,
-                                  size: 32,
+                                  size: AppIconSize.xl,
                                 ),
                               ),
-                              const SizedBox(width: 16),
+                              const SizedBox(width: AppSpacing.lg),
                               Expanded(
                                 child: Column(
                                   mainAxisAlignment: MainAxisAlignment.center,
@@ -241,17 +243,17 @@ class _InvoiceDetailScreenState extends ConsumerState<InvoiceDetailScreen> {
                                     Text(
                                       _invoice.invoiceNumber,
                                       style: TextStyle(
-                                        fontSize: 28,
+                                        fontSize: AppFontSize.display,
                                         fontWeight: FontWeight.w800,
                                         color: isDark ? AppColors.darkTextPrimary : AppColors.textPrimary,
                                         letterSpacing: -0.5,
                                       ),
                                     ),
-                                    const SizedBox(height: 8),
+                                    const SizedBox(height: AppSpacing.sm),
                                     Row(
                                       children: [
                                         Container(
-                                          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                                          padding: const EdgeInsets.symmetric(horizontal: AppSpacing.md, vertical: AppSpacing.xs),
                                           decoration: BoxDecoration(
                                             gradient: LinearGradient(
                                               colors: [
@@ -259,17 +261,17 @@ class _InvoiceDetailScreenState extends ConsumerState<InvoiceDetailScreen> {
                                                 statusColor.withValues(alpha: 0.1),
                                               ],
                                             ),
-                                            borderRadius: BorderRadius.circular(12),
+                                            borderRadius: BorderRadius.circular(AppRadius.md),
                                           ),
                                           child: Row(
                                             mainAxisSize: MainAxisSize.min,
                                             children: [
-                                              Icon(statusIcon, size: 14, color: statusColor),
-                                              const SizedBox(width: 6),
+                                              Icon(statusIcon, size: AppIconSize.xs, color: statusColor),
+                                              const SizedBox(width: AppSpacing.xs),
                                               Text(
                                                 _invoice.paymentStatus,
                                                 style: TextStyle(
-                                                  fontSize: 12,
+                                                  fontSize: AppFontSize.sm,
                                                   fontWeight: FontWeight.w700,
                                                   color: statusColor,
                                                 ),
@@ -329,7 +331,7 @@ class _InvoiceDetailScreenState extends ConsumerState<InvoiceDetailScreen> {
                           begin: Alignment.topLeft,
                           end: Alignment.bottomRight,
                         ),
-                        borderRadius: BorderRadius.circular(20),
+                        borderRadius: BorderRadius.circular(AppRadius.xl),
                         boxShadow: [
                           BoxShadow(
                             color: AppColors.billing.withValues(alpha: 0.1),
@@ -341,12 +343,12 @@ class _InvoiceDetailScreenState extends ConsumerState<InvoiceDetailScreen> {
                       child: Row(
                         children: [
                           Container(
-                            padding: const EdgeInsets.all(12),
+                            padding: const EdgeInsets.all(AppSpacing.md),
                             decoration: BoxDecoration(
                               gradient: LinearGradient(
                                 colors: [AppColors.billing, AppColors.billing.withValues(alpha: 0.8)],
                               ),
-                              borderRadius: BorderRadius.circular(16),
+                              borderRadius: BorderRadius.circular(AppRadius.lg),
                               boxShadow: [
                                 BoxShadow(
                                   color: AppColors.billing.withValues(alpha: 0.3),
@@ -362,7 +364,7 @@ class _InvoiceDetailScreenState extends ConsumerState<InvoiceDetailScreen> {
                               style: const TextStyle(
                                 color: Colors.white,
                                 fontWeight: FontWeight.bold,
-                                fontSize: 18,
+                                fontSize: AppFontSize.xxl,
                               ),
                             ),
                           ),
@@ -376,7 +378,7 @@ class _InvoiceDetailScreenState extends ConsumerState<InvoiceDetailScreen> {
                                   style: TextStyle(
                                     fontWeight: FontWeight.w700,
                                     color: textColor,
-                                    fontSize: 16,
+                                    fontSize: AppFontSize.xl,
                                   ),
                                 ),
                                 if (_patient!.phone.isNotEmpty)
@@ -387,7 +389,7 @@ class _InvoiceDetailScreenState extends ConsumerState<InvoiceDetailScreen> {
                               ],
                             ),
                           ),
-                          Icon(Icons.person_outline, color: AppColors.billing, size: 24),
+                          Icon(Icons.person_outline, color: AppColors.billing, size: AppIconSize.md),
                         ],
                       ),
                     ),
@@ -406,7 +408,7 @@ class _InvoiceDetailScreenState extends ConsumerState<InvoiceDetailScreen> {
                         begin: Alignment.topLeft,
                         end: Alignment.bottomRight,
                       ),
-                      borderRadius: BorderRadius.circular(20),
+                      borderRadius: BorderRadius.circular(AppRadius.xl),
                       boxShadow: [
                         BoxShadow(
                           color: AppColors.billing.withValues(alpha: 0.08),
@@ -423,7 +425,7 @@ class _InvoiceDetailScreenState extends ConsumerState<InvoiceDetailScreen> {
                           child: Row(
                             children: [
                               Container(
-                                padding: const EdgeInsets.all(8),
+                                padding: const EdgeInsets.all(AppSpacing.sm),
                                 decoration: BoxDecoration(
                                   gradient: LinearGradient(
                                     colors: [
@@ -431,15 +433,15 @@ class _InvoiceDetailScreenState extends ConsumerState<InvoiceDetailScreen> {
                                       AppColors.billing.withValues(alpha: 0.1),
                                     ],
                                   ),
-                                  borderRadius: BorderRadius.circular(12),
+                                  borderRadius: BorderRadius.circular(AppRadius.md),
                                 ),
                                 child: Icon(
                                   Icons.receipt_long_rounded,
                                   color: AppColors.billing,
-                                  size: 20,
+                                  size: AppIconSize.sm,
                                 ),
                               ),
-                              const SizedBox(width: 12),
+                              const SizedBox(width: AppSpacing.md),
                               Text(
                                 'Items',
                                 style: TextStyle(
@@ -553,7 +555,7 @@ class _InvoiceDetailScreenState extends ConsumerState<InvoiceDetailScreen> {
                         begin: Alignment.topLeft,
                         end: Alignment.bottomRight,
                       ),
-                      borderRadius: BorderRadius.circular(20),
+                      borderRadius: BorderRadius.circular(AppRadius.xl),
                       boxShadow: [
                         BoxShadow(
                           color: statusColor.withValues(alpha: 0.1),
@@ -568,7 +570,7 @@ class _InvoiceDetailScreenState extends ConsumerState<InvoiceDetailScreen> {
                         Row(
                           children: [
                             Container(
-                              padding: const EdgeInsets.all(8),
+                              padding: const EdgeInsets.all(AppSpacing.sm),
                               decoration: BoxDecoration(
                                 gradient: LinearGradient(
                                   colors: [
@@ -576,15 +578,15 @@ class _InvoiceDetailScreenState extends ConsumerState<InvoiceDetailScreen> {
                                     statusColor.withValues(alpha: 0.1),
                                   ],
                                 ),
-                                borderRadius: BorderRadius.circular(12),
+                                borderRadius: BorderRadius.circular(AppRadius.md),
                               ),
                               child: Icon(
                                 statusIcon,
                                 color: statusColor,
-                                size: 20,
+                                size: AppIconSize.sm,
                               ),
                             ),
-                            const SizedBox(width: 12),
+                              const SizedBox(width: AppSpacing.md),
                             Text(
                               'Payment Details',
                               style: TextStyle(

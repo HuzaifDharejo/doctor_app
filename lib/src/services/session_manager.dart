@@ -75,15 +75,21 @@ class SessionManager {
 
   /// Show warning before timeout
   void _showWarning() {
-    if (!_isActive || _context == null) return;
+    if (!_isActive) return;
 
     log.w('SESSION', 'Session timeout warning');
     
     _onWarning?.call();
     
-    // Show warning dialog if context is available
-    if (_context != null && _context!.mounted) {
-      _showTimeoutWarningDialog(_context!);
+    // Show warning dialog if context is available and mounted
+    final context = _context;
+    if (context != null && context.mounted) {
+      try {
+        _showTimeoutWarningDialog(context);
+      } catch (e) {
+        // Context might have been disposed, ignore
+        log.d('SESSION', 'Could not show warning dialog: $e');
+      }
     }
   }
 
@@ -104,32 +110,45 @@ class SessionManager {
   void _showTimeoutWarningDialog(BuildContext context) {
     if (!context.mounted) return;
 
-    showDialog(
-      context: context,
-      barrierDismissible: false,
-      builder: (context) => AlertDialog(
-        title: const Row(
-          children: [
-            Icon(Icons.warning_amber_rounded, color: AppColors.warning),
-            SizedBox(width: AppSpacing.sm),
-            Text('Session Timeout Warning'),
-          ],
-        ),
-        content: const Text(
-          'Your session will expire in 1 minute due to inactivity. '
-          'Continue working to stay logged in.',
-        ),
-        actions: [
-          TextButton(
-            onPressed: () {
-              Navigator.pop(context);
-              resetInactivityTimer();
-            },
-            child: const Text('Continue'),
-          ),
-        ],
-      ),
-    );
+    try {
+      showDialog(
+        context: context,
+        barrierDismissible: false,
+        builder: (context) {
+          // Double-check context is still mounted inside builder
+          if (!context.mounted) {
+            return const SizedBox.shrink();
+          }
+          return AlertDialog(
+            title: const Row(
+              children: [
+                Icon(Icons.warning_amber_rounded, color: AppColors.warning),
+                SizedBox(width: AppSpacing.sm),
+                Text('Session Timeout Warning'),
+              ],
+            ),
+            content: const Text(
+              'Your session will expire in 1 minute due to inactivity. '
+              'Continue working to stay logged in.',
+            ),
+            actions: [
+              TextButton(
+                onPressed: () {
+                  if (context.mounted) {
+                    Navigator.pop(context);
+                    resetInactivityTimer();
+                  }
+                },
+                child: const Text('Continue'),
+              ),
+            ],
+          );
+        },
+      );
+    } catch (e) {
+      // Context was disposed during dialog creation, ignore
+      log.d('SESSION', 'Could not show timeout warning: $e');
+    }
   }
 
   /// Pause session tracking (e.g., when app goes to background)

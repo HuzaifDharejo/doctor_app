@@ -2,6 +2,9 @@ import 'dart:convert';
 import 'dart:typed_data';
 
 import 'package:flutter/foundation.dart' show kDebugMode, kIsWeb;
+// NOTE: Importing services.dart on Flutter Web will trigger an AssetManifest.json check
+// This is a known Flutter Web limitation and the warning can be safely ignored.
+// We never actually call rootBundle.load on web (see _loadPredefinedBackground method).
 import 'package:flutter/services.dart';
 import 'package:pdf/pdf.dart';
 import 'package:pdf/widgets.dart' as pw;
@@ -19,42 +22,45 @@ class PdfService {
   
   /// Load predefined background image from assets
   /// Returns null if asset doesn't exist or can't be loaded (graceful degradation)
+  /// NOTE: This method should NEVER be called on web - always check kIsWeb at call site
   static Future<pw.MemoryImage?> _loadPredefinedBackground(String imageType) async {
-    // Skip asset loading on web if assets are not properly configured
-    // On web, assets need to be explicitly included in the build
+    // CRITICAL: Always return null on web - assets are not supported on web platform
+    // This check MUST be first to prevent any asset access attempts
     if (kIsWeb) {
-      // Silently return null on web - assets may not be available
+      return null;
+    }
+    
+    // Map of background types to asset paths (when assets are added)
+    final assetMap = <String, String>{
+      'lungs': 'assets/backgrounds/lungs.png',
+      'heart': 'assets/backgrounds/heart.png',
+      'brain': 'assets/backgrounds/brain.png',
+      'xray': 'assets/backgrounds/xray.png',
+    };
+    
+    final assetPath = assetMap[imageType.toLowerCase()];
+    if (assetPath == null) {
+      return null;
+    }
+    
+    // Final safety check before accessing rootBundle
+    // This should never execute on web due to first check, but defense in depth
+    assert(!kIsWeb, '_loadPredefinedBackground should never be called on web');
+    if (kIsWeb) {
       return null;
     }
     
     try {
-      // Map of background types to asset paths (when assets are added)
-      final assetMap = <String, String>{
-        'lungs': 'assets/backgrounds/lungs.png',
-        'heart': 'assets/backgrounds/heart.png',
-        'brain': 'assets/backgrounds/brain.png',
-        'xray': 'assets/backgrounds/xray.png',
-      };
-      
-      final assetPath = assetMap[imageType.toLowerCase()];
-      if (assetPath != null) {
-        try {
-          final byteData = await rootBundle.load(assetPath);
-          final bytes = byteData.buffer.asUint8List();
-          return pw.MemoryImage(bytes);
-        } catch (e) {
-          // Asset doesn't exist or can't be loaded - this is expected if assets haven't been added yet
-          // Only log in debug mode to reduce noise in production
-          if (kDebugMode) {
-            log.d('PDF', 'Background asset not available: $assetPath (this is expected if assets haven\'t been added)');
-          }
-          return null;
-        }
-      }
-      
-      return null;
+      // This will only execute on mobile/desktop platforms
+      final byteData = await rootBundle.load(assetPath);
+      final bytes = byteData.buffer.asUint8List();
+      return pw.MemoryImage(bytes);
     } catch (e) {
-      // Silently return null on any error - graceful degradation
+      // Asset doesn't exist or can't be loaded - this is expected if assets haven't been added yet
+      // Only log in debug mode to reduce noise in production
+      if (kDebugMode) {
+        log.d('PDF', 'Background asset not available: $assetPath (this is expected if assets haven\'t been added): $e');
+      }
       return null;
     }
   }
@@ -1492,24 +1498,39 @@ class PdfService {
       try {
         if (config.backgroundImageType == 'custom' && config.customBackgroundData != null && config.customBackgroundData!.isNotEmpty) {
           backgroundImage = pw.MemoryImage(base64Decode(config.customBackgroundData!));
-        } else if (config.backgroundImageType != 'custom') {
+          log.i('PDF', 'Background image loaded (custom, ${config.customBackgroundData!.length} chars)');
+        } else if (config.backgroundImageType != 'custom' && !kIsWeb) {
           // Load predefined background (lungs, heart, brain, xray)
+          // Skip on web - predefined assets are not supported on web platform
           backgroundImage = await _loadPredefinedBackground(config.backgroundImageType);
+          if (backgroundImage != null) {
+            log.i('PDF', 'Background image loaded (predefined: ${config.backgroundImageType})');
+          }
         }
       } catch (e) {
         log.w('PDF', 'Error loading background image: $e');
       }
+    } else {
+      log.i('PDF', 'No background image configured');
     }
     
     // Parse signature image if available
     pw.MemoryImage? signatureImage;
-    final signatureBytes = _parseSignatureData(signatureData);
-    if (signatureBytes != null) {
-      try {
-        signatureImage = pw.MemoryImage(signatureBytes);
-      } catch (e) {
-        log.w('PDF', 'Error creating signature image: $e');
+    if (signatureData != null && signatureData.isNotEmpty) {
+      log.i('PDF', 'Signature data provided (length: ${signatureData.length})');
+      final signatureBytes = _parseSignatureData(signatureData);
+      if (signatureBytes != null) {
+        try {
+          signatureImage = pw.MemoryImage(signatureBytes);
+          log.i('PDF', 'Signature image loaded successfully (${signatureBytes.length} bytes)');
+        } catch (e) {
+          log.w('PDF', 'Error creating signature image: $e');
+        }
+      } else {
+        log.w('PDF', 'Signature data provided but could not be parsed. Format may be unsupported (strokes format).');
       }
+    } else {
+      log.i('PDF', 'No signature data provided');
     }
     
     // V5: Use pre-loaded medications if provided, otherwise parse from itemsJson
@@ -1554,15 +1575,10 @@ class PdfService {
       }
     } catch (_) {}
 
-    pdf.addPage(
-      pw.Page(
-        pageFormat: PdfPageFormat.a4,
-        margin: const pw.EdgeInsets.all(40),
-        build: (pw.Context context) {
-          // Build content with optional background
-          final content = pw.Column(
-            crossAxisAlignment: pw.CrossAxisAlignment.start,
-            children: [
+    // Build content function (reused for both cases)
+    final contentBuilder = (pw.Context context) {
+      // Build content - MultiPage expects a list of widgets
+      return [
               // Header (if enabled)
               if (config.showHeader) ...[
                 _buildTemplateHeader(
@@ -1573,9 +1589,9 @@ class PdfService {
                   doctorName: doctorName,
                   logoImage: logoImage,
                 ),
-                pw.SizedBox(height: 20),
+                pw.SizedBox(height: 12),
                 pw.Divider(thickness: 2, color: PdfColors.blue800),
-                pw.SizedBox(height: 20),
+                pw.SizedBox(height: 12),
               ],
               
               // Prescription Title
@@ -1583,7 +1599,7 @@ class PdfService {
                 child: pw.Text(
                   'PRESCRIPTION',
                   style: pw.TextStyle(
-                    fontSize: 18,
+                    fontSize: 14,
                     fontWeight: pw.FontWeight.bold,
                     color: PdfColors.blue800,
                   ),
@@ -1591,12 +1607,13 @@ class PdfService {
               ),
               pw.SizedBox(height: 20),
               
-              // Patient Info
+              // Patient Info - Enhanced Design
               pw.Container(
-                padding: const pw.EdgeInsets.all(12),
+                padding: const pw.EdgeInsets.all(14),
                 decoration: pw.BoxDecoration(
-                  color: PdfColors.grey100,
-                  borderRadius: pw.BorderRadius.circular(8),
+                  color: PdfColors.blue50,
+                  borderRadius: pw.BorderRadius.circular(10),
+                  border: pw.Border.all(color: PdfColors.blue200, width: 1.5),
                 ),
                 child: pw.Row(
                   mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
@@ -1605,31 +1622,35 @@ class PdfService {
                       pw.Column(
                         crossAxisAlignment: pw.CrossAxisAlignment.start,
                         children: [
-                          pw.Text('Patient Name:', style: pw.TextStyle(fontWeight: pw.FontWeight.bold)),
-                          pw.Text('${patient.firstName} ${patient.lastName}'),
+                          pw.Text('Patient Name:', style: pw.TextStyle(fontWeight: pw.FontWeight.bold, fontSize: 9, color: PdfColors.blue900)),
+                          pw.SizedBox(height: 2),
+                          pw.Text('${patient.firstName} ${patient.lastName}', style: pw.TextStyle(fontSize: 9, fontWeight: pw.FontWeight.bold)),
                         ],
                       ),
                     pw.Column(
                       crossAxisAlignment: pw.CrossAxisAlignment.start,
                       children: [
-                        pw.Text('Date:', style: pw.TextStyle(fontWeight: pw.FontWeight.bold)),
-                        pw.Text(_formatDate(prescription.createdAt)),
+                        pw.Text('Date:', style: pw.TextStyle(fontWeight: pw.FontWeight.bold, fontSize: 9, color: PdfColors.blue900)),
+                        pw.SizedBox(height: 2),
+                        pw.Text(_formatDate(prescription.createdAt), style: pw.TextStyle(fontSize: 9, fontWeight: pw.FontWeight.bold)),
                       ],
                     ),
                     if (patient.phone.isNotEmpty && config.showAddress)
                       pw.Column(
                         crossAxisAlignment: pw.CrossAxisAlignment.start,
                         children: [
-                          pw.Text('Phone:', style: pw.TextStyle(fontWeight: pw.FontWeight.bold)),
-                          pw.Text(patient.phone),
+                          pw.Text('Phone:', style: pw.TextStyle(fontWeight: pw.FontWeight.bold, fontSize: 9, color: PdfColors.blue900)),
+                          pw.SizedBox(height: 2),
+                          pw.Text(patient.phone, style: pw.TextStyle(fontSize: 9, fontWeight: pw.FontWeight.bold)),
                         ],
                       ),
                     if (config.showAge && patient.age != null)
                       pw.Column(
                         crossAxisAlignment: pw.CrossAxisAlignment.start,
                         children: [
-                          pw.Text('Age:', style: pw.TextStyle(fontWeight: pw.FontWeight.bold)),
-                          pw.Text('${patient.age} years'),
+                          pw.Text('Age:', style: pw.TextStyle(fontWeight: pw.FontWeight.bold, fontSize: 9, color: PdfColors.blue900)),
+                          pw.SizedBox(height: 2),
+                          pw.Text('${patient.age} years', style: pw.TextStyle(fontSize: 9, fontWeight: pw.FontWeight.bold)),
                         ],
                       ),
                   ],
@@ -1637,306 +1658,653 @@ class PdfService {
               ),
               pw.SizedBox(height: 12),
               
-              // Vitals Section (if available)
+              // Vitals Section (if available) - Enhanced Design
               if (vitals.isNotEmpty) ...[
                 pw.Container(
-                  padding: const pw.EdgeInsets.all(10),
+                  padding: const pw.EdgeInsets.all(12),
                   decoration: pw.BoxDecoration(
-                    border: pw.Border.all(color: PdfColors.blue200),
-                    borderRadius: pw.BorderRadius.circular(6),
+                    border: pw.Border.all(color: PdfColors.blue300, width: 1.5),
+                    borderRadius: pw.BorderRadius.circular(8),
                     color: PdfColors.blue50,
                   ),
                   child: pw.Column(
                     crossAxisAlignment: pw.CrossAxisAlignment.start,
                     children: [
-                      pw.Text('Vitals:', style: pw.TextStyle(fontWeight: pw.FontWeight.bold, fontSize: 11, color: PdfColors.blue800)),
-                      pw.SizedBox(height: 6),
+                      pw.Container(
+                        padding: const pw.EdgeInsets.only(bottom: 8),
+                        decoration: pw.BoxDecoration(
+                          border: pw.Border(
+                            bottom: pw.BorderSide(color: PdfColors.blue300, width: 1),
+                          ),
+                        ),
+                        child: pw.Text('Vitals', style: pw.TextStyle(fontWeight: pw.FontWeight.bold, fontSize: 10, color: PdfColors.blue900)),
+                      ),
+                      pw.SizedBox(height: 8),
                       pw.Wrap(
-                        spacing: 16,
-                        runSpacing: 4,
+                        spacing: 12,
+                        runSpacing: 6,
                         children: [
                           // Support both snake_case and camelCase field names
                           if ((vitals['bp'] ?? vitals['blood_pressure']) != null && (vitals['bp'] ?? vitals['blood_pressure']).toString().isNotEmpty && (vitals['bp'] ?? vitals['blood_pressure']).toString() != '-/-')
-                            pw.Text('BP: ${vitals['bp'] ?? vitals['blood_pressure']}', style: const pw.TextStyle(fontSize: 10)),
+                            pw.Container(
+                              padding: const pw.EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                              decoration: pw.BoxDecoration(
+                                color: PdfColors.white,
+                                borderRadius: pw.BorderRadius.circular(4),
+                                border: pw.Border.all(color: PdfColors.blue200),
+                              ),
+                              child: pw.Text('BP: ${vitals['bp'] ?? vitals['blood_pressure']}', style: pw.TextStyle(fontSize: 8, fontWeight: pw.FontWeight.bold)),
+                            ),
                           if ((vitals['pulse'] ?? vitals['heart_rate'] ?? vitals['heartRate']) != null && (vitals['pulse'] ?? vitals['heart_rate'] ?? vitals['heartRate']).toString().isNotEmpty && (vitals['pulse'] ?? vitals['heart_rate'] ?? vitals['heartRate']).toString() != '-')
-                            pw.Text('Pulse: ${vitals['pulse'] ?? vitals['heart_rate'] ?? vitals['heartRate']} bpm', style: const pw.TextStyle(fontSize: 10)),
+                            pw.Container(
+                              padding: const pw.EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                              decoration: pw.BoxDecoration(
+                                color: PdfColors.white,
+                                borderRadius: pw.BorderRadius.circular(4),
+                                border: pw.Border.all(color: PdfColors.blue200),
+                              ),
+                              child: pw.Text('Pulse: ${vitals['pulse'] ?? vitals['heart_rate'] ?? vitals['heartRate']} bpm', style: pw.TextStyle(fontSize: 8, fontWeight: pw.FontWeight.bold)),
+                            ),
                           if ((vitals['temperature'] ?? vitals['temp']) != null && (vitals['temperature'] ?? vitals['temp']).toString().isNotEmpty && (vitals['temperature'] ?? vitals['temp']).toString() != '-')
-                            pw.Text('Temp: ${vitals['temperature'] ?? vitals['temp']}°F', style: const pw.TextStyle(fontSize: 10)),
+                            pw.Container(
+                              padding: const pw.EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                              decoration: pw.BoxDecoration(
+                                color: PdfColors.white,
+                                borderRadius: pw.BorderRadius.circular(4),
+                                border: pw.Border.all(color: PdfColors.blue200),
+                              ),
+                              child: pw.Text('Temp: ${vitals['temperature'] ?? vitals['temp']}°F', style: pw.TextStyle(fontSize: 8, fontWeight: pw.FontWeight.bold)),
+                            ),
                           if ((vitals['respiratory_rate'] ?? vitals['respiratoryRate'] ?? vitals['rr']) != null && (vitals['respiratory_rate'] ?? vitals['respiratoryRate'] ?? vitals['rr']).toString().isNotEmpty && (vitals['respiratory_rate'] ?? vitals['respiratoryRate'] ?? vitals['rr']).toString() != '-')
-                            pw.Text('RR: ${vitals['respiratory_rate'] ?? vitals['respiratoryRate'] ?? vitals['rr']}/min', style: const pw.TextStyle(fontSize: 10)),
+                            pw.Container(
+                              padding: const pw.EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                              decoration: pw.BoxDecoration(
+                                color: PdfColors.white,
+                                borderRadius: pw.BorderRadius.circular(4),
+                                border: pw.Border.all(color: PdfColors.blue200),
+                              ),
+                              child: pw.Text('RR: ${vitals['respiratory_rate'] ?? vitals['respiratoryRate'] ?? vitals['rr']}/min', style: pw.TextStyle(fontSize: 8, fontWeight: pw.FontWeight.bold)),
+                            ),
                           if ((vitals['spo2'] ?? vitals['oxygenSaturation'] ?? vitals['oxygen_saturation']) != null && (vitals['spo2'] ?? vitals['oxygenSaturation'] ?? vitals['oxygen_saturation']).toString().isNotEmpty && (vitals['spo2'] ?? vitals['oxygenSaturation'] ?? vitals['oxygen_saturation']).toString() != '-')
-                            pw.Text('SpO2: ${vitals['spo2'] ?? vitals['oxygenSaturation'] ?? vitals['oxygen_saturation']}%', style: const pw.TextStyle(fontSize: 10)),
+                            pw.Container(
+                              padding: const pw.EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                              decoration: pw.BoxDecoration(
+                                color: PdfColors.white,
+                                borderRadius: pw.BorderRadius.circular(4),
+                                border: pw.Border.all(color: PdfColors.blue200),
+                              ),
+                              child: pw.Text('SpO2: ${vitals['spo2'] ?? vitals['oxygenSaturation'] ?? vitals['oxygen_saturation']}%', style: pw.TextStyle(fontSize: 8, fontWeight: pw.FontWeight.bold)),
+                            ),
                           if ((vitals['weight'] ?? vitals['wt']) != null && (vitals['weight'] ?? vitals['wt']).toString().isNotEmpty && (vitals['weight'] ?? vitals['wt']).toString() != '-')
-                            pw.Text('Wt: ${vitals['weight'] ?? vitals['wt']} kg', style: const pw.TextStyle(fontSize: 10)),
+                            pw.Container(
+                              padding: const pw.EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                              decoration: pw.BoxDecoration(
+                                color: PdfColors.white,
+                                borderRadius: pw.BorderRadius.circular(4),
+                                border: pw.Border.all(color: PdfColors.blue200),
+                              ),
+                              child: pw.Text('Wt: ${vitals['weight'] ?? vitals['wt']} kg', style: pw.TextStyle(fontSize: 8, fontWeight: pw.FontWeight.bold)),
+                            ),
                           if ((vitals['height'] ?? vitals['ht']) != null && (vitals['height'] ?? vitals['ht']).toString().isNotEmpty && (vitals['height'] ?? vitals['ht']).toString() != '-')
-                            pw.Text('Ht: ${vitals['height'] ?? vitals['ht']} cm', style: const pw.TextStyle(fontSize: 10)),
+                            pw.Container(
+                              padding: const pw.EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                              decoration: pw.BoxDecoration(
+                                color: PdfColors.white,
+                                borderRadius: pw.BorderRadius.circular(4),
+                                border: pw.Border.all(color: PdfColors.blue200),
+                              ),
+                              child: pw.Text('Ht: ${vitals['height'] ?? vitals['ht']} cm', style: pw.TextStyle(fontSize: 8, fontWeight: pw.FontWeight.bold)),
+                            ),
                         ],
                       ),
                     ],
                   ),
                 ),
-                pw.SizedBox(height: 12),
+                pw.SizedBox(height: 16),
               ],
               
-              // Chief Complaint / Symptoms
-              if (chiefComplaint.isNotEmpty) ...[
-                pw.Container(
-                  width: double.infinity,
-                  padding: const pw.EdgeInsets.all(10),
-                  decoration: pw.BoxDecoration(
-                    border: pw.Border.all(color: PdfColors.orange200),
-                    borderRadius: pw.BorderRadius.circular(6),
-                    color: PdfColors.orange50,
-                  ),
-                  child: pw.Column(
-                    crossAxisAlignment: pw.CrossAxisAlignment.start,
-                    children: [
-                      pw.Text('Chief Complaint:', style: pw.TextStyle(fontWeight: pw.FontWeight.bold, fontSize: 11, color: PdfColors.orange800)),
-                      pw.SizedBox(height: 4),
-                      pw.Text(chiefComplaint, style: const pw.TextStyle(fontSize: 10)),
-                    ],
-                  ),
-                ),
-                pw.SizedBox(height: 12),
-              ],
-              
-              // Diagnosis
-              if (diagnosis.isNotEmpty && config.showImpressionDiagnosis) ...[
-                pw.Container(
-                  width: double.infinity,
-                  padding: const pw.EdgeInsets.all(10),
-                  decoration: pw.BoxDecoration(
-                    border: pw.Border.all(color: PdfColors.purple200),
-                    borderRadius: pw.BorderRadius.circular(6),
-                    color: PdfColors.purple50,
-                  ),
-                  child: pw.Column(
-                    crossAxisAlignment: pw.CrossAxisAlignment.start,
-                    children: [
-                      pw.Text('Diagnosis:', style: pw.TextStyle(fontWeight: pw.FontWeight.bold, fontSize: 11, color: PdfColors.purple800)),
-                      pw.SizedBox(height: 4),
-                      pw.Text(diagnosis, style: const pw.TextStyle(fontSize: 10)),
-                    ],
-                  ),
-                ),
-                pw.SizedBox(height: 12),
-              ],
-              
-              // Rx Symbol
+              // Two-column layout: Left (other sections) and Right (medications)
               pw.Row(
+                crossAxisAlignment: pw.CrossAxisAlignment.start,
                 children: [
-                  pw.Text(
-                    'Rx',
-                    style: pw.TextStyle(
-                      fontSize: 24,
-                      fontWeight: pw.FontWeight.bold,
-                      fontStyle: pw.FontStyle.italic,
-                      color: PdfColors.blue800,
+                  // Left column: Chief Complaint, Diagnosis, Lab Tests, Instructions, Follow-up, Clinical Notes
+                  pw.Expanded(
+                    flex: 1,
+                    child: pw.Column(
+                      crossAxisAlignment: pw.CrossAxisAlignment.start,
+                      children: [
+                        // Chief Complaint / Symptoms - Enhanced Design
+                        if (chiefComplaint.isNotEmpty) ...[
+                          pw.Container(
+                            width: double.infinity,
+                            padding: const pw.EdgeInsets.all(12),
+                            decoration: pw.BoxDecoration(
+                              border: pw.Border.all(color: PdfColors.orange300, width: 1.5),
+                              borderRadius: pw.BorderRadius.circular(8),
+                              color: PdfColors.orange50,
+                            ),
+                            child: pw.Column(
+                              crossAxisAlignment: pw.CrossAxisAlignment.start,
+                              children: [
+                                pw.Container(
+                                  padding: const pw.EdgeInsets.only(bottom: 6),
+                                  decoration: pw.BoxDecoration(
+                                    border: pw.Border(
+                                      bottom: pw.BorderSide(color: PdfColors.orange300, width: 1),
+                                    ),
+                                  ),
+                                  child: pw.Row(
+                                    children: [
+                                      pw.Container(
+                                        width: 4,
+                                        height: 16,
+                                        decoration: pw.BoxDecoration(
+                                          color: PdfColors.orange600,
+                                          borderRadius: pw.BorderRadius.circular(2),
+                                        ),
+                                      ),
+                                      pw.SizedBox(width: 6),
+                                      pw.Text('Chief Complaint', style: pw.TextStyle(fontWeight: pw.FontWeight.bold, fontSize: 10, color: PdfColors.orange900)),
+                                    ],
+                                  ),
+                                ),
+                                pw.SizedBox(height: 8),
+                                pw.Text(chiefComplaint, style: pw.TextStyle(fontSize: 9, height: 1.4)),
+                              ],
+                            ),
+                          ),
+                          pw.SizedBox(height: 14),
+                        ],
+                        
+                        // Diagnosis - Enhanced Design
+                        if (diagnosis.isNotEmpty && config.showImpressionDiagnosis) ...[
+                          pw.Container(
+                            width: double.infinity,
+                            padding: const pw.EdgeInsets.all(12),
+                            decoration: pw.BoxDecoration(
+                              border: pw.Border.all(color: PdfColors.purple300, width: 1.5),
+                              borderRadius: pw.BorderRadius.circular(8),
+                              color: PdfColors.purple50,
+                            ),
+                            child: pw.Column(
+                              crossAxisAlignment: pw.CrossAxisAlignment.start,
+                              children: [
+                                pw.Container(
+                                  padding: const pw.EdgeInsets.only(bottom: 6),
+                                  decoration: pw.BoxDecoration(
+                                    border: pw.Border(
+                                      bottom: pw.BorderSide(color: PdfColors.purple300, width: 1),
+                                    ),
+                                  ),
+                                  child: pw.Row(
+                                    children: [
+                                      pw.Container(
+                                        width: 4,
+                                        height: 16,
+                                        decoration: pw.BoxDecoration(
+                                          color: PdfColors.purple600,
+                                          borderRadius: pw.BorderRadius.circular(2),
+                                        ),
+                                      ),
+                                      pw.SizedBox(width: 6),
+                                      pw.Text(
+                                        config.sectionLabels?['diagnosis'] ?? 'Diagnosis',
+                                        style: pw.TextStyle(fontWeight: pw.FontWeight.bold, fontSize: 10, color: PdfColors.purple900)),
+                                    ],
+                                  ),
+                                ),
+                                pw.SizedBox(height: 8),
+                                pw.Text(diagnosis, style: pw.TextStyle(fontSize: 9, height: 1.4)),
+                              ],
+                            ),
+                          ),
+                          pw.SizedBox(height: 14),
+                        ],
+                        
+                        // Lab Tests / Investigations - Enhanced Design
+                        if (labTests.isNotEmpty && config.showLabsInvestigations) ...[
+                          pw.Container(
+                            width: double.infinity,
+                            padding: const pw.EdgeInsets.all(12),
+                            decoration: pw.BoxDecoration(
+                              border: pw.Border.all(color: PdfColors.teal300, width: 1.5),
+                              borderRadius: pw.BorderRadius.circular(8),
+                              color: PdfColors.teal50,
+                            ),
+                            child: pw.Column(
+                              crossAxisAlignment: pw.CrossAxisAlignment.start,
+                              children: [
+                                pw.Container(
+                                  padding: const pw.EdgeInsets.only(bottom: 6),
+                                  decoration: pw.BoxDecoration(
+                                    border: pw.Border(
+                                      bottom: pw.BorderSide(color: PdfColors.teal300, width: 1),
+                                    ),
+                                  ),
+                                  child: pw.Row(
+                                    children: [
+                                      pw.Container(
+                                        width: 4,
+                                        height: 16,
+                                        decoration: pw.BoxDecoration(
+                                          color: PdfColors.teal600,
+                                          borderRadius: pw.BorderRadius.circular(2),
+                                        ),
+                                      ),
+                                      pw.SizedBox(width: 6),
+                                      pw.Text(
+                                        config.sectionLabels?['lab_tests'] ?? 'Investigations Advised',
+                                        style: pw.TextStyle(fontWeight: pw.FontWeight.bold, fontSize: 10, color: PdfColors.teal900)),
+                                    ],
+                                  ),
+                                ),
+                                pw.SizedBox(height: 8),
+                                pw.Wrap(
+                                  spacing: 6,
+                                  runSpacing: 6,
+                                  children: labTests.map((test) {
+                                    final testName = test is Map ? (test['name'] as String? ?? test.toString()) : test.toString();
+                                    return pw.Container(
+                                      padding: const pw.EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                                      decoration: pw.BoxDecoration(
+                                        color: PdfColors.white,
+                                        border: pw.Border.all(color: PdfColors.teal400, width: 1),
+                                        borderRadius: pw.BorderRadius.circular(5),
+                                      ),
+                                      child: pw.Text(testName, style: const pw.TextStyle(fontSize: 8)),
+                                    );
+                                  }).toList(),
+                                ),
+                              ],
+                            ),
+                          ),
+                          pw.SizedBox(height: 14),
+                        ],
+                        
+                        // Instructions / Advice - Enhanced Design
+                        if (prescription.instructions.isNotEmpty) ...[
+                          pw.Container(
+                            width: double.infinity,
+                            padding: const pw.EdgeInsets.all(12),
+                            decoration: pw.BoxDecoration(
+                              border: pw.Border.all(color: PdfColors.indigo300, width: 1.5),
+                              borderRadius: pw.BorderRadius.circular(8),
+                              color: PdfColors.indigo50,
+                            ),
+                            child: pw.Column(
+                              crossAxisAlignment: pw.CrossAxisAlignment.start,
+                              children: [
+                                pw.Container(
+                                  padding: const pw.EdgeInsets.only(bottom: 6),
+                                  decoration: pw.BoxDecoration(
+                                    border: pw.Border(
+                                      bottom: pw.BorderSide(color: PdfColors.indigo300, width: 1),
+                                    ),
+                                  ),
+                                  child: pw.Row(
+                                    children: [
+                                      pw.Container(
+                                        width: 4,
+                                        height: 16,
+                                        decoration: pw.BoxDecoration(
+                                          color: PdfColors.indigo600,
+                                          borderRadius: pw.BorderRadius.circular(2),
+                                        ),
+                                      ),
+                                      pw.SizedBox(width: 6),
+                                      pw.Text(
+                                        config.sectionLabels?['advice'] ?? 'Instructions',
+                                        style: pw.TextStyle(
+                                          fontWeight: pw.FontWeight.bold,
+                                          fontSize: 10,
+                                          color: PdfColors.indigo900,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                                pw.SizedBox(height: 8),
+                                pw.Text(prescription.instructions, style: pw.TextStyle(fontSize: 9, height: 1.4)),
+                              ],
+                            ),
+                          ),
+                          pw.SizedBox(height: 14),
+                        ],
+                        
+                        // Follow-up - Enhanced Design
+                        if (followUp.isNotEmpty && followUp['date'] != null && config.showNextVisitDate) ...[
+                          pw.Container(
+                            width: double.infinity,
+                            padding: const pw.EdgeInsets.all(12),
+                            decoration: pw.BoxDecoration(
+                              border: pw.Border.all(color: PdfColors.green300, width: 1.5),
+                              borderRadius: pw.BorderRadius.circular(8),
+                              color: PdfColors.green50,
+                            ),
+                            child: pw.Column(
+                              crossAxisAlignment: pw.CrossAxisAlignment.start,
+                              children: [
+                                pw.Container(
+                                  padding: const pw.EdgeInsets.only(bottom: 6),
+                                  decoration: pw.BoxDecoration(
+                                    border: pw.Border(
+                                      bottom: pw.BorderSide(color: PdfColors.green300, width: 1),
+                                    ),
+                                  ),
+                                  child: pw.Row(
+                                    children: [
+                                      pw.Container(
+                                        width: 4,
+                                        height: 16,
+                                        decoration: pw.BoxDecoration(
+                                          color: PdfColors.green600,
+                                          borderRadius: pw.BorderRadius.circular(2),
+                                        ),
+                                      ),
+                                      pw.SizedBox(width: 6),
+                                      pw.Text(
+                                        config.sectionLabels?['follow_up'] ?? 'Follow-up',
+                                        style: pw.TextStyle(fontWeight: pw.FontWeight.bold, fontSize: 10, color: PdfColors.green900)),
+                                    ],
+                                  ),
+                                ),
+                                pw.SizedBox(height: 8),
+                                pw.Row(
+                                  children: [
+                                    pw.Text(_formatDate(DateTime.parse(followUp['date'] as String)), style: pw.TextStyle(fontSize: 9, fontWeight: pw.FontWeight.bold)),
+                                    if ((followUp['notes'] as String?)?.isNotEmpty == true) ...[
+                                      pw.Text(' - ', style: const pw.TextStyle(fontSize: 9)),
+                                      pw.Expanded(child: pw.Text(followUp['notes'] as String, style: pw.TextStyle(fontSize: 9, height: 1.4))),
+                                    ],
+                                  ],
+                                ),
+                              ],
+                            ),
+                          ),
+                          pw.SizedBox(height: 14),
+                        ],
+                        
+                        // Clinical Notes (if available) - Enhanced Design
+                        if (notes.isNotEmpty) ...[
+                          pw.Container(
+                            width: double.infinity,
+                            padding: const pw.EdgeInsets.all(12),
+                            decoration: pw.BoxDecoration(
+                              border: pw.Border.all(color: PdfColors.grey400, width: 1.5),
+                              borderRadius: pw.BorderRadius.circular(8),
+                              color: PdfColors.grey100,
+                            ),
+                            child: pw.Column(
+                              crossAxisAlignment: pw.CrossAxisAlignment.start,
+                              children: [
+                                pw.Container(
+                                  padding: const pw.EdgeInsets.only(bottom: 6),
+                                  decoration: pw.BoxDecoration(
+                                    border: pw.Border(
+                                      bottom: pw.BorderSide(color: PdfColors.grey400, width: 1),
+                                    ),
+                                  ),
+                                  child: pw.Row(
+                                    children: [
+                                      pw.Container(
+                                        width: 4,
+                                        height: 16,
+                                        decoration: pw.BoxDecoration(
+                                          color: PdfColors.grey600,
+                                          borderRadius: pw.BorderRadius.circular(2),
+                                        ),
+                                      ),
+                                      pw.SizedBox(width: 6),
+                                      pw.Text('Clinical Notes', style: pw.TextStyle(fontWeight: pw.FontWeight.bold, fontSize: 10, color: PdfColors.grey800)),
+                                    ],
+                                  ),
+                                ),
+                                pw.SizedBox(height: 8),
+                                pw.Text(notes, style: pw.TextStyle(fontSize: 9, height: 1.4)),
+                              ],
+                            ),
+                          ),
+                        ],
+                      ],
+                    ),
+                  ),
+                  
+                  // Spacing between columns
+                  pw.SizedBox(width: 16),
+                  
+                  // Right column: Rx Symbol and Medications Table
+                  pw.Expanded(
+                    flex: 1,
+                    child: pw.Column(
+                      crossAxisAlignment: pw.CrossAxisAlignment.start,
+                      children: [
+                        // Rx Symbol - Enhanced Design
+                        pw.Container(
+                          alignment: pw.Alignment.centerRight,
+                          padding: const pw.EdgeInsets.only(bottom: 8),
+                          child: pw.Container(
+                            padding: const pw.EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                            decoration: pw.BoxDecoration(
+                              color: PdfColors.blue50,
+                              borderRadius: pw.BorderRadius.circular(6),
+                              border: pw.Border.all(color: PdfColors.blue300, width: 1.5),
+                            ),
+                            child: pw.Text(
+                              'Rx',
+                              style: pw.TextStyle(
+                                fontSize: 20,
+                                fontWeight: pw.FontWeight.bold,
+                                fontStyle: pw.FontStyle.italic,
+                                color: PdfColors.blue900,
+                              ),
+                            ),
+                          ),
+                        ),
+                        pw.SizedBox(height: 14),
+                        
+                        // Medications Table - Enhanced Design
+                        if (medications.isNotEmpty) ...[
+                          pw.Container(
+                            decoration: pw.BoxDecoration(
+                              border: pw.Border.all(color: PdfColors.blue300, width: 1.5),
+                              borderRadius: pw.BorderRadius.circular(8),
+                            ),
+                            child: pw.Table(
+                              border: pw.TableBorder(
+                                horizontalInside: pw.BorderSide(color: PdfColors.grey300, width: 0.5),
+                                verticalInside: pw.BorderSide(color: PdfColors.grey300, width: 0.5),
+                                left: pw.BorderSide.none,
+                                top: pw.BorderSide.none,
+                                right: pw.BorderSide.none,
+                                bottom: pw.BorderSide.none,
+                              ),
+                              columnWidths: {
+                                0: const pw.FlexColumnWidth(0.5),
+                                1: const pw.FlexColumnWidth(2.5),
+                                2: const pw.FlexColumnWidth(),
+                                3: const pw.FlexColumnWidth(1.5),
+                                4: const pw.FlexColumnWidth(),
+                              },
+                              children: [
+                                // Header row
+                                pw.TableRow(
+                                  decoration: pw.BoxDecoration(
+                                    color: PdfColors.blue100,
+                                    borderRadius: const pw.BorderRadius.only(
+                                      topLeft: pw.Radius.circular(8),
+                                      topRight: pw.Radius.circular(8),
+                                    ),
+                                  ),
+                                  children: [
+                                    _tableCell('#', isHeader: true),
+                                    _tableCell('Medication', isHeader: true),
+                                    _tableCell('Dosage', isHeader: true),
+                                    _tableCell('Frequency', isHeader: true),
+                                    _tableCell('Duration', isHeader: true),
+                                  ],
+                                ),
+                                // Medication rows with alternating colors
+                                ...medications.asMap().entries.map((entry) {
+                                  final index = entry.key;
+                                  final med = entry.value as Map<String, dynamic>;
+                                  final isEven = index % 2 == 0;
+                                  return pw.TableRow(
+                                    decoration: pw.BoxDecoration(
+                                      color: isEven ? PdfColors.white : PdfColors.grey50,
+                                    ),
+                                    children: [
+                                      _tableCell('${index + 1}', isEven: isEven),
+                                      _tableCell((med['name'] as String?) ?? 'Unknown', isEven: isEven),
+                                      _tableCell((med['dosage'] as String?) ?? '-', isEven: isEven),
+                                      _tableCell((med['frequency'] as String?) ?? '-', isEven: isEven),
+                                      _tableCell((med['duration'] as String?) ?? '-', isEven: isEven),
+                                    ],
+                                  );
+                                }),
+                              ],
+                            ),
+                          ),
+                          pw.SizedBox(height: 14),
+                          // Divider at the bottom of medications
+                          pw.Container(
+                            height: 2,
+                            decoration: pw.BoxDecoration(
+                              color: PdfColors.blue200,
+                              borderRadius: pw.BorderRadius.circular(1),
+                            ),
+                          ),
+                        ],
+                      ],
                     ),
                   ),
                 ],
               ),
               pw.SizedBox(height: 12),
               
-              // Medications Table
-              if (medications.isNotEmpty) ...[
-                pw.Table(
-                  border: pw.TableBorder.all(color: PdfColors.grey400),
-                  columnWidths: {
-                    0: const pw.FlexColumnWidth(0.5),
-                    1: const pw.FlexColumnWidth(2.5),
-                    2: const pw.FlexColumnWidth(),
-                    3: const pw.FlexColumnWidth(1.5),
-                    4: const pw.FlexColumnWidth(),
-                  },
-                  children: [
-                    // Header row
-                    pw.TableRow(
-                      decoration: const pw.BoxDecoration(color: PdfColors.blue100),
-                      children: [
-                        _tableCell('#', isHeader: true),
-                        _tableCell('Medication', isHeader: true),
-                        _tableCell('Dosage', isHeader: true),
-                        _tableCell('Frequency', isHeader: true),
-                        _tableCell('Duration', isHeader: true),
-                      ],
-                    ),
-                    // Medication rows
-                    ...medications.asMap().entries.map((entry) {
-                      final index = entry.key;
-                      final med = entry.value as Map<String, dynamic>;
-                      return pw.TableRow(
-                        children: [
-                          _tableCell('${index + 1}'),
-                          _tableCell((med['name'] as String?) ?? 'Unknown'),
-                          _tableCell((med['dosage'] as String?) ?? '-'),
-                          _tableCell((med['frequency'] as String?) ?? '-'),
-                          _tableCell((med['duration'] as String?) ?? '-'),
-                        ],
-                      );
-                    }),
-                  ],
+              pw.Spacer(),
+              
+              // Footer (always show if signature is available, or if footer is enabled) - Enhanced Design
+              if (config.showFooter || signatureImage != null || (signatureData != null && signatureData.isNotEmpty)) ...[
+                pw.SizedBox(height: 20),
+                pw.Container(
+                  height: 2,
+                  decoration: pw.BoxDecoration(
+                    color: PdfColors.blue200,
+                    borderRadius: pw.BorderRadius.circular(1),
+                  ),
                 ),
                 pw.SizedBox(height: 16),
-              ],
-              
-              // Lab Tests / Investigations
-              if (labTests.isNotEmpty && config.showLabsInvestigations) ...[
                 pw.Container(
-                  width: double.infinity,
-                  padding: const pw.EdgeInsets.all(10),
+                  padding: const pw.EdgeInsets.symmetric(vertical: 12, horizontal: 16),
                   decoration: pw.BoxDecoration(
-                    border: pw.Border.all(color: PdfColors.teal200),
-                    borderRadius: pw.BorderRadius.circular(6),
-                    color: PdfColors.teal50,
+                    color: PdfColors.grey50,
+                    borderRadius: pw.BorderRadius.circular(8),
+                    border: pw.Border.all(color: PdfColors.grey300, width: 1),
                   ),
-                  child: pw.Column(
-                    crossAxisAlignment: pw.CrossAxisAlignment.start,
+                  child: pw.Row(
+                    mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
+                    crossAxisAlignment: pw.CrossAxisAlignment.end,
                     children: [
-                      pw.Text('Investigations Advised:', style: pw.TextStyle(fontWeight: pw.FontWeight.bold, fontSize: 11, color: PdfColors.teal800)),
-                      pw.SizedBox(height: 6),
-                      pw.Wrap(
-                        spacing: 8,
-                        runSpacing: 4,
-                        children: labTests.map((test) {
-                          final testName = test is Map ? (test['name'] as String? ?? test.toString()) : test.toString();
-                          return pw.Container(
-                            padding: const pw.EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                            decoration: pw.BoxDecoration(
-                              color: PdfColors.white,
-                              border: pw.Border.all(color: PdfColors.teal300),
-                              borderRadius: pw.BorderRadius.circular(4),
+                      // Left side: Doctor name and phone
+                      pw.Column(
+                        crossAxisAlignment: pw.CrossAxisAlignment.start,
+                        children: [
+                          pw.Text('Dr. $doctorName', style: pw.TextStyle(fontWeight: pw.FontWeight.bold, fontSize: 11, color: PdfColors.grey900)),
+                          if ((clinicPhone ?? config.clinicPhone1).isNotEmpty) ...[
+                            pw.SizedBox(height: 2),
+                            pw.Text('Tel: ${clinicPhone ?? config.clinicPhone1}', style: pw.TextStyle(fontSize: 9, color: PdfColors.grey700)),
+                          ],
+                        ],
+                      ),
+                      // Right side: Signature
+                      pw.Column(
+                        crossAxisAlignment: pw.CrossAxisAlignment.end,
+                        children: [
+                          // Show signature image if available
+                          if (signatureImage != null) ...[
+                            pw.Container(
+                              padding: const pw.EdgeInsets.all(4),
+                              decoration: pw.BoxDecoration(
+                                border: pw.Border.all(color: PdfColors.grey300, width: 1),
+                                borderRadius: pw.BorderRadius.circular(4),
+                              ),
+                              child: pw.Image(signatureImage, height: 50, width: 120),
                             ),
-                            child: pw.Text(testName, style: const pw.TextStyle(fontSize: 9)),
-                          );
-                        }).toList(),
+                            pw.SizedBox(height: 4),
+                          ] else if (signatureData != null && signatureData.isNotEmpty) ...[
+                            // Signature data exists but couldn't be parsed (likely strokes format)
+                            pw.Container(
+                              width: 150,
+                              height: 35,
+                              padding: const pw.EdgeInsets.all(4),
+                              decoration: pw.BoxDecoration(
+                                border: pw.Border.all(color: PdfColors.grey400, width: 1.5),
+                                borderRadius: pw.BorderRadius.circular(4),
+                                color: PdfColors.white,
+                              ),
+                              child: pw.Center(
+                                child: pw.Text(
+                                  '[Signature]',
+                                  style: pw.TextStyle(
+                                    fontSize: 10,
+                                    color: PdfColors.grey600,
+                                    fontStyle: pw.FontStyle.italic,
+                                  ),
+                                ),
+                              ),
+                            ),
+                            pw.SizedBox(height: 4),
+                          ] else ...[
+                            pw.Container(
+                              width: 150,
+                              height: 35,
+                              padding: const pw.EdgeInsets.all(4),
+                              decoration: pw.BoxDecoration(
+                                border: pw.Border.all(color: PdfColors.grey400, width: 1.5),
+                                borderRadius: pw.BorderRadius.circular(4),
+                              ),
+                              child: pw.Divider(),
+                            ),
+                            pw.SizedBox(height: 4),
+                          ],
+                          pw.Text('Signature', style: pw.TextStyle(fontSize: 8, color: PdfColors.grey600)),
+                        ],
                       ),
                     ],
                   ),
                 ),
-                pw.SizedBox(height: 12),
               ],
-              
-              // Instructions / Advice
-              if (prescription.instructions.isNotEmpty) ...[
-                pw.Text(
-                  'Instructions:',
-                  style: pw.TextStyle(
-                    fontWeight: pw.FontWeight.bold,
-                    fontSize: 12,
-                  ),
-                ),
-                pw.SizedBox(height: 8),
-                pw.Container(
-                  width: double.infinity,
-                  padding: const pw.EdgeInsets.all(10),
-                  decoration: pw.BoxDecoration(
-                    border: pw.Border.all(color: PdfColors.grey400),
-                    borderRadius: pw.BorderRadius.circular(4),
-                  ),
-                  child: pw.Text(prescription.instructions),
-                ),
-                pw.SizedBox(height: 12),
-              ],
-              
-              // Follow-up
-              if (followUp.isNotEmpty && followUp['date'] != null && config.showNextVisitDate) ...[
-                pw.Container(
-                  width: double.infinity,
-                  padding: const pw.EdgeInsets.all(10),
-                  decoration: pw.BoxDecoration(
-                    border: pw.Border.all(color: PdfColors.green200),
-                    borderRadius: pw.BorderRadius.circular(6),
-                    color: PdfColors.green50,
-                  ),
-                  child: pw.Row(
-                    children: [
-                      pw.Text('Follow-up: ', style: pw.TextStyle(fontWeight: pw.FontWeight.bold, fontSize: 11, color: PdfColors.green800)),
-                      pw.Text(_formatDate(DateTime.parse(followUp['date'] as String)), style: const pw.TextStyle(fontSize: 11)),
-                      if ((followUp['notes'] as String?)?.isNotEmpty == true) ...[
-                        pw.Text(' - ', style: const pw.TextStyle(fontSize: 11)),
-                        pw.Expanded(child: pw.Text(followUp['notes'] as String, style: const pw.TextStyle(fontSize: 10))),
-                      ],
-                    ],
-                  ),
-                ),
-                pw.SizedBox(height: 12),
-              ],
-              
-              // Clinical Notes (if available)
-              if (notes.isNotEmpty) ...[
-                pw.Container(
-                  width: double.infinity,
-                  padding: const pw.EdgeInsets.all(10),
-                  decoration: pw.BoxDecoration(
-                    border: pw.Border.all(color: PdfColors.grey300),
-                    borderRadius: pw.BorderRadius.circular(4),
-                    color: PdfColors.grey100,
-                  ),
-                  child: pw.Column(
-                    crossAxisAlignment: pw.CrossAxisAlignment.start,
-                    children: [
-                      pw.Text('Clinical Notes:', style: pw.TextStyle(fontWeight: pw.FontWeight.bold, fontSize: 10, color: PdfColors.grey700)),
-                      pw.SizedBox(height: 4),
-                      pw.Text(notes, style: const pw.TextStyle(fontSize: 9)),
-                    ],
-                  ),
-                ),
-              ],
-              
-              pw.Spacer(),
-              
-              // Footer (if enabled)
-              if (config.showFooter) ...[
-                pw.Divider(),
-                pw.SizedBox(height: 10),
-                pw.Row(
-                  mainAxisAlignment: pw.MainAxisAlignment.end,
-                  children: [
-                    pw.Column(
-                      children: [
-                        // Show signature image if available
-                        if (signatureImage != null) ...[
-                          pw.Image(signatureImage, height: 50, width: 120),
-                          pw.SizedBox(height: 4),
-                        ] else ...[
-                          pw.Container(width: 150, child: pw.Divider()),
-                          pw.SizedBox(height: 4),
-                        ],
-                        pw.Text('Dr. $doctorName', style: pw.TextStyle(fontWeight: pw.FontWeight.bold)),
-                        pw.Text('Signature'),
-                      ],
+      ];
+    };
+
+    pdf.addPage(
+      pw.MultiPage(
+        build: contentBuilder,
+        // Always use pageTheme - it includes pageFormat and margin
+        // buildBackground only renders when backgroundImage is not null
+        pageTheme: pw.PageTheme(
+          pageFormat: PdfPageFormat.a4,
+          margin: const pw.EdgeInsets.all(40),
+          buildBackground: backgroundImage != null
+              ? (pw.Context context) {
+                  final pageWidth = PdfPageFormat.a4.width - (40 * 2);
+                  final pageHeight = PdfPageFormat.a4.height - (40 * 2);
+                  return pw.Container(
+                    width: pageWidth,
+                    height: pageHeight,
+                    child: pw.Opacity(
+                      opacity: 0.15,
+                      child: pw.Image(backgroundImage!, fit: pw.BoxFit.cover),
                     ),
-                  ],
-                ),
-              ],
-            ],
-          );
-          
-          // Apply background if configured
-          if (backgroundImage != null) {
-            return pw.Stack(
-              children: [
-                // Background (blurred by making it very transparent)
-                pw.Positioned.fill(
-                  child: pw.Opacity(
-                    opacity: 0.15,
-                    child: pw.Image(backgroundImage, fit: pw.BoxFit.cover),
-                  ),
-                ),
-                // Content on top
-                content,
-              ],
-            );
-          }
-          return content;
-        },
+                  );
+                }
+              : null,
+        ),
       ),
     );
 
     return pdf.save();
   }
-
   static Future<Uint8List> _generateInvoicePdf({
     required Patient patient,
     required Invoice invoice,
@@ -2196,68 +2564,86 @@ class PdfService {
     required String doctorName,
     pw.MemoryImage? logoImage,
   }) {
+    // Prioritize config values from scanned template over profile values
     final effectiveClinicName = clinicName.isNotEmpty ? clinicName : (config.clinicAddressLine1.isNotEmpty ? 'Medical Clinic' : '');
-    final effectivePhone = clinicPhone.isNotEmpty ? clinicPhone : (config.clinicPhone1.isNotEmpty ? config.clinicPhone1 : '');
-    final effectiveAddress = clinicAddress.isNotEmpty ? clinicAddress : (config.clinicAddressLine1.isNotEmpty ? config.clinicAddressLine1 : '');
+    // Use config phone if available, otherwise use provided phone
+    final effectivePhone = config.clinicPhone1.isNotEmpty ? config.clinicPhone1 : (clinicPhone.isNotEmpty ? clinicPhone : '');
+    // Use config address if available, otherwise use provided address
+    final effectiveAddress = config.clinicAddressLine1.isNotEmpty ? config.clinicAddressLine1 : (clinicAddress.isNotEmpty ? clinicAddress : '');
     
     return pw.Row(
       mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
       crossAxisAlignment: pw.CrossAxisAlignment.start,
       children: [
-        pw.Column(
-          crossAxisAlignment: pw.CrossAxisAlignment.start,
-          children: [
-            pw.Text(
-              effectiveClinicName,
-              style: pw.TextStyle(
-                fontSize: 20,
-                fontWeight: pw.FontWeight.bold,
-                color: PdfColors.blue900,
-              ),
-            ),
-            if (doctorName.isNotEmpty)
-              pw.Text('Dr. $doctorName', style: const pw.TextStyle(fontSize: 12)),
-            if (effectivePhone.isNotEmpty)
-              pw.Text('Tel: $effectivePhone', style: const pw.TextStyle(fontSize: 10)),
-            if (config.clinicPhone2.isNotEmpty)
-              pw.Text('Tel: ${config.clinicPhone2}', style: const pw.TextStyle(fontSize: 10)),
-            if (effectiveAddress.isNotEmpty)
-              pw.Text(effectiveAddress, style: const pw.TextStyle(fontSize: 10)),
-            if (config.clinicAddressLine2.isNotEmpty)
-              pw.Text(config.clinicAddressLine2, style: const pw.TextStyle(fontSize: 10)),
-            if (config.clinicHours.isNotEmpty)
-              pw.Text('Hours: ${config.clinicHours}', style: const pw.TextStyle(fontSize: 9)),
-          ],
-        ),
-        // Logo or placeholder
-        if (logoImage != null)
-          pw.Image(logoImage, height: 60, width: 120, fit: pw.BoxFit.contain)
-        else
-          pw.Container(
-            padding: const pw.EdgeInsets.all(12),
-            decoration: pw.BoxDecoration(
-              color: PdfColors.blue100,
-              border: pw.Border.all(color: PdfColors.blue800, width: 2),
-              borderRadius: pw.BorderRadius.circular(8),
-            ),
-            child: pw.Column(
-              children: [
-                pw.Text('+', style: pw.TextStyle(fontSize: 20, fontWeight: pw.FontWeight.bold, color: PdfColors.blue800)),
+        // Left side: Doctor name, phone, clinic info, expert in
+        pw.Expanded(
+          child: pw.Column(
+            crossAxisAlignment: pw.CrossAxisAlignment.start,
+            children: [
+              if (doctorName.isNotEmpty)
+                pw.Text('Dr. $doctorName', style: pw.TextStyle(fontSize: 14, fontWeight: pw.FontWeight.bold)),
+              if (effectivePhone.isNotEmpty) ...[
+                pw.SizedBox(height: 2),
+                pw.Text('Tel: $effectivePhone', style: const pw.TextStyle(fontSize: 9)),
               ],
-            ),
+              if (config.clinicPhone2.isNotEmpty) ...[
+                pw.SizedBox(height: 2),
+                pw.Text('Tel: ${config.clinicPhone2}', style: const pw.TextStyle(fontSize: 9)),
+              ],
+              if (effectiveAddress.isNotEmpty) ...[
+                pw.SizedBox(height: 2),
+                pw.Text(effectiveAddress, style: const pw.TextStyle(fontSize: 9)),
+              ],
+              if (config.clinicAddressLine2.isNotEmpty) ...[
+                pw.SizedBox(height: 2),
+                pw.Text(config.clinicAddressLine2, style: const pw.TextStyle(fontSize: 9)),
+              ],
+              if (config.showExpertInDiseases && config.expertInDiseases.isNotEmpty) ...[
+                pw.SizedBox(height: 4),
+                pw.Text('Expert In: ${config.expertInDiseases}', style: pw.TextStyle(fontSize: 9, fontStyle: pw.FontStyle.italic)),
+              ],
+              if (config.showWorkingExperience && config.workingExperience.isNotEmpty) ...[
+                pw.SizedBox(height: 2),
+                pw.Text(config.workingExperience, style: const pw.TextStyle(fontSize: 8)),
+              ],
+            ],
           ),
+        ),
+        // Right side: Clinic name (large and bold)
+        pw.Expanded(
+          child: pw.Column(
+            crossAxisAlignment: pw.CrossAxisAlignment.end,
+            children: [
+              pw.Text(
+                effectiveClinicName,
+                style: pw.TextStyle(
+                  fontSize: 18,
+                  fontWeight: pw.FontWeight.bold,
+                  color: PdfColors.blue900,
+                ),
+                textAlign: pw.TextAlign.right,
+              ),
+              // Logo or placeholder on right if available
+              if (logoImage != null) ...[
+                pw.SizedBox(height: 8),
+                pw.Image(logoImage, height: 60, width: 120, fit: pw.BoxFit.contain),
+              ],
+            ],
+          ),
+        ),
       ],
     );
   }
 
-  static pw.Widget _tableCell(String text, {bool isHeader = false}) {
+  static pw.Widget _tableCell(String text, {bool isHeader = false, bool isEven = true}) {
     return pw.Container(
-      padding: const pw.EdgeInsets.all(8),
+      padding: const pw.EdgeInsets.symmetric(horizontal: 10, vertical: 9),
       child: pw.Text(
         text,
         style: pw.TextStyle(
-          fontWeight: isHeader ? pw.FontWeight.bold : null,
-          fontSize: isHeader ? 11 : 10,
+          fontWeight: isHeader ? pw.FontWeight.bold : pw.FontWeight.normal,
+          fontSize: isHeader ? 9 : 8,
+          color: isHeader ? PdfColors.blue900 : PdfColors.grey800,
         ),
       ),
     );

@@ -14,6 +14,7 @@ import '../../services/pdf_template_config.dart';
 import '../../theme/app_theme.dart';
 import '../widgets/signature_pad.dart';
 import '../../core/widgets/keyboard_aware_scaffold.dart';
+import 'prescription_pad_scanner_screen.dart';
 
 class DoctorProfileScreen extends ConsumerStatefulWidget {
   const DoctorProfileScreen({super.key});
@@ -700,6 +701,86 @@ class _DoctorProfileScreenState extends ConsumerState<DoctorProfileScreen>
     );
   }
 
+  bool _hasTemplateSaved() {
+    final profile = ref.read(doctorSettingsProvider).profile;
+    final config = profile.pdfTemplateConfig;
+    return config.clinicAddressLine1.isNotEmpty || 
+           config.clinicAddressLine2.isNotEmpty ||
+           config.clinicPhone1.isNotEmpty ||
+           config.clinicPhone2.isNotEmpty ||
+           config.expertInDiseases.isNotEmpty ||
+           config.workingExperience.isNotEmpty ||
+           (config.sectionLabels != null && config.sectionLabels!.isNotEmpty);
+  }
+  
+  bool _hasClinicInfo() {
+    final profile = ref.read(doctorSettingsProvider).profile;
+    final config = profile.pdfTemplateConfig;
+    return config.clinicAddressLine1.isNotEmpty || 
+           config.clinicAddressLine2.isNotEmpty ||
+           config.clinicPhone1.isNotEmpty ||
+           config.clinicPhone2.isNotEmpty ||
+           config.clinicHours.isNotEmpty;
+  }
+  
+  bool _hasSectionLabels() {
+    final profile = ref.read(doctorSettingsProvider).profile;
+    final config = profile.pdfTemplateConfig;
+    return config.sectionLabels != null && config.sectionLabels!.isNotEmpty;
+  }
+  
+  bool _hasExpertIn() {
+    final profile = ref.read(doctorSettingsProvider).profile;
+    return profile.pdfTemplateConfig.expertInDiseases.isNotEmpty;
+  }
+  
+  bool _hasExperience() {
+    final profile = ref.read(doctorSettingsProvider).profile;
+    return profile.pdfTemplateConfig.workingExperience.isNotEmpty;
+  }
+  
+  Widget _buildTemplateInfoRow(bool isDark, IconData icon, String label, bool hasData) {
+    return Padding(
+      padding: const EdgeInsets.only(top: 4),
+      child: Row(
+        children: [
+          Icon(icon, size: 16, color: hasData ? AppColors.primary : (isDark ? AppColors.darkTextSecondary : AppColors.textSecondary)),
+          const SizedBox(width: 8),
+          Text(
+            label,
+            style: TextStyle(
+              fontSize: 12,
+              color: hasData 
+                ? (isDark ? AppColors.darkTextPrimary : AppColors.textPrimary)
+                : (isDark ? AppColors.darkTextSecondary : AppColors.textSecondary),
+              fontWeight: hasData ? FontWeight.w500 : FontWeight.normal,
+            ),
+          ),
+          const Spacer(),
+          Icon(
+            hasData ? Icons.check_circle : Icons.cancel,
+            size: 16,
+            color: hasData ? Colors.green : (isDark ? AppColors.darkTextSecondary : AppColors.textSecondary),
+          ),
+        ],
+      ),
+    );
+  }
+  
+  void _navigateToTemplateEditor() {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (_) => const PrescriptionPadScannerScreen(),
+      ),
+    ).then((_) {
+      // Reload profile after returning
+      final updatedProfile = ref.read(doctorSettingsProvider).profile;
+      _initializeFromProfile(updatedProfile);
+      setState(() {});
+    });
+  }
+
   Widget _buildClinicTab(bool isDark, bool isCompact) {
     return SingleChildScrollView(
       padding: EdgeInsets.all(isCompact ? 12 : 20),
@@ -716,6 +797,85 @@ class _DoctorProfileScreenState extends ConsumerState<DoctorProfileScreen>
                 _buildEditableField(label: 'Address', controller: _clinicAddressController, isDark: isDark, icon: Icons.location_on_outlined, maxLines: 2),
                 const SizedBox(height: 16),
                 _buildEditableField(label: 'Clinic Phone', controller: _clinicPhoneController, isDark: isDark, icon: Icons.phone_outlined, keyboardType: TextInputType.phone),
+              ],
+            ),
+          ),
+          const SizedBox(height: 16),
+          _buildCard(
+            isDark: isDark,
+            title: 'Prescription Pad Template',
+            icon: Icons.scanner,
+            trailing: _hasTemplateSaved()
+              ? IconButton(
+                  icon: const Icon(Icons.edit, size: 20),
+                  onPressed: () => _navigateToTemplateEditor(),
+                  tooltip: 'Edit Template',
+                  color: AppColors.primary,
+                )
+              : null,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                if (_hasTemplateSaved()) ...[
+                  // Show saved template info
+                  Container(
+                    padding: const EdgeInsets.all(12),
+                    decoration: BoxDecoration(
+                      color: AppColors.primary.withValues(alpha: 0.1),
+                      borderRadius: BorderRadius.circular(8),
+                      border: Border.all(color: AppColors.primary.withValues(alpha: 0.3)),
+                    ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(
+                          children: [
+                            Icon(Icons.check_circle, color: AppColors.primary, size: 20),
+                            const SizedBox(width: 8),
+                            Text(
+                              'Template Saved',
+                              style: TextStyle(
+                                fontSize: 14,
+                                fontWeight: FontWeight.bold,
+                                color: isDark ? AppColors.darkTextPrimary : AppColors.textPrimary,
+                              ),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 8),
+                        _buildTemplateInfoRow(isDark, Icons.business, 'Clinic Info', _hasClinicInfo()),
+                        _buildTemplateInfoRow(isDark, Icons.view_list, 'Section Labels', _hasSectionLabels()),
+                        _buildTemplateInfoRow(isDark, Icons.medical_services, 'Expert In', _hasExpertIn()),
+                        _buildTemplateInfoRow(isDark, Icons.work_history, 'Experience', _hasExperience()),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+                ] else ...[
+                  Text(
+                    'Scan your prescription pad to automatically extract clinic information, section labels, and layout.',
+                    style: TextStyle(
+                      fontSize: 13,
+                      color: isDark ? AppColors.darkTextSecondary : AppColors.textSecondary,
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+                ],
+                Row(
+                  children: [
+                    Expanded(
+                      child: ElevatedButton.icon(
+                        onPressed: () => _navigateToTemplateEditor(),
+                        icon: Icon(_hasTemplateSaved() ? Icons.edit : Icons.scanner),
+                        label: Text(_hasTemplateSaved() ? 'Edit Template' : 'Scan Prescription Pad'),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: AppColors.primary,
+                          padding: const EdgeInsets.symmetric(vertical: 12),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
               ],
             ),
           ),

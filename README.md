@@ -152,6 +152,86 @@ This project follows modern Flutter best practices and clean architecture princi
 
 ---
 
+## 🎨 Design System & UI/UX
+
+### Design Tokens
+The app uses a comprehensive design token system for consistent UI across all screens:
+
+#### Spacing (`AppSpacing`)
+- `xs` = 4px, `sm` = 8px, `md` = 12px, `lg` = 16px
+- `xl` = 20px, `xxl` = 24px, `xxxl` = 32px, `xxxxl` = 40px
+- Semantic spacing: `contentPadding`, `sectionSpacing`, `cardPadding`, `buttonPadding`
+
+#### Border Radius (`AppRadius`)
+- `xs` = 4px, `sm` = 8px, `md` = 12px, `lg` = 16px
+- `xl` = 20px, `xxl` = 24px
+- Semantic: `card` = 16px, `button` = 8px, `input` = 12px
+
+#### Typography (`AppFontSize`)
+- `xs` = 11px, `sm` = 12px, `md` = 13px, `lg` = 14px
+- `xl` = 16px, `xxl` = 18px, `xxxl` = 22px, `display` = 26px
+- Semantic sizes: `titleLarge`, `bodyLarge`, `headlineLarge`, etc.
+
+#### Icon Sizes (`AppIconSize`)
+- `xs` = 16px, `sm` = 20px, `md` = 24px, `lg` = 28px
+- `xl` = 32px, `xxl` = 48px
+- Semantic: `button` = 20px, `fab` = 24px
+
+### Recent UI/UX Improvements (December 2024)
+
+#### ✅ Theme Token Consistency
+**Status:** Completed for high-priority screens
+
+**Completed Screens:**
+- ✅ **PrescriptionsScreen** — All hardcoded spacing, radius, font sizes, and icon sizes replaced with design tokens
+- ✅ **InvoiceDetailScreen** — Complete theme token migration for consistent UI
+- ✅ **Clinical Features Screens** — ProblemListScreen, FamilyHistoryScreen, ImmunizationsScreen, AllergyManagementScreen, ReferralsScreen
+
+**Benefits:**
+- **Visual Consistency** — All screens follow the same design system
+- **Maintainability** — Single source of truth for design values
+- **Scalability** — Easy to update globally by changing tokens
+- **Better UX** — Consistent spacing and sizing improves user experience
+
+#### ✅ Skeleton Loading States
+**Status:** Implemented for key screens
+
+**Implemented:**
+- ✅ **Dashboard** — `DashboardSkeleton` with shimmer effects
+- ✅ **Patient List** — `PatientListSkeleton` with patient card placeholders
+- ✅ **Appointment List** — `AppointmentListSkeleton` integrated
+- ✅ **Prescription List** — `PrescriptionListSkeleton` with prescription card placeholders
+
+**Features:**
+- Shimmer animation effects for better perceived performance
+- Realistic placeholders matching actual content layout
+- Smooth transitions from loading to content
+
+### UI/UX Best Practices
+
+#### Loading States
+- **Skeleton Loaders** — Used instead of spinners for better UX
+- **Progressive Loading** — Data appears as it loads
+- **Optimistic Updates** — Immediate feedback for user actions
+
+#### Visual Hierarchy
+- **Consistent Spacing** — All screens use `AppSpacing` tokens
+- **Standardized Typography** — `AppFontSize` tokens for consistent text sizing
+- **Unified Border Radius** — `AppRadius` tokens for consistent rounded corners
+- **Icon Consistency** — `AppIconSize` tokens for uniform icon sizing
+
+#### Responsive Design
+- **Compact Mode** — Optimized layouts for small screens (< 400px width)
+- **Adaptive Padding** — Context-aware spacing based on screen size
+- **Flexible Components** — Widgets adapt to available space
+
+### Design System Files
+- `lib/src/core/theme/design_tokens.dart` — All design tokens
+- `lib/src/theme/app_theme.dart` — Light and dark theme definitions
+- `lib/src/core/widgets/skeleton_loading.dart` — Skeleton loader components
+
+---
+
 ## 📁 Project Structure
 
 ```
@@ -354,6 +434,40 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 | **Reusable Components** | 15+ |
 | **Unit Tests** | 776+ |
 | **Features** | 36 |
+| **Design Tokens** | 50+ |
+| **Skeleton Loaders** | 5+ |
+
+---
+
+## 🎯 Recent Updates & Improvements
+
+### December 2024 - UI/UX Enhancements
+
+#### Theme Token Standardization ✅
+- **PrescriptionsScreen** — Complete migration to design tokens
+- **InvoiceDetailScreen** — All hardcoded values replaced with tokens
+- **Clinical Features Screens** — 5 screens standardized (ProblemList, FamilyHistory, Immunizations, Allergies, Referrals)
+
+**Impact:**
+- Consistent visual design across all updated screens
+- Easier maintenance with centralized design values
+- Better scalability for future updates
+
+#### Loading State Improvements ✅
+- Skeleton loaders implemented for Dashboard, Patient List, Appointment List, and Prescription List
+- Shimmer effects for better perceived performance
+- Smooth loading transitions
+
+#### Code Quality ✅
+- Zero linter errors across all updated files
+- Type-safe design token system
+- Comprehensive documentation in `docs/` folder
+
+### Upcoming Improvements
+- Complete theme token migration for remaining medical record screens
+- Enhanced skeleton loaders for additional screens
+- Query result pagination for better performance
+- Advanced search and filtering capabilities
 
 ---
 

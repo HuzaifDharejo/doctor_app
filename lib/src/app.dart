@@ -202,15 +202,17 @@ class _LoggingNavigatorObserver extends NavigatorObserver {
     String name = route.settings.name ?? '';
     if (name.isEmpty && route is ModalRoute) {
       // Try to get the widget name from the route's current result
+      // Use a safe approach that doesn't access disposed contexts
       try {
         // Access the route's subtreeContext to get widget info
+        // Check if context is mounted before accessing
         final context = route.subtreeContext;
-        if (context != null) {
+        if (context != null && context.mounted) {
           final widget = context.widget;
           name = '/${_camelToKebab(widget.runtimeType.toString())}';
         }
       } catch (_) {
-        // Fallback
+        // Fallback - context might be disposed, ignore
       }
     }
     
