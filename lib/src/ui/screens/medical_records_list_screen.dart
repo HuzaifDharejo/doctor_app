@@ -179,7 +179,15 @@ class _MedicalRecordsListScreenState extends ConsumerState<MedicalRecordsListScr
           ],
         ),
       ),
-      floatingActionButton: _AddRecordFAB(selectedRecordType: _selectedRecordType),
+      floatingActionButton: _AddRecordFAB(
+        selectedRecordType: _selectedRecordType,
+        onRecordAdded: () async {
+          await _paginationController.refresh();
+          if (mounted) {
+            setState(() {});
+          }
+        },
+      ),
     );
   }
 }
@@ -780,8 +788,12 @@ class _RecordCard extends StatelessWidget {
 
 class _AddRecordFAB extends StatelessWidget {
 
-  const _AddRecordFAB({this.selectedRecordType});
+  const _AddRecordFAB({
+    this.selectedRecordType,
+    required this.onRecordAdded,
+  });
   final String? selectedRecordType;
+  final VoidCallback onRecordAdded;
 
   @override
   Widget build(BuildContext context) {
@@ -815,9 +827,10 @@ class _AddRecordFAB extends StatelessWidget {
       ),
     );
     
+    // Always refresh when returning from add record screen
+    // This ensures new records appear immediately
     if (result != null && context.mounted) {
-      // Trigger rebuild by invalidating the provider
-      // This is handled by the parent widget's state
+      onRecordAdded();
     }
   }
 }

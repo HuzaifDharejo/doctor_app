@@ -71,7 +71,7 @@ class _EditInvoiceScreenState extends ConsumerState<EditInvoiceScreen> {
         _items.add(_InvoiceItem(
           description: item['description']?.toString() ?? '',
           quantity: (item['quantity'] as num?)?.toInt() ?? 1,
-          rate: (item['rate'] as num?)?.toDouble() ?? 0,
+          rate: (item['unitPrice'] as num?)?.toDouble() ?? (item['rate'] as num?)?.toDouble() ?? 0, // Support both field names
           type: item['type']?.toString() ?? 'Service',
         ));
       }

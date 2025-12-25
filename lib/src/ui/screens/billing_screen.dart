@@ -1161,10 +1161,14 @@ class _BillingScreenState extends ConsumerState<BillingScreen> with SingleTicker
                           icon: Icons.check_circle,
                           onPressed: () async {
                             await db.updateInvoice(invoice.copyWith(paymentStatus: 'Paid'));
+                            // Refresh all pagination controllers
+                            for (final controller in _paginationControllers.values) {
+                              controller.refresh();
+                            }
                             if (context.mounted) {
                               Navigator.pop(context);
+                              setState(() {});
                             }
-                            setState(() {});
                           },
                         ),
                       ),
@@ -1283,12 +1287,22 @@ class _BillingScreenState extends ConsumerState<BillingScreen> with SingleTicker
         ],
       ),
         child: FloatingActionButton.extended(
-                        onPressed: () {
+                        onPressed: () async {
                           if (!mounted) return;
-                          Navigator.push<void>(
+                          final result = await Navigator.push<void>(
                             context,
                             MaterialPageRoute<void>(builder: (_) => const AddInvoiceScreen()),
                           );
+                          // Always refresh all pagination controllers when returning from add invoice screen
+                          // This ensures new invoices appear immediately
+                          if (mounted) {
+                            for (final controller in _paginationControllers.values) {
+                              await controller.refresh();
+                            }
+                            if (mounted) {
+                              setState(() {});
+                            }
+                          }
                         },
         backgroundColor: Colors.transparent,
         elevation: 0,

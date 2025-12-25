@@ -14,6 +14,7 @@ void main() {
     // when importing services.dart, even if rootBundle is never used
     if (kIsWeb && errorString.contains('AssetManifest.json')) {
       // Silently ignore - this is expected behavior on Flutter Web
+      // Don't log or dump to console - completely suppress
       return;
     }
     
@@ -21,6 +22,7 @@ void main() {
     // that occurs during navigation transitions (fixed in Flutter 3.27.0+)
     if (kIsWeb && errorString.contains('disposed EngineFlutterView')) {
       // Silently ignore - this is a known Flutter Web framework issue
+      // Don't log or dump to console - completely suppress
       return;
     }
     
@@ -33,7 +35,7 @@ void main() {
       },
     );
     
-    // In debug mode, also print to console
+    // In debug mode, also print to console (only for non-suppressed errors)
     if (kDebugMode) {
       FlutterError.dumpErrorToConsole(details);
     }
@@ -41,6 +43,22 @@ void main() {
 
   // Catch async errors
   PlatformDispatcher.instance.onError = (error, stack) {
+    // Suppress known harmless Flutter Web errors
+    final errorString = error.toString();
+    
+    // Ignore AssetManifest.json errors on web - this is a known Flutter Web limitation
+    // when importing services.dart, even if rootBundle is never used
+    if (kIsWeb && errorString.contains('AssetManifest.json')) {
+      // Silently ignore - this is expected behavior on Flutter Web
+      return true; // Handled
+    }
+    
+    // Ignore disposed EngineFlutterView errors on web
+    if (kIsWeb && errorString.contains('disposed EngineFlutterView')) {
+      // Silently ignore - this is a known Flutter Web framework issue
+      return true; // Handled
+    }
+    
     log.f('PLATFORM', 'Uncaught platform error',
       error: error,
       stackTrace: stack,

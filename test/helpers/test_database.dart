@@ -273,7 +273,7 @@ class TestDataFactory {
   }) {
     return PrescriptionsCompanion.insert(
       patientId: patientId,
-      itemsJson: itemsJson ?? '[]',
+      itemsJson: Value(itemsJson ?? '[]'),
       instructions: Value(instructions ?? ''),
       isRefillable: Value(isRefillable ?? false),
     );

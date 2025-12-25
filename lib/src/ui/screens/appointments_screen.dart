@@ -261,8 +261,17 @@ class _AppointmentsScreenState extends ConsumerState<AppointmentsScreen> {
         builder: (_) => AddAppointmentScreen(initialDate: _selectedDate),
       ),
     );
-    if (result != null) {
-      setState(() {}); // Refresh the list
+    // Always refresh when returning from add appointment screen
+    // This ensures new appointments appear immediately
+    if (mounted) {
+      setState(() {
+        // Update selected date if appointment was created for a different date
+        if (result != null && result.appointmentDateTime != null) {
+          _selectedDate = result.appointmentDateTime;
+        }
+      });
+      // Invalidate provider to force refresh
+      ref.invalidate(doctorDbProvider);
     }
   }
 
@@ -1613,6 +1622,8 @@ class _AppointmentsScreenState extends ConsumerState<AppointmentsScreen> {
                                   ),
                                 );
                                 if (result == true) {
+                                  // Invalidate database provider to refresh appointments
+                                  ref.invalidate(doctorDbProvider);
                                   setState(() {});
                                 }
                               },
@@ -1651,6 +1662,8 @@ class _AppointmentsScreenState extends ConsumerState<AppointmentsScreen> {
                                   ),
                                 );
                                 if (result == true) {
+                                  // Invalidate database provider to refresh appointments
+                                  ref.invalidate(doctorDbProvider);
                                   setState(() {});
                                 }
                               },

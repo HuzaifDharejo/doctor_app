@@ -55,8 +55,17 @@ class _EditPrescriptionScreenState extends ConsumerState<EditPrescriptionScreen>
     _instructionsController.text = widget.prescription.instructions;
     _isRefillable = widget.prescription.isRefillable;
 
-    // V5: Load medications from normalized table first
+    // Load follow-up and notes from normalized fields
     final db = await ref.read(doctorDbProvider.future);
+    final followUpData = await db.getFollowUpForPrescriptionCompat(widget.prescription.id);
+    if (followUpData != null) {
+      // Note: Follow-up date and notes are loaded but not editable in this simplified view
+      // They can be viewed in the prescription details screen
+    }
+    final clinicalNotes = await db.getClinicalNotesForPrescriptionCompat(widget.prescription.id);
+    // Note: Clinical notes are loaded but not editable in this simplified view
+
+    // V5: Load medications from normalized table first
     final normalizedMeds = await db.getMedicationsForPrescriptionCompat(widget.prescription.id);
     
     if (normalizedMeds.isNotEmpty) {
@@ -797,7 +806,11 @@ class _EditPrescriptionScreenState extends ConsumerState<EditPrescriptionScreen>
     try {
       final db = await ref.read(doctorDbProvider.future);
 
-      // V5: Update prescription with empty itemsJson - data goes to normalized table
+      // Get existing follow-up and notes to preserve them (not editable in this view)
+      final followUpData = await db.getFollowUpForPrescriptionCompat(widget.prescription.id);
+      final clinicalNotes = await db.getClinicalNotesForPrescriptionCompat(widget.prescription.id);
+
+      // V5: Update prescription with normalized fields
       final updatedPrescription = PrescriptionsCompanion(
         id: Value(widget.prescription.id),
         patientId: Value(widget.prescription.patientId),
@@ -810,6 +823,14 @@ class _EditPrescriptionScreenState extends ConsumerState<EditPrescriptionScreen>
         diagnosis: Value(_diagnosisController.text),
         chiefComplaint: Value(_symptomsController.text),
         vitalsJson: const Value('{}'), // V5: Vitals stored in VitalSigns table
+        // Preserve normalized fields (follow-up and notes not editable in this view)
+        followUpDate: Value(followUpData != null && followUpData['date'] != null 
+            ? DateTime.tryParse(followUpData['date'] as String) 
+            : widget.prescription.followUpDate),
+        followUpNotes: Value(followUpData != null 
+            ? (followUpData['notes'] as String? ?? widget.prescription.followUpNotes)
+            : widget.prescription.followUpNotes),
+        clinicalNotes: Value(clinicalNotes.isNotEmpty ? clinicalNotes : widget.prescription.clinicalNotes),
       );
 
       await db.updatePrescription(updatedPrescription);

@@ -29,6 +29,7 @@ class LabOrderService {
     required String orderingProvider,
     required DateTime orderedDate,
     int? encounterId,
+    int? prescriptionId, // V6: Direct link to prescription
     String? orderType,
     String? diagnosisCodes,
     String? priority,
@@ -49,6 +50,7 @@ class LabOrderService {
         orderingProvider: orderingProvider,
         orderedDate: orderedDate,
         encounterId: Value(encounterId),
+        prescriptionId: Value(prescriptionId), // V6: Link to prescription
         orderType: Value(orderType ?? 'lab'),
         diagnosisCodes: Value(diagnosisCodes ?? ''),
         priority: Value(priority ?? 'routine'),

@@ -134,317 +134,113 @@ class _PatientClinicalFeaturesTabState extends ConsumerState<PatientClinicalFeat
 
     return CustomScrollView(
       slivers: [
-        // Problem List Section
-        _buildSectionHeader(
-          'Problem List',
-          Icons.assignment_rounded,
-          _activeProblems.length,
-          onViewAll: () => Navigator.push(
-            context,
-            MaterialPageRoute(
-              builder: (_) => ProblemListScreen(patientId: widget.patient.id),
+        // Header
+        SliverPadding(
+          padding: const EdgeInsets.fromLTRB(AppSpacing.md, AppSpacing.lg, AppSpacing.md, AppSpacing.md),
+          sliver: SliverToBoxAdapter(
+            child: Text(
+              'Clinical Features',
+              style: TextStyle(
+                fontSize: AppFontSize.xxl,
+                fontWeight: FontWeight.w800,
+                color: isDark ? AppColors.darkTextPrimary : AppColors.textPrimary,
+              ),
             ),
           ),
         ),
-        if (_activeProblems.isEmpty)
-          _buildEmptyState(
-            'No active problems',
-            'Add problems from encounters or manually',
-            Icons.assignment_outlined,
-            onAdd: () => Navigator.push(
-              context,
-              MaterialPageRoute(
-                builder: (_) => ProblemListScreen(patientId: widget.patient.id),
-              ),
+        
+        // Tiles Grid
+        SliverPadding(
+          padding: const EdgeInsets.symmetric(horizontal: AppSpacing.md),
+          sliver: SliverGrid(
+            gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+              crossAxisCount: 2,
+              childAspectRatio: 1.1,
+              crossAxisSpacing: AppSpacing.md,
+              mainAxisSpacing: AppSpacing.md,
             ),
-          )
-        else
-          SliverPadding(
-            padding: const EdgeInsets.symmetric(horizontal: AppSpacing.md),
-            sliver: SliverList(
-              delegate: SliverChildBuilderDelegate(
-                (context, index) {
-                  if (index >= _activeProblems.length) return null;
-                  final problem = _activeProblems[index];
-                  return _buildProblemCard(problem, isDark, surfaceColor);
-                },
-                childCount: _activeProblems.length > 3 ? 3 : _activeProblems.length,
-              ),
-            ),
-          ),
-        if (_activeProblems.length > 3)
-          SliverPadding(
-            padding: const EdgeInsets.all(AppSpacing.md),
-            sliver: SliverToBoxAdapter(
-              child: Center(
-                child: TextButton(
-                  onPressed: () => Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (_) => ProblemListScreen(patientId: widget.patient.id),
-                    ),
+            delegate: SliverChildListDelegate([
+              _buildFeatureTile(
+                'Problem List',
+                Icons.assignment_rounded,
+                _activeProblems.length,
+                const Color(0xFFEF4444),
+                () => Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (_) => ProblemListScreen(patientId: widget.patient.id),
                   ),
-                  child: const Text('View All Problems'),
                 ),
+                isDark,
               ),
-            ),
-          ),
-
-        // Family History Section
-        _buildSectionHeader(
-          'Family History',
-          Icons.family_restroom_rounded,
-          _familyHistory.length,
-          onViewAll: () => Navigator.push(
-            context,
-            MaterialPageRoute(
-              builder: (_) => FamilyHistoryScreen(patientId: widget.patient.id),
-            ),
-          ),
-        ),
-        if (_familyHistory.isEmpty)
-          _buildEmptyState(
-            'No family history recorded',
-            'Add family medical history',
-            Icons.family_restroom_outlined,
-            onAdd: () => Navigator.push(
-              context,
-              MaterialPageRoute(
-                builder: (_) => FamilyHistoryScreen(patientId: widget.patient.id),
-              ),
-            ),
-          )
-        else
-          SliverPadding(
-            padding: const EdgeInsets.symmetric(horizontal: AppSpacing.md),
-            sliver: SliverList(
-              delegate: SliverChildBuilderDelegate(
-                (context, index) {
-                  if (index >= _familyHistory.length) return null;
-                  final history = _familyHistory[index];
-                  return _buildFamilyHistoryCard(history, isDark, surfaceColor);
-                },
-                childCount: _familyHistory.length > 3 ? 3 : _familyHistory.length,
-              ),
-            ),
-          ),
-        if (_familyHistory.length > 3)
-          SliverPadding(
-            padding: const EdgeInsets.all(AppSpacing.md),
-            sliver: SliverToBoxAdapter(
-              child: Center(
-                child: TextButton(
-                  onPressed: () => Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (_) => FamilyHistoryScreen(patientId: widget.patient.id),
-                    ),
+              _buildFeatureTile(
+                'Family History',
+                Icons.family_restroom_rounded,
+                _familyHistory.length,
+                const Color(0xFF8B5CF6),
+                () => Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (_) => FamilyHistoryScreen(patientId: widget.patient.id),
                   ),
-                  child: const Text('View All Family History'),
                 ),
+                isDark,
               ),
-            ),
-          ),
-
-        // Immunizations Section
-        _buildSectionHeader(
-          'Immunizations',
-          Icons.vaccines_rounded,
-          _immunizations.length,
-          onViewAll: () => Navigator.push(
-            context,
-            MaterialPageRoute(
-              builder: (_) => ImmunizationsScreen(patientId: widget.patient.id),
-            ),
-          ),
-        ),
-        if (_immunizations.isEmpty)
-          _buildEmptyState(
-            'No immunizations recorded',
-            'Add immunization records',
-            Icons.vaccines_outlined,
-            onAdd: () => Navigator.push(
-              context,
-              MaterialPageRoute(
-                builder: (_) => ImmunizationsScreen(patientId: widget.patient.id),
-              ),
-            ),
-          )
-        else
-          SliverPadding(
-            padding: const EdgeInsets.symmetric(horizontal: AppSpacing.md),
-            sliver: SliverList(
-              delegate: SliverChildBuilderDelegate(
-                (context, index) {
-                  if (index >= _immunizations.length) return null;
-                  final immunization = _immunizations[index];
-                  return _buildImmunizationCard(immunization, isDark, surfaceColor);
-                },
-                childCount: _immunizations.length > 3 ? 3 : _immunizations.length,
-              ),
-            ),
-          ),
-        if (_immunizations.length > 3)
-          SliverPadding(
-            padding: const EdgeInsets.all(AppSpacing.md),
-            sliver: SliverToBoxAdapter(
-              child: Center(
-                child: TextButton(
-                  onPressed: () => Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (_) => ImmunizationsScreen(patientId: widget.patient.id),
-                    ),
+              _buildFeatureTile(
+                'Immunizations',
+                Icons.vaccines_rounded,
+                _immunizations.length,
+                const Color(0xFF10B981),
+                () => Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (_) => ImmunizationsScreen(patientId: widget.patient.id),
                   ),
-                  child: const Text('View All Immunizations'),
                 ),
+                isDark,
               ),
-            ),
-          ),
-
-        // Allergies Section
-        _buildSectionHeader(
-          'Allergies',
-          Icons.warning_rounded,
-          widget.patient.allergies?.isNotEmpty == true ? 1 : 0,
-          onViewAll: () => Navigator.push(
-            context,
-            MaterialPageRoute(
-              builder: (_) => AllergyManagementScreen(patientId: widget.patient.id),
-            ),
-          ),
-        ),
-        if (widget.patient.allergies?.isEmpty != false)
-          _buildEmptyState(
-            'No allergies recorded',
-            'Add patient allergies',
-            Icons.warning_outlined,
-            onAdd: () => Navigator.push(
-              context,
-              MaterialPageRoute(
-                builder: (_) => AllergyManagementScreen(patientId: widget.patient.id),
-              ),
-            ),
-          )
-        else
-          SliverPadding(
-            padding: const EdgeInsets.symmetric(horizontal: AppSpacing.md),
-            sliver: SliverToBoxAdapter(
-              child: _buildAllergyCard(widget.patient.allergies!, isDark, surfaceColor),
-            ),
-          ),
-
-        // Referrals Section
-        _buildSectionHeader(
-          'Referrals',
-          Icons.forward_to_inbox_rounded,
-          _referralCount,
-          onViewAll: () => Navigator.push(
-            context,
-            MaterialPageRoute(
-              builder: (_) => ReferralsScreen(patientId: widget.patient.id),
-            ),
-          ),
-        ),
-        if (_referrals.isEmpty)
-          _buildEmptyState(
-            'No referrals',
-            'Create referrals to specialists',
-            Icons.forward_to_inbox_outlined,
-            onAdd: () => Navigator.push(
-              context,
-              MaterialPageRoute(
-                builder: (_) => ReferralsScreen(patientId: widget.patient.id),
-              ),
-            ),
-          )
-        else
-          SliverPadding(
-            padding: const EdgeInsets.symmetric(horizontal: AppSpacing.md),
-            sliver: SliverList(
-              delegate: SliverChildBuilderDelegate(
-                (context, index) {
-                  if (index >= _referrals.length) return null;
-                  final referral = _referrals[index];
-                  return _buildReferralCard(referral, isDark, surfaceColor);
-                },
-                childCount: _referrals.length > 3 ? 3 : _referrals.length,
-              ),
-            ),
-          ),
-        if (_referrals.length > 3)
-          SliverPadding(
-            padding: const EdgeInsets.all(AppSpacing.md),
-            sliver: SliverToBoxAdapter(
-              child: Center(
-                child: TextButton(
-                  onPressed: () => Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (_) => ReferralsScreen(patientId: widget.patient.id),
-                    ),
+              _buildFeatureTile(
+                'Allergies',
+                Icons.warning_rounded,
+                widget.patient.allergies?.isNotEmpty == true ? 1 : 0,
+                const Color(0xFFF59E0B),
+                () => Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (_) => AllergyManagementScreen(patientId: widget.patient.id),
                   ),
-                  child: const Text('View All Referrals'),
                 ),
+                isDark,
               ),
-            ),
-          ),
-
-        // Lab Orders Section
-        _buildSectionHeader(
-          'Lab Orders',
-          Icons.science_rounded,
-          _labOrderCount,
-          onViewAll: () => Navigator.push(
-            context,
-            MaterialPageRoute(
-              builder: (_) => LabOrdersScreen(patientId: widget.patient.id),
-            ),
+              _buildFeatureTile(
+                'Referrals',
+                Icons.forward_to_inbox_rounded,
+                _referralCount,
+                const Color(0xFF3B82F6),
+                () => Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (_) => ReferralsScreen(patientId: widget.patient.id),
+                  ),
+                ),
+                isDark,
+              ),
+              _buildFeatureTile(
+                'Lab Orders',
+                Icons.science_rounded,
+                _labOrderCount,
+                const Color(0xFF06B6D4),
+                () => Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (_) => LabOrdersScreen(patientId: widget.patient.id),
+                  ),
+                ),
+                isDark,
+              ),
+            ]),
           ),
         ),
-        if (_labOrders.isEmpty)
-          _buildEmptyState(
-            'No lab orders',
-            'Create lab orders for tests',
-            Icons.science_outlined,
-            onAdd: () => Navigator.push(
-              context,
-              MaterialPageRoute(
-                builder: (_) => LabOrdersScreen(patientId: widget.patient.id),
-              ),
-            ),
-          )
-        else
-          SliverPadding(
-            padding: const EdgeInsets.symmetric(horizontal: AppSpacing.md),
-            sliver: SliverList(
-              delegate: SliverChildBuilderDelegate(
-                (context, index) {
-                  if (index >= _labOrders.length) return null;
-                  final labOrder = _labOrders[index];
-                  return _buildLabOrderCard(labOrder, isDark, surfaceColor);
-                },
-                childCount: _labOrders.length > 3 ? 3 : _labOrders.length,
-              ),
-            ),
-          ),
-        if (_labOrders.length > 3)
-          SliverPadding(
-            padding: const EdgeInsets.all(AppSpacing.md),
-            sliver: SliverToBoxAdapter(
-              child: Center(
-                child: TextButton(
-                  onPressed: () => Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (_) => LabOrdersScreen(patientId: widget.patient.id),
-                    ),
-                  ),
-                  child: const Text('View All Lab Orders'),
-                ),
-              ),
-            ),
-          ),
 
         // Bottom padding
         const SliverPadding(padding: EdgeInsets.only(bottom: AppSpacing.xl)),
@@ -452,44 +248,102 @@ class _PatientClinicalFeaturesTabState extends ConsumerState<PatientClinicalFeat
     );
   }
 
-  Widget _buildSectionHeader(String title, IconData icon, int count, {VoidCallback? onViewAll}) {
-    return SliverPadding(
-      padding: const EdgeInsets.fromLTRB(AppSpacing.md, AppSpacing.lg, AppSpacing.md, AppSpacing.sm),
-      sliver: SliverToBoxAdapter(
-        child: Row(
-          children: [
-            Icon(icon, size: 20, color: AppColors.primary),
-            const SizedBox(width: AppSpacing.sm),
-            Text(
-              title,
-              style: const TextStyle(
-                fontSize: AppFontSize.lg,
-                fontWeight: FontWeight.w700,
-              ),
+  Widget _buildFeatureTile(
+    String title,
+    IconData icon,
+    int count,
+    Color color,
+    VoidCallback onTap,
+    bool isDark,
+  ) {
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(AppRadius.lg),
+        child: Container(
+          decoration: BoxDecoration(
+            gradient: LinearGradient(
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+              colors: [
+                color.withValues(alpha: 0.15),
+                color.withValues(alpha: 0.08),
+              ],
             ),
-            const SizedBox(width: AppSpacing.sm),
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-              decoration: BoxDecoration(
-                color: AppColors.primary.withValues(alpha: 0.15),
-                borderRadius: BorderRadius.circular(12),
+            borderRadius: BorderRadius.circular(AppRadius.lg),
+            border: Border.all(
+              color: color.withValues(alpha: 0.2),
+              width: 1,
+            ),
+            boxShadow: [
+              BoxShadow(
+                color: color.withValues(alpha: 0.1),
+                blurRadius: 8,
+                offset: const Offset(0, 2),
               ),
-              child: Text(
-                count.toString(),
-                style: TextStyle(
-                  fontSize: AppFontSize.sm,
-                  fontWeight: FontWeight.w600,
-                  color: AppColors.primary,
+            ],
+          ),
+          child: Padding(
+            padding: const EdgeInsets.all(AppSpacing.lg),
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Container(
+                  padding: const EdgeInsets.all(AppSpacing.md),
+                  decoration: BoxDecoration(
+                    color: color.withValues(alpha: 0.2),
+                    borderRadius: BorderRadius.circular(AppRadius.md),
+                  ),
+                  child: Icon(
+                    icon,
+                    color: color,
+                    size: AppIconSize.lg,
+                  ),
                 ),
-              ),
+                const SizedBox(height: AppSpacing.md),
+                Text(
+                  title,
+                  style: TextStyle(
+                    fontSize: AppFontSize.md,
+                    fontWeight: FontWeight.w700,
+                    color: isDark ? AppColors.darkTextPrimary : AppColors.textPrimary,
+                  ),
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                ),
+                const SizedBox(height: AppSpacing.xs),
+                Row(
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: AppSpacing.sm, vertical: 2),
+                      decoration: BoxDecoration(
+                        color: color.withValues(alpha: 0.2),
+                        borderRadius: BorderRadius.circular(AppRadius.sm),
+                      ),
+                      child: Text(
+                        '$count',
+                        style: TextStyle(
+                          fontSize: AppFontSize.sm,
+                          fontWeight: FontWeight.w700,
+                          color: color,
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: AppSpacing.xs),
+                    Text(
+                      count == 1 ? 'item' : 'items',
+                      style: TextStyle(
+                        fontSize: AppFontSize.xs,
+                        color: isDark ? AppColors.darkTextSecondary : AppColors.textSecondary,
+                      ),
+                    ),
+                  ],
+                ),
+              ],
             ),
-            const Spacer(),
-            if (onViewAll != null)
-              TextButton(
-                onPressed: onViewAll,
-                child: const Text('View All'),
-              ),
-          ],
+          ),
         ),
       ),
     );

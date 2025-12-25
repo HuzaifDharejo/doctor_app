@@ -1,6 +1,7 @@
 // Minimal Drift DB. Run `flutter pub run build_runner build` to generate code.
 import 'dart:convert';
 import 'package:drift/drift.dart';
+import '../services/logger_service.dart';
 
 // Conditional imports for platform-specific code
 import 'doctor_db_native.dart' if (dart.library.html) 'doctor_db_web.dart' as impl;
@@ -48,11 +49,15 @@ class Prescriptions extends Table {
   IntColumn get encounterId => integer().nullable().references(Encounters, #id)(); // V2: Link to encounter
   IntColumn get primaryDiagnosisId => integer().nullable().references(Diagnoses, #id)(); // V2: Primary diagnosis
   DateTimeColumn get createdAt => dateTime().withDefault(currentDateAndTime)();
-  TextColumn get itemsJson => text()();
+  TextColumn get itemsJson => text().withDefault(const Constant('[]'))(); // Minimal - only for legacy compatibility, not used for new data
   TextColumn get instructions => text().withDefault(const Constant(''))();
   BoolColumn get isRefillable => boolean().withDefault(const Constant(false))();
   IntColumn get appointmentId => integer().nullable().references(Appointments, #id)(); // Link to appointment where prescribed
   IntColumn get medicalRecordId => integer().nullable().references(MedicalRecords, #id)(); // Link to diagnosis/assessment
+  // Normalized follow-up and notes fields (required, no backwards compatibility needed)
+  DateTimeColumn get followUpDate => dateTime().nullable()();
+  TextColumn get followUpNotes => text().withDefault(const Constant(''))(); // Required field
+  TextColumn get clinicalNotes => text().withDefault(const Constant(''))(); // Required field
   // DEPRECATED in V2 - Use Encounters.chiefComplaint and VitalSigns table instead
   @Deprecated('Use primaryDiagnosisId instead - links to Diagnoses table')
   TextColumn get diagnosis => text().withDefault(const Constant(''))();
@@ -680,6 +685,7 @@ class LabOrders extends Table {
   IntColumn get id => integer().autoIncrement()();
   IntColumn get patientId => integer().references(Patients, #id)();
   IntColumn get encounterId => integer().nullable().references(Encounters, #id)();
+  IntColumn get prescriptionId => integer().nullable().references(Prescriptions, #id)(); // V6: Direct link to prescription
   
   // Order details
   TextColumn get orderNumber => text()();
@@ -1647,6 +1653,19 @@ class DoctorDatabase extends _$DoctorDatabase {
           CREATE INDEX IF NOT EXISTS idx_encounters_date 
           ON encounters(encounterDate);
         ''');
+      }
+      if (from < 14) {
+        // Schema V14: Complete normalization - Add prescription fields and lab order links
+        // Add follow-up and notes fields to Prescriptions table
+        await m.addColumn(prescriptions, prescriptions.followUpDate);
+        await m.addColumn(prescriptions, prescriptions.followUpNotes);
+        await m.addColumn(prescriptions, prescriptions.clinicalNotes);
+        
+        // Add prescriptionId to LabOrders for direct linking
+        await m.addColumn(labOrders, labOrders.prescriptionId);
+        
+        // Note: Existing data in itemsJson will continue to work via helper methods
+        // Data migration from JSON to normalized fields can be done later if needed
       }
     },
   );
@@ -3419,6 +3438,139 @@ class DoctorDatabase extends _$DoctorDatabase {
       }
     } catch (_) {}
     return [];
+  }
+
+  /// V6: Get lab tests for a prescription with backwards compatibility
+  /// Priority: 1) LabOrders with prescriptionId, 2) LabOrders via encounterId, 3) itemsJson
+  Future<List<Map<String, dynamic>>> getLabTestsForPrescriptionCompat(int prescriptionId) async {
+    final prescription = await getPrescriptionById(prescriptionId);
+    if (prescription == null) return [];
+    
+    // Priority 1: Try to get lab tests from LabOrders linked directly via prescriptionId (V6)
+    final labOrdersByPrescription = await (select(labOrders)
+      ..where((l) => l.prescriptionId.equals(prescriptionId))
+      ..orderBy([(l) => OrderingTerm.asc(l.orderedDate)]))
+      .get();
+    
+    if (labOrdersByPrescription.isNotEmpty) {
+      final labTests = <Map<String, dynamic>>[];
+      for (final order in labOrdersByPrescription) {
+        final testResults = await getResultsForLabOrder(order.id);
+        for (final result in testResults) {
+          labTests.add({
+            'name': result.testName,
+            'code': result.testCode,
+            'category': result.category,
+          });
+        }
+      }
+      if (labTests.isNotEmpty) return labTests;
+    }
+    
+    // Priority 2: Try to get lab tests from LabOrders via encounterId (V2)
+    if (prescription.encounterId != null) {
+      final labOrdersList = await (select(labOrders)
+        ..where((l) => l.encounterId.equals(prescription.encounterId!))
+        ..orderBy([(l) => OrderingTerm.asc(l.orderedDate)]))
+      .get();
+      
+      if (labOrdersList.isNotEmpty) {
+        final labTests = <Map<String, dynamic>>[];
+        for (final order in labOrdersList) {
+          final testResults = await getResultsForLabOrder(order.id);
+          for (final result in testResults) {
+            labTests.add({
+              'name': result.testName,
+              'code': result.testCode,
+              'category': result.category,
+            });
+          }
+        }
+        if (labTests.isNotEmpty) return labTests;
+      }
+    }
+    
+    // Fallback to itemsJson for old records
+    try {
+      final parsed = jsonDecode(prescription.itemsJson);
+      if (parsed is Map<String, dynamic>) {
+        final labTests = (parsed['lab_tests'] as List<dynamic>?) ?? [];
+        return labTests.map((test) {
+          if (test is Map<String, dynamic>) {
+            return {
+              'name': test['name'] ?? test.toString(),
+              'code': test['code'] ?? '',
+              'category': test['category'] ?? '',
+            };
+          }
+          return {'name': test.toString(), 'code': '', 'category': ''};
+        }).toList();
+      }
+    } catch (_) {}
+    return [];
+  }
+
+  /// V6: Get follow-up information for a prescription with backwards compatibility
+  /// Priority: 1) Prescriptions.followUpDate/followUpNotes (V6), 2) ScheduledFollowUps, 3) itemsJson
+  Future<Map<String, dynamic>?> getFollowUpForPrescriptionCompat(int prescriptionId) async {
+    final prescription = await getPrescriptionById(prescriptionId);
+    if (prescription == null) return null;
+    
+    // Priority 1: Try to get from normalized Prescriptions fields (V6)
+    if (prescription.followUpDate != null) {
+      return {
+        'date': prescription.followUpDate!.toIso8601String(),
+        'notes': prescription.followUpNotes,
+      };
+    }
+    
+    // Priority 2: Try to get from ScheduledFollowUps table
+    final followUps = await (select(scheduledFollowUps)
+      ..where((f) => f.sourcePrescriptionId.equals(prescriptionId))
+      ..orderBy([(f) => OrderingTerm.desc(f.scheduledDate)])
+      ..limit(1))
+      .get();
+    
+    if (followUps.isNotEmpty) {
+      final followUp = followUps.first;
+      return {
+        'date': followUp.scheduledDate.toIso8601String(),
+        'notes': followUp.reason,
+      };
+    }
+    
+    // Priority 3: Fallback to itemsJson for old records
+    try {
+      final parsed = jsonDecode(prescription.itemsJson);
+      if (parsed is Map<String, dynamic>) {
+        final followUp = parsed['follow_up'] as Map<String, dynamic>?;
+        if (followUp != null && followUp.isNotEmpty) {
+          return followUp;
+        }
+      }
+    } catch (_) {}
+    return null;
+  }
+
+  /// V6: Get clinical notes for a prescription with backwards compatibility
+  /// Priority: 1) Prescriptions.clinicalNotes (V6), 2) itemsJson
+  Future<String> getClinicalNotesForPrescriptionCompat(int prescriptionId) async {
+    final prescription = await getPrescriptionById(prescriptionId);
+    if (prescription == null) return '';
+    
+    // Priority 1: Try to get from normalized Prescriptions.clinicalNotes field (V6)
+    if (prescription.clinicalNotes.isNotEmpty) {
+      return prescription.clinicalNotes;
+    }
+    
+    // Priority 2: Fallback to itemsJson for old records
+    try {
+      final parsed = jsonDecode(prescription.itemsJson);
+      if (parsed is Map<String, dynamic>) {
+        return (parsed['notes'] as String?) ?? '';
+      }
+    } catch (_) {}
+    return '';
   }
 
   // ═══════════════════════════════════════════════════════════════════════════════

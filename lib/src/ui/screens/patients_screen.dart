@@ -62,6 +62,7 @@ class _PatientsScreenState extends ConsumerState<PatientsScreen> {
     if (mounted) {
       setState(() {
         _error = _paginationController.error;
+        // Force rebuild when items change (for pagination updates)
       });
     }
   }
@@ -141,6 +142,12 @@ class _PatientsScreenState extends ConsumerState<PatientsScreen> {
     HapticFeedback.mediumImpact();
     // Refresh the pagination controller - this will reload from page 0
     await _paginationController.refresh();
+    // Ensure UI updates after refresh
+    if (mounted) {
+      setState(() {
+        _error = _paginationController.error;
+      });
+    }
   }
 
   void _clearSearch() {
@@ -325,9 +332,10 @@ class _PatientsScreenState extends ConsumerState<PatientsScreen> {
                 context,
                 MaterialPageRoute<Patient?>(builder: (_) => const AddPatientScreen()),
               );
-              // Refresh list if a patient was added - use full refresh to reset pagination
-              if (result != null && mounted) {
-                _refreshList();
+              // Always refresh list when returning from add patient screen
+              // This ensures new patients appear immediately
+              if (mounted) {
+                await _handleRefresh();
               }
             },
             borderRadius: BorderRadius.circular(16),

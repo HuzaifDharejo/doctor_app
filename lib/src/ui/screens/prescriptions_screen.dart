@@ -319,29 +319,39 @@ class _PrescriptionsScreenState extends ConsumerState<PrescriptionsScreen> {
   }
 
   Widget _buildPrescriptionCard(BuildContext context, WidgetRef ref, DoctorDatabase db, Prescription prescription) {
-    // V5: Use compatibility method to get medications from either normalized table or legacy JSON
+    // V5: Use compatibility methods to get all prescription data
     return FutureBuilder<List<Map<String, dynamic>>>(
       future: db.getMedicationsForPrescriptionCompat(prescription.id),
       builder: (context, medsSnapshot) {
         final medications = medsSnapshot.data ?? [];
         
-        // Parse lab tests, follow-up, notes from itemsJson (still stored there for now)
-        List<dynamic> labTests = [];
-        Map<String, dynamic> followUp = {};
-        String notes = '';
-        
-        try {
-          final parsed = jsonDecode(prescription.itemsJson);
-          if (parsed is Map<String, dynamic>) {
-            labTests = (parsed['lab_tests'] as List<dynamic>?) ?? [];
-            followUp = (parsed['follow_up'] as Map<String, dynamic>?) ?? {};
-            notes = (parsed['notes'] as String?) ?? '';
-          }
-        } catch (_) {}
+        // Get lab tests, follow-up, and notes using helper methods (with backwards compatibility)
+        return FutureBuilder<Map<String, dynamic>>(
+          future: Future.wait([
+            db.getLabTestsForPrescriptionCompat(prescription.id),
+            db.getFollowUpForPrescriptionCompat(prescription.id),
+            db.getClinicalNotesForPrescriptionCompat(prescription.id),
+          ]).then((results) => {
+            'labTests': results[0] as List<Map<String, dynamic>>,
+            'followUp': results[1] as Map<String, dynamic>?,
+            'notes': results[2] as String,
+          }),
+          builder: (context, dataSnapshot) {
+            final data = dataSnapshot.data ?? {'labTests': <Map<String, dynamic>>[], 'followUp': null, 'notes': ''};
+            final labTestsData = data['labTests'] as List<Map<String, dynamic>>;
+            final followUpData = data['followUp'] as Map<String, dynamic>?;
+            final notesData = data['notes'] as String;
+            
+            // Convert to expected format
+            final List<dynamic> labTests = labTestsData.map((test) => {
+              'name': test['name'] ?? '',
+            }).toList();
+            final Map<String, dynamic> followUp = followUpData ?? {};
+            final String notes = notesData;
     
-        return FutureBuilder<Patient?>(
-          future: db.getPatientById(prescription.patientId),
-          builder: (context, patientSnapshot) {
+            return FutureBuilder<Patient?>(
+              future: db.getPatientById(prescription.patientId),
+              builder: (context, patientSnapshot) {
             final patient = patientSnapshot.data;
             final patientName = patient != null 
                 ? '${patient.firstName} ${patient.lastName}'
@@ -651,7 +661,9 @@ class _PrescriptionsScreenState extends ConsumerState<PrescriptionsScreen> {
                     ),
                 ],
               ),
-        );
+            );
+              },
+            );
           },
         );
       },
@@ -1245,6 +1257,30 @@ class _PrescriptionsScreenState extends ConsumerState<PrescriptionsScreen> {
                     Row(
                       children: [
                         Expanded(
+                          child: AppButton.primary(
+                            label: 'Edit',
+                            icon: Icons.edit,
+                            onPressed: () async {
+                              Navigator.pop(context);
+                              final result = await Navigator.push<bool>(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (context) => EditPrescriptionScreen(
+                                    prescription: prescription,
+                                    patient: patient,
+                                  ),
+                                ),
+                              );
+                              if (result == true && mounted) {
+                                // Refresh pagination controller
+                                _paginationController.refresh();
+                                setState(() {});
+                              }
+                            },
+                          ),
+                        ),
+                        const SizedBox(width: AppSpacing.sm),
+                        Expanded(
                           child: AppButton.tertiary(
                             label: 'Refill',
                             icon: Icons.refresh,
@@ -1378,6 +1414,8 @@ class _PrescriptionsScreenState extends ConsumerState<PrescriptionsScreen> {
               try {
                 final db = await ref.read(doctorDbProvider.future);
                 await db.deletePrescription(prescription.id);
+                // Refresh pagination controller
+                _paginationController.refresh();
                 ref.invalidate(doctorDbProvider);
                 if (context.mounted) {
                   ScaffoldMessenger.of(context).showSnackBar(
@@ -1525,12 +1563,15 @@ class _PrescriptionsScreenState extends ConsumerState<PrescriptionsScreen> {
       // Create new prescription with same items
       final newPrescription = PrescriptionsCompanion.insert(
         patientId: prescription.patientId,
-        itemsJson: prescription.itemsJson,
+        itemsJson: Value(prescription.itemsJson),
         instructions: Value(prescription.instructions),
         isRefillable: Value(prescription.isRefillable),
       );
 
       await db.insertPrescription(newPrescription);
+      
+      // Refresh pagination controller
+      _paginationController.refresh();
 
       if (context.mounted) {
         ScaffoldMessenger.of(context).showSnackBar(

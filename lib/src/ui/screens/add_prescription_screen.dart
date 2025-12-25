@@ -691,12 +691,18 @@ class _AddPrescriptionScreenState extends ConsumerState<AddPrescriptionScreen> {
         // Save to database - use normalized tables (V5)
         final db = await ref.read(doctorDbProvider.future);
         
-        // Insert prescription record (itemsJson kept for backwards compatibility but empty)
+        // Insert prescription record
+        // V6: Use normalized fields for follow-up and notes, itemsJson for backwards compatibility only
+        // Medications are in normalized PrescriptionMedications table
         final prescriptionId = await db.insertPrescription(
           PrescriptionsCompanion.insert(
             patientId: _selectedPatientId!,
-            // V5: itemsJson is deprecated - use PrescriptionMedications table instead
-            itemsJson: '[]', // Empty JSON - data is in normalized table
+            // V6: Use normalized fields for follow-up and notes
+            followUpDate: Value(_followUpDate),
+            followUpNotes: Value(_followUpNotesController.text),
+            clinicalNotes: Value(_notesController.text),
+            // itemsJson is minimal - lab tests are in LabOrders table, follow-up/notes in normalized fields
+            itemsJson: const Value('[]'),
             instructions: Value(jsonData['advice'] as String? ?? ''),
             diagnosis: Value(jsonData['diagnosis'] as String? ?? ''),
             chiefComplaint: Value(jsonData['symptoms'] as String? ?? ''),
@@ -745,6 +751,7 @@ class _AddPrescriptionScreenState extends ConsumerState<AddPrescriptionScreen> {
             final orderNumber = 'LO-${baseTimestamp + i}';
             
             // Create individual lab order for this test
+            // V6: Link lab order directly to prescription via prescriptionId
             final labOrderId = await labOrderService.createLabOrder(
               patientId: _selectedPatientId!,
               orderNumber: orderNumber,
@@ -753,6 +760,7 @@ class _AddPrescriptionScreenState extends ConsumerState<AddPrescriptionScreen> {
               orderingProvider: 'Doctor',
               orderedDate: DateTime.now(),
               encounterId: widget.encounterId,
+              prescriptionId: prescriptionId, // V6: Direct link to prescription
               orderType: 'lab',
               priority: 'routine',
               notes: 'Auto-created from prescription #$prescriptionId',
@@ -889,6 +897,8 @@ class _AddPrescriptionScreenState extends ConsumerState<AddPrescriptionScreen> {
         diagnosis: _diagnosisController.text,
         chiefComplaint: _symptomsController.text,
         vitalsJson: vitalsJson,
+        followUpNotes: _followUpNotesController.text,
+        clinicalNotes: _notesController.text,
       );
 
       final doctorSettings = ref.read(doctorSettingsProvider);

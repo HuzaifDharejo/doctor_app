@@ -786,7 +786,7 @@ class CloudBackupService {
   Future<void> _restorePrescription(DoctorDatabase db, Map<String, dynamic> json) async {
     await db.insertPrescription(PrescriptionsCompanion.insert(
       patientId: json['patientId'] as int,
-      itemsJson: json['itemsJson'] as String,
+      itemsJson: Value(json['itemsJson'] as String? ?? '[]'),
       instructions: Value(json['instructions'] as String? ?? ''),
       isRefillable: Value(json['isRefillable'] as bool? ?? false),
       appointmentId: Value(json['appointmentId'] as int?),

@@ -11,6 +11,7 @@ import '../../db/doctor_db.dart';
 import '../../providers/db_provider.dart';
 import '../../providers/encounter_provider.dart';
 import '../../services/encounter_service.dart';
+import '../../services/lab_order_service.dart';
 import '../../services/logger_service.dart';
 import '../../services/problem_list_service.dart';
 import '../../theme/app_theme.dart';
@@ -58,7 +59,6 @@ class _WorkflowWizardScreenState extends ConsumerState<WorkflowWizardScreen> {
   Invoice? _invoice;
   
   // Diagnosis data (shared between steps)
-  String _currentDiagnosis = '';
   List<String> _currentDiagnoses = [];
   
   // Chief Complaint data
@@ -302,6 +302,57 @@ class _WorkflowWizardScreenState extends ConsumerState<WorkflowWizardScreen> {
     });
     
     final db = await ref.read(doctorDbProvider.future);
+    
+    // Final data sync: Save any remaining workflow data to prescription
+    if (_prescription != null) {
+      try {
+        // Save clinical notes if not already saved
+        if (_subjective.isNotEmpty || _objective.isNotEmpty || 
+            _assessment.isNotEmpty || _plan.isNotEmpty) {
+          final existingNotes = await db.getClinicalNotesForPrescriptionCompat(_prescription!.id);
+          if (existingNotes.isEmpty) {
+            final soapNotes = StringBuffer();
+            if (_subjective.isNotEmpty) {
+              soapNotes.writeln('S: $_subjective');
+            }
+            if (_objective.isNotEmpty) {
+              soapNotes.writeln('O: $_objective');
+            }
+            if (_assessment.isNotEmpty) {
+              soapNotes.writeln('A: $_assessment');
+            }
+            if (_plan.isNotEmpty) {
+              soapNotes.writeln('P: $_plan');
+            }
+            
+            await db.updatePrescription(
+              PrescriptionsCompanion(
+                id: Value(_prescription!.id),
+                clinicalNotes: Value(soapNotes.toString().trim()),
+              ),
+            );
+            log.d('WORKFLOW', 'Clinical notes saved to prescription on completion');
+          }
+        }
+        
+        // Update follow-up info if scheduled but not yet saved to prescription
+        if (_followUp != null) {
+          final prescription = await db.getPrescriptionById(_prescription!.id);
+          if (prescription != null && prescription.followUpDate == null) {
+            await db.updatePrescription(
+              PrescriptionsCompanion(
+                id: Value(_prescription!.id),
+                followUpDate: Value(_followUp!.scheduledDate),
+                followUpNotes: Value(_followUp!.reason),
+              ),
+            );
+            log.d('WORKFLOW', 'Follow-up saved to prescription on completion');
+          }
+        }
+      } catch (e) {
+        log.e('WORKFLOW', 'Error syncing workflow data to prescription', error: e);
+      }
+    }
     
     // Complete the encounter if exists
     if (_encounter != null) {
@@ -1843,7 +1894,9 @@ class _WorkflowWizardScreenState extends ConsumerState<WorkflowWizardScreen> {
       final encounterId = await encounterService.startEncounter(
         patientId: _patient!.id,
         appointmentId: _appointment!.id,
-        chiefComplaint: _appointment!.reason ?? 'Scheduled appointment',
+        chiefComplaint: _appointment!.reason.isNotEmpty 
+            ? _appointment!.reason 
+            : 'Scheduled appointment',
         encounterType: _getEncounterType(_appointment!.reason),
       );
       
@@ -1886,9 +1939,9 @@ class _WorkflowWizardScreenState extends ConsumerState<WorkflowWizardScreen> {
       'patientId': _patient!.id,
     });
     
-    await Navigator.push(
+    await Navigator.push<void>(
       context,
-      MaterialPageRoute(
+      MaterialPageRoute<void>(
         builder: (_) => EncounterScreen(
           encounterId: _encounter!.id,
           patient: _patient,
@@ -1917,9 +1970,9 @@ class _WorkflowWizardScreenState extends ConsumerState<WorkflowWizardScreen> {
     if (_patient == null) return;
     
     log.d('WORKFLOW', 'Viewing patient history: ${_patient!.firstName} ${_patient!.lastName}');
-    await Navigator.push(
+    await Navigator.push<void>(
       context,
-      MaterialPageRoute(
+      MaterialPageRoute<void>(
         builder: (_) => PatientViewScreen(patient: _patient!),
       ),
     );
@@ -1965,9 +2018,9 @@ class _WorkflowWizardScreenState extends ConsumerState<WorkflowWizardScreen> {
       }
     } else {
       // Fallback to original vitals screen
-      await Navigator.push(
+      await Navigator.push<void>(
         context,
-        MaterialPageRoute(
+        MaterialPageRoute<void>(
           builder: (_) => VitalSignsScreen(
             patientId: _patient!.id,
             patientName: '${_patient!.firstName} ${_patient!.lastName}',
@@ -2049,7 +2102,7 @@ class _WorkflowWizardScreenState extends ConsumerState<WorkflowWizardScreen> {
       selectedComplaints.addAll(_chiefComplaint.split(', ').map((s) => s.trim()).where((s) => s.isNotEmpty));
     }
     
-    showModalBottomSheet(
+    showModalBottomSheet<void>(
       context: context,
       backgroundColor: isDark ? const Color(0xFF1E1E1E) : Colors.white,
       shape: const RoundedRectangleBorder(
@@ -2338,7 +2391,7 @@ class _WorkflowWizardScreenState extends ConsumerState<WorkflowWizardScreen> {
       {'name': 'ECG', 'code': 'ECG'},
     ];
     
-    showModalBottomSheet(
+    showModalBottomSheet<void>(
       context: context,
       backgroundColor: isDark ? const Color(0xFF1E1E1E) : Colors.white,
       shape: const RoundedRectangleBorder(
@@ -2418,6 +2471,39 @@ class _WorkflowWizardScreenState extends ConsumerState<WorkflowWizardScreen> {
         _plan = result['plan'] ?? '';
         _completedSteps[9] = true;
       });
+      
+      // If prescription already exists, save clinical notes immediately
+      if (_prescription != null) {
+        try {
+          final db = await ref.read(doctorDbProvider.future);
+          final soapNotes = StringBuffer();
+          if (_subjective.isNotEmpty) {
+            soapNotes.writeln('S: $_subjective');
+          }
+          if (_objective.isNotEmpty) {
+            soapNotes.writeln('O: $_objective');
+          }
+          if (_assessment.isNotEmpty) {
+            soapNotes.writeln('A: $_assessment');
+          }
+          if (_plan.isNotEmpty) {
+            soapNotes.writeln('P: $_plan');
+          }
+          
+          await db.updatePrescription(
+            PrescriptionsCompanion(
+              id: Value(_prescription!.id),
+              clinicalNotes: Value(soapNotes.toString().trim()),
+            ),
+          );
+          
+          log.i('WORKFLOW', 'Clinical notes saved to existing prescription', extra: {
+            'prescriptionId': _prescription!.id,
+          });
+        } catch (e) {
+          log.e('WORKFLOW', 'Failed to save clinical notes to prescription', error: e);
+        }
+      }
     }
   }
 
@@ -2539,7 +2625,6 @@ class _WorkflowWizardScreenState extends ConsumerState<WorkflowWizardScreen> {
         // Extract diagnosis from medical record if available
         if (result.diagnosis.isNotEmpty && !_currentDiagnoses.contains(result.diagnosis)) {
           _currentDiagnoses.add(result.diagnosis);
-          _currentDiagnosis = result.diagnosis;
           
           // If encounter exists, also link this diagnosis to the encounter
           // (Medical record screens may not always do this automatically)
@@ -2623,18 +2708,19 @@ class _WorkflowWizardScreenState extends ConsumerState<WorkflowWizardScreen> {
             }
             
             // Link diagnosis to encounter only if not already linked
-            if (diagnosis != null && diagnosis.id != null && !linkedDiagnosisIds.contains(diagnosis.id)) {
+            // Note: diagnosis.id is non-nullable (autoIncrement), so no null check needed
+            if (diagnosis != null && !linkedDiagnosisIds.contains(diagnosis.id)) {
               await db.into(db.encounterDiagnoses).insert(
                 EncounterDiagnosesCompanion.insert(
                   encounterId: _encounter!.id,
-                  diagnosisId: diagnosis.id!,
+                  diagnosisId: diagnosis.id,
                   isNewDiagnosis: Value(!existingDiagnosisMap.containsKey(diagnosisName.toLowerCase())),
                   encounterStatus: const Value('addressed'),
                 ),
               );
-              linkedDiagnosisIds.add(diagnosis.id!); // Track as linked
+              linkedDiagnosisIds.add(diagnosis.id); // Track as linked
               log.d('WORKFLOW', 'Linked diagnosis ${diagnosis.id} to encounter ${_encounter!.id}');
-            } else if (diagnosis != null && diagnosis.id != null) {
+            } else if (diagnosis != null) {
               log.d('WORKFLOW', 'Diagnosis ${diagnosis.id} already linked to encounter ${_encounter!.id}, skipping');
             }
           }
@@ -2647,7 +2733,6 @@ class _WorkflowWizardScreenState extends ConsumerState<WorkflowWizardScreen> {
       setState(() {
         _currentDiagnoses = diagnoses;
         if (diagnoses.isNotEmpty) {
-          _currentDiagnosis = diagnoses.first;
           _completedSteps[5] = true; // Diagnosis is step 5
         }
       });
@@ -2793,14 +2878,95 @@ class _WorkflowWizardScreenState extends ConsumerState<WorkflowWizardScreen> {
         'patientId': result.patientId,
       });
       
-      // V5: Load medication count from normalized table
       final db = await ref.read(doctorDbProvider.future);
+      
+      // V5: Load medication count from normalized table
       final medications = await db.getMedicationsForPrescriptionCompat(result.id);
+      
+      // Save lab orders to database and link to prescription
+      if (_labOrders.isNotEmpty) {
+        try {
+          final labOrderService = LabOrderService();
+          final baseTimestamp = DateTime.now().millisecondsSinceEpoch;
+          
+          for (int i = 0; i < _labOrders.length; i++) {
+            final test = _labOrders[i];
+            final orderNumber = 'LO-${baseTimestamp + i}';
+            
+            // Create lab order linked to prescription
+            final labOrderId = await labOrderService.createLabOrder(
+              patientId: _patient!.id,
+              orderNumber: orderNumber,
+              testCodes: '[]', // V5: Use LabTestResults table
+              testNames: '[]', // V5: Use LabTestResults table
+              orderingProvider: 'Doctor',
+              orderedDate: DateTime.now(),
+              encounterId: _encounter?.id,
+              prescriptionId: result.id, // Link to prescription
+              orderType: 'lab',
+              priority: 'routine',
+              notes: 'Ordered via workflow wizard',
+            );
+            
+            // Save test to normalized LabTestResults table
+            await db.insertLabTestResult(
+              LabTestResultsCompanion.insert(
+                labOrderId: labOrderId,
+                patientId: _patient!.id,
+                testName: test['name'] as String? ?? 'Unknown Test',
+                testCode: Value(test['code'] as String? ?? ''),
+                category: Value(test['category'] as String? ?? ''),
+                displayOrder: Value(i),
+              ),
+            );
+          }
+          
+          log.i('WORKFLOW', 'Lab orders saved and linked to prescription', extra: {
+            'prescriptionId': result.id,
+            'labOrderCount': _labOrders.length,
+          });
+        } catch (e) {
+          log.e('WORKFLOW', 'Failed to save lab orders', error: e);
+        }
+      }
+      
+      // Save clinical notes to prescription if available
+      if (_subjective.isNotEmpty || _objective.isNotEmpty || 
+          _assessment.isNotEmpty || _plan.isNotEmpty) {
+        try {
+          final soapNotes = StringBuffer();
+          if (_subjective.isNotEmpty) {
+            soapNotes.writeln('S: $_subjective');
+          }
+          if (_objective.isNotEmpty) {
+            soapNotes.writeln('O: $_objective');
+          }
+          if (_assessment.isNotEmpty) {
+            soapNotes.writeln('A: $_assessment');
+          }
+          if (_plan.isNotEmpty) {
+            soapNotes.writeln('P: $_plan');
+          }
+          
+          await db.updatePrescription(
+            PrescriptionsCompanion(
+              id: Value(result.id),
+              clinicalNotes: Value(soapNotes.toString().trim()),
+            ),
+          );
+          
+          log.i('WORKFLOW', 'Clinical notes saved to prescription', extra: {
+            'prescriptionId': result.id,
+          });
+        } catch (e) {
+          log.e('WORKFLOW', 'Failed to save clinical notes', error: e);
+        }
+      }
       
       setState(() {
         _prescription = result;
         _prescriptionMedicationCount = medications.length;
-        _completedSteps[6] = true;
+        _completedSteps[7] = true; // Prescription is step 7 (index 7)
       });
     } else {
       log.d('WORKFLOW', 'Prescription creation cancelled');
@@ -2835,9 +3001,30 @@ class _WorkflowWizardScreenState extends ConsumerState<WorkflowWizardScreen> {
         'scheduledDate': result.scheduledDate.toIso8601String(),
         'patientId': _patient!.id,
       });
+      
+      // Also update prescription with follow-up info if prescription exists
+      if (_prescription != null) {
+        try {
+          final db = await ref.read(doctorDbProvider.future);
+          await db.updatePrescription(
+            PrescriptionsCompanion(
+              id: Value(_prescription!.id),
+              followUpDate: Value(result.scheduledDate),
+              followUpNotes: Value(result.reason),
+            ),
+          );
+          
+          log.i('WORKFLOW', 'Follow-up saved to prescription', extra: {
+            'prescriptionId': _prescription!.id,
+          });
+        } catch (e) {
+          log.e('WORKFLOW', 'Failed to update prescription with follow-up', error: e);
+        }
+      }
+      
       setState(() {
         _followUp = result;
-        _completedSteps[7] = true;
+        _completedSteps[8] = true; // Follow-up is step 8 (index 8)
       });
     } else {
       log.d('WORKFLOW', 'Follow-up scheduling cancelled');
@@ -2875,7 +3062,7 @@ class _WorkflowWizardScreenState extends ConsumerState<WorkflowWizardScreen> {
       });
       setState(() {
         _invoice = result;
-        _completedSteps[8] = true;
+        _completedSteps[10] = true; // Invoice is step 10 (index 10)
       });
     } else {
       log.d('WORKFLOW', 'Invoice creation cancelled');

@@ -1497,21 +1497,39 @@ class PdfService {
     if (config.backgroundImageType != 'none') {
       try {
         if (config.backgroundImageType == 'custom' && config.customBackgroundData != null && config.customBackgroundData!.isNotEmpty) {
-          backgroundImage = pw.MemoryImage(base64Decode(config.customBackgroundData!));
-          log.i('PDF', 'Background image loaded (custom, ${config.customBackgroundData!.length} chars)');
+          try {
+            final decodedBytes = base64Decode(config.customBackgroundData!);
+            backgroundImage = pw.MemoryImage(decodedBytes);
+            log.i('PDF', 'Background image loaded (custom, ${config.customBackgroundData!.length} chars, ${decodedBytes.length} bytes decoded)');
+          } catch (e) {
+            log.w('PDF', 'Error decoding custom background image: $e');
+          }
         } else if (config.backgroundImageType != 'custom' && !kIsWeb) {
           // Load predefined background (lungs, heart, brain, xray)
           // Skip on web - predefined assets are not supported on web platform
           backgroundImage = await _loadPredefinedBackground(config.backgroundImageType);
           if (backgroundImage != null) {
             log.i('PDF', 'Background image loaded (predefined: ${config.backgroundImageType})');
+          } else {
+            log.w('PDF', 'Predefined background image not found: ${config.backgroundImageType}');
           }
+        } else if (config.backgroundImageType != 'custom' && kIsWeb) {
+          log.w('PDF', 'Predefined backgrounds not supported on web platform. Use custom background instead.');
         }
       } catch (e) {
         log.w('PDF', 'Error loading background image: $e');
       }
     } else {
       log.i('PDF', 'No background image configured');
+    }
+    
+    // Log final background status with detailed info
+    if (backgroundImage != null) {
+      log.i('PDF', 'Background image ready: type=${config.backgroundImageType}, image=${backgroundImage.runtimeType}');
+    } else if (config.backgroundImageType != 'none') {
+      log.w('PDF', 'Background image configured but failed to load. Type: ${config.backgroundImageType}, isWeb: $kIsWeb');
+    } else {
+      log.i('PDF', 'No background image requested (type: none)');
     }
     
     // Parse signature image if available
@@ -1533,39 +1551,72 @@ class PdfService {
       log.i('PDF', 'No signature data provided');
     }
     
-    // V5: Use pre-loaded medications if provided, otherwise parse from itemsJson
+    // V5: Use pre-loaded medications if provided, otherwise use compatibility method
     List<dynamic> medications = medicationsList ?? [];
-    List<dynamic> labTests = [];
-    Map<String, dynamic> followUp = {};
-    String notes = '';
     String diagnosis = prescription.diagnosis;
     String chiefComplaint = prescription.chiefComplaint;
     
-    // Parse additional data from itemsJson (lab tests, follow-up, notes)
-    try {
-      final parsed = jsonDecode(prescription.itemsJson);
-      if (parsed is List) {
-        // Old format: just array of medications
-        if (medications.isEmpty) medications = parsed;
-      } else if (parsed is Map<String, dynamic>) {
-        // New format: full prescription object
-        if (medications.isEmpty) {
-          medications = (parsed['medications'] as List<dynamic>?) ?? [];
+    // Get lab tests, follow-up, and notes using helper methods (with backwards compatibility)
+    final db = await DoctorDatabase.instance;
+    final labTestsData = await db.getLabTestsForPrescriptionCompat(prescription.id);
+    final followUpData = await db.getFollowUpForPrescriptionCompat(prescription.id);
+    var notesData = await db.getClinicalNotesForPrescriptionCompat(prescription.id);
+    
+    // Convert to expected format
+    var labTests = labTestsData.map((test) => {
+      'name': test['name'] ?? '',
+      'code': test['code'] ?? '',
+      'category': test['category'] ?? '',
+    }).toList();
+    var followUp = followUpData ?? <String, dynamic>{};
+    var notesDataVar = notesData;
+    
+    // Fallback: Parse from itemsJson for old records (if helper methods return empty)
+    if (labTests.isEmpty && followUp.isEmpty && notesDataVar.isEmpty) {
+      try {
+        final parsed = jsonDecode(prescription.itemsJson);
+        if (parsed is List) {
+          // Old format: just array of medications
+          if (medications.isEmpty) medications = parsed;
+        } else if (parsed is Map<String, dynamic>) {
+          // New format: full prescription object
+          if (medications.isEmpty) {
+            medications = (parsed['medications'] as List<dynamic>?) ?? [];
+          }
+          final parsedLabTests = (parsed['lab_tests'] as List<dynamic>?) ?? [];
+          if (parsedLabTests.isNotEmpty) {
+            labTests = parsedLabTests.map((test) {
+              if (test is Map<String, dynamic>) {
+                return test;
+              } else if (test is String) {
+                return {'name': test, 'code': '', 'category': ''};
+              }
+              return {'name': test.toString(), 'code': '', 'category': ''};
+            }).toList();
+          }
+          final parsedFollowUp = (parsed['follow_up'] as Map<String, dynamic>?) ?? {};
+          if (parsedFollowUp.isNotEmpty) {
+            followUp = parsedFollowUp;
+          }
+          final parsedNotes = (parsed['notes'] as String?) ?? '';
+          if (parsedNotes.isNotEmpty) {
+            notesDataVar = parsedNotes;
+          }
+          // Use from JSON if available (may have more complete data)
+          if ((parsed['diagnosis'] as String?)?.isNotEmpty == true) {
+            diagnosis = parsed['diagnosis'] as String;
+          }
+          if ((parsed['symptoms'] as String?)?.isNotEmpty == true) {
+            chiefComplaint = parsed['symptoms'] as String;
+          }
         }
-        labTests = (parsed['lab_tests'] as List<dynamic>?) ?? [];
-        followUp = (parsed['follow_up'] as Map<String, dynamic>?) ?? {};
-        notes = (parsed['notes'] as String?) ?? '';
-        // Use from JSON if available (may have more complete data)
-        if ((parsed['diagnosis'] as String?)?.isNotEmpty == true) {
-          diagnosis = parsed['diagnosis'] as String;
-        }
-        if ((parsed['symptoms'] as String?)?.isNotEmpty == true) {
-          chiefComplaint = parsed['symptoms'] as String;
-        }
+      } catch (e) {
+        log.w('PDF', 'Error parsing prescription itemsJson: $e');
       }
-    } catch (e) {
-      log.w('PDF', 'Error parsing prescription itemsJson: $e');
     }
+    
+    // Use final notes variable
+    final String notes = notesDataVar;
 
     // Parse vitals from vitalsJson
     Map<String, dynamic> vitals = {};
@@ -1578,7 +1629,7 @@ class PdfService {
     // Build content function (reused for both cases)
     final contentBuilder = (pw.Context context) {
       // Build content - MultiPage expects a list of widgets
-      return [
+      final content = [
               // Header (if enabled)
               if (config.showHeader) ...[
                 _buildTemplateHeader(
@@ -2275,28 +2326,44 @@ class PdfService {
                 ),
               ],
       ];
+      
+      // Return content as-is - background will be handled by buildBackground in PageTheme
+      // Note: We don't wrap in Stack here because it causes issues with Expanded widgets
+      // that need unbounded height constraints
+      return content;
     };
 
     pdf.addPage(
       pw.MultiPage(
         build: contentBuilder,
-        // Always use pageTheme - it includes pageFormat and margin
-        // buildBackground only renders when backgroundImage is not null
         pageTheme: pw.PageTheme(
           pageFormat: PdfPageFormat.a4,
           margin: const pw.EdgeInsets.all(40),
           buildBackground: backgroundImage != null
               ? (pw.Context context) {
-                  final pageWidth = PdfPageFormat.a4.width - (40 * 2);
-                  final pageHeight = PdfPageFormat.a4.height - (40 * 2);
-                  return pw.Container(
-                    width: pageWidth,
-                    height: pageHeight,
-                    child: pw.Opacity(
-                      opacity: 0.15,
-                      child: pw.Image(backgroundImage!, fit: pw.BoxFit.cover),
-                    ),
-                  );
+                  log.i('PDF', 'buildBackground called - rendering background. Page: ${context.pageNumber}, Format: ${context.page.pageFormat.width}x${context.page.pageFormat.height}');
+                  // Use full page dimensions
+                  final pageWidth = context.page.pageFormat.width;
+                  final pageHeight = context.page.pageFormat.height;
+                  
+                  try {
+                    return pw.Container(
+                      width: pageWidth,
+                      height: pageHeight,
+                      child: pw.Opacity(
+                        opacity: 0.5, // Increased to 50% for maximum visibility during testing
+                        child: pw.Image(
+                          backgroundImage!,
+                          fit: pw.BoxFit.cover,
+                          width: pageWidth,
+                          height: pageHeight,
+                        ),
+                      ),
+                    );
+                  } catch (e) {
+                    log.e('PDF', 'Error rendering background in buildBackground: $e');
+                    return pw.Container(); // Return empty container on error
+                  }
                 }
               : null,
         ),

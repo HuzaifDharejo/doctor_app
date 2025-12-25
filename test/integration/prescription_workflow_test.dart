@@ -118,7 +118,7 @@ void main() {
         final prescriptionId = await db.insertPrescription(
           PrescriptionsCompanion.insert(
             patientId: patientId,
-            itemsJson: jsonEncode([{'name': 'Vitamin D', 'dosage': '1000 IU'}]),
+            itemsJson: Value(jsonEncode([{'name': 'Vitamin D', 'dosage': '1000 IU'}])),
             diagnosis: const Value('Vitamin D deficiency'),
           ),
         );
@@ -147,7 +147,7 @@ void main() {
         final prescriptionId = await db.insertPrescription(
           PrescriptionsCompanion.insert(
             patientId: patientId,
-            itemsJson: jsonEncode([{'name': 'Atorvastatin', 'dosage': '20mg'}]),
+            itemsJson: Value(jsonEncode([{'name': 'Atorvastatin', 'dosage': '20mg'}])),
             vitalsJson: Value(jsonEncode(vitals)),
           ),
         );
@@ -314,7 +314,7 @@ void main() {
         final prescriptionId = await db.insertPrescription(
           PrescriptionsCompanion.insert(
             patientId: patientId,
-            itemsJson: jsonEncode([{'name': 'Prescription Drug'}]),
+            itemsJson: Value(jsonEncode([{'name': 'Prescription Drug'}])),
             appointmentId: Value(appointmentId),
           ),
         );
@@ -345,7 +345,7 @@ void main() {
         final prescriptionId = await db.insertPrescription(
           PrescriptionsCompanion.insert(
             patientId: patientId,
-            itemsJson: jsonEncode([{'name': 'Cold medicine'}]),
+            itemsJson: Value(jsonEncode([{'name': 'Cold medicine'}])),
             medicalRecordId: Value(recordId),
           ),
         );
@@ -472,7 +472,7 @@ void main() {
         final prescriptionId = await db.insertPrescription(
           PrescriptionsCompanion.insert(
             patientId: patientId,
-            itemsJson: jsonEncode(medications),
+            itemsJson: Value(jsonEncode(medications)),
             diagnosis: const Value('Diabetes mellitus type 2, Essential hypertension'),
             instructions: const Value('Monitor blood sugar regularly. Return if symptoms worsen.'),
             appointmentId: Value(appointmentId),
@@ -659,7 +659,7 @@ void main() {
         final prescriptionId = await db.insertPrescription(
           PrescriptionsCompanion.insert(
             patientId: patientId,
-            itemsJson: jsonEncode([{'name': 'Pain reliever'}]),
+            itemsJson: Value(jsonEncode([{'name': 'Pain reliever'}])),
             chiefComplaint: const Value('Headache for 3 days'),
           ),
         );

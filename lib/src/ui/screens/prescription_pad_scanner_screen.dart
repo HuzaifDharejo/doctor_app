@@ -524,6 +524,8 @@ class _PrescriptionPadScannerScreenState extends ConsumerState<PrescriptionPadSc
           'pulse': '72',
           'temperature': '98.6',
         }),
+        followUpNotes: 'Review after one week',
+        clinicalNotes: '',
         isRefillable: false,
       );
       
@@ -618,6 +620,27 @@ class _PrescriptionPadScannerScreenState extends ConsumerState<PrescriptionPadSc
         }
       }
       
+      // Handle background image: use new one if selected, otherwise preserve existing
+      final existingConfig = profile.pdfTemplateConfig;
+      String backgroundImageType;
+      String? backgroundData;
+      
+      if (_backgroundImageBase64 != null) {
+        // New background image selected
+        backgroundImageType = 'custom';
+        backgroundData = _backgroundImageBase64;
+      } else if (existingConfig.backgroundImageType == 'custom' && 
+                 existingConfig.customBackgroundData != null && 
+                 existingConfig.customBackgroundData!.isNotEmpty) {
+        // Preserve existing background (user didn't change it)
+        backgroundImageType = 'custom';
+        backgroundData = existingConfig.customBackgroundData;
+      } else {
+        // No background (either never set or explicitly removed)
+        backgroundImageType = 'none';
+        backgroundData = null;
+      }
+      
       final updatedConfig = profile.pdfTemplateConfig.copyWith(
         clinicAddressLine1: clinicAddressLine1,
         clinicAddressLine2: clinicAddressLine2,
@@ -633,8 +656,8 @@ class _PrescriptionPadScannerScreenState extends ConsumerState<PrescriptionPadSc
         showMrNumber: true,
         showOccupation: true,
         sectionLabels: sectionLabels,
-        backgroundImageType: _backgroundImageBase64 != null ? 'custom' : 'none',
-        customBackgroundData: _backgroundImageBase64,
+        backgroundImageType: backgroundImageType,
+        customBackgroundData: backgroundData,
       );
       
       final updatedProfile = profile.copyWith(
