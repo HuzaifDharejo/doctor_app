@@ -1491,7 +1491,7 @@ class DoctorDatabase extends _$DoctorDatabase {
   DoctorDatabase.forTesting(super.e);
 
   @override
-  int get schemaVersion => 13;
+  int get schemaVersion => 14;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
